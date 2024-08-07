@@ -347,7 +347,7 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	var err error
 
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && !isSeparator(l.cur); err = l.readRune() {
+	for err = l.readRune(); l.hasNext() && err == nil && !isSeparator(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
 	}
 

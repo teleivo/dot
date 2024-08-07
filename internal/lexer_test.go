@@ -67,15 +67,6 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: `"#00008844"`},
 			},
 		},
-		"IdentifiersUnquotedString": { // https://graphviz.org/doc/info/lang.html#ids
-			in: `_A A_cZ A10 ÿ `,
-			want: []token.Token{
-				{Type: token.Identifier, Literal: "_A"},
-				{Type: token.Identifier, Literal: "A_cZ"},
-				{Type: token.Identifier, Literal: "A10"},
-				{Type: token.Identifier, Literal: `ÿ`},
-			},
-		},
 		"AttributeList": {
 			// 	in: `	graph [
 			// 	labelloc = t
@@ -197,6 +188,96 @@ G > H
 		})
 	}
 
+	// https://graphviz.org/doc/info/lang.html#ids
+	t.Run("UnquotedIdentifiers", func(t *testing.T) {
+		t.Run("Valid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want token.Token
+			}{
+				{
+					in:   "_A",
+					want: token.Token{Type: token.Identifier, Literal: "_A"},
+				},
+				{
+					in:   "A_cZ",
+					want: token.Token{Type: token.Identifier, Literal: "A_cZ"},
+				},
+				{
+					in:   "A10",
+					want: token.Token{Type: token.Identifier, Literal: "A10"},
+				},
+				{
+					in:   "-.",
+					want: token.Token{Type: token.Identifier, Literal: "-."},
+				},
+				{
+					in:   `ÿ  `,
+					want: token.Token{Type: token.Identifier, Literal: `ÿ`},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer := New(strings.NewReader(test.in))
+					next, stop := iter.Pull2(lexer.All())
+					defer stop()
+
+					got, err, ok := next()
+
+					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+					assert.NoErrorf(t, err, "All(%q)", test.in)
+					assert.Truef(t, ok, "All(%q)", test.in)
+
+					_, _, ok = next()
+
+					assert.Falsef(t, ok, "All(%q) want only one token", test.in)
+				})
+			}
+		})
+
+		t.Run("Invalid", func(t *testing.T) {
+			t.Skip()
+
+			tests := []struct {
+				in   string
+				want LexError
+			}{
+				{
+					in: "\n. 0",
+					want: LexError{
+						LineNr:      2,
+						CharacterNr: 1,
+						Character:   '.',
+						Reason:      "`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier",
+					},
+				},
+				{
+					in: "\n\n\n\t  - F",
+					want: LexError{
+						LineNr:      4,
+						CharacterNr: 4,
+						Character:   '-',
+						Reason:      "`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier",
+					},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer := New(strings.NewReader(test.in))
+					next, stop := iter.Pull2(lexer.All())
+					defer stop()
+
+					_, err, ok := next()
+
+					got, ok := err.(LexError)
+					require.Truef(t, ok, "All(%q) wanted LexError, instead got %q", test.in, err)
+					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+				})
+			}
+		})
+	})
 	// https://graphviz.org/doc/info/lang.html#ids
 	t.Run("NumeralIdentifiers", func(t *testing.T) {
 		t.Run("Valid", func(t *testing.T) {

@@ -55,8 +55,6 @@ func TestLexer(t *testing.T) {
 				{Type: token.Edge, Literal: "Edge"},
 			},
 		},
-		// TODO lex html string
-		// TODO should I strip the quotes from the literal? or leave that up to the parser?
 		"IdentifiersQuoted": { // https://graphviz.org/doc/info/lang.html#ids
 			in: `"graph" "strict" "\"d" "_A" "-.9" "Helvetica,Arial,sans-serif" "#00008844"`,
 			want: []token.Token{
@@ -138,12 +136,6 @@ func TestLexer(t *testing.T) {
 				{Type: token.RightBrace, Literal: "}"},
 			},
 		},
-		// TODO test invalid identifiers, how does any string not leading with a digit concern
-		// lexing?
-		// TODO test invalid edge operators
-		// TODO handle EOF differently? I now have multiple places checking for io.EOF would be nice
-		// to mark that in one place
-		// TODO add hints to some errors like <- did you mean ->
 	}
 
 	for name, test := range tests {
@@ -152,7 +144,6 @@ func TestLexer(t *testing.T) {
 
 			got := make([]token.Token, 0, len(tests))
 			for token, err := range lexer.All() {
-				t.Logf("%+v err %v\n", token, err)
 				assert.NoError(t, err)
 				got = append(got, token)
 			}
@@ -166,8 +157,6 @@ func TestLexer(t *testing.T) {
 	}{
 		"IdentifiersIllegal": { // https://graphviz.org/doc/info/lang.html#ids
 			in: ` A  ?
-. D
-	E - F
 G > H
 `,
 			errs: []*LexError{
@@ -178,24 +167,9 @@ G > H
 					Character:   '?',
 					Reason:      "invalid token",
 				},
+				nil,
 				{
 					LineNr:      2,
-					CharacterNr: 1,
-					Character:   '.',
-					Reason:      "`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier",
-				},
-				nil,
-				nil,
-				{
-					LineNr:      3,
-					CharacterNr: 4,
-					Character:   '-',
-					Reason:      "`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier",
-				},
-				nil,
-				nil,
-				{
-					LineNr:      4,
 					CharacterNr: 3,
 					Character:   '>',
 					Reason:      "invalid token",

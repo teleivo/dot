@@ -307,9 +307,6 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
 
-	// TODO validate the quote is closed
-	// TODO cap looking for missing quote at 16384 runes https://gitlab.com/graphviz/graphviz/-/issues/1261
-	// TODO how to validate any quotes inside the string are quoted?
 	prev := l.cur
 	id := []rune{l.cur}
 	for err = l.readRune(); err == nil && (l.cur != '"' || (prev == '\\' && l.cur == '"')); err = l.readRune() {

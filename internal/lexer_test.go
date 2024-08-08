@@ -55,21 +55,6 @@ func TestLexer(t *testing.T) {
 				{Type: token.Edge, Literal: "Edge"},
 			},
 		},
-		"IdentifiersQuoted": { // https://graphviz.org/doc/info/lang.html#ids
-			in: `"graph" "strict" "\"d" "_A" "-.9" "A--B" "A-B" "A->B" "Helvetica,Arial,sans-serif" "#00008844"`,
-			want: []token.Token{
-				{Type: token.Identifier, Literal: `"graph"`},
-				{Type: token.Identifier, Literal: `"strict"`},
-				{Type: token.Identifier, Literal: `"\"d"`},
-				{Type: token.Identifier, Literal: `"_A"`},
-				{Type: token.Identifier, Literal: `"-.9"`},
-				{Type: token.Identifier, Literal: `"A--B"`},
-				{Type: token.Identifier, Literal: `"A-B"`},
-				{Type: token.Identifier, Literal: `"A->B"`},
-				{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
-				{Type: token.Identifier, Literal: `"#00008844"`},
-			},
-		},
 		"AttributeList": {
 			in: `	graph [
 				labelloc = t
@@ -403,6 +388,121 @@ func TestLexer(t *testing.T) {
 						CharacterNr: 5,
 						Character:   ' ',
 						Reason:      "a numeral must have at least one digit",
+					},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer := New(strings.NewReader(test.in))
+					next, stop := iter.Pull2(lexer.All())
+					defer stop()
+
+					_, err, ok := next()
+
+					got, ok := err.(LexError)
+					require.Truef(t, ok, "All(%q) wanted LexError, instead got %q", test.in, err)
+					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+				})
+			}
+		})
+	})
+
+	t.Run("QuotedIdentifiers", func(t *testing.T) {
+		t.Run("Valid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want token.Token
+			}{
+				{
+					in:   `"graph"`,
+					want: token.Token{Type: token.Identifier, Literal: `"graph"`},
+				},
+				{
+					in:   `"strict"`,
+					want: token.Token{Type: token.Identifier, Literal: `"strict"`},
+				},
+				{
+					in:   `"\"d"`,
+					want: token.Token{Type: token.Identifier, Literal: `"\"d"`},
+				},
+				{
+					in:   `"\nd"`,
+					want: token.Token{Type: token.Identifier, Literal: `"\nd"`},
+				},
+				{
+					in:   `"\\d"`,
+					want: token.Token{Type: token.Identifier, Literal: `"\\d"`},
+				},
+				{
+					in:   `"_A"`,
+					want: token.Token{Type: token.Identifier, Literal: `"_A"`},
+				},
+				{
+					in:   `"_A"`,
+					want: token.Token{Type: token.Identifier, Literal: `"_A"`},
+				},
+				{
+					in:   `"-.9"`,
+					want: token.Token{Type: token.Identifier, Literal: `"-.9"`},
+				},
+				{
+					in:   `"A--B"`,
+					want: token.Token{Type: token.Identifier, Literal: `"A--B"`},
+				},
+				{
+					in:   `"A->B"`,
+					want: token.Token{Type: token.Identifier, Literal: `"A->B"`},
+				},
+				{
+					in:   `"A-B"`,
+					want: token.Token{Type: token.Identifier, Literal: `"A-B"`},
+				},
+				{
+					in:   `"Helvetica,Arial,sans-serif"`,
+					want: token.Token{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
+				},
+				{
+					in:   `"#00008844"`,
+					want: token.Token{Type: token.Identifier, Literal: `"#00008844"`},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer := New(strings.NewReader(test.in))
+					next, stop := iter.Pull2(lexer.All())
+					defer stop()
+
+					got, err, ok := next()
+
+					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+					assert.NoErrorf(t, err, "All(%q)", test.in)
+					assert.Truef(t, ok, "All(%q)", test.in)
+
+					_, _, ok = next()
+
+					assert.Falsef(t, ok, "All(%q) want only one token", test.in)
+				})
+			}
+		})
+
+		t.Run("Invalid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want LexError
+			}{
+				{
+					// TODO unclosed quote
+					// TODO unclosed quote with max length as in
+					// missing quote at 16384 runes https://gitlab.com/graphviz/graphviz/-/issues/1261
+					// TODO how to validate any quotes inside the string are quoted?
+					in: `"asdf`,
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 4,
+						Character:   '',
+						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
 					},
 				},
 			}

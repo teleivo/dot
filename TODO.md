@@ -1,12 +1,6 @@
-* handle EOF differently? I now have multiple places checking for io.EOF would be nice
-  to mark that in one place
-
-* what are not io.EOF errors and do I handle them well?
-* generate coverage to see if I missed any logic?
+* write parser
 
 * how to continue generating tokens when finding invalid ones?
-
-* write parser
 
 * write cmd/validate
 * write cmd/stats that tells me how many nodes, edges there are

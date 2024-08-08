@@ -103,6 +103,7 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 	}
 }
 
+// readRune reads one rune and advances the lexers position markers depending on the read rune.
 func (l *Lexer) readRune() error {
 	r, _, err := l.r.ReadRune()
 	if err != nil {
@@ -126,10 +127,6 @@ func (l *Lexer) readRune() error {
 	return nil
 }
 
-func (l *Lexer) hasNext() bool {
-	return !(l.eof && l.cur == 0)
-}
-
 func (l *Lexer) skipWhitespace() (err error) {
 	for isWhitespace(l.cur) {
 		err := l.readRune()
@@ -149,6 +146,10 @@ func isWhitespace(r rune) bool {
 		return true
 	}
 	return false
+}
+
+func (l *Lexer) hasNext() bool {
+	return !(l.eof && l.cur == 0)
 }
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
@@ -186,6 +187,12 @@ func isStartOfUnquotedString(r rune) bool {
 	return r == '_' || isAlphabetic(r)
 }
 
+// isAlphabetic determines if the rune is part of the allowed alphabetic characters of an unquoted
+// identifier as defined in https://graphviz.org/doc/info/lang.html#ids.
+func isAlphabetic(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
+}
+
 func isStartOfNumeral(r rune) bool {
 	return r == '-' || r == '.' || unicode.IsDigit(r)
 }
@@ -218,14 +225,6 @@ func (l *Lexer) lexError(reason string) LexError {
 		Character:   l.cur,
 		Reason:      reason,
 	}
-}
-
-func isIdentifier(r rune) bool {
-	return isAlphabetic(r) || r == '_' || r == '-' || r == '.' || r == '"' || r == '\\' || unicode.IsDigit(r)
-}
-
-func isAlphabetic(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
 }
 
 // tokenizeUnquotedString considers the current rune(s) as an identifier that might be a dot

@@ -186,9 +186,8 @@ func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
 
 func isStartofIdentifier(r rune) bool {
 	if isStartOfQuotedString(r) ||
-		isStartOfHTMLString(r) ||
 		isStartOfNumeral(r) ||
-		isStartOfAnyString(r) {
+		isStartOfUnquotedString(r) {
 		return true
 	}
 
@@ -207,18 +206,16 @@ func isStartOfNumeral(r rune) bool {
 	return r == '-' || r == '.' || unicode.IsDigit(r)
 }
 
-func isStartOfAnyString(r rune) bool {
+func isStartOfUnquotedString(r rune) bool {
 	return r == '_' || isAlphabetic(r)
 }
 
 func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
 	if isStartOfQuotedString(l.cur) {
 		return l.tokenizeQuotedString()
-	} else if isStartOfHTMLString(l.cur) {
-		return l.tokenizeHTMLString()
 	} else if isStartOfNumeral(l.cur) {
 		return l.tokenizeNumeral()
-	} else if isStartOfAnyString(l.cur) {
+	} else if isStartOfUnquotedString(l.cur) {
 		return l.tokenizeUnquotedString()
 	}
 
@@ -289,31 +286,13 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	return token.Token{Type: token.Identifier, Literal: string(id)}, err
 }
 
-func (l *Lexer) tokenizeHTMLString() (token.Token, error) {
-	var tok token.Token
-	var err error
-
-	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && !isSeparator(l.cur); err = l.readRune() {
-		id = append(id, l.cur)
-	}
-
-	if err != nil {
-		return tok, err
-	}
-
-	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
-}
-
 func (l *Lexer) tokenizeNumeral() (token.Token, error) {
-	fmt.Println("tokenizeNumeral")
 	var tok token.Token
 	var err error
 	var id []rune
-	var pos int
-	var hasDot bool
 	var hasDigit bool
-	for l.hasNext() && err == nil && !isNumeralSeparator(l.cur) {
+
+	for pos, hasDot := 0, false; l.hasNext() && err == nil && !isNumeralSeparator(l.cur); err, pos = l.readRune(), pos+1 {
 		if l.cur == '-' && pos != 0 {
 			return tok, l.lexError("a numeral can only be prefixed with a `-`")
 		}
@@ -333,8 +312,6 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 		}
 
 		id = append(id, l.cur)
-		err = l.readRune()
-		pos++
 	}
 
 	if !hasDigit {

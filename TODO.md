@@ -1,12 +1,17 @@
-* test invalid edge operators?
-* test that I validate every rune I add to the id of that ids type
-* test that I read a numeral, unquoted id until I find a terminal or eof
-* test that I read a quoted id until I find a terminal or eof or a non escaped quote
+* improve lexing of unquoted strings
+  * test that I validate every rune I add to the id of that ids type
 
-* test more invalid identifiers, how does any string not leading with a digit concern
-  lexing?
+* improve lexing of quoted strings
+  * test that I read a quoted id until I find a terminal or eof or a non escaped quote
 
-* how to continue generating tokens when finding invalid ones?
+* improve lexing of edge operators?
+  * test invalid edge operators?
+
+* test that I consume until the appropriate separators like a terminal, eof (this is probably
+covered in every test), whitespace. Does the separator depend on the specific type of id?
+    * for numeral
+    * quoted should only be closing quote
+    * unquoted id until I find a terminal or eof
 
 * generate coverage to see if I missed any logic?
 
@@ -14,8 +19,11 @@
 
 * handle EOF differently? I now have multiple places checking for io.EOF would be nice
   to mark that in one place
+* how to continue generating tokens when finding invalid ones?
 
 * write parser
+
+* how to handle ports?
 
 * write cmd/validate
 * write cmd/stats that tells me how many nodes, edges there are

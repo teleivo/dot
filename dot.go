@@ -3,6 +3,8 @@ package dot
 
 import (
 	"io"
+
+	dot "github.com/teleivo/dot/internal"
 )
 
 type Graph struct {
@@ -12,10 +14,17 @@ type Graph struct {
 }
 
 type Parser struct {
+	l *dot.Lexer
 }
 
-func (p *Parser) Parse(r io.Reader) *Graph {
+func New(r io.Reader) *Parser {
+	return &Parser{
+		l: dot.New(r),
+	}
+}
+
+func (p *Parser) Parse() (*Graph, error) {
 	g := &Graph{}
 
-	return g
+	return g, nil
 }

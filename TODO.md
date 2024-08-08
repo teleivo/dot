@@ -17,6 +17,10 @@ covered in every test), whitespace. Does the separator depend on the specific ty
 
 * refactor and fix todos in code
 
+* what are not io.EOF errors and do I handle them well?
+
+* support comments (by discarding them)
+
 * handle EOF differently? I now have multiple places checking for io.EOF would be nice
   to mark that in one place
 * how to continue generating tokens when finding invalid ones?

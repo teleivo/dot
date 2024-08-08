@@ -187,10 +187,6 @@ func TestLexer(t *testing.T) {
 					want: token.Token{Type: token.Identifier, Literal: "A10"},
 				},
 				{
-					in:   "-.",
-					want: token.Token{Type: token.Identifier, Literal: "-."},
-				},
-				{
 					in:   `ÿ  `,
 					want: token.Token{Type: token.Identifier, Literal: `ÿ`},
 				},
@@ -221,7 +217,7 @@ func TestLexer(t *testing.T) {
 				want LexError
 			}{
 				{
-					in: "  ",
+					in: "  ", // \177
 					want: LexError{
 						LineNr:      1,
 						CharacterNr: 3,
@@ -230,11 +226,11 @@ func TestLexer(t *testing.T) {
 					},
 				},
 				{
-					in: "\n\n ÿ",
+					in: `Ā`, // Unicode character U+0100 = \400 which cannot be written as rune(\400) as its outside of Gos valid octal range
 					want: LexError{
-						LineNr:      3,
-						CharacterNr: 2,
-						Character:   'ÿ',
+						LineNr:      1,
+						CharacterNr: 1,
+						Character:   'Ā',
 						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
 					},
 				},
@@ -353,6 +349,15 @@ func TestLexer(t *testing.T) {
 						CharacterNr: 4,
 						Character:   '.',
 						Reason:      "a numeral can only have one `.` that is at least preceded or followed by digits",
+					},
+				},
+				{
+					in: "-.",
+					want: LexError{ // TODO I point the error past the EOF
+						LineNr:      1,
+						CharacterNr: 3,
+						// Character:   '.',
+						Reason: "a numeral must have at least one digit",
 					},
 				},
 				{

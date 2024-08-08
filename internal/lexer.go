@@ -32,10 +32,10 @@ func New(r io.Reader) *Lexer {
 	return &lexer
 }
 
-// TODO support comments (by discarding them)
 // All returns an iterator over all dot tokens in the given reader.
 func (l *Lexer) All() iter.Seq2[token.Token, error] {
 	return func(yield func(token.Token, error) bool) {
+		// TODO handle errors
 		// initialize current and next runes
 		err := l.readRune()
 		if errors.Is(err, io.EOF) {
@@ -100,8 +100,6 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 			fmt.Println("after advance")
 			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 		}
-		// TODO handle illegal runes
-		// TODO handle error that is not io.EOF
 	}
 }
 
@@ -185,13 +183,21 @@ func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
 }
 
 func isStartofIdentifier(r rune) bool {
-	if isStartOfQuotedString(r) ||
+	if isStartOfUnquotedString(r) ||
 		isStartOfNumeral(r) ||
-		isStartOfUnquotedString(r) {
+		isStartOfQuotedString(r) {
 		return true
 	}
 
 	return false
+}
+
+func isStartOfUnquotedString(r rune) bool {
+	return r == '_' || isAlphabetic(r)
+}
+
+func isStartOfNumeral(r rune) bool {
+	return r == '-' || r == '.' || unicode.IsDigit(r)
 }
 
 func isStartOfQuotedString(r rune) bool {
@@ -202,21 +208,13 @@ func isStartOfHTMLString(r rune) bool {
 	return r == '<'
 }
 
-func isStartOfNumeral(r rune) bool {
-	return r == '-' || r == '.' || unicode.IsDigit(r)
-}
-
-func isStartOfUnquotedString(r rune) bool {
-	return r == '_' || isAlphabetic(r)
-}
-
 func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
-	if isStartOfQuotedString(l.cur) {
-		return l.tokenizeQuotedString()
+	if isStartOfUnquotedString(l.cur) {
+		return l.tokenizeUnquotedString()
 	} else if isStartOfNumeral(l.cur) {
 		return l.tokenizeNumeral()
-	} else if isStartOfUnquotedString(l.cur) {
-		return l.tokenizeUnquotedString()
+	} else if isStartOfQuotedString(l.cur) {
+		return l.tokenizeQuotedString()
 	}
 
 	var tok token.Token
@@ -260,30 +258,25 @@ func isTerminal(r rune) bool {
 	return false
 }
 
-func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
+// tokenizeUnquotedString considers the current rune(s) as an identifier that might be a dot
+// keyword.
+func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
 
-	// TODO validate the quote is closed
-	// TODO cap looking for missing quote at 16384 runes https://gitlab.com/graphviz/graphviz/-/issues/1261
-	// TODO how to validate any quotes inside the string are quoted?
-	prev := l.cur
 	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && (l.cur != '"' || (prev == '\\' && l.cur == '"')); err = l.readRune() {
+	for err = l.readRune(); l.hasNext() && err == nil && !isSeparator(l.cur); err = l.readRune() {
 		id = append(id, l.cur)
-		prev = l.cur
 	}
 
 	if err != nil {
 		return tok, err
 	}
 
-	// consume closing quote
-	id = append(id, l.cur)
-	// TODO error handling
-	err = l.readRune()
+	literal := string(id)
+	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
 
-	return token.Token{Type: token.Identifier, Literal: string(id)}, err
+	return tok, err
 }
 
 func (l *Lexer) tokenizeNumeral() (token.Token, error) {
@@ -324,25 +317,30 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
 }
 
-// tokenizeUnquotedString considers the current rune(s) as an identifier that might be a dot
-// keyword.
-func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
+func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
 
+	// TODO validate the quote is closed
+	// TODO cap looking for missing quote at 16384 runes https://gitlab.com/graphviz/graphviz/-/issues/1261
+	// TODO how to validate any quotes inside the string are quoted?
+	prev := l.cur
 	id := []rune{l.cur}
-	for err = l.readRune(); l.hasNext() && err == nil && !isSeparator(l.cur); err = l.readRune() {
+	for err = l.readRune(); err == nil && (l.cur != '"' || (prev == '\\' && l.cur == '"')); err = l.readRune() {
 		id = append(id, l.cur)
+		prev = l.cur
 	}
 
 	if err != nil {
 		return tok, err
 	}
 
-	literal := string(id)
-	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
+	// consume closing quote
+	id = append(id, l.cur)
+	// TODO error handling
+	err = l.readRune()
 
-	return tok, err
+	return token.Token{Type: token.Identifier, Literal: string(id)}, err
 }
 
 type LexError struct {

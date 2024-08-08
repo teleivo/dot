@@ -492,7 +492,6 @@ func TestLexer(t *testing.T) {
 				in   string
 				want LexError
 			}{
-				// TODO how to validate any quotes inside the string are quoted?
 				{
 					in: `"asdf`,
 					want: LexError{

@@ -1,6 +1,3 @@
-* improve lexing of quoted strings
-  * test not escaping a quote?
-
 * improve lexing of edge operators?
   * test invalid edge operators?
 

@@ -308,14 +308,14 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
 	var id []rune
-
 	var hasClosingQuote bool
+
 	for pos, prev := 0, rune(0); l.hasNext() && err == nil; err, pos = l.readRune(), pos+1 {
 		id = append(id, l.cur)
 
-		// TODO it could also be an unescaped quote
-		if pos != 0 && l.cur == '"' && prev != '\\' {
+		if pos != 0 && l.cur == '"' && prev != '\\' { // assuming a non-escaped quote after pos 0 closes the string
 			hasClosingQuote = true
+			err = l.readRune() // consume closing quote
 			break
 		}
 		if pos > maxUnquotedStringLen {

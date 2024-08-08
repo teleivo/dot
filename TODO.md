@@ -1,6 +1,3 @@
-* improve lexing of unquoted strings
-  * test that I validate every rune I add to the id of that ids type
-
 * improve lexing of quoted strings
   * test that I read a quoted id until I find a terminal or eof or a non escaped quote
 

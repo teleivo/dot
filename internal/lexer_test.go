@@ -226,10 +226,28 @@ func TestLexer(t *testing.T) {
 					},
 				},
 				{
+					in: "  _zabx", // \177
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 7,
+						Character:   '',
+						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
+					},
+				},
+				{
 					in: `Ā`, // Unicode character U+0100 = \400 which cannot be written as rune(\400) as its outside of Gos valid octal range
 					want: LexError{
 						LineNr:      1,
 						CharacterNr: 1,
+						Character:   'Ā',
+						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
+					},
+				},
+				{
+					in: `_Ā`, // Unicode character U+0100 = \400 which cannot be written as rune(\400) as its outside of Gos valid octal range
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 2,
 						Character:   'Ā',
 						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
 					},

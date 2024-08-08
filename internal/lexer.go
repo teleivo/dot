@@ -32,6 +32,8 @@ func New(r io.Reader) *Lexer {
 	return &lexer
 }
 
+const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`
+
 // All returns an iterator over all dot tokens in the given reader.
 func (l *Lexer) All() iter.Seq2[token.Token, error] {
 	return func(yield func(token.Token, error) bool) {
@@ -86,7 +88,7 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 					// continue here?
 					continue // as we do advance in tokenizeIdentifier we want to skip advancing at the end of the loop
 				} else {
-					err = l.lexError(`unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`)
+					err = l.lexError(unquotedStringErr)
 				}
 			}
 
@@ -94,11 +96,7 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 				return
 			}
 
-			fmt.Println("before advance")
-			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 			err = l.readRune()
-			fmt.Println("after advance")
-			fmt.Printf("l.cur %q, l.next %q, err %v\n", l.cur, l.next, err)
 		}
 	}
 }
@@ -238,34 +236,18 @@ func isAlphabetic(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
 }
 
-// TODO is this also dependent on the context? as in - is not a separator inside of a quoted string
-// isSeparator determines if the rune separates tokens. This can be terminal tokens or whitespace.
-func isSeparator(r rune) bool {
-	return isTerminal(r) || r == '-' || isWhitespace(r)
-}
-
-func isNumeralSeparator(r rune) bool {
-	return isTerminal(r) || isWhitespace(r)
-}
-
-// isTerminal determines if the rune is considered a terminal token in the dot language. This does
-// not contain edge operators
-func isTerminal(r rune) bool {
-	switch token.TokenType(r) {
-	case token.LeftBrace, token.RightBrace, token.LeftBracket, token.RightBracket, token.Colon, token.Semicolon, token.Equal, token.Comma:
-		return true
-	}
-	return false
-}
-
 // tokenizeUnquotedString considers the current rune(s) as an identifier that might be a dot
 // keyword.
 func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
+	var id []rune
 
-	id := []rune{l.cur}
-	for err = l.readRune(); l.hasNext() && err == nil && !isSeparator(l.cur); err = l.readRune() {
+	for ; l.hasNext() && err == nil && !isUnquotedStringSeparator(l.cur); err = l.readRune() {
+		if !isLegalInUnquotedString(l.cur) {
+			return tok, l.lexError(unquotedStringErr)
+		}
+
 		id = append(id, l.cur)
 	}
 
@@ -277,6 +259,10 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
 
 	return tok, err
+}
+
+func isLegalInUnquotedString(r rune) bool {
+	return isStartOfUnquotedString(r) || unicode.IsDigit(r)
 }
 
 func (l *Lexer) tokenizeNumeral() (token.Token, error) {
@@ -341,6 +327,25 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	err = l.readRune()
 
 	return token.Token{Type: token.Identifier, Literal: string(id)}, err
+}
+
+// isUnquotedStringSeparator determines if the rune separates tokens.
+func isUnquotedStringSeparator(r rune) bool {
+	return isTerminal(r) || isWhitespace(r) || r == '-' // potential edge operator
+}
+
+func isNumeralSeparator(r rune) bool {
+	return isTerminal(r) || isWhitespace(r)
+}
+
+// isTerminal determines if the rune is considered a terminal token in the dot language. This does
+// not contain edge operators
+func isTerminal(r rune) bool {
+	switch token.TokenType(r) {
+	case token.LeftBrace, token.RightBrace, token.LeftBracket, token.RightBracket, token.Colon, token.Semicolon, token.Equal, token.Comma:
+		return true
+	}
+	return false
 }
 
 type LexError struct {

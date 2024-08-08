@@ -1,5 +1,5 @@
 * improve lexing of quoted strings
-  * test that I read a quoted id until I find a terminal or eof or a non escaped quote
+  * test not escaping a quote?
 
 * improve lexing of edge operators?
   * test invalid edge operators?

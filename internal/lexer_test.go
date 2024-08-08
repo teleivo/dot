@@ -56,35 +56,36 @@ func TestLexer(t *testing.T) {
 			},
 		},
 		"IdentifiersQuoted": { // https://graphviz.org/doc/info/lang.html#ids
-			in: `"graph" "strict" "\"d" "_A" "-.9" "Helvetica,Arial,sans-serif" "#00008844"`,
+			in: `"graph" "strict" "\"d" "_A" "-.9" "A--B" "A-B" "A->B" "Helvetica,Arial,sans-serif" "#00008844"`,
 			want: []token.Token{
 				{Type: token.Identifier, Literal: `"graph"`},
 				{Type: token.Identifier, Literal: `"strict"`},
 				{Type: token.Identifier, Literal: `"\"d"`},
 				{Type: token.Identifier, Literal: `"_A"`},
 				{Type: token.Identifier, Literal: `"-.9"`},
+				{Type: token.Identifier, Literal: `"A--B"`},
+				{Type: token.Identifier, Literal: `"A-B"`},
+				{Type: token.Identifier, Literal: `"A->B"`},
 				{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
 				{Type: token.Identifier, Literal: `"#00008844"`},
 			},
 		},
 		"AttributeList": {
-			// 	in: `	graph [
-			// 	labelloc = t
-			// 	fontname = "Helvetica,Arial,sans-serif"
-			// ]
-			// 			edge [arrowhead=none color="#00008844"]  `,
-			in: `	
-					edge [arrowhead=none color="#00008844"]  `,
+			in: `	graph [
+				labelloc = t
+				fontname = "Helvetica,Arial,sans-serif"
+			]
+						edge [arrowhead=none color="#00008844"]  `,
 			want: []token.Token{
-				// {Type: token.Graph, Literal: "graph"},
-				// {Type: token.LeftBracket, Literal: "["},
-				// {Type: token.Identifier, Literal: "labelloc"},
-				// {Type: token.Equal, Literal: "="},
-				// {Type: token.Identifier, Literal: "t"},
-				// {Type: token.Identifier, Literal: "fontname"},
-				// {Type: token.Equal, Literal: "="},
-				// {Type: token.Identifier, Literal: "Helvetica,Arial,sans-serif"},
-				// {Type: token.RightBracket, Literal: "]"},
+				{Type: token.Graph, Literal: "graph"},
+				{Type: token.LeftBracket, Literal: "["},
+				{Type: token.Identifier, Literal: "labelloc"},
+				{Type: token.Equal, Literal: "="},
+				{Type: token.Identifier, Literal: "t"},
+				{Type: token.Identifier, Literal: "fontname"},
+				{Type: token.Equal, Literal: "="},
+				{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
+				{Type: token.RightBracket, Literal: "]"},
 				{Type: token.Edge, Literal: "edge"},
 				{Type: token.LeftBracket, Literal: "["},
 				{Type: token.Identifier, Literal: "arrowhead"},
@@ -142,33 +143,11 @@ func TestLexer(t *testing.T) {
 		})
 	}
 
+	// TODO is there some other error case I would want to test?
 	errorTests := map[string]struct {
 		in   string
 		errs []*LexError
-	}{
-		"IdentifiersIllegal": { // https://graphviz.org/doc/info/lang.html#ids
-			in: ` A  ?
-G > H
-`,
-			errs: []*LexError{
-				nil,
-				{
-					LineNr:      1,
-					CharacterNr: 5,
-					Character:   '?',
-					Reason:      "invalid token",
-				},
-				nil,
-				{
-					LineNr:      2,
-					CharacterNr: 3,
-					Character:   '>',
-					Reason:      "invalid token",
-				},
-				nil,
-			},
-		},
-	}
+	}{}
 
 	for name, test := range errorTests {
 		t.Run(name, func(t *testing.T) {
@@ -237,28 +216,26 @@ G > H
 		})
 
 		t.Run("Invalid", func(t *testing.T) {
-			t.Skip()
-
 			tests := []struct {
 				in   string
 				want LexError
 			}{
 				{
-					in: "\n. 0",
+					in: "  ",
 					want: LexError{
-						LineNr:      2,
-						CharacterNr: 1,
-						Character:   '.',
-						Reason:      "`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier",
+						LineNr:      1,
+						CharacterNr: 3,
+						Character:   '',
+						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
 					},
 				},
 				{
-					in: "\n\n\n\t  - F",
+					in: "\n\n ÿ",
 					want: LexError{
-						LineNr:      4,
-						CharacterNr: 4,
-						Character:   '-',
-						Reason:      "`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier",
+						LineNr:      3,
+						CharacterNr: 2,
+						Character:   'ÿ',
+						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
 					},
 				},
 			}
@@ -278,7 +255,7 @@ G > H
 			}
 		})
 	})
-	// https://graphviz.org/doc/info/lang.html#ids
+
 	t.Run("NumeralIdentifiers", func(t *testing.T) {
 		t.Run("Valid", func(t *testing.T) {
 			tests := []struct {
@@ -286,36 +263,44 @@ G > H
 				want token.Token
 			}{
 				{
+					in:   " -.9\t\n",
+					want: token.Token{Type: token.Identifier, Literal: "-.9"},
+				},
+				{
 					in:   "-0.13",
 					want: token.Token{Type: token.Identifier, Literal: "-0.13"},
-				},
-				{
-					in:   "0.13",
-					want: token.Token{Type: token.Identifier, Literal: "0.13"},
-				},
-				{
-					in:   "0.",
-					want: token.Token{Type: token.Identifier, Literal: "0."},
 				},
 				{
 					in:   "-0.",
 					want: token.Token{Type: token.Identifier, Literal: "-0."},
 				},
 				{
-					in:   "47",
-					want: token.Token{Type: token.Identifier, Literal: "47"},
+					in:   "-92.58",
+					want: token.Token{Type: token.Identifier, Literal: "-92.58"},
 				},
 				{
 					in:   "-92",
 					want: token.Token{Type: token.Identifier, Literal: "-92"},
 				},
 				{
-					in:   " -.9\t\n",
-					want: token.Token{Type: token.Identifier, Literal: "-.9"},
+					in:   ".13",
+					want: token.Token{Type: token.Identifier, Literal: ".13"},
 				},
 				{
-					in:   `100 200 `,
-					want: token.Token{Type: token.Identifier, Literal: `100 200`}, // non-breakig space \240
+					in:   "0.",
+					want: token.Token{Type: token.Identifier, Literal: "0."},
+				},
+				{
+					in:   "0.13",
+					want: token.Token{Type: token.Identifier, Literal: "0.13"},
+				},
+				{
+					in:   "47",
+					want: token.Token{Type: token.Identifier, Literal: "47"},
+				},
+				{
+					in:   "47.58",
+					want: token.Token{Type: token.Identifier, Literal: "47.58"},
 				},
 			}
 
@@ -344,21 +329,57 @@ G > H
 				want LexError
 			}{
 				{
+					in: "-.1A",
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 4,
+						Character:   'A',
+						Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
+					},
+				},
+				{
+					in: "1-20",
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 2,
+						Character:   '-',
+						Reason:      "a numeral can only be prefixed with a `-`",
+					},
+				},
+				{
+					in: ".13.4",
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 4,
+						Character:   '.',
+						Reason:      "a numeral can only have one `.` that is at least preceded or followed by digits",
+					},
+				},
+				{
 					in: "\n. 0",
 					want: LexError{
 						LineNr:      2,
-						CharacterNr: 1,
-						Character:   '.',
-						Reason:      "`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier",
+						CharacterNr: 2,
+						Character:   ' ',
+						Reason:      "a numeral must have at least one digit",
+					},
+				},
+				{
+					in: `100 200 `, // non-breakig space \240 between 100 and 200
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 4,
+						Character:   ' ',
+						Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
 					},
 				},
 				{
 					in: "\n\n\n\t  - F",
 					want: LexError{
 						LineNr:      4,
-						CharacterNr: 4,
-						Character:   '-',
-						Reason:      "`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier",
+						CharacterNr: 5,
+						Character:   ' ',
+						Reason:      "a numeral must have at least one digit",
 					},
 				},
 			}

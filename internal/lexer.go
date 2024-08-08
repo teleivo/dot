@@ -45,6 +45,7 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 		if errors.Is(err, io.EOF) {
 			return
 		}
+		fmt.Println("initialized")
 
 		for {
 			var tok token.Token
@@ -85,7 +86,7 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 					// continue here?
 					continue // as we do advance in tokenizeIdentifier we want to skip advancing at the end of the loop
 				} else {
-					err = l.lexError("invalid token")
+					err = l.lexError(`unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`)
 				}
 			}
 
@@ -248,6 +249,10 @@ func isSeparator(r rune) bool {
 	return isTerminal(r) || r == '-' || isWhitespace(r)
 }
 
+func isNumeralSeparator(r rune) bool {
+	return isTerminal(r) || isWhitespace(r)
+}
+
 // isTerminal determines if the rune is considered a terminal token in the dot language. This does
 // not contain edge operators
 func isTerminal(r rune) bool {
@@ -304,35 +309,37 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 	fmt.Println("tokenizeNumeral")
 	var tok token.Token
 	var err error
-
-	if l.cur == '.' && !unicode.IsDigit(l.next) {
-		lexError := l.lexError("`.` needs to be either double-quoted to be a quoted identifier or prefixed or followed by a digit to be a numeral identifier")
-
-		// TODO read til a valid separator or eof? so I can potentially lex more valid tokens?
-		err = l.readRune()
-		if err != nil {
-			return tok, err
+	var id []rune
+	var pos int
+	var hasDot bool
+	var hasDigit bool
+	for l.hasNext() && err == nil && !isNumeralSeparator(l.cur) {
+		if l.cur == '-' && pos != 0 {
+			return tok, l.lexError("a numeral can only be prefixed with a `-`")
 		}
 
-		return tok, lexError
-	} else if l.cur == '-' && (l.next != '.' && !unicode.IsDigit(l.next)) {
-		lexError := l.lexError("`-` needs to be either double-quoted to be a quoted identifier or followed by an optional `.` and at least one digit to be a numeral identifier")
-
-		// TODO read til a valid separator or eof? so I can potentially lex more valid tokens?
-		err = l.readRune()
-		if err != nil {
-			return tok, err
+		if l.cur == '.' && hasDot {
+			return tok, l.lexError("a numeral can only have one `.` that is at least preceded or followed by digits")
 		}
 
-		return tok, lexError
-	}
+		if l.cur != '-' && l.cur != '.' && !unicode.IsDigit(l.cur) { // otherwise only digits are allowed
+			return tok, l.lexError("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
+		}
 
-	// TODO validate every l.cur is a digit
-	id := []rune{l.cur}
-	for err = l.readRune(); l.hasNext() && err == nil && !isSeparator(l.cur); err = l.readRune() {
+		if l.cur == '.' {
+			hasDot = true
+		} else if unicode.IsDigit(l.cur) {
+			hasDigit = true
+		}
+
 		id = append(id, l.cur)
+		err = l.readRune()
+		pos++
 	}
 
+	if !hasDigit {
+		err = l.lexError("a numeral must have at least one digit")
+	}
 	if err != nil {
 		return tok, err
 	}

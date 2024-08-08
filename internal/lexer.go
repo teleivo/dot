@@ -112,16 +112,6 @@ func (l *Lexer) readRune() error {
 		}
 
 		l.eof = true
-		if l.cur == '\n' {
-			l.curLineNr++
-			l.curCharNr = 1
-		} else {
-			l.curCharNr++
-		}
-		l.cur = l.next
-		l.next = 0
-		// fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
-		return nil
 	}
 
 	if l.cur == '\n' {

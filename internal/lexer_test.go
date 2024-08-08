@@ -492,17 +492,33 @@ func TestLexer(t *testing.T) {
 				in   string
 				want LexError
 			}{
+				// TODO how to validate any quotes inside the string are quoted?
 				{
-					// TODO unclosed quote
-					// TODO unclosed quote with max length as in
-					// missing quote at 16384 runes https://gitlab.com/graphviz/graphviz/-/issues/1261
-					// TODO how to validate any quotes inside the string are quoted?
 					in: `"asdf`,
 					want: LexError{
 						LineNr:      1,
+						CharacterNr: 6,
+						Character:   0,
+						Reason:      "missing closing quote",
+					},
+				},
+				{
+					in: `"asdf	
+		}`,
+					want: LexError{
+						LineNr:      2,
 						CharacterNr: 4,
-						Character:   '',
-						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
+						Character:   0,
+						Reason:      "missing closing quote",
+					},
+				},
+				{
+					in: `"` + strings.Repeat("a", 16348),
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 16349,
+						Character:   'a',
+						Reason:      "potentially missing closing quote, found none after max 16348 characters",
 					},
 				},
 			}

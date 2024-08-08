@@ -32,6 +32,7 @@ func New(r io.Reader) *Lexer {
 	return &lexer
 }
 
+const maxUnquotedStringLen = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
 const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`
 
 // All returns an iterator over all dot tokens in the given reader.
@@ -306,22 +307,29 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
+	var id []rune
 
-	prev := l.cur
-	id := []rune{l.cur}
-	for err = l.readRune(); err == nil && (l.cur != '"' || (prev == '\\' && l.cur == '"')); err = l.readRune() {
+	var hasClosingQuote bool
+	for pos, prev := 0, rune(0); l.hasNext() && err == nil; err, pos = l.readRune(), pos+1 {
 		id = append(id, l.cur)
+
+		// TODO it could also be an unescaped quote
+		if pos != 0 && l.cur == '"' && prev != '\\' {
+			hasClosingQuote = true
+			break
+		}
+		if pos > maxUnquotedStringLen {
+			return tok, l.lexError(fmt.Sprintf("potentially missing closing quote, found none after max %d characters", maxUnquotedStringLen+1))
+		}
 		prev = l.cur
 	}
 
+	if !hasClosingQuote {
+		err = l.lexError("missing closing quote")
+	}
 	if err != nil {
 		return tok, err
 	}
-
-	// consume closing quote
-	id = append(id, l.cur)
-	// TODO error handling
-	err = l.readRune()
 
 	return token.Token{Type: token.Identifier, Literal: string(id)}, err
 }

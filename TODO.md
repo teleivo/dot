@@ -7,16 +7,15 @@ covered in every test), whitespace. Does the separator depend on the specific ty
     * quoted should only be closing quote
     * unquoted id until I find a terminal or eof
 
-* generate coverage to see if I missed any logic?
-
 * refactor and fix todos in code
+
+* generate coverage to see if I missed any logic?
 
 * what are not io.EOF errors and do I handle them well?
 
-* support comments (by discarding them)
-
 * handle EOF differently? I now have multiple places checking for io.EOF would be nice
   to mark that in one place
+
 * how to continue generating tokens when finding invalid ones?
 
 * write parser

@@ -86,7 +86,7 @@ func TestLexer(t *testing.T) {
 			in: `  A -> {B C}
 				D -- E
 			subgraph {
-			  rank = same; A; B; C;
+			  rank = same; A;B;C;
 			}`,
 			want: []token.Token{
 				{Type: token.Identifier, Literal: "A"},
@@ -125,30 +125,6 @@ func TestLexer(t *testing.T) {
 				got = append(got, token)
 			}
 			assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
-		})
-	}
-
-	// TODO is there some other error case I would want to test?
-	errorTests := map[string]struct {
-		in   string
-		errs []*LexError
-	}{}
-
-	for name, test := range errorTests {
-		t.Run(name, func(t *testing.T) {
-			lexer := New(strings.NewReader(test.in))
-
-			var i int
-			for _, err := range lexer.All() {
-				if test.errs[i] == nil {
-					assert.NoErrorf(t, err, "All(%q) at index %d", test.in, i)
-				} else {
-					got, ok := err.(LexError)
-					require.Truef(t, ok, "All(%q) at index %d wanted LexError, instead got %q", test.in, i, err)
-					assert.EqualValuesf(t, got, *test.errs[i], "All(%q) at index %d", test.in, i)
-				}
-				i++
-			}
 		})
 	}
 

@@ -85,8 +85,6 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 					if !yield(tok, err) || l.eof {
 						return
 					}
-					// TODO could I not advance past in tokenizeIdentifier to get rid of the
-					// continue here?
 					continue // as we do advance in tokenizeIdentifier we want to skip advancing at the end of the loop
 				} else {
 					err = l.lexError(unquotedStringErr)

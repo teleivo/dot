@@ -38,23 +38,26 @@ const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([
 // All returns an iterator over all dot tokens in the given reader.
 func (l *Lexer) All() iter.Seq2[token.Token, error] {
 	return func(yield func(token.Token, error) bool) {
-		// TODO handle errors
 		// initialize current and next runes
 		err := l.readRune()
-		if errors.Is(err, io.EOF) {
+		if err != nil {
+			var tok token.Token
+			yield(tok, err)
 			return
 		}
 		err = l.readRune()
-		if errors.Is(err, io.EOF) {
+		if err != nil {
+			var tok token.Token
+			yield(tok, err)
 			return
 		}
-		fmt.Println("initialized")
 
 		for {
 			var tok token.Token
 
 			err := l.skipWhitespace()
 			if err != nil {
+				yield(tok, err)
 				return
 			} else if !l.hasNext() {
 				return
@@ -82,16 +85,16 @@ func (l *Lexer) All() iter.Seq2[token.Token, error] {
 					tok, err = l.tokenizeEdgeOperator()
 				} else if isStartofIdentifier(l.cur) {
 					tok, err = l.tokenizeIdentifier()
-					if !yield(tok, err) || l.eof {
+					if !yield(tok, err) || !l.hasNext() {
 						return
 					}
-					continue // as we do advance in tokenizeIdentifier we want to skip advancing at the end of the loop
+					continue // we already advance in tokenizeIdentifier so we dont want to at the end of the loop
 				} else {
 					err = l.lexError(unquotedStringErr)
 				}
 			}
 
-			if !yield(tok, err) || l.eof {
+			if !yield(tok, err) || !l.hasNext() {
 				return
 			}
 
@@ -104,8 +107,8 @@ func (l *Lexer) readRune() error {
 	r, _, err := l.r.ReadRune()
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
-			fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
-			return err
+			// fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
+			return fmt.Errorf("failed to read rune due to: %v", err)
 		}
 
 		l.eof = true
@@ -117,7 +120,7 @@ func (l *Lexer) readRune() error {
 		}
 		l.cur = l.next
 		l.next = 0
-		fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
+		// fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
 		return nil
 	}
 
@@ -129,7 +132,7 @@ func (l *Lexer) readRune() error {
 	}
 	l.cur = l.next
 	l.next = r
-	fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
+	// fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
 	return nil
 }
 

@@ -15,10 +15,14 @@ go get -u github.com/teleivo/dot
 * does not produce an [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree) but a data structure
   representing the graph, edges and nodes
 * does not support comments https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
-* does not support [double-quoted strings can be concatenated using a '+'
-operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
+* does not support ports
 * does not support https://graphviz.org/doc/info/lang.html#html-strings as I have not needed them
 for my purposes
+* does not support [double-quoted strings can be concatenated using a '+'
+operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
+* does not treat records in any special way. Labels will be parsed as strings.
+* attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
+adhere to some requirements which are not validated. The values are parsed as identifiers (unquoted, numeral, quoted) and ultimately stored as strings.
 
 ## Disclaimer
 

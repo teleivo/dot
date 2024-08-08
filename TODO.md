@@ -1,29 +1,34 @@
-* improve lexing of edge operators?
-  * test invalid edge operators?
-
-* test that I consume until the appropriate separators like a terminal, eof (this is probably
-covered in every test), whitespace. Does the separator depend on the specific type of id?
-    * for numeral
-    * quoted should only be closing quote
-    * unquoted id until I find a terminal or eof
-
 * refactor and fix todos in code
-
-* generate coverage to see if I missed any logic?
-
-* what are not io.EOF errors and do I handle them well?
-
 * handle EOF differently? I now have multiple places checking for io.EOF would be nice
   to mark that in one place
+
+* what are not io.EOF errors and do I handle them well?
+* generate coverage to see if I missed any logic?
 
 * how to continue generating tokens when finding invalid ones?
 
 * write parser
 
-* how to handle ports?
-
 * write cmd/validate
 * write cmd/stats that tells me how many nodes, edges there are
+* profile any of the above on a large file, generate a pprof dot file and feed that back into the
+parser as a test via testdata
+
+## Parser
+
+* Where are commas legal?
+* Are `{}` creating a lexical scope? This
+
+```
+{ node [shape=circle]
+    a b c d e f g h  i j k l m n o p  q r s t u v w x
+}
+{ node [shape=diamond]
+    A B C D E F G H  I J K L M N O P  Q R S T U V W X
+}
+```
+
+sets the attributes on given nodes in the `{}` but will it affect nodes outside?
 
 ## Questions
 

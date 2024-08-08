@@ -58,9 +58,9 @@ func TestLexer(t *testing.T) {
 		"AttributeList": {
 			in: `	graph [
 				labelloc = t
-				fontname = "Helvetica,Arial,sans-serif"
+				fontname = "Helvetica,Arial,sans-serif",fontsize=16
 			]
-						edge [arrowhead=none color="#00008844"]  `,
+					edge [arrowhead=none color="#00008844",style = filled];  `,
 			want: []token.Token{
 				{Type: token.Graph, Literal: "graph"},
 				{Type: token.LeftBracket, Literal: "["},
@@ -70,6 +70,10 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "fontname"},
 				{Type: token.Equal, Literal: "="},
 				{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
+				{Type: token.Comma, Literal: ","},
+				{Type: token.Identifier, Literal: "fontsize"},
+				{Type: token.Equal, Literal: "="},
+				{Type: token.Identifier, Literal: "16"},
 				{Type: token.RightBracket, Literal: "]"},
 				{Type: token.Edge, Literal: "edge"},
 				{Type: token.LeftBracket, Literal: "["},
@@ -79,13 +83,19 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "color"},
 				{Type: token.Equal, Literal: "="},
 				{Type: token.Identifier, Literal: `"#00008844"`},
+				{Type: token.Comma, Literal: ","},
+				{Type: token.Identifier, Literal: "style"},
+				{Type: token.Equal, Literal: "="},
+				{Type: token.Identifier, Literal: "filled"},
 				{Type: token.RightBracket, Literal: "]"},
+				{Type: token.Semicolon, Literal: ";"},
 			},
 		},
 		"Subgraphs": {
 			in: `  A -> {B C}
 				D -- E
 			subgraph {
+				"F"
 			  rank = same; A;B;C;
 			}`,
 			want: []token.Token{
@@ -100,6 +110,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "E"},
 				{Type: token.Subgraph, Literal: "subgraph"},
 				{Type: token.LeftBrace, Literal: "{"},
+				{Type: token.Identifier, Literal: `"F"`},
 				{Type: token.Identifier, Literal: "rank"},
 				{Type: token.Equal, Literal: "="},
 				{Type: token.Identifier, Literal: "same"},
@@ -512,5 +523,45 @@ func TestLexer(t *testing.T) {
 				})
 			}
 		})
+	})
+
+	t.Run("Clusters", func(t *testing.T) {
+		in := `digraph G {
+	fontname="Helvetica,Arial,sans-serif"
+	node [fontname="Helvetica,Arial,sans-serif"]
+	edge [fontname="Helvetica,Arial,sans-serif"]
+
+	subgraph cluster_0 {
+		style=filled;
+		color=lightgrey;
+		node [style=filled,color=white];
+		a0 -> a1 -> a2 -> a3;
+		label = "process #1";
+	}
+
+	subgraph cluster_1 {
+		node [style=filled];
+		b0 -> b1 -> b2 -> b3;
+		label = "process #2";
+		color=blue
+	}
+	start -> a0;
+	start -> b0;
+	a1 -> b3;
+	b2 -> a3;
+	a3 -> a0;
+	a3 -> end;
+	b3 -> end;
+
+	start [shape=Mdiamond];
+	end [shape=Msquare];
+}`
+
+		lexer := New(strings.NewReader(in))
+
+		for token, err := range lexer.All() {
+			require.NoError(t, err)
+			t.Logf("%+v\n", token)
+		}
 	})
 }

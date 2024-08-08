@@ -24,10 +24,6 @@ func New(r io.Reader) *Lexer {
 	lexer := Lexer{
 		r:         bufio.NewReader(r),
 		curLineNr: 1,
-		// TODO is there a better way I can do this? That this is not within readChar feels like a
-		// hack/but I do not want every place that calls readRune() to also have to
-		// incrementPosition
-		curCharNr: -1,
 	}
 	return &lexer
 }
@@ -117,6 +113,9 @@ func (l *Lexer) readRune() error {
 
 	if l.cur == '\n' {
 		l.curLineNr++
+		l.curCharNr = 1
+	} else if l.curLineNr == 1 && l.curCharNr == 1 && l.cur == rune(0) {
+		// 2 readRune calls are needed to fill the cur and next runes
 		l.curCharNr = 1
 	} else {
 		l.curCharNr++
@@ -247,9 +246,24 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	}
 
 	literal := string(id)
-	tok = token.Token{Type: token.LookupIdentifier(literal), Literal: literal}
+	tok = token.Token{Type: token.LookupKeyword(literal), Literal: literal}
 
 	return tok, err
+}
+
+// isUnquotedStringSeparator determines if the rune separates tokens.
+func isUnquotedStringSeparator(r rune) bool {
+	return isTerminal(r) || isWhitespace(r) || r == '-' // potential edge operator
+}
+
+// isTerminal determines if the rune is considered a terminal token in the dot language. This does
+// not contain edge operators
+func isTerminal(r rune) bool {
+	switch token.TokenType(r) {
+	case token.LeftBrace, token.RightBrace, token.LeftBracket, token.RightBracket, token.Colon, token.Semicolon, token.Equal, token.Comma:
+		return true
+	}
+	return false
 }
 
 func isLegalInUnquotedString(r rune) bool {
@@ -294,6 +308,10 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
 }
 
+func isNumeralSeparator(r rune) bool {
+	return isTerminal(r) || isWhitespace(r)
+}
+
 func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
@@ -322,25 +340,6 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	}
 
 	return token.Token{Type: token.Identifier, Literal: string(id)}, err
-}
-
-// isUnquotedStringSeparator determines if the rune separates tokens.
-func isUnquotedStringSeparator(r rune) bool {
-	return isTerminal(r) || isWhitespace(r) || r == '-' // potential edge operator
-}
-
-func isNumeralSeparator(r rune) bool {
-	return isTerminal(r) || isWhitespace(r)
-}
-
-// isTerminal determines if the rune is considered a terminal token in the dot language. This does
-// not contain edge operators
-func isTerminal(r rune) bool {
-	switch token.TokenType(r) {
-	case token.LeftBrace, token.RightBrace, token.LeftBracket, token.RightBracket, token.Colon, token.Semicolon, token.Equal, token.Comma:
-		return true
-	}
-	return false
 }
 
 type LexError struct {

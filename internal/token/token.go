@@ -46,10 +46,10 @@ var keywords = map[string]TokenType{
 	"subgraph": Subgraph,
 }
 
-// LookupIdentifier returns the token type associated with given identifier which is either a dot
+// LookupKeyword returns the token type associated with given identifier which is either a dot
 // keyword or a dot id. Dot keywords are case-insensitive. This function expects that the input is a
 // valid dot id as specified in https://graphviz.org/doc/info/lang.html#ids.
-func LookupIdentifier(identifier string) TokenType {
+func LookupKeyword(identifier string) TokenType {
 	if len(identifier) <= maxKeywordLen {
 		identifier = strings.ToLower(identifier)
 	}

@@ -1,4 +1,3 @@
-* refactor and fix todos in code
 * handle EOF differently? I now have multiple places checking for io.EOF would be nice
   to mark that in one place
 
@@ -38,6 +37,8 @@ sets the attributes on given nodes in the `{}` but will it affect nodes outside?
 
 * lex html string
 * expose the knowledge of quoted, unquoted, numeral, html identifiers? 
+* how complicated is it to use the bufio.Readers buffer instead of creating intermediate slices for
+identifiers? how much would that even matter at the expense of how much code :sweat_smile:
 
 ### Hints
 

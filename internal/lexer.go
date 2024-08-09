@@ -52,7 +52,7 @@ func (l *Lexer) NextToken() (token.Token, error) {
 
 	err := l.skipWhitespaceAndComments()
 	if err != nil {
-		return tok, l.err
+		return tok, err
 	}
 	if l.isEOF() {
 		tok.Type = token.EOF
@@ -61,21 +61,21 @@ func (l *Lexer) NextToken() (token.Token, error) {
 
 	switch l.cur {
 	case '{':
-		tok, err = l.tokenizeRuneAs(token.LeftBrace)
+		tok = l.tokenizeRuneAs(token.LeftBrace)
 	case '}':
-		tok, err = l.tokenizeRuneAs(token.RightBrace)
+		tok = l.tokenizeRuneAs(token.RightBrace)
 	case '[':
-		tok, err = l.tokenizeRuneAs(token.LeftBracket)
+		tok = l.tokenizeRuneAs(token.LeftBracket)
 	case ']':
-		tok, err = l.tokenizeRuneAs(token.RightBracket)
+		tok = l.tokenizeRuneAs(token.RightBracket)
 	case ':':
-		tok, err = l.tokenizeRuneAs(token.Colon)
+		tok = l.tokenizeRuneAs(token.Colon)
 	case ',':
-		tok, err = l.tokenizeRuneAs(token.Comma)
+		tok = l.tokenizeRuneAs(token.Comma)
 	case ';':
-		tok, err = l.tokenizeRuneAs(token.Semicolon)
+		tok = l.tokenizeRuneAs(token.Semicolon)
 	case '=':
-		tok, err = l.tokenizeRuneAs(token.Equal)
+		tok = l.tokenizeRuneAs(token.Equal)
 	default:
 		if isEdgeOperator(l.cur, l.next) {
 			tok, err = l.tokenizeEdgeOperator()
@@ -208,8 +208,8 @@ func (l *Lexer) skipLine() {
 	}
 }
 
-func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
-	return token.Token{Type: tokenType, Literal: string(l.cur)}, nil
+func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) token.Token {
+	return token.Token{Type: tokenType, Literal: string(l.cur)}
 }
 
 func isEdgeOperator(first, second rune) bool {

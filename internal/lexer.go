@@ -106,9 +106,7 @@ func (l *Lexer) NextToken() (token.Token, error) {
 
 // readRune reads one rune and advances the lexers position markers depending on the read rune.
 func (l *Lexer) readRune() error {
-	if l.isEOF() {
-
-	}
+	// TODO can I make this nicer?
 	if l.isDone() {
 		return l.err
 	}

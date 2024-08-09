@@ -212,6 +212,15 @@ func TestLexer(t *testing.T) {
 						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
 					},
 				},
+				{
+					in: "A\000B", // null byte
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 2,
+						Character:   '\000',
+						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
+					},
+				},
 			}
 
 			for i, test := range tests {

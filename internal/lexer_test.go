@@ -63,7 +63,9 @@ func TestLexer(t *testing.T) {
 		"AttributeList": {
 			in: `	graph [
 				labelloc = t
+				# such lines are considered a line output from a C preprocessor which should be discarded
 				fontname = "Helvetica,Arial,sans-serif",fontsize=16
+				// C++-style single-line comments are discarded as well
 			]
 					edge [arrowhead=none color="#00008844",style = filled];  `,
 			want: []token.Token{

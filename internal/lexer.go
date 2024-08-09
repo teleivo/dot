@@ -49,8 +49,8 @@ const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([
 func (l *Lexer) Next() (token.Token, error) {
 	var tok token.Token
 
-	l.skipWhitespace()
-	if l.err != nil {
+	err := l.skipInsignificant()
+	if err != nil {
 		return tok, l.err
 	}
 	if l.isEOF() {
@@ -58,7 +58,6 @@ func (l *Lexer) Next() (token.Token, error) {
 		return tok, nil
 	}
 
-	var err error
 	switch l.cur {
 	case '{':
 		tok, err = l.tokenizeRuneAs(token.LeftBrace)
@@ -136,6 +135,34 @@ func (l *Lexer) readRune() error {
 	return nil
 }
 
+// skipInsignificant skips whitespace and comments.
+func (l *Lexer) skipInsignificant() error {
+	l.skipWhitespace()
+	if l.err != nil {
+		return l.err
+	}
+	if l.isEOF() {
+		return nil
+	}
+
+	// C preprocessor output # and C++ style single line comments
+	if l.cur != '#' && !(l.cur == '/' && l.next == '/') {
+		return nil
+	}
+
+	l.skipLine()
+	if l.err != nil {
+		return l.err
+	}
+
+	l.skipWhitespace()
+	if l.err != nil {
+		return l.err
+	}
+
+	return nil
+}
+
 func (l *Lexer) skipWhitespace() {
 	for isWhitespace(l.cur) {
 		err := l.readRune()
@@ -165,6 +192,20 @@ func (l *Lexer) isDone() bool {
 
 func (l *Lexer) isEOF() bool {
 	return !l.hasNext()
+}
+
+func (l *Lexer) skipLine() {
+	for l.cur != '\n' {
+		err := l.readRune()
+		if err != nil {
+			return
+		}
+	}
+
+	err := l.readRune()
+	if err != nil {
+		return
+	}
 }
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {

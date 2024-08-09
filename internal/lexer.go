@@ -44,12 +44,13 @@ func NewLexer(r io.Reader) (*Lexer, error) {
 const maxUnquotedStringLen = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
 const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`
 
-// Next advances the lexers position by one token and returns it. True is returned if the lexer was
-// able to get another token and false otherwise.
-func (l *Lexer) Next() (token.Token, error) {
+// NextToken advances the lexers position by one token and returns it. The lexer will stop trying to
+// tokenize more tokens on the first error it encounters. A token of typen [token.EOF] is returned
+// once the underlying reader returns [io.EOF] and the peek token has been consumed.
+func (l *Lexer) NextToken() (token.Token, error) {
 	var tok token.Token
 
-	err := l.skipInsignificant()
+	err := l.skipWhitespaceAndComments()
 	if err != nil {
 		return tok, l.err
 	}
@@ -135,8 +136,7 @@ func (l *Lexer) readRune() error {
 	return nil
 }
 
-// skipInsignificant skips whitespace and comments.
-func (l *Lexer) skipInsignificant() error {
+func (l *Lexer) skipWhitespaceAndComments() error {
 	l.skipWhitespace()
 	if l.err != nil {
 		return l.err

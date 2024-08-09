@@ -507,36 +507,36 @@ func TestLexer(t *testing.T) {
 
 func assertTokens(t *testing.T, lexer *Lexer, want []token.Token) {
 	for i, wantTok := range want {
-		tok, err := lexer.Next()
+		tok, err := lexer.NextToken()
 
-		require.NoErrorf(t, err, "Next() at i=%d", i)
-		require.EqualValuesf(t, tok, wantTok, "Next() at i=%d", i)
+		require.NoErrorf(t, err, "NextToken() at i=%d", i)
+		require.EqualValuesf(t, tok, wantTok, "NextToken() at i=%d", i)
 	}
 	assertEOF(t, lexer)
 }
 
 func assertEOF(t *testing.T, lexer *Lexer) {
-	tok, err := lexer.Next()
+	tok, err := lexer.NextToken()
 
-	assert.NoErrorf(t, err, "Next()")
-	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "Next()")
+	assert.NoErrorf(t, err, "NextToken()")
+	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "NextToken()")
 }
 
 func assertLexError(t *testing.T, lexer *Lexer, want LexError) {
-	tok, err := lexer.Next()
+	tok, err := lexer.NextToken()
 
 	var wantTok token.Token
-	assert.EqualValuesf(t, tok, wantTok, "Next()")
+	assert.EqualValuesf(t, tok, wantTok, "NextToken()")
 	got, ok := err.(LexError)
-	assert.Truef(t, ok, "Next() wanted LexError, instead got %v", err)
+	assert.Truef(t, ok, "NextToken() wanted LexError, instead got %v", err)
 	if ok {
-		assert.EqualValuesf(t, got, want, "Next()")
+		assert.EqualValuesf(t, got, want, "NextToken()")
 	}
 
-	_, err = lexer.Next()
+	_, err = lexer.NextToken()
 	got, ok = err.(LexError)
-	assert.Truef(t, ok, "Next() wanted LexError, instead got %v", err)
+	assert.Truef(t, ok, "NextToken() wanted LexError, instead got %v", err)
 	if ok {
-		assert.EqualValuesf(t, got, want, "Next()")
+		assert.EqualValuesf(t, got, want, "NextToken()")
 	}
 }

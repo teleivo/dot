@@ -50,7 +50,7 @@ func (p *Parser) nextToken() error {
 		return nil
 	}
 
-	tok, err := p.l.Next()
+	tok, err := p.l.NextToken()
 	if err != nil {
 		return err
 	}

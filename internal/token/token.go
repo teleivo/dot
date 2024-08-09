@@ -1,6 +1,8 @@
 package token
 
-import "strings"
+import (
+	"strings"
+)
 
 // TokenType represents the types of tokens of the dot language.
 type TokenType int
@@ -81,6 +83,14 @@ func Type(in string) (TokenType, bool) {
 type Token struct {
 	Type    TokenType
 	Literal string
+}
+
+func (t Token) String() string {
+	if t.Type == Identifier {
+		return t.Literal
+	}
+
+	return t.Type.String()
 }
 
 // maxKeywordLen is the length of the longest dot keyword which is "subgraph".

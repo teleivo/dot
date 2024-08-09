@@ -73,8 +73,6 @@ func (p *Parser) Parse() (*Graph, error) {
 		return g, nil
 	}
 
-	fmt.Printf("%#v\n", p)
-
 	if !p.curTokenIs(token.Strict) && !p.curTokenIs(token.Graph) && !p.curTokenIs(token.Digraph) {
 		return nil, fmt.Errorf("expected either %q, %q, or %q but got %q instead", token.Strict, token.Graph, token.Digraph, p.curToken)
 	}
@@ -108,6 +106,17 @@ func (p *Parser) Parse() (*Graph, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if !p.curTokenIs(token.LeftBrace) {
+		return nil, fmt.Errorf("expected either %q but got %q instead", token.LeftBrace, p.curToken)
+	}
+	// TODO count opening braces and brackets and decrement them on closing to validate they match?
+	// or is that to simplistic as there are rules as to when you are allowed/have to close them?
+	fmt.Printf("%#v\n", p.curToken)
+	err = p.nextToken()
+	if err != nil {
+		return nil, err
 	}
 
 	return g, nil

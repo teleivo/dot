@@ -50,6 +50,7 @@ Error: <stdin>: syntax error in line 1 near '->'
 
 ## Nice to have
 
+
 * lex html string
 * expose the knowledge of quoted, unquoted, numeral, html identifiers? 
 * how complicated is it to use the bufio.Readers buffer instead of creating intermediate slices for

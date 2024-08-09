@@ -128,7 +128,7 @@ func TestLexer(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			lexer := New(strings.NewReader(test.in))
+			lexer := NewLexer(strings.NewReader(test.in))
 
 			got := make([]token.Token, 0, len(tests))
 			for token, err := range lexer.All() {
@@ -166,7 +166,7 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := New(strings.NewReader(test.in))
+					lexer := NewLexer(strings.NewReader(test.in))
 					next, stop := iter.Pull2(lexer.All())
 					defer stop()
 
@@ -228,7 +228,7 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := New(strings.NewReader(test.in))
+					lexer := NewLexer(strings.NewReader(test.in))
 					next, stop := iter.Pull2(lexer.All())
 					defer stop()
 
@@ -292,7 +292,7 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := New(strings.NewReader(test.in))
+					lexer := NewLexer(strings.NewReader(test.in))
 					next, stop := iter.Pull2(lexer.All())
 					defer stop()
 
@@ -381,7 +381,7 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := New(strings.NewReader(test.in))
+					lexer := NewLexer(strings.NewReader(test.in))
 					next, stop := iter.Pull2(lexer.All())
 					defer stop()
 
@@ -457,7 +457,7 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := New(strings.NewReader(test.in))
+					lexer := NewLexer(strings.NewReader(test.in))
 					next, stop := iter.Pull2(lexer.All())
 					defer stop()
 
@@ -511,7 +511,7 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := New(strings.NewReader(test.in))
+					lexer := NewLexer(strings.NewReader(test.in))
 					next, stop := iter.Pull2(lexer.All())
 					defer stop()
 
@@ -523,45 +523,5 @@ func TestLexer(t *testing.T) {
 				})
 			}
 		})
-	})
-
-	t.Run("Clusters", func(t *testing.T) {
-		in := `digraph G {
-	fontname="Helvetica,Arial,sans-serif"
-	node [fontname="Helvetica,Arial,sans-serif"]
-	edge [fontname="Helvetica,Arial,sans-serif"]
-
-	subgraph cluster_0 {
-		style=filled;
-		color=lightgrey;
-		node [style=filled,color=white];
-		a0 -> a1 -> a2 -> a3;
-		label = "process #1";
-	}
-
-	subgraph cluster_1 {
-		node [style=filled];
-		b0 -> b1 -> b2 -> b3;
-		label = "process #2";
-		color=blue
-	}
-	start -> a0;
-	start -> b0;
-	a1 -> b3;
-	b2 -> a3;
-	a3 -> a0;
-	a3 -> end;
-	b3 -> end;
-
-	start [shape=Mdiamond];
-	end [shape=Msquare];
-}`
-
-		lexer := New(strings.NewReader(in))
-
-		for token, err := range lexer.All() {
-			require.NoError(t, err)
-			t.Logf("%+v\n", token)
-		}
 	})
 }

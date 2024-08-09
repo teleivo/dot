@@ -2,31 +2,80 @@ package token
 
 import "strings"
 
-type TokenType string
+// TokenType represents the types of tokens of the dot language.
+type TokenType int
 
 const (
-	LeftBrace    = "{"
-	RightBrace   = "}"
-	LeftBracket  = "["
-	RightBracket = "]"
-	Colon        = ":"
-	Semicolon    = ";"
-	Equal        = "="
-	Comma        = ","
-
-	DirectedEgde   = "->"
-	UndirectedEgde = "--"
-
-	Identifier = "identifier"
-
+	LeftBrace TokenType = iota
+	RightBrace
+	LeftBracket
+	RightBracket
+	Colon
+	Semicolon
+	Equal
+	Comma
+	DirectedEgde
+	UndirectedEgde
+	Identifier
 	// Keywords
-	Digraph  = "digraph"
-	Edge     = "edge"
-	Graph    = "graph"
-	Node     = "node"
-	Strict   = "strict"
-	Subgraph = "subgraph"
+	Digraph
+	Edge
+	Graph
+	Node
+	Strict
+	Subgraph
 )
+
+var typeStrings map[TokenType]string = map[TokenType]string{
+	LeftBrace:      "{",
+	RightBrace:     "}",
+	LeftBracket:    "[",
+	RightBracket:   "]",
+	Colon:          ":",
+	Semicolon:      ";",
+	Equal:          "=",
+	Comma:          ",",
+	DirectedEgde:   "->",
+	UndirectedEgde: "--",
+	Identifier:     "identifier",
+	// Keywords,
+	Digraph:  "digraph",
+	Edge:     "edge",
+	Graph:    "graph",
+	Node:     "node",
+	Strict:   "strict",
+	Subgraph: "subgraph",
+}
+
+var types map[string]TokenType = map[string]TokenType{
+	"{":          LeftBrace,
+	"}":          RightBrace,
+	"[":          LeftBracket,
+	"]":          RightBracket,
+	":":          Colon,
+	";":          Semicolon,
+	"=":          Equal,
+	",":          Comma,
+	"->":         DirectedEgde,
+	"--":         UndirectedEgde,
+	"identifier": Identifier,
+	// Keywords,
+	"digraph":  Digraph,
+	"edge":     Edge,
+	"graph":    Graph,
+	"node":     Node,
+	"strict":   Strict,
+	"subgraph": Subgraph,
+}
+
+func (tt TokenType) String() string {
+	return typeStrings[tt]
+}
+
+func Type(in string) (TokenType, bool) {
+	v, ok := types[in]
+	return v, ok
+}
 
 // Token represents a token of the dot language.
 type Token struct {
@@ -35,7 +84,7 @@ type Token struct {
 }
 
 // maxKeywordLen is the length of the longest dot keyword which is "subgraph".
-const maxKeywordLen = len(Subgraph)
+const maxKeywordLen = 8
 
 var keywords = map[string]TokenType{
 	"digraph":  Digraph,

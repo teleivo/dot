@@ -20,7 +20,7 @@ type Lexer struct {
 	eof       bool
 }
 
-func New(r io.Reader) *Lexer {
+func NewLexer(r io.Reader) *Lexer {
 	lexer := Lexer{
 		r:         bufio.NewReader(r),
 		curLineNr: 1,
@@ -167,9 +167,9 @@ func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
 	}
 
 	if l.cur == '-' {
-		return token.Token{Type: token.UndirectedEgde, Literal: token.UndirectedEgde}, err
+		return token.Token{Type: token.UndirectedEgde, Literal: token.UndirectedEgde.String()}, err
 	}
-	return token.Token{Type: token.DirectedEgde, Literal: token.DirectedEgde}, err
+	return token.Token{Type: token.DirectedEgde, Literal: token.DirectedEgde.String()}, err
 }
 
 func isStartofIdentifier(r rune) bool {
@@ -259,7 +259,12 @@ func isUnquotedStringSeparator(r rune) bool {
 // isTerminal determines if the rune is considered a terminal token in the dot language. This does
 // not contain edge operators
 func isTerminal(r rune) bool {
-	switch token.TokenType(r) {
+	tok, ok := token.Type(string(r))
+	if !ok {
+		return false
+	}
+
+	switch tok {
 	case token.LeftBrace, token.RightBrace, token.LeftBracket, token.RightBracket, token.Colon, token.Semicolon, token.Equal, token.Comma:
 		return true
 	}

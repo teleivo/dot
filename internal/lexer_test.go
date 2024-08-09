@@ -1,7 +1,6 @@
 package dot
 
 import (
-	"iter"
 	"strconv"
 	"strings"
 	"testing"
@@ -128,14 +127,11 @@ func TestLexer(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			lexer := NewLexer(strings.NewReader(test.in))
+			lexer, err := NewLexer(strings.NewReader(test.in))
 
-			got := make([]token.Token, 0, len(tests))
-			for token, err := range lexer.All() {
-				assert.NoError(t, err)
-				got = append(got, token)
-			}
-			assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+			require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+
+			assertTokens(t, lexer, test.want)
 		})
 	}
 
@@ -166,19 +162,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := NewLexer(strings.NewReader(test.in))
-					next, stop := iter.Pull2(lexer.All())
-					defer stop()
+					lexer, err := NewLexer(strings.NewReader(test.in))
 
-					got, err, ok := next()
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
 
-					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
-					assert.NoErrorf(t, err, "All(%q)", test.in)
-					assert.Truef(t, ok, "All(%q)", test.in)
-
-					_, _, ok = next()
-
-					assert.Falsef(t, ok, "All(%q) want only one token", test.in)
+					assertTokens(t, lexer, []token.Token{test.want})
 				})
 			}
 		})
@@ -228,15 +216,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := NewLexer(strings.NewReader(test.in))
-					next, stop := iter.Pull2(lexer.All())
-					defer stop()
+					lexer, err := NewLexer(strings.NewReader(test.in))
 
-					_, err, ok := next()
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
 
-					got, ok := err.(LexError)
-					require.Truef(t, ok, "All(%q) wanted LexError, instead got %q", test.in, err)
-					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+					assertLexError(t, lexer, test.want)
 				})
 			}
 		})
@@ -292,19 +276,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := NewLexer(strings.NewReader(test.in))
-					next, stop := iter.Pull2(lexer.All())
-					defer stop()
+					lexer, err := NewLexer(strings.NewReader(test.in))
 
-					got, err, ok := next()
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
 
-					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
-					assert.NoErrorf(t, err, "All(%q)", test.in)
-					assert.Truef(t, ok, "All(%q)", test.in)
-
-					_, _, ok = next()
-
-					assert.Falsef(t, ok, "All(%q) want only one token", test.in)
+					assertTokens(t, lexer, []token.Token{test.want})
 				})
 			}
 		})
@@ -381,15 +357,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := NewLexer(strings.NewReader(test.in))
-					next, stop := iter.Pull2(lexer.All())
-					defer stop()
+					lexer, err := NewLexer(strings.NewReader(test.in))
 
-					_, err, ok := next()
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
 
-					got, ok := err.(LexError)
-					require.Truef(t, ok, "All(%q) wanted LexError, instead got %q", test.in, err)
-					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+					assertLexError(t, lexer, test.want)
 				})
 			}
 		})
@@ -457,19 +429,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := NewLexer(strings.NewReader(test.in))
-					next, stop := iter.Pull2(lexer.All())
-					defer stop()
+					lexer, err := NewLexer(strings.NewReader(test.in))
 
-					got, err, ok := next()
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
 
-					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
-					assert.NoErrorf(t, err, "All(%q)", test.in)
-					assert.Truef(t, ok, "All(%q)", test.in)
-
-					_, _, ok = next()
-
-					assert.Falsef(t, ok, "All(%q) want only one token", test.in)
+					assertTokens(t, lexer, []token.Token{test.want})
 				})
 			}
 		})
@@ -511,17 +475,48 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer := NewLexer(strings.NewReader(test.in))
-					next, stop := iter.Pull2(lexer.All())
-					defer stop()
+					lexer, err := NewLexer(strings.NewReader(test.in))
 
-					_, err, ok := next()
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
 
-					got, ok := err.(LexError)
-					require.Truef(t, ok, "All(%q) wanted LexError, instead got %q", test.in, err)
-					assert.EqualValuesf(t, got, test.want, "All(%q)", test.in)
+					assertLexError(t, lexer, test.want)
 				})
 			}
 		})
 	})
+}
+
+func assertTokens(t *testing.T, lexer *Lexer, want []token.Token) {
+	for i, wantTok := range want {
+		tok, err, ok := lexer.Next()
+
+		require.NoErrorf(t, err, "Next() at i=%d", i)
+		require.EqualValuesf(t, tok, wantTok, "Next() at i=%d", i)
+		require.Truef(t, ok, "Next() at i=%d", i)
+	}
+
+	_, err, ok := lexer.Next()
+	assert.NoErrorf(t, err, "Next()")
+	assert.Falsef(t, ok, "Next() should not return more tokens")
+}
+
+func assertLexError(t *testing.T, lexer *Lexer, want LexError) {
+	tok, err, ok := lexer.Next()
+
+	var wantTok token.Token
+	assert.EqualValuesf(t, tok, wantTok, "Next()")
+	assert.Falsef(t, ok, "Next() should not return a token")
+	got, ok := err.(LexError)
+	assert.Truef(t, ok, "Next() wanted LexError, instead got %v", err)
+	if ok {
+		assert.EqualValuesf(t, got, want, "Next()")
+	}
+
+	_, err, ok = lexer.Next()
+	assert.Falsef(t, ok, "Next() should not return more tokens")
+	got, ok = err.(LexError)
+	assert.Truef(t, ok, "Next() wanted LexError, instead got %v", err)
+	if ok {
+		assert.EqualValuesf(t, got, want, "Next()")
+	}
 }

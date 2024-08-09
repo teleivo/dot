@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/teleivo/assertive/assert"
+	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/dot"
 )
 
@@ -19,18 +20,29 @@ func TestParser(t *testing.T) {
 			want: dot.Graph{},
 		},
 		"EmptyDirectedGraph": {
-			in:   "digraph {}",
-			want: dot.Graph{},
+			in: "digraph {}",
+			want: dot.Graph{
+				Directed: true,
+			},
 		},
 		"EmptyUndirectedGraph": {
 			in:   "graph {}",
 			want: dot.Graph{},
 		},
+		// "StrictDirectedNamedGraph": {
+		// 	in: `strict digraph dependencies {}`,
+		// 	want: dot.Graph{
+		// 		Strict:   true,
+		// 		Directed: true,
+		// 	},
+		// },
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			p := dot.New(strings.NewReader(test.in))
+			p, err := dot.New(strings.NewReader(test.in))
+
+			require.NoErrorf(t, err, "New(%q)", test.in)
 
 			g, err := p.Parse()
 

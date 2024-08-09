@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"iter"
 	"unicode"
 
 	"github.com/teleivo/dot/internal/token"
@@ -18,94 +17,101 @@ type Lexer struct {
 	curCharNr int
 	next      rune
 	eof       bool
+	err       error
 }
 
-func NewLexer(r io.Reader) *Lexer {
-	lexer := Lexer{
+func NewLexer(r io.Reader) (*Lexer, error) {
+	l := Lexer{
 		r:         bufio.NewReader(r),
 		curLineNr: 1,
 	}
-	return &lexer
+
+	// initialize current and next runes
+	err := l.readRune()
+	if err != nil {
+		return nil, err
+	}
+	err = l.readRune()
+	if err != nil {
+		return nil, err
+	}
+	// 2 readRune calls are needed to fill the cur and next runes
+	l.curCharNr = 1
+
+	return &l, nil
 }
 
 const maxUnquotedStringLen = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
 const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`
 
-// All returns an iterator over all dot tokens in the given reader.
-func (l *Lexer) All() iter.Seq2[token.Token, error] {
-	return func(yield func(token.Token, error) bool) {
-		// initialize current and next runes
-		err := l.readRune()
-		if err != nil {
-			var tok token.Token
-			yield(tok, err)
-			return
-		}
-		err = l.readRune()
-		if err != nil {
-			var tok token.Token
-			yield(tok, err)
-			return
-		}
+// Next advances the lexers position by one token and returns it. True is returned if the lexer was
+// able to get another token and false otherwise.
+func (l *Lexer) Next() (token.Token, error, bool) {
+	var tok token.Token
 
-		for {
-			var tok token.Token
+	_ = l.skipWhitespace()
+	if l.isDone() {
+		return tok, l.err, false
+	}
 
-			err := l.skipWhitespace()
+	var err error
+	switch l.cur {
+	case '{':
+		tok, err = l.tokenizeRuneAs(token.LeftBrace)
+	case '}':
+		tok, err = l.tokenizeRuneAs(token.RightBrace)
+	case '[':
+		tok, err = l.tokenizeRuneAs(token.LeftBracket)
+	case ']':
+		tok, err = l.tokenizeRuneAs(token.RightBracket)
+	case ':':
+		tok, err = l.tokenizeRuneAs(token.Colon)
+	case ',':
+		tok, err = l.tokenizeRuneAs(token.Comma)
+	case ';':
+		tok, err = l.tokenizeRuneAs(token.Semicolon)
+	case '=':
+		tok, err = l.tokenizeRuneAs(token.Equal)
+	default:
+		if isEdgeOperator(l.cur, l.next) {
+			tok, err = l.tokenizeEdgeOperator()
+		} else if isStartofIdentifier(l.cur) {
+			tok, err = l.tokenizeIdentifier()
+			// we already advance in tokenizeIdentifier so we dont want to at the end of the loop
 			if err != nil {
-				yield(tok, err)
-				return
-			} else if !l.hasNext() {
-				return
+				l.err = err
+				return tok, err, false
 			}
-
-			switch l.cur {
-			case '{':
-				tok, err = l.tokenizeRuneAs(token.LeftBrace)
-			case '}':
-				tok, err = l.tokenizeRuneAs(token.RightBrace)
-			case '[':
-				tok, err = l.tokenizeRuneAs(token.LeftBracket)
-			case ']':
-				tok, err = l.tokenizeRuneAs(token.RightBracket)
-			case ':':
-				tok, err = l.tokenizeRuneAs(token.Colon)
-			case ',':
-				tok, err = l.tokenizeRuneAs(token.Comma)
-			case ';':
-				tok, err = l.tokenizeRuneAs(token.Semicolon)
-			case '=':
-				tok, err = l.tokenizeRuneAs(token.Equal)
-			default:
-				if isEdgeOperator(l.cur, l.next) {
-					tok, err = l.tokenizeEdgeOperator()
-				} else if isStartofIdentifier(l.cur) {
-					tok, err = l.tokenizeIdentifier()
-					if !yield(tok, err) || !l.hasNext() {
-						return
-					}
-					continue // we already advance in tokenizeIdentifier so we dont want to at the end of the loop
-				} else {
-					err = l.lexError(unquotedStringErr)
-				}
-			}
-
-			if !yield(tok, err) || !l.hasNext() {
-				return
-			}
-
-			err = l.readRune()
+			return tok, err, true
+		} else {
+			err = l.lexError(unquotedStringErr)
 		}
 	}
+
+	if err != nil {
+		l.err = err
+		return tok, err, false
+	}
+
+	err = l.readRune()
+	if err != nil {
+		return tok, err, true
+	}
+	return tok, err, true
 }
 
 // readRune reads one rune and advances the lexers position markers depending on the read rune.
 func (l *Lexer) readRune() error {
+	if l.isDone() {
+		return l.err
+	}
+
 	r, _, err := l.r.ReadRune()
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
-			// fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
-			return fmt.Errorf("failed to read rune due to: %v", err)
+			// fmt.Printf("%d:%d: l.cur %q, l.next %q, eof %v, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, l.eof, err)
+			l.err = fmt.Errorf("failed to read rune due to: %v", err)
+			return l.err
 		}
 
 		l.eof = true
@@ -114,15 +120,12 @@ func (l *Lexer) readRune() error {
 	if l.cur == '\n' {
 		l.curLineNr++
 		l.curCharNr = 1
-	} else if l.curLineNr == 1 && l.curCharNr == 1 && l.cur == rune(0) {
-		// 2 readRune calls are needed to fill the cur and next runes
-		l.curCharNr = 1
 	} else {
 		l.curCharNr++
 	}
 	l.cur = l.next
 	l.next = r
-	// fmt.Printf("%d:%d: l.cur %q, l.next %q, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, err)
+	// fmt.Printf("%d:%d: l.cur %q, l.next %q, eof %v, err %v\n", l.curLineNr, l.curCharNr, l.cur, l.next, l.eof, err)
 	return nil
 }
 
@@ -134,7 +137,7 @@ func (l *Lexer) skipWhitespace() (err error) {
 		}
 	}
 
-	return nil
+	return l.err
 }
 
 // isWhitespace determines if the rune is considered whitespace. It does not include non-breaking
@@ -149,6 +152,14 @@ func isWhitespace(r rune) bool {
 
 func (l *Lexer) hasNext() bool {
 	return !(l.eof && l.cur == 0)
+}
+
+func (l *Lexer) isDone() bool {
+	return l.isEOF() || l.err != nil
+}
+
+func (l *Lexer) isEOF() bool {
+	return !l.hasNext()
 }
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
@@ -248,7 +259,7 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	literal := string(id)
 	tok = token.Token{Type: token.LookupKeyword(literal), Literal: literal}
 
-	return tok, err
+	return tok, nil
 }
 
 // isUnquotedStringSeparator determines if the rune separates tokens.
@@ -344,7 +355,7 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 		return tok, err
 	}
 
-	return token.Token{Type: token.Identifier, Literal: string(id)}, err
+	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
 }
 
 type LexError struct {

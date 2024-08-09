@@ -23,6 +23,27 @@ parser as a test via testdata
 
 sets the attributes on given nodes in the `{}` but will it affect nodes outside?
 
+### Tolerant
+
+This does stop at the first error
+
+```
+echo 'graph{ !A; C->B }' | dot -Tsvg -O
+Error: <stdin>: syntax error in line 1 near '!'
+```
+
+and is not precise about where the error is
+
+```
+echo 'graph{ C->B; @A }' | dot -Tsvg -O
+Error: <stdin>: syntax error in line 1 near '->'
+```
+
+## Serializer
+
+* serialize a dot.Graph given a writer
+* test Parser/Serializer by feeding one to the other which should give the same result
+
 ## Questions
 
 * should I strip the quotes from the literal? or leave that up to the parser?

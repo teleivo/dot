@@ -8,8 +8,6 @@ Parser for the [DOT language](https://graphviz.org/doc/info/lang.html) written i
 go get -u github.com/teleivo/dot
 ```
 
-**Needs: export GOEXPERIMENT=rangefunc** as it uses the experimental [iterators](https://go.dev/wiki/RangefuncExperiment).
-
 ## Limitations
 
 * does not produce an [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree) but a data structure

@@ -46,8 +46,8 @@ func TestParser(t *testing.T) {
 
 			g, err := p.Parse()
 
-			assert.NoError(t, err)
-			assert.EqualValues(t, g, &test.want)
+			assert.NoErrorf(t, err, "Parse(%q)", test.in)
+			assert.EqualValuesf(t, g, &test.want, "Parse(%q)", test.in)
 		})
 	}
 }

@@ -46,12 +46,16 @@ const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([
 
 // Next advances the lexers position by one token and returns it. True is returned if the lexer was
 // able to get another token and false otherwise.
-func (l *Lexer) Next() (token.Token, error, bool) {
+func (l *Lexer) Next() (token.Token, error) {
 	var tok token.Token
 
-	_ = l.skipWhitespace()
-	if l.isDone() {
-		return tok, l.err, false
+	l.skipWhitespace()
+	if l.err != nil {
+		return tok, l.err
+	}
+	if l.isEOF() {
+		tok.Type = token.EOF
+		return tok, nil
 	}
 
 	var err error
@@ -80,9 +84,9 @@ func (l *Lexer) Next() (token.Token, error, bool) {
 			// we already advance in tokenizeIdentifier so we dont want to at the end of the loop
 			if err != nil {
 				l.err = err
-				return tok, err, false
+				return tok, err
 			}
-			return tok, err, true
+			return tok, err
 		} else {
 			err = l.lexError(unquotedStringErr)
 		}
@@ -90,18 +94,21 @@ func (l *Lexer) Next() (token.Token, error, bool) {
 
 	if err != nil {
 		l.err = err
-		return tok, err, false
+		return tok, err
 	}
 
 	err = l.readRune()
 	if err != nil {
-		return tok, err, true
+		return tok, err
 	}
-	return tok, err, true
+	return tok, err
 }
 
 // readRune reads one rune and advances the lexers position markers depending on the read rune.
 func (l *Lexer) readRune() error {
+	if l.isEOF() {
+
+	}
 	if l.isDone() {
 		return l.err
 	}
@@ -129,15 +136,13 @@ func (l *Lexer) readRune() error {
 	return nil
 }
 
-func (l *Lexer) skipWhitespace() (err error) {
+func (l *Lexer) skipWhitespace() {
 	for isWhitespace(l.cur) {
 		err := l.readRune()
 		if err != nil {
-			return err
+			return
 		}
 	}
-
-	return l.err
 }
 
 // isWhitespace determines if the rune is considered whitespace. It does not include non-breaking

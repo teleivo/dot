@@ -19,7 +19,6 @@ type Parser struct {
 	l         *dot.Lexer
 	curToken  token.Token
 	peekToken token.Token
-	eof       bool
 }
 
 func New(r io.Reader) (*Parser, error) {
@@ -32,7 +31,7 @@ func New(r io.Reader) (*Parser, error) {
 		l: l,
 	}
 
-	// consume two tokens to initialize cur and next token
+	// consume two tokens to initialize cur and peek token
 	err = p.nextToken()
 	if err != nil {
 		return nil, err
@@ -51,15 +50,9 @@ func (p *Parser) nextToken() error {
 		return nil
 	}
 
-	// TODO I think can we have an error with a valid token
-	// TODO is an EOF token easier to use?
-	tok, err, ok := p.l.Next()
+	tok, err := p.l.Next()
 	if err != nil {
 		return err
-	}
-	if !ok {
-		p.eof = true
-		return nil
 	}
 	p.peekToken = tok
 
@@ -126,7 +119,7 @@ func (p *Parser) isDone() bool {
 }
 
 func (p *Parser) isEOF() bool {
-	return p.eof
+	return p.curTokenIs(token.EOF)
 }
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {

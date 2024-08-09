@@ -17,12 +17,16 @@ func TestLexer(t *testing.T) {
 		err  error
 	}{
 		"Empty": {
-			in:   "",
-			want: []token.Token{},
+			in: "",
+			want: []token.Token{
+				{Type: token.EOF},
+			},
 		},
 		"OnlyWhitespace": {
-			in:   "\t \n \t\t   ",
-			want: []token.Token{},
+			in: "\t \n \t\t   ",
+			want: []token.Token{
+				{Type: token.EOF},
+			},
 		},
 		"LiteralSingleCharacterTokens": {
 			in: "{};=[],:",
@@ -35,6 +39,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.RightBracket, Literal: "]"},
 				{Type: token.Comma, Literal: ","},
 				{Type: token.Colon, Literal: ":"},
+				{Type: token.EOF},
 			},
 		},
 		"KeywordsAreCaseInsensitive": {
@@ -52,6 +57,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.Node, Literal: "node"},
 				{Type: token.Edge, Literal: "edge"},
 				{Type: token.Edge, Literal: "Edge"},
+				{Type: token.EOF},
 			},
 		},
 		"AttributeList": {
@@ -88,6 +94,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "filled"},
 				{Type: token.RightBracket, Literal: "]"},
 				{Type: token.Semicolon, Literal: ";"},
+				{Type: token.EOF},
 			},
 		},
 		"Subgraphs": {
@@ -121,6 +128,7 @@ func TestLexer(t *testing.T) {
 				{Type: token.Identifier, Literal: "C"},
 				{Type: token.Semicolon, Literal: ";"},
 				{Type: token.RightBrace, Literal: "}"},
+				{Type: token.EOF},
 			},
 		},
 	}
@@ -497,32 +505,33 @@ func TestLexer(t *testing.T) {
 
 func assertTokens(t *testing.T, lexer *Lexer, want []token.Token) {
 	for i, wantTok := range want {
-		tok, err, ok := lexer.Next()
+		tok, err := lexer.Next()
 
 		require.NoErrorf(t, err, "Next() at i=%d", i)
 		require.EqualValuesf(t, tok, wantTok, "Next() at i=%d", i)
-		require.Truef(t, ok, "Next() at i=%d", i)
 	}
+	assertEOF(t, lexer)
+}
 
-	_, err, ok := lexer.Next()
+func assertEOF(t *testing.T, lexer *Lexer) {
+	tok, err := lexer.Next()
+
 	assert.NoErrorf(t, err, "Next()")
-	assert.Falsef(t, ok, "Next() should not return more tokens")
+	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "Next()")
 }
 
 func assertLexError(t *testing.T, lexer *Lexer, want LexError) {
-	tok, err, ok := lexer.Next()
+	tok, err := lexer.Next()
 
 	var wantTok token.Token
 	assert.EqualValuesf(t, tok, wantTok, "Next()")
-	assert.Falsef(t, ok, "Next() should not return a token")
 	got, ok := err.(LexError)
 	assert.Truef(t, ok, "Next() wanted LexError, instead got %v", err)
 	if ok {
 		assert.EqualValuesf(t, got, want, "Next()")
 	}
 
-	_, err, ok = lexer.Next()
-	assert.Falsef(t, ok, "Next() should not return more tokens")
+	_, err = lexer.Next()
 	got, ok = err.(LexError)
 	assert.Truef(t, ok, "Next() wanted LexError, instead got %v", err)
 	if ok {

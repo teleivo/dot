@@ -26,6 +26,9 @@ const (
 	Node
 	Strict
 	Subgraph
+	// EOF is not part of the dot language and is used to indicate the end of the file or stream. No
+	// language token should follow the EOF token.
+	EOF
 )
 
 var typeStrings map[TokenType]string = map[TokenType]string{
@@ -47,6 +50,7 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	Node:     "node",
 	Strict:   "strict",
 	Subgraph: "subgraph",
+	EOF:      "EOF",
 }
 
 var types map[string]TokenType = map[string]TokenType{

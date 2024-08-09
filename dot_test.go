@@ -46,7 +46,7 @@ func TestParser(t *testing.T) {
 		},
 	}
 
-	// TODO add error tests
+	// TODO start parsing the simplest statement
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

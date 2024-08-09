@@ -21,24 +21,24 @@ type Lexer struct {
 }
 
 func NewLexer(r io.Reader) (*Lexer, error) {
-	l := Lexer{
+	lexer := Lexer{
 		r:         bufio.NewReader(r),
 		curLineNr: 1,
 	}
 
 	// initialize current and next runes
-	err := l.readRune()
+	err := lexer.readRune()
 	if err != nil {
 		return nil, err
 	}
-	err = l.readRune()
+	err = lexer.readRune()
 	if err != nil {
 		return nil, err
 	}
 	// 2 readRune calls are needed to fill the cur and next runes
-	l.curCharNr = 1
+	lexer.curCharNr = 1
 
-	return &l, nil
+	return &lexer, nil
 }
 
 const maxUnquotedStringLen = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based

@@ -16,22 +16,22 @@ type Graph struct {
 }
 
 type Parser struct {
-	l         *dot.Lexer
+	lexer     *dot.Lexer
 	curToken  token.Token
 	peekToken token.Token
 }
 
 func New(r io.Reader) (*Parser, error) {
-	l, err := dot.NewLexer(r)
+	lexer, err := dot.NewLexer(r)
 	if err != nil {
 		return nil, err
 	}
 
 	p := Parser{
-		l: l,
+		lexer: lexer,
 	}
 
-	// consume two tokens to initialize cur and peek token
+	// initialize cur and peek token
 	err = p.nextToken()
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (p *Parser) nextToken() error {
 		return nil
 	}
 
-	tok, err := p.l.NextToken()
+	tok, err := p.lexer.NextToken()
 	if err != nil {
 		return err
 	}

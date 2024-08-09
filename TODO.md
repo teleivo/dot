@@ -23,7 +23,7 @@ parser as a test via testdata
 
 sets the attributes on given nodes in the `{}` but will it affect nodes outside?
 
-### Tolerant
+### Compatibility & Fault Tolerance
 
 This does stop at the first error
 
@@ -37,6 +37,15 @@ and is not precise about where the error is
 ```
 echo 'graph{ C->B; @A }' | dot -Tsvg -O
 Error: <stdin>: syntax error in line 1 near '->'
+```
+
+Null byte is not allowed in unquoted identifiers as per spec. It is also not supported in quoted
+strings as shown by this error
+
+```
+echo -e 'graph{ "A\000--B" }' | dot -Tsvg -O
+Error: <stdin>: syntax error in line 1 scanning a quoted string (missing endquote? longer than 16384?)
+String starting:"A
 ```
 
 ## Serializer

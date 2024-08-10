@@ -1,6 +1,34 @@
 * write parser
+  * parse node stmt
+  * parse multiple statements
+  * parse edge stmt
+  * parse attribute stmt
+  * parse subgraph
+  * what is `ID '=' ID`
+  * parse ports?
+
+I want to be able to at least parse what I need for my current test setup
+
+```
+strict digraph {
+	3 -> 2 [label="L"]
+	5 -> 3 [label="L"]
+	3 -> 4 [label="R"]
+	10 -> 5 [label="L", color = red]
+	7 -> 6 [label="L"]
+	5 -> 7 [label="R"]
+	9 -> 8 [label="L", color = red]
+	7 -> 9 [label="R"]
+	20 -> 15 [label="L"]
+	10 -> 20 [label="R"]
+	20 -> 23 [label="R"]
+}
+```
 
 * how to continue generating tokens when finding invalid ones?
+
+* count opening braces and brackets and decrement them on closing to validate they match?
+or is that to simplistic as there are rules as to when you are allowed/have to close them?
 
 * write cmd/validate
 * write cmd/stats that tells me how many nodes, edges there are

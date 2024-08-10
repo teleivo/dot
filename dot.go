@@ -104,8 +104,6 @@ func (p *Parser) Parse() (*Graph, error) {
 	if !p.curTokenIs(token.LeftBrace) {
 		return nil, fmt.Errorf("expected either %q but got %q instead", token.LeftBrace, p.curToken)
 	}
-	// TODO count opening braces and brackets and decrement them on closing to validate they match?
-	// or is that to simplistic as there are rules as to when you are allowed/have to close them?
 	err = p.nextToken()
 	if err != nil {
 		return nil, err

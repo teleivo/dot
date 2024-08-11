@@ -1,11 +1,15 @@
 * write parser
-  * parse node stmt
-  * parse multiple statements
+  * FINISH: parse node stmt; go through todos and cleanup code
+  * parse attr_stmt
+    * first `node [a=b]` setting the default for subsequent nodes
+    * second `graph [a=b]`
   * parse edge stmt
-  * parse attribute stmt
+    * handle `edge [a=b]` setting the default for subsequent nodes
+  * parse multiple statements by using a graph I want to parse for my skeleton tests
   * parse subgraph
-  * what is `ID '=' ID`
   * parse ports?
+
+* make error messages more user friendly
 
 I want to be able to at least parse what I need for my current test setup
 

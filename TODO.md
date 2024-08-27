@@ -1,9 +1,13 @@
 * write parser
   * parse edge stmt
-    * handle `edge [a=b]` setting the default for subsequent nodes
+    * with node_id
+  * should I add the token to the AttrStmt? so it is easier to check if its a graph/node/edge?
+  * test the String() methods at least using one test for all statements
   * handle EOF better and move these special tokens up top like Go does
   * parse multiple statements by using a graph I want to parse for my skeleton tests
   * parse subgraph
+  * parse edge stmt
+    * with subgraph
   * parse ports?
 
 * make error messages more user friendly

@@ -315,6 +315,103 @@ func TestParser(t *testing.T) {
 		})
 	})
 
+	t.Run("EdgeStatement", func(t *testing.T) {
+		tests := map[string]struct {
+			in   string
+			want ast.Graph
+			err  error
+		}{
+			"SingleUndirectedEdge": {
+				in: "graph { 1 -- 2 }",
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left:  "1",
+							Right: ast.EdgeRHS{Right: "2"},
+						},
+					},
+				},
+			},
+			"SingleDirectedEdge": {
+				in: "graph { 1 -> 2 }",
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left:  "1",
+							Right: ast.EdgeRHS{Directed: true, Right: "2"},
+						},
+					},
+				},
+			},
+			"MultipleDirectedEdges": {
+				in: "graph { 1 -> 2 -> 3 -> 4 }",
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left: "1",
+							Right: ast.EdgeRHS{
+								Directed: true,
+								Right:    "2",
+								Next: &ast.EdgeRHS{
+									Directed: true,
+									Right:    "3",
+									Next: &ast.EdgeRHS{
+										Directed: true,
+										Right:    "4",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			// TODO with attr_list
+		}
+
+		for name, test := range tests {
+			t.Run(name, func(t *testing.T) {
+				p, err := dot.New(strings.NewReader(test.in))
+
+				require.NoErrorf(t, err, "New(%q)", test.in)
+
+				g, err := p.Parse()
+
+				assert.NoErrorf(t, err, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+			})
+		}
+
+		t.Run("Invalid", func(t *testing.T) {
+			tests := map[string]struct {
+				in     string
+				errMsg string
+			}{
+				"GraphWithoutAttributeList": {
+					in:     "graph { 1 -> 2 }",
+					errMsg: "undirected graph cannot contain directed edges",
+				},
+				"NodeWithoutAttributeList": {
+					in:     "digraph { 1 -- 2  }",
+					errMsg: "directed graph cannot contain undirected edges",
+				},
+				// TODO test more cases
+			}
+
+			for name, test := range tests {
+				t.Run(name, func(t *testing.T) {
+					p, err := dot.New(strings.NewReader(test.in))
+
+					require.NoErrorf(t, err, "New(%q)", test.in)
+
+					_, err = p.Parse()
+
+					require.NotNilf(t, err, "Parse(%q)", test.in)
+					assertContains(t, err.Error(), test.errMsg)
+				})
+			}
+		})
+	})
+
 	t.Run("AttributeStatement", func(t *testing.T) {
 		tests := map[string]struct {
 			in   string

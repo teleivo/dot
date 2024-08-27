@@ -8,24 +8,28 @@ import (
 type TokenType int
 
 const (
-	LeftBrace TokenType = iota
-	RightBrace
-	LeftBracket
-	RightBracket
-	Colon
-	Semicolon
-	Equal
-	Comma
-	DirectedEgde
-	UndirectedEgde
-	Identifier
+	LeftBrace      TokenType = iota // {
+	RightBrace                      // }
+	LeftBracket                     // [
+	RightBracket                    // ]
+	Colon                           // :
+	Semicolon                       // ;
+	Equal                           // =
+	Comma                           // ,
+	DirectedEgde                    // ->
+	UndirectedEgde                  // --
+	Identifier                      // like _A 12 "234"
+
 	// Keywords
-	Digraph
-	Edge
-	Graph
-	Node
-	Strict
-	Subgraph
+	Digraph  // digraph
+	Edge     // edge
+	Graph    // graph
+	Node     // node
+	Strict   // strict
+	Subgraph // subgraph
+
+	// TODO move this up under special tokens as Go does. This then leads to a problem as the zero
+	// value for the current token in the parser is EOF.
 	// EOF is not part of the dot language and is used to indicate the end of the file or stream. No
 	// language token should follow the EOF token.
 	EOF

@@ -4,16 +4,12 @@ package dot
 import (
 	"fmt"
 	"io"
+	"slices"
 
 	dot "github.com/teleivo/dot/internal"
+	"github.com/teleivo/dot/internal/ast"
 	"github.com/teleivo/dot/internal/token"
 )
-
-type Graph struct {
-	ID       string
-	Strict   bool
-	Directed bool
-}
 
 type Parser struct {
 	lexer     *dot.Lexer
@@ -31,11 +27,7 @@ func New(r io.Reader) (*Parser, error) {
 		lexer: lexer,
 	}
 
-	// initialize cur and peek token
-	err = p.nextToken()
-	if err != nil {
-		return nil, err
-	}
+	// initialize peek token
 	err = p.nextToken()
 	if err != nil {
 		return nil, err
@@ -46,70 +38,195 @@ func New(r io.Reader) (*Parser, error) {
 
 func (p *Parser) nextToken() error {
 	p.curToken = p.peekToken
-	if p.isDone() {
-		return nil
-	}
-
 	tok, err := p.lexer.NextToken()
 	if err != nil {
 		return err
 	}
 	p.peekToken = tok
+	fmt.Printf("%#v\n", p)
 
 	return nil
 }
 
-func (p *Parser) Parse() (*Graph, error) {
-	g := &Graph{}
-
-	if p.isDone() {
-		return g, nil
+func (p *Parser) Parse() (ast.Graph, error) {
+	// if p.isDone() {
+	if p.peekTokenIs(token.EOF) {
+		var graph ast.Graph
+		return graph, nil
 	}
 
-	if !p.curTokenIs(token.Strict) && !p.curTokenIs(token.Graph) && !p.curTokenIs(token.Digraph) {
-		return nil, fmt.Errorf("expected either %q, %q, or %q but got %q instead", token.Strict, token.Graph, token.Digraph, p.curToken)
+	graph, err := p.parseHeader()
+	if err != nil {
+		return graph, err
 	}
+
+	err = p.expectPeekTokenIsOneOf(token.LeftBrace)
+	if err != nil {
+		return graph, err
+	}
+
+	for ; !p.curTokenIs(token.EOF) && err == nil; err = p.nextToken() {
+		switch p.curToken.Type {
+		case token.Identifier:
+			var stmt ast.Stmt
+			stmt, err = p.parseNodeStatement()
+			graph.Stmts = append(graph.Stmts, stmt)
+		}
+
+		if err != nil {
+			return graph, err
+		}
+	}
+
+	return graph, err
+}
+
+func (p *Parser) parseHeader() (ast.Graph, error) {
+	var graph ast.Graph
+
+	err := p.expectPeekTokenIsOneOf(token.Strict, token.Graph, token.Digraph)
+	if err != nil {
+		return graph, err
+	}
+
 	if p.curTokenIs(token.Strict) {
-		g.Strict = true
+		graph.Strict = true
 
-		err := p.nextToken()
+		err := p.expectPeekTokenIsOneOf(token.Graph, token.Digraph)
 		if err != nil {
-			return nil, err
+			return graph, err
 		}
 	}
 
-	if !p.curTokenIs(token.Graph) && !p.curTokenIs(token.Digraph) {
-		return nil, fmt.Errorf("expected either %q, or %q but got %q instead", token.Graph, token.Digraph, p.curToken)
-	}
 	if p.curTokenIs(token.Digraph) {
-		g.Directed = true
+		graph.Directed = true
 	}
-	err := p.nextToken()
+
+	// graph ID is optional
+	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
 	if err != nil {
-		return nil, err
+		return graph, err
 	}
 
-	if !p.curTokenIs(token.Identifier) && !p.curTokenIs(token.LeftBrace) {
-		return nil, fmt.Errorf("expected either %q, or %q but got %q instead", token.Identifier, token.LeftBrace, p.curToken)
+	if hasID {
+		graph.ID = p.curToken.Literal
 	}
-	if p.curTokenIs(token.Identifier) {
-		g.ID = p.curToken.Literal
 
-		err := p.nextToken()
+	return graph, nil
+}
+
+func (p *Parser) parseNodeStatement() (*ast.NodeStmt, error) {
+	fmt.Println("parseNodeStatement")
+	ns := &ast.NodeStmt{ID: p.curToken.Literal}
+
+	// attr_list is optional
+	hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
+	if err != nil {
+		return ns, err
+	}
+	if !hasLeftBracket {
+		return ns, nil
+	}
+
+	attrs, err := p.parseAttrList()
+	if err != nil {
+		return ns, err
+	}
+
+	ns.AttrList = attrs
+
+	return ns, nil
+}
+
+func (p *Parser) parseAttrList() (*ast.AttrList, error) {
+	fmt.Println("parseAttrList")
+	var first, cur *ast.AttrList
+	for p.curTokenIs(token.LeftBracket) {
+		err := p.expectPeekTokenIsOneOf(token.RightBracket, token.Identifier)
 		if err != nil {
-			return nil, err
+			return first, err
+		}
+
+		// a_list is optional
+		if p.curTokenIs(token.Identifier) {
+			alist, err := p.parseAList()
+			if err != nil {
+				return first, err
+			}
+			if first == nil {
+				first = &ast.AttrList{AList: alist}
+				cur = first
+			} else {
+				cur.Next = &ast.AttrList{AList: alist}
+				cur = cur.Next
+			}
+
+			err = p.expectPeekTokenIsOneOf(token.RightBracket)
+			if err != nil {
+				return first, err
+			}
+		}
+
+		_, err = p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
+		if err != nil {
+			return first, err
 		}
 	}
 
-	if !p.curTokenIs(token.LeftBrace) {
-		return nil, fmt.Errorf("expected either %q but got %q instead", token.LeftBrace, p.curToken)
-	}
-	err = p.nextToken()
-	if err != nil {
-		return nil, err
+	return first, nil
+}
+
+func (p *Parser) parseAList() (*ast.AList, error) {
+	fmt.Println("parseAList")
+	var first, cur *ast.AList
+	for p.curTokenIs(token.Identifier) {
+		attr, err := p.parseAttribute()
+		if err != nil {
+			return first, err
+		}
+		if first == nil {
+			first = &ast.AList{Attribute: attr}
+			cur = first
+		} else {
+			cur.Next = &ast.AList{Attribute: attr}
+			cur = cur.Next
+		}
+
+		_, err = p.advanceIfPeekTokenIsOneOf(token.Comma, token.Semicolon)
+		if err != nil {
+			return first, err
+		}
+
+		hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
+		if err != nil {
+			return first, err
+		}
+		if !hasID {
+			return first, err
+		}
 	}
 
-	return g, nil
+	return first, nil
+}
+
+func (p *Parser) parseAttribute() (ast.Attribute, error) {
+	fmt.Println("parseAttribute")
+	attr := ast.Attribute{
+		Name: p.curToken.Literal,
+	}
+
+	err := p.expectPeekTokenIsOneOf(token.Equal)
+	if err != nil {
+		return attr, err
+	}
+
+	err = p.expectPeekTokenIsOneOf(token.Identifier)
+	if err != nil {
+		return attr, err
+	}
+	attr.Value = p.curToken.Literal
+
+	return attr, nil
 }
 
 func (p *Parser) isDone() bool {
@@ -124,6 +241,43 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
 
+func (p *Parser) curTokenIsOneOf(tokens ...token.TokenType) bool {
+	return slices.ContainsFunc(tokens, p.curTokenIs)
+}
+
+func (p *Parser) peekTokenIsOneOf(tokens ...token.TokenType) bool {
+	return slices.ContainsFunc(tokens, p.peekTokenIs)
+}
+
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
+}
+
+func (p *Parser) expectPeekTokenIsOneOf(want ...token.TokenType) error {
+	if !p.peekTokenIsOneOf(want...) {
+		if len(want) == 1 {
+			return fmt.Errorf("expected next token to be %q but got %q instead", want[0], p.peekToken)
+		}
+		return fmt.Errorf("expected next token to be one of %q but got %q instead", want, p.peekToken)
+	}
+
+	err := p.nextToken()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Parser) advanceIfPeekTokenIsOneOf(tokens ...token.TokenType) (bool, error) {
+	if !p.peekTokenIsOneOf(tokens...) {
+		return false, nil
+	}
+
+	err := p.nextToken()
+	if err != nil {
+		return true, err
+	}
+
+	return true, nil
 }

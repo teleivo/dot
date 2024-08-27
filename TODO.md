@@ -10,6 +10,8 @@
     * with subgraph
   * parse ports?
 
+* is it nicer to work with slices then my choice of linked lists with *Next whenever there was a
+recursive definition?
 * make error messages more user friendly
   * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
     I could say that
@@ -380,7 +382,6 @@ String starting:"A
 * should I strip the quotes from the literal? or leave that up to the parser?
 
 ## Nice to have
-
 
 * lex html string
 * expose the knowledge of quoted, unquoted, numeral, html identifiers? 

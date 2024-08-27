@@ -71,6 +71,10 @@ func (p *Parser) Parse() (ast.Graph, error) {
 			var stmt ast.Stmt
 			stmt, err = p.parseNodeStatement()
 			graph.Stmts = append(graph.Stmts, stmt)
+		case token.Graph, token.Node, token.Edge:
+			var stmt ast.Stmt
+			stmt, err = p.parseAttrStatement()
+			graph.Stmts = append(graph.Stmts, stmt)
 		}
 
 		if err != nil {
@@ -126,6 +130,25 @@ func (p *Parser) parseNodeStatement() (*ast.NodeStmt, error) {
 	}
 	if !hasLeftBracket {
 		return ns, nil
+	}
+
+	attrs, err := p.parseAttrList()
+	if err != nil {
+		return ns, err
+	}
+
+	ns.AttrList = attrs
+
+	return ns, nil
+}
+
+func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
+	fmt.Println("parseAttrStatement")
+	ns := &ast.AttrStmt{ID: p.curToken.Literal}
+
+	err := p.expectPeekTokenIsOneOf(token.LeftBracket)
+	if err != nil {
+		return ns, err
 	}
 
 	attrs, err := p.parseAttrList()

@@ -43,6 +43,25 @@ func (ns *NodeStmt) String() string {
 
 func (ns *NodeStmt) stmtNode() {}
 
+type AttrStmt struct {
+	ID       string    // ID is the identifier of the node targeted by the node statement.
+	AttrList *AttrList // AttrList is an optional list of attributes for the node targeted by the node statement.
+}
+
+func (ns *AttrStmt) String() string {
+	var out strings.Builder
+
+	out.WriteString(ns.ID)
+	if ns.AttrList != nil {
+		out.WriteRune(' ')
+		out.WriteString(ns.AttrList.String())
+	}
+
+	return out.String()
+}
+
+func (ns *AttrStmt) stmtNode() {}
+
 // AttrList is a list of attributes as defined by https://graphviz.org/doc/info/attrs.html.
 type AttrList struct {
 	AList *AList    // AList is an optional list of attributes.

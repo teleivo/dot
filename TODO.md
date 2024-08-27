@@ -1,10 +1,7 @@
 * write parser
-  * parse attr_stmt
-    * first `node [a=b]` setting the default for subsequent nodes
-    * second `graph [a=b]`
-  * handle EOF better and move these special tokens up top like Go does
   * parse edge stmt
     * handle `edge [a=b]` setting the default for subsequent nodes
+  * handle EOF better and move these special tokens up top like Go does
   * parse multiple statements by using a graph I want to parse for my skeleton tests
   * parse subgraph
   * parse ports?

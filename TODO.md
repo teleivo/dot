@@ -1,14 +1,11 @@
 * write parser
-  * parse edge stmt
-    * handle `edge [a=b]` setting the default for subsequent nodes
+  * test the String() methods at least using one test for all statements
   * handle EOF better and move these special tokens up top like Go does
   * parse multiple statements by using a graph I want to parse for my skeleton tests
   * parse subgraph
+  * parse edge stmt
+    * with subgraph
   * parse ports?
-
-* make error messages more user friendly
-  * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
-    I could say that
 
 I want to be able to at least parse what I need for my current test setup
 
@@ -323,6 +320,17 @@ or is that to simplistic as there are rules as to when you are allowed/have to c
 * profile any of the above on a large file, generate a pprof dot file and feed that back into the
 parser as a test via testdata
 
+
+## API
+
+* should I add the token to the AttrStmt? so it is easier to check if its a graph/node/edge?
+* is it nicer to work with slices then my choice of linked lists with *Next whenever there was a
+recursive definition?
+* should I remove the Directed field from EdgeRHS as that is clear from graph.Directed?
+* make error messages more user friendly
+  * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
+    I could say that
+
 ## Parser
 
 * Add position start, end to tokens as in Gos' token package. Add them to ast/Node as well like Go
@@ -376,7 +384,6 @@ String starting:"A
 * should I strip the quotes from the literal? or leave that up to the parser?
 
 ## Nice to have
-
 
 * lex html string
 * expose the knowledge of quoted, unquoted, numeral, html identifiers? 

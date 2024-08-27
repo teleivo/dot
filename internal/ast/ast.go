@@ -43,9 +43,36 @@ func (ns *NodeStmt) String() string {
 
 func (ns *NodeStmt) stmtNode() {}
 
+type EdgeStmt struct {
+	Left     string    // Left is the left node identifier of the edge statement.
+	Right    EdgeRHS   // Right is the edge statements right hand side.
+	AttrList *AttrList // AttrList is an optional list of attributes for the edge.
+}
+
+type EdgeRHS struct {
+	Directed bool     // Directed indicates that this is a directed edge statement.
+	Right    string   // Left is the left node identifier of the edge statement.
+	Next     *EdgeRHS // Next is an optional edge right hand side.
+}
+
+func (ns *EdgeStmt) String() string {
+	var out strings.Builder
+
+	out.WriteString(ns.Left)
+	// TODO do the right and next
+	if ns.AttrList != nil {
+		out.WriteRune(' ')
+		out.WriteString(ns.AttrList.String())
+	}
+
+	return out.String()
+}
+
+func (ns *EdgeStmt) stmtNode() {}
+
 type AttrStmt struct {
-	ID       string    // ID is the identifier of the node targeted by the node statement.
-	AttrList *AttrList // AttrList is an optional list of attributes for the node targeted by the node statement.
+	ID       string    // ID is either graph, node or edge.
+	AttrList *AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
 }
 
 func (ns *AttrStmt) String() string {

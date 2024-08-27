@@ -2,6 +2,7 @@
 package dot
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"slices"
@@ -66,11 +67,18 @@ func (p *Parser) Parse() (ast.Graph, error) {
 	}
 
 	for ; !p.curTokenIs(token.EOF) && err == nil; err = p.nextToken() {
+		// TODO move the append out
 		switch p.curToken.Type {
 		case token.Identifier:
-			var stmt ast.Stmt
-			stmt, err = p.parseNodeStatement()
-			graph.Stmts = append(graph.Stmts, stmt)
+			if p.peekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
+				var stmt ast.Stmt
+				stmt, err = p.parseEdgeStatement(graph)
+				graph.Stmts = append(graph.Stmts, stmt)
+			} else {
+				var stmt ast.Stmt
+				stmt, err = p.parseNodeStatement()
+				graph.Stmts = append(graph.Stmts, stmt)
+			}
 		case token.Graph, token.Node, token.Edge:
 			var stmt ast.Stmt
 			stmt, err = p.parseAttrStatement()
@@ -117,6 +125,81 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	}
 
 	return graph, nil
+}
+
+func (p *Parser) parseEdgeStatement(graph ast.Graph) (*ast.EdgeStmt, error) {
+	fmt.Println("parseEdgeStatement")
+	es := &ast.EdgeStmt{Left: p.curToken.Literal}
+
+	err := p.expectPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+	if err != nil {
+		return es, err
+	}
+
+	erhs, err := p.parseEdgeRHS(graph)
+	if err != nil {
+		return es, err
+	}
+	es.Right = erhs
+
+	// attr_list is optional
+	hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
+	if err != nil {
+		return es, err
+	}
+	if !hasLeftBracket {
+		return es, nil
+	}
+
+	attrs, err := p.parseAttrList()
+	if err != nil {
+		return es, err
+	}
+
+	es.AttrList = attrs
+
+	return es, nil
+}
+
+func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
+	fmt.Println("parseEdgeRHS")
+	var first, cur *ast.EdgeRHS
+	for p.curTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
+		var directed bool
+		if p.curTokenIs(token.DirectedEgde) {
+			directed = true
+		}
+		if directed && !graph.Directed {
+			return ast.EdgeRHS{}, errors.New("undirected graph cannot contain directed edges")
+		}
+		if !directed && graph.Directed {
+			return ast.EdgeRHS{}, errors.New("directed graph cannot contain undirected edges")
+		}
+
+		err := p.expectPeekTokenIsOneOf(token.Identifier)
+		if err != nil {
+			return *first, err
+		}
+
+		if first == nil {
+			first = &ast.EdgeRHS{Directed: directed, Right: p.curToken.Literal}
+			cur = first
+		} else {
+			cur.Next = &ast.EdgeRHS{Directed: directed, Right: p.curToken.Literal}
+			cur = cur.Next
+		}
+
+		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+		if err != nil {
+			return *first, err
+		}
+		if !hasEdgeOperator {
+			return *first, err
+		}
+	}
+
+	return *first, nil
+
 }
 
 func (p *Parser) parseNodeStatement() (*ast.NodeStmt, error) {

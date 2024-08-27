@@ -7,6 +7,8 @@
   * parse ports?
 
 * make error messages more user friendly
+  * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
+    I could say that
 
 I want to be able to at least parse what I need for my current test setup
 

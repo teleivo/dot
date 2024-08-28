@@ -1,11 +1,13 @@
 * write parser
-  * test the String() methods at least using one test for all statements
-  * handle EOF better and move these special tokens up top like Go does
-  * parse multiple statements by using a graph I want to parse for my skeleton tests
   * parse subgraph
   * parse edge stmt
     * with subgraph
+  * test the String() methods at least using one test for all statements
   * parse ports?
+  * parse comments
+  * handle EOF better and move these special tokens up top like Go does
+  * how does strict affect a graph? no cycles? is that something my parser should validate?
+  * parse multiple statements by using a graph I want to parse for my skeleton tests
 
 I want to be able to at least parse what I need for my current test setup
 
@@ -25,7 +27,10 @@ strict digraph {
 }
 ```
 
-Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
+* count opening braces and brackets and decrement them on closing to validate they match?
+or is that to simplistic as there are rules as to when you are allowed/have to close them?
+
+* still needed? Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
 
 ```go
 type Graph struct {
@@ -311,9 +316,6 @@ func assertContains(t *testing.T, got, want string) {
 ```
 
 * how to continue generating tokens when finding invalid ones?
-
-* count opening braces and brackets and decrement them on closing to validate they match?
-or is that to simplistic as there are rules as to when you are allowed/have to close them?
 
 * write cmd/validate
 * write cmd/stats that tells me how many nodes, edges there are

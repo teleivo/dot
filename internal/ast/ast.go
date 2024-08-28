@@ -145,3 +145,15 @@ func (a *Attribute) String() string {
 
 	return out.String()
 }
+
+// Subgraph is a dot subgraph.
+type Subgraph struct {
+	ID    string // ID is the optional identifier.
+	Stmts []Stmt
+}
+
+func (s Subgraph) String() string {
+	return ""
+}
+
+func (s Subgraph) stmtNode() {}

@@ -1,11 +1,10 @@
 * write parser
+  * parse ports
   * test the String() methods at least using one test for all statements
+  * parse comments
   * handle EOF better and move these special tokens up top like Go does
   * parse multiple statements by using a graph I want to parse for my skeleton tests
-  * parse subgraph
-  * parse edge stmt
-    * with subgraph
-  * parse ports?
+* write cmd/dotfmt
 
 I want to be able to at least parse what I need for my current test setup
 
@@ -25,7 +24,10 @@ strict digraph {
 }
 ```
 
-Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
+* count opening braces and brackets and decrement them on closing to validate they match?
+or is that to simplistic as there are rules as to when you are allowed/have to close them?
+
+* still needed? Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
 
 ```go
 type Graph struct {
@@ -310,11 +312,6 @@ func assertContains(t *testing.T, got, want string) {
 }
 ```
 
-* how to continue generating tokens when finding invalid ones?
-
-* count opening braces and brackets and decrement them on closing to validate they match?
-or is that to simplistic as there are rules as to when you are allowed/have to close them?
-
 * write cmd/validate
 * write cmd/stats that tells me how many nodes, edges there are
 * profile any of the above on a large file, generate a pprof dot file and feed that back into the
@@ -333,6 +330,10 @@ recursive definition?
 
 ## Parser
 
+* Lexical and Semantic Notes https://graphviz.org/doc/info/lang.html
+  * should some of these influence the parser/should it err
+  * how does strict affect a graph? no cycles? is that something my parser should validate?
+* how to continue generating tokens when finding invalid ones?
 * Add position start, end to tokens as in Gos' token package. Add them to ast/Node as well like Go
 does? Their columns are bytes not runes, should I use bytes as well?
 * Where are commas legal?

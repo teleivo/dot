@@ -13,6 +13,7 @@ type Graph struct {
 	Stmts    []Stmt
 }
 
+// TODO add another marker as this right now means that any Stringer is an AST node
 // Node represents an AST node of a dot graph.
 type Node interface {
 	String() string
@@ -25,14 +26,14 @@ type Stmt interface {
 }
 
 type NodeStmt struct {
-	ID       string    // ID is the identifier of the node targeted by the node statement.
+	ID       NodeID    // ID is the identifier of the node targeted by the node statement.
 	AttrList *AttrList // AttrList is an optional list of attributes for the node targeted by the node statement.
 }
 
 func (ns *NodeStmt) String() string {
 	var out strings.Builder
 
-	out.WriteString(ns.ID)
+	out.WriteString(ns.ID.String())
 	if ns.AttrList != nil {
 		out.WriteRune(' ')
 		out.WriteString(ns.AttrList.String())
@@ -43,22 +44,33 @@ func (ns *NodeStmt) String() string {
 
 func (ns *NodeStmt) stmtNode() {}
 
+// NodeID identifies a dot node.
+type NodeID struct {
+	ID string // ID is the identifier of the node.
+}
+
+func (ni NodeID) String() string {
+	return ni.ID
+}
+
+func (ni NodeID) edgeOperand() {}
+
 type EdgeStmt struct {
-	Left     string    // Left is the left node identifier of the edge statement.
-	Right    EdgeRHS   // Right is the edge statements right hand side.
-	AttrList *AttrList // AttrList is an optional list of attributes for the edge.
+	Left     EdgeOperand // Left is the left node identifier or subgraph of the edge statement.
+	Right    EdgeRHS     // Right is the edge statements right hand side.
+	AttrList *AttrList   // AttrList is an optional list of attributes for the edge.
 }
 
 type EdgeRHS struct {
-	Directed bool     // Directed indicates that this is a directed edge statement.
-	Right    string   // Left is the left node identifier of the edge statement.
-	Next     *EdgeRHS // Next is an optional edge right hand side.
+	Directed bool        // Directed indicates that this is a directed edge.
+	Right    EdgeOperand // Right is the right node identifier or subgraph of the edge right hand side.
+	Next     *EdgeRHS    // Next is an optional edge right hand side.
 }
 
 func (ns *EdgeStmt) String() string {
 	var out strings.Builder
 
-	out.WriteString(ns.Left)
+	out.WriteString(ns.Left.String())
 	// TODO do the right and next
 	if ns.AttrList != nil {
 		out.WriteRune(' ')
@@ -69,6 +81,11 @@ func (ns *EdgeStmt) String() string {
 }
 
 func (ns *EdgeStmt) stmtNode() {}
+
+type EdgeOperand interface {
+	Node
+	edgeOperand()
+}
 
 type AttrStmt struct {
 	ID       string    // ID is either graph, node or edge.
@@ -130,13 +147,14 @@ func (al *AList) String() string {
 }
 
 // Attribute is a name-value attribute pair https://graphviz.org/doc/info/attrs.html. Note that this
-// is not defined in the abstract grammar of the dot language.
+// name is not defined in the abstract grammar of the dot language. It is defined as a statement and
+// as part of the a_list as ID '=' ID.
 type Attribute struct {
 	Name  string // Name is an identifier naming the attribute.
 	Value string // Value is the identifier representing the value of the attribute.
 }
 
-func (a *Attribute) String() string {
+func (a Attribute) String() string {
 	var out strings.Builder
 
 	out.WriteString(a.Name)
@@ -145,3 +163,18 @@ func (a *Attribute) String() string {
 
 	return out.String()
 }
+
+func (a Attribute) stmtNode() {}
+
+// Subgraph is a dot subgraph.
+type Subgraph struct {
+	ID    string // ID is the optional identifier.
+	Stmts []Stmt
+}
+
+func (s Subgraph) String() string {
+	return ""
+}
+
+func (s Subgraph) stmtNode()    {}
+func (s Subgraph) edgeOperand() {}

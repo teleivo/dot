@@ -290,14 +290,6 @@ func TestParser(t *testing.T) {
 					in:     "graph { foo [ }",
 					errMsg: `expected next token to be one of ["]" "identifier"]`,
 				},
-				"AttributeWithoutName": {
-					in:     "graph { foo [ = b ] }",
-					errMsg: `expected next token to be one of ["]" "identifier"]`,
-				},
-				"AttributeWithoutValue": {
-					in:     "graph { foo [ a = ] }",
-					errMsg: `expected next token to be "identifier"`,
-				},
 			}
 
 			for name, test := range tests {
@@ -373,6 +365,23 @@ func TestParser(t *testing.T) {
 				},
 			},
 			// TODO with attr_list
+			// TODO with subgraph as RHS
+			// "EdgeWithSubgraphRHS": {
+			// 	in: "digraph { A -> {B C} }",
+			// 	want: ast.Graph{
+			// 		Directed: true,
+			// 		Stmts: []ast.Stmt{
+			// 			&ast.EdgeStmt{
+			// 				Left: "A",
+			// 				Right: ast.EdgeRHS{
+			// 					ast.NodeStmt{ID: "A"},
+			// 				},
+			// 			},
+			//
+			// 			ast.Subgraph{ID: "foo"},
+			// 		},
+			// 	},
+			// },
 		}
 
 		for name, test := range tests {
@@ -543,6 +552,65 @@ func TestParser(t *testing.T) {
 		})
 	})
 
+	t.Run("AttributeAssignment", func(t *testing.T) {
+		tests := map[string]struct {
+			in   string
+			want ast.Graph
+			err  error
+		}{
+			"Single": {
+				in: "graph { rank = same; }",
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						ast.Attribute{Name: "rank", Value: "same"},
+					},
+				},
+			},
+		}
+
+		for name, test := range tests {
+			t.Run(name, func(t *testing.T) {
+				p, err := dot.New(strings.NewReader(test.in))
+
+				require.NoErrorf(t, err, "New(%q)", test.in)
+
+				g, err := p.Parse()
+
+				assert.NoErrorf(t, err, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+			})
+		}
+
+		t.Run("Invalid", func(t *testing.T) {
+			tests := map[string]struct {
+				in     string
+				errMsg string
+			}{
+				"MissingName": {
+					in:     "graph { = b }",
+					errMsg: `expected an "identifier" before the '='`,
+				},
+				"MissingValue": {
+					in:     "graph { a = }",
+					errMsg: `expected next token to be "identifier"`,
+				},
+			}
+
+			for name, test := range tests {
+				t.Run(name, func(t *testing.T) {
+					p, err := dot.New(strings.NewReader(test.in))
+
+					require.NoErrorf(t, err, "New(%q)", test.in)
+
+					_, err = p.Parse()
+
+					require.NotNilf(t, err, "Parse(%q)", test.in)
+					assertContains(t, err.Error(), test.errMsg)
+				})
+			}
+		})
+	})
+
 	t.Run("Subgraph", func(t *testing.T) {
 		tests := map[string]struct {
 			in   string
@@ -570,6 +638,24 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						ast.Subgraph{ID: "foo"},
+					},
+				},
+			},
+			"SubgraphWithAttributesAndNodes": {
+				in: `graph {
+					subgraph {
+						rank = same; A; B;
+					}
+				}`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						ast.Subgraph{
+							Stmts: []ast.Stmt{
+								ast.Attribute{Name: "rank", Value: "same"},
+								&ast.NodeStmt{ID: "A"},
+								&ast.NodeStmt{ID: "B"},
+							},
+						},
 					},
 				},
 			},

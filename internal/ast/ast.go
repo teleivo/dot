@@ -130,13 +130,14 @@ func (al *AList) String() string {
 }
 
 // Attribute is a name-value attribute pair https://graphviz.org/doc/info/attrs.html. Note that this
-// is not defined in the abstract grammar of the dot language.
+// name is not defined in the abstract grammar of the dot language. It is defined as a statement and
+// as part of the a_list as ID '=' ID.
 type Attribute struct {
 	Name  string // Name is an identifier naming the attribute.
 	Value string // Value is the identifier representing the value of the attribute.
 }
 
-func (a *Attribute) String() string {
+func (a Attribute) String() string {
 	var out strings.Builder
 
 	out.WriteString(a.Name)
@@ -145,6 +146,8 @@ func (a *Attribute) String() string {
 
 	return out.String()
 }
+
+func (a Attribute) stmtNode() {}
 
 // Subgraph is a dot subgraph.
 type Subgraph struct {

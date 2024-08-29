@@ -91,6 +91,8 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 		case token.Identifier:
 			if p.peekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
 				stmt, err = p.parseEdgeStatement(graph)
+			} else if p.peekTokenIs(token.Equal) {
+				stmt, err = p.parseAttribute()
 			} else {
 				stmt, err = p.parseNodeStatement()
 			}
@@ -98,6 +100,8 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 			stmt, err = p.parseAttrStatement()
 		case token.Subgraph, token.LeftBrace:
 			stmt, err = p.parseSubgraph(graph)
+		case token.Equal:
+			err = errors.New(`expected an "identifier" before the '='`)
 		default:
 			continue
 		}

@@ -1,5 +1,5 @@
 * write parser
-  * parse subgraph
+  * parse edgeRHS with subgraph
   * parse edge stmt
     * with subgraph
   * test the String() methods at least using one test for all statements

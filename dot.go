@@ -152,9 +152,13 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 
 func (p *Parser) parseEdgeStatement(graph ast.Graph) (*ast.EdgeStmt, error) {
 	fmt.Println("parseEdgeStatement")
-	es := &ast.EdgeStmt{Left: p.curToken.Literal}
+	left, err := p.parseEdgeOperand(graph)
+	if err != nil {
+		return nil, err
+	}
 
-	err := p.expectPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+	es := &ast.EdgeStmt{Left: left}
+	err = p.expectPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
 	if err != nil {
 		return es, err
 	}
@@ -184,6 +188,19 @@ func (p *Parser) parseEdgeStatement(graph ast.Graph) (*ast.EdgeStmt, error) {
 	return es, nil
 }
 
+func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
+	fmt.Println("parseEdgeOperand")
+	if p.curTokenIs(token.Identifier) {
+		return ast.NodeID{ID: p.curToken.Literal}, nil
+	}
+	// TODO is this safe? or do I need expect...
+	subgraph, err := p.parseSubgraph(graph)
+	if err != nil {
+		return subgraph, err
+	}
+	return subgraph, nil
+}
+
 func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 	fmt.Println("parseEdgeRHS")
 	var first, cur *ast.EdgeRHS
@@ -201,14 +218,18 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 
 		err := p.expectPeekTokenIsOneOf(token.Identifier)
 		if err != nil {
-			return *first, err
+			return ast.EdgeRHS{}, err
 		}
 
+		right, err := p.parseEdgeOperand(graph)
+		if err != nil {
+			return ast.EdgeRHS{}, err
+		}
 		if first == nil {
-			first = &ast.EdgeRHS{Directed: directed, Right: p.curToken.Literal}
+			first = &ast.EdgeRHS{Directed: directed, Right: right}
 			cur = first
 		} else {
-			cur.Next = &ast.EdgeRHS{Directed: directed, Right: p.curToken.Literal}
+			cur.Next = &ast.EdgeRHS{Directed: directed, Right: right}
 			cur = cur.Next
 		}
 

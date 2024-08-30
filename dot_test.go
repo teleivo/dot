@@ -318,8 +318,8 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left:  "1",
-							Right: ast.EdgeRHS{Right: "2"},
+							Left:  ast.NodeID{ID: "1"},
+							Right: ast.EdgeRHS{Right: ast.NodeID{ID: "2"}},
 						},
 					},
 				},
@@ -330,8 +330,8 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left:  "1",
-							Right: ast.EdgeRHS{Directed: true, Right: "2"},
+							Left:  ast.NodeID{ID: "1"},
+							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: "2"}},
 						},
 					},
 				},
@@ -342,16 +342,16 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left: "1",
+							Left: ast.NodeID{ID: "1"},
 							Right: ast.EdgeRHS{
 								Directed: true,
-								Right:    "2",
+								Right:    ast.NodeID{ID: "2"},
 								Next: &ast.EdgeRHS{
 									Directed: true,
-									Right:    "3",
+									Right:    ast.NodeID{ID: "3"},
 									Next: &ast.EdgeRHS{
 										Directed: true,
-										Right:    "4",
+										Right:    ast.NodeID{ID: "4"},
 									},
 								},
 							},
@@ -364,24 +364,25 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
-			// TODO with attr_list
-			// TODO with subgraph as RHS
-			// "EdgeWithSubgraphRHS": {
-			// 	in: "digraph { A -> {B C} }",
-			// 	want: ast.Graph{
-			// 		Directed: true,
-			// 		Stmts: []ast.Stmt{
-			// 			&ast.EdgeStmt{
-			// 				Left: "A",
-			// 				Right: ast.EdgeRHS{
-			// 					ast.NodeStmt{ID: "A"},
-			// 				},
-			// 			},
-			//
-			// 			ast.Subgraph{ID: "foo"},
-			// 		},
-			// 	},
-			// },
+			"EdgeWithSubgraphRHS": {
+				in: "digraph { A -> {B C} }",
+				want: ast.Graph{
+					Directed: true,
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left: ast.NodeID{ID: "A"},
+							Right: ast.EdgeRHS{
+								Right: ast.Subgraph{
+									Stmts: []ast.Stmt{
+										&ast.NodeStmt{ID: "B"},
+										&ast.NodeStmt{ID: "C"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		}
 
 		for name, test := range tests {

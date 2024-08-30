@@ -2,8 +2,9 @@
   * parse edgeRHS with subgraph
   * parse edge stmt
     * with subgraph
-  * test the String() methods at least using one test for all statements
+  * adapt NodeStmt to use the NodeID type instead of just ID string
   * parse ports?
+  * test the String() methods at least using one test for all statements
   * parse comments
   * handle EOF better and move these special tokens up top like Go does
   * how does strict affect a graph? no cycles? is that something my parser should validate?

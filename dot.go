@@ -153,8 +153,6 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 	var stmt ast.Stmt
 	var err error
 	var left ast.EdgeOperand
-	// 	switch p.curToken.Type {
-	// case token.Identifier:
 	if p.curTokenIs(token.Identifier) {
 		nid, err := p.parseNodeID()
 		left = nid
@@ -198,40 +196,6 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 	erhs, err := p.parseEdgeRHS(graph)
 	if err != nil {
 		return stmt, err
-	}
-	es.Right = erhs
-
-	// attr_list is optional
-	hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
-	if err != nil {
-		return es, err
-	}
-	if !hasLeftBracket {
-		return es, nil
-	}
-
-	attrs, err := p.parseAttrList()
-	if err != nil {
-		return es, err
-	}
-
-	es.AttrList = attrs
-
-	return es, nil
-}
-
-func (p *Parser) parseEdgeStatement(graph ast.Graph, left ast.EdgeOperand) (*ast.EdgeStmt, error) {
-	fmt.Println("parseEdgeStatement")
-	es := &ast.EdgeStmt{Left: left}
-
-	err := p.expectPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
-	if err != nil {
-		return es, err
-	}
-
-	erhs, err := p.parseEdgeRHS(graph)
-	if err != nil {
-		return es, err
 	}
 	es.Right = erhs
 
@@ -310,29 +274,6 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 
 	return *first, nil
 
-}
-
-func (p *Parser) parseNodeStatement() (*ast.NodeStmt, error) {
-	fmt.Println("parseNodeStatement")
-	ns := &ast.NodeStmt{ID: p.curToken.Literal}
-
-	// attr_list is optional
-	hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
-	if err != nil {
-		return ns, err
-	}
-	if !hasLeftBracket {
-		return ns, nil
-	}
-
-	attrs, err := p.parseAttrList()
-	if err != nil {
-		return ns, err
-	}
-
-	ns.AttrList = attrs
-
-	return ns, nil
 }
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {

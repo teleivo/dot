@@ -170,9 +170,9 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 			if err != nil {
 				return stmt, err
 			}
-			stmt = &ast.NodeStmt{ID: nid.ID, AttrList: attrs}
+			stmt = &ast.NodeStmt{ID: nid, AttrList: attrs}
 		} else {
-			stmt = &ast.NodeStmt{ID: nid.ID}
+			stmt = &ast.NodeStmt{ID: nid}
 		}
 	} else if p.curTokenIs(token.Subgraph) || p.curTokenIs(token.LeftBrace) {
 		subraph, err := p.parseSubgraph(graph)

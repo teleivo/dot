@@ -26,14 +26,14 @@ type Stmt interface {
 }
 
 type NodeStmt struct {
-	ID       string    // ID is the identifier of the node targeted by the node statement.
+	ID       NodeID    // ID is the identifier of the node targeted by the node statement.
 	AttrList *AttrList // AttrList is an optional list of attributes for the node targeted by the node statement.
 }
 
 func (ns *NodeStmt) String() string {
 	var out strings.Builder
 
-	out.WriteString(ns.ID)
+	out.WriteString(ns.ID.String())
 	if ns.AttrList != nil {
 		out.WriteRune(' ')
 		out.WriteString(ns.AttrList.String())

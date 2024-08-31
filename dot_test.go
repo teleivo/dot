@@ -105,7 +105,7 @@ func TestParser(t *testing.T) {
 				in: "graph { foo }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{ID: "foo"},
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo"}},
 					},
 				},
 			},
@@ -115,10 +115,10 @@ func TestParser(t *testing.T) {
 				}`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{ID: "foo"},
-						&ast.NodeStmt{ID: "bar"},
-						&ast.NodeStmt{ID: "baz"},
-						&ast.NodeStmt{ID: "trash"},
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo"}},
+						&ast.NodeStmt{ID: ast.NodeID{ID: "bar"}},
+						&ast.NodeStmt{ID: ast.NodeID{ID: "baz"}},
+						&ast.NodeStmt{ID: ast.NodeID{ID: "trash"}},
 					},
 				},
 			},
@@ -126,7 +126,7 @@ func TestParser(t *testing.T) {
 				in: "graph { foo [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{ID: "foo"},
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo"}},
 					},
 				},
 			},
@@ -135,7 +135,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "b"},
@@ -150,7 +150,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "b"},
@@ -165,7 +165,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "b"},
@@ -180,7 +180,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "b"},
@@ -195,7 +195,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "b"},
@@ -206,7 +206,7 @@ func TestParser(t *testing.T) {
 							},
 						},
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "e"},
@@ -221,7 +221,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "b"},
@@ -245,7 +245,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							ID: "foo",
+							ID: ast.NodeID{ID: "foo"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{Name: "a", Value: "b"},
@@ -372,8 +372,8 @@ func TestParser(t *testing.T) {
 						&ast.EdgeStmt{
 							Left: ast.Subgraph{
 								Stmts: []ast.Stmt{
-									&ast.NodeStmt{ID: "A"},
-									&ast.NodeStmt{ID: "B"},
+									&ast.NodeStmt{ID: ast.NodeID{ID: "A"}},
+									&ast.NodeStmt{ID: ast.NodeID{ID: "B"}},
 								},
 							},
 							Right: ast.EdgeRHS{
@@ -395,8 +395,40 @@ func TestParser(t *testing.T) {
 								Directed: true,
 								Right: ast.Subgraph{
 									Stmts: []ast.Stmt{
-										&ast.NodeStmt{ID: "B"},
-										&ast.NodeStmt{ID: "C"},
+										&ast.NodeStmt{ID: ast.NodeID{ID: "B"}},
+										&ast.NodeStmt{ID: ast.NodeID{ID: "C"}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"EdgeWithNestedSubraphs": {
+				in: "graph { {1 2} -- {3 -- {4 5}} }",
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left: ast.Subgraph{
+								Stmts: []ast.Stmt{
+									&ast.NodeStmt{ID: ast.NodeID{ID: "1"}},
+									&ast.NodeStmt{ID: ast.NodeID{ID: "2"}},
+								},
+							},
+							Right: ast.EdgeRHS{
+								Right: ast.Subgraph{
+									Stmts: []ast.Stmt{
+										&ast.EdgeStmt{
+											Left: ast.NodeID{ID: "3"},
+											Right: ast.EdgeRHS{
+												Right: ast.Subgraph{
+													Stmts: []ast.Stmt{
+														&ast.NodeStmt{ID: ast.NodeID{ID: "4"}},
+														&ast.NodeStmt{ID: ast.NodeID{ID: "5"}},
+													},
+												},
+											},
+										},
 									},
 								},
 							},
@@ -416,8 +448,8 @@ func TestParser(t *testing.T) {
 								Right: ast.Subgraph{
 									ID: "foo",
 									Stmts: []ast.Stmt{
-										&ast.NodeStmt{ID: "B"},
-										&ast.NodeStmt{ID: "C"},
+										&ast.NodeStmt{ID: ast.NodeID{ID: "B"}},
+										&ast.NodeStmt{ID: ast.NodeID{ID: "C"}},
 									},
 								},
 							},
@@ -695,8 +727,8 @@ func TestParser(t *testing.T) {
 						ast.Subgraph{
 							Stmts: []ast.Stmt{
 								ast.Attribute{Name: "rank", Value: "same"},
-								&ast.NodeStmt{ID: "A"},
-								&ast.NodeStmt{ID: "B"},
+								&ast.NodeStmt{ID: ast.NodeID{ID: "A"}},
+								&ast.NodeStmt{ID: ast.NodeID{ID: "B"}},
 							},
 						},
 					},

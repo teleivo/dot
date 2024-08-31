@@ -1,10 +1,5 @@
 * write parser
-  * parse edge stmt with LHS subgraph
-    * parsing the subraph needs to call parsing edgeStmt with the subraph if the peek token is an
-    edge operator
-    * I could do the same for parsing a node_stmt which is actually parsing a node_id and if the
-    peek is [ ; its a node_stmt (maybe more chars?) if its an edge operator its an edge stmt
-  * adapt NodeStmt to use the NodeID type instead of just ID string
+  * cleanup code
   * parse ports?
   * test the String() methods at least using one test for all statements
   * parse comments

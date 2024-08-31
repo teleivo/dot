@@ -88,18 +88,14 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 	for ; !p.curTokenIsOneOf(token.EOF, token.RightBrace) && err == nil; err = p.nextToken() {
 		var stmt ast.Stmt
 		switch p.curToken.Type {
-		case token.Identifier:
-			if p.peekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
-				stmt, err = p.parseEdgeStatement(graph)
-			} else if p.peekTokenIs(token.Equal) {
+		case token.Identifier, token.Subgraph, token.LeftBrace:
+			if p.curTokenIs(token.Identifier) && p.peekTokenIs(token.Equal) {
 				stmt, err = p.parseAttribute()
 			} else {
-				stmt, err = p.parseNodeStatement()
+				stmt, err = p.parseStatement(graph)
 			}
 		case token.Graph, token.Node, token.Edge:
 			stmt, err = p.parseAttrStatement()
-		case token.Subgraph, token.LeftBrace:
-			stmt, err = p.parseSubgraph(graph)
 		case token.Equal:
 			err = errors.New(`expected an "identifier" before the '='`)
 		default:
@@ -112,6 +108,7 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 		stmts = append(stmts, stmt)
 	}
 
+	fmt.Println("parseStatementList return")
 	return stmts, nil
 }
 
@@ -150,15 +147,84 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	return graph, nil
 }
 
-func (p *Parser) parseEdgeStatement(graph ast.Graph) (*ast.EdgeStmt, error) {
-	fmt.Println("parseEdgeStatement")
-	left, err := p.parseEdgeOperand(graph)
+// TODO what name makes sense?
+func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
+	fmt.Println("parseStatement")
+	var stmt ast.Stmt
+	var err error
+	var left ast.EdgeOperand
+	// 	switch p.curToken.Type {
+	// case token.Identifier:
+	if p.curTokenIs(token.Identifier) {
+		nid, err := p.parseNodeID()
+		left = nid
+		if err != nil {
+			return stmt, err
+		}
+
+		// attr_list is optional
+		hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
+		if err != nil {
+			return stmt, err
+		}
+		if hasLeftBracket {
+			attrs, err := p.parseAttrList()
+			if err != nil {
+				return stmt, err
+			}
+			stmt = &ast.NodeStmt{ID: nid.ID, AttrList: attrs}
+		} else {
+			stmt = &ast.NodeStmt{ID: nid.ID}
+		}
+	} else if p.curTokenIs(token.Subgraph) || p.curTokenIs(token.LeftBrace) {
+		subraph, err := p.parseSubgraph(graph)
+		if err != nil {
+			return stmt, err
+		}
+		left = subraph
+		stmt = subraph
+	}
+
+	hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
 	if err != nil {
-		return nil, err
+		return stmt, err
+	}
+
+	if !hasEdgeOperator {
+		return stmt, nil
 	}
 
 	es := &ast.EdgeStmt{Left: left}
-	err = p.expectPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+	erhs, err := p.parseEdgeRHS(graph)
+	if err != nil {
+		return stmt, err
+	}
+	es.Right = erhs
+
+	// attr_list is optional
+	hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
+	if err != nil {
+		return es, err
+	}
+	if !hasLeftBracket {
+		return es, nil
+	}
+
+	attrs, err := p.parseAttrList()
+	if err != nil {
+		return es, err
+	}
+
+	es.AttrList = attrs
+
+	return es, nil
+}
+
+func (p *Parser) parseEdgeStatement(graph ast.Graph, left ast.EdgeOperand) (*ast.EdgeStmt, error) {
+	fmt.Println("parseEdgeStatement")
+	es := &ast.EdgeStmt{Left: left}
+
+	err := p.expectPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
 	if err != nil {
 		return es, err
 	}
@@ -216,7 +282,7 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 			return ast.EdgeRHS{}, errors.New("directed graph cannot contain undirected edges")
 		}
 
-		err := p.expectPeekTokenIsOneOf(token.Identifier)
+		err := p.expectPeekTokenIsOneOf(token.Identifier, token.Subgraph, token.LeftBrace)
 		if err != nil {
 			return ast.EdgeRHS{}, err
 		}
@@ -267,6 +333,11 @@ func (p *Parser) parseNodeStatement() (*ast.NodeStmt, error) {
 	ns.AttrList = attrs
 
 	return ns, nil
+}
+
+func (p *Parser) parseNodeID() (ast.NodeID, error) {
+	fmt.Println("parseNodeID")
+	return ast.NodeID{ID: p.curToken.Literal}, nil
 }
 
 func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {

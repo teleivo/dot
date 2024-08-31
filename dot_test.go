@@ -364,7 +364,27 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
-			"EdgeWithSubgraphRHS": {
+			"EdgeWithLHSShortSubgraph": {
+				in: "digraph { {A B} -> C }",
+				want: ast.Graph{
+					Directed: true,
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left: ast.Subgraph{
+								Stmts: []ast.Stmt{
+									&ast.NodeStmt{ID: "A"},
+									&ast.NodeStmt{ID: "B"},
+								},
+							},
+							Right: ast.EdgeRHS{
+								Directed: true,
+								Right:    ast.NodeID{ID: "C"},
+							},
+						},
+					},
+				},
+			},
+			"EdgeWithRHSShortSubgraph": {
 				in: "digraph { A -> {B C} }",
 				want: ast.Graph{
 					Directed: true,
@@ -372,7 +392,29 @@ func TestParser(t *testing.T) {
 						&ast.EdgeStmt{
 							Left: ast.NodeID{ID: "A"},
 							Right: ast.EdgeRHS{
+								Directed: true,
 								Right: ast.Subgraph{
+									Stmts: []ast.Stmt{
+										&ast.NodeStmt{ID: "B"},
+										&ast.NodeStmt{ID: "C"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"EdgeWithRHSExplicitSubraph": {
+				in: "digraph { A -> subgraph foo {B C} }",
+				want: ast.Graph{
+					Directed: true,
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left: ast.NodeID{ID: "A"},
+							Right: ast.EdgeRHS{
+								Directed: true,
+								Right: ast.Subgraph{
+									ID: "foo",
 									Stmts: []ast.Stmt{
 										&ast.NodeStmt{ID: "B"},
 										&ast.NodeStmt{ID: "C"},

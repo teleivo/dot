@@ -10,10 +10,8 @@ go get -u github.com/teleivo/dot
 
 ## Limitations
 
-* does not produce an [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree) but a data structure
-  representing the graph, edges and nodes
-* does not support multi-line comments https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 * does not support ports
+* does not support multi-line comments https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 * does not support https://graphviz.org/doc/info/lang.html#html-strings as I have not needed them
 for my purposes
 * does not support [double-quoted strings can be concatenated using a '+'

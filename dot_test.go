@@ -122,6 +122,14 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			"NodeWithPortName": {
+				in: "graph { foo:f0 }",
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{ID: "f0"}}},
+					},
+				},
+			},
 			"OnlyNodeWithEmptyAttributeList": {
 				in: "graph { foo [] }",
 				want: ast.Graph{
@@ -289,6 +297,10 @@ func TestParser(t *testing.T) {
 				"AttributeListWithoutClosingBracket": {
 					in:     "graph { foo [ }",
 					errMsg: `expected next token to be one of ["]" "identifier"]`,
+				},
+				"NodeWithPortWithoutName": {
+					in:     "graph { foo: }",
+					errMsg: `expected next token to be "identifier"`,
 				},
 			}
 

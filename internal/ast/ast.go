@@ -46,7 +46,8 @@ func (ns *NodeStmt) stmtNode() {}
 
 // NodeID identifies a dot node.
 type NodeID struct {
-	ID string // ID is the identifier of the node.
+	ID   string // ID is the identifier of the node.
+	Port *Port  // Port is an optioal port an edge can attach to.
 }
 
 func (ni NodeID) String() string {
@@ -54,6 +55,15 @@ func (ni NodeID) String() string {
 }
 
 func (ni NodeID) edgeOperand() {}
+
+// Port defines a node port where an edge can attach to.
+type Port struct {
+	ID string // ID is the identifier of the port.
+}
+
+func (p Port) String() string {
+	return p.ID
+}
 
 type EdgeStmt struct {
 	Left     EdgeOperand // Left is the left node identifier or subgraph of the edge statement.

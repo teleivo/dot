@@ -277,7 +277,19 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
 	fmt.Println("parseNodeID")
-	return ast.NodeID{ID: p.curToken.Literal}, nil
+	nid := ast.NodeID{ID: p.curToken.Literal}
+
+	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Colon)
+	if err != nil || !hasID {
+		return nid, err
+	}
+	err = p.expectPeekTokenIsOneOf(token.Identifier)
+	if err != nil {
+		return nid, err
+	}
+	nid.Port = &ast.Port{ID: p.curToken.Literal}
+
+	return nid, nil
 }
 
 func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {

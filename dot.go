@@ -155,12 +155,11 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 	var left ast.EdgeOperand
 	if p.curTokenIs(token.Identifier) {
 		nid, err := p.parseNodeID()
-		left = nid
 		if err != nil {
 			return stmt, err
 		}
 
-		// attr_list is optional
+		// attr_list is optional in a node_stmt
 		hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
 		if err != nil {
 			return stmt, err
@@ -170,15 +169,17 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 			if err != nil {
 				return stmt, err
 			}
-			stmt = &ast.NodeStmt{ID: nid, AttrList: attrs}
-		} else {
-			stmt = &ast.NodeStmt{ID: nid}
+			return &ast.NodeStmt{ID: nid, AttrList: attrs}, nil
 		}
+
+		left = nid
+		stmt = &ast.NodeStmt{ID: nid}
 	} else if p.curTokenIs(token.Subgraph) || p.curTokenIs(token.LeftBrace) {
 		subraph, err := p.parseSubgraph(graph)
 		if err != nil {
 			return stmt, err
 		}
+
 		left = subraph
 		stmt = subraph
 	}
@@ -199,7 +200,7 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 	}
 	es.Right = erhs
 
-	// attr_list is optional
+	// attr_list is optional in edge_stmt
 	hasLeftBracket, err := p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
 	if err != nil {
 		return es, err

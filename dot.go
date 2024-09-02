@@ -277,7 +277,56 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
 	fmt.Println("parseNodeID")
-	return ast.NodeID{ID: p.curToken.Literal}, nil
+	nid := ast.NodeID{ID: p.curToken.Literal}
+
+	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Colon)
+	if err != nil || !hasID {
+		return nid, err
+	}
+
+	port, err := p.parsePort()
+	if err != nil {
+		return nid, err
+	}
+	nid.Port = port
+
+	return nid, nil
+}
+
+func (p *Parser) parsePort() (*ast.Port, error) {
+	fmt.Println("parsePort")
+	err := p.expectPeekTokenIsOneOf(token.Identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.peekTokenIsOneOf(token.Colon) { // port is either :ID | :compass_pt
+		cp, ok := ast.IsCompassPoint(p.curToken.Literal)
+		if ok {
+			return &ast.Port{CompassPoint: cp}, nil
+		}
+		return &ast.Port{Name: p.curToken.Literal}, nil
+	}
+
+	// port with name and compass_pt :ID:compass_pt
+	port := ast.Port{Name: p.curToken.Literal}
+
+	err = p.expectPeekTokenIsOneOf(token.Colon)
+	if err != nil {
+		return &port, err
+	}
+	err = p.expectPeekTokenIsOneOf(token.Identifier)
+	if err != nil {
+		return &port, err
+	}
+
+	cp, ok := ast.IsCompassPoint(p.curToken.Literal)
+	if !ok {
+		return &port, fmt.Errorf("expected a compass point %v instead got %q", []ast.CompassPoint{ast.Underscore, ast.North, ast.NorthEast, ast.East, ast.SouthEast, ast.South, ast.SouthWest, ast.West, ast.NorthWest, ast.Center}, p.curToken.Literal)
+	}
+	port.CompassPoint = cp
+
+	return &port, nil
 }
 
 func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {

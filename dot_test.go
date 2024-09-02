@@ -122,6 +122,110 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			"NodeWithPortName": {
+				in: "graph { foo:f0 }",
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.Underscore}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointUnderscore": {
+				in: `graph { foo:"f0":_ }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.Underscore}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointNorth": {
+				in: `graph { foo:"f0":n }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.North}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointNorthEast": {
+				in: `graph { foo:f0:ne }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.NorthEast}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointEast": {
+				in: `graph { foo:f0:e }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.East}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointSouthEast": {
+				in: `graph { foo:f0:se }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.SouthEast}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointSouth": {
+				in: `graph { foo:f0:s }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.South}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointSouthWest": {
+				in: `graph { foo:f0:sw }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.SouthWest}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointWest": {
+				in: `graph { foo:f0:w }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.West}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointNorthWest": {
+				in: `graph { foo:f0:nw }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.NorthWest}}},
+					},
+				},
+			},
+			"NodeWithPortNameAndCompassPointCenter": {
+				in: `graph { foo:f0:c }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.Center}}},
+					},
+				},
+			},
+			"NodeWithCompassPointNorth": {
+				in: `graph { foo:n }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{CompassPoint: ast.North}}},
+					},
+				},
+			},
+			"NodeWithPortNameEqualToACompassPoint": { // https://graphviz.org/docs/attr-types/portPos
+				in: `graph { foo:n:n }`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						&ast.NodeStmt{ID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "n", CompassPoint: ast.North}}},
+					},
+				},
+			},
 			"OnlyNodeWithEmptyAttributeList": {
 				in: "graph { foo [] }",
 				want: ast.Graph{
@@ -289,6 +393,18 @@ func TestParser(t *testing.T) {
 				"AttributeListWithoutClosingBracket": {
 					in:     "graph { foo [ }",
 					errMsg: `expected next token to be one of ["]" "identifier"]`,
+				},
+				"NodeWithPortWithoutName": {
+					in:     "graph { foo: }",
+					errMsg: `expected next token to be "identifier"`,
+				},
+				"NodeWithPortWithoutCompassPoint": {
+					in:     "graph { foo:f: }",
+					errMsg: `expected next token to be "identifier"`,
+				},
+				"NodeWithPortWithInvalidCompassPoint": {
+					in:     "graph { foo:n:bottom }",
+					errMsg: `expected a compass point [_ n ne`,
 				},
 			}
 

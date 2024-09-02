@@ -1,5 +1,4 @@
 * write parser
-  * parse ports
   * test the String() methods at least using one test for all statements
   * parse comments
   * handle EOF better and move these special tokens up top like Go does

@@ -287,7 +287,32 @@ func (p *Parser) parseNodeID() (ast.NodeID, error) {
 	if err != nil {
 		return nid, err
 	}
-	nid.Port = &ast.Port{ID: p.curToken.Literal}
+	if p.peekTokenIsOneOf(token.Colon) {
+		nid.Port = &ast.Port{Name: p.curToken.Literal}
+	} else {
+		cp, ok := ast.IsCompassPoint(p.curToken.Literal)
+		if ok {
+			nid.Port = &ast.Port{CompassPoint: cp}
+		} else {
+			nid.Port = &ast.Port{Name: p.curToken.Literal}
+		}
+		return nid, nil
+	}
+
+	err = p.expectPeekTokenIsOneOf(token.Colon)
+	if err != nil {
+		return nid, err
+	}
+	err = p.expectPeekTokenIsOneOf(token.Identifier)
+	if err != nil {
+		return nid, err
+	}
+
+	cp, ok := ast.IsCompassPoint(p.curToken.Literal)
+	if !ok {
+		return nid, fmt.Errorf("expected a compass point %v instead got %q", []ast.CompassPoint{ast.Underscore, ast.North, ast.NorthEast, ast.East, ast.SouthEast, ast.South, ast.SouthWest, ast.West, ast.NorthWest, ast.Center}, p.curToken.Literal)
+	}
+	nid.Port.CompassPoint = cp
 
 	return nid, nil
 }

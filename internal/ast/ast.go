@@ -58,11 +58,63 @@ func (ni NodeID) edgeOperand() {}
 
 // Port defines a node port where an edge can attach to.
 type Port struct {
-	ID string // ID is the identifier of the port.
+	Name         string       // Name is the identifier of the port.
+	CompassPoint CompassPoint // Node position at which the edge can attach to.
 }
 
 func (p Port) String() string {
-	return p.ID
+	return p.Name
+}
+
+// CompassPoint position at which an edge can attach to a node https://graphviz.org/docs/attr-types/portPos.
+type CompassPoint int
+
+const (
+	Underscore CompassPoint = iota // Underscore is the default compass point in a port with a name https://graphviz.org/docs/attr-types/portPos.
+	North
+	NorthEast
+	East
+	SouthEast
+	South
+	SouthWest
+	West
+	NorthWest
+	Center
+)
+
+var compassPointStrings = map[CompassPoint]string{
+	Underscore: "_",
+	North:      "n",
+	NorthEast:  "ne",
+	East:       "e",
+	SouthEast:  "se",
+	South:      "s",
+	SouthWest:  "sw",
+	West:       "w",
+	NorthWest:  "nw",
+	Center:     "c",
+}
+
+var compassPoints = map[string]CompassPoint{
+	"_":  Underscore,
+	"n":  North,
+	"ne": NorthEast,
+	"e":  East,
+	"se": SouthEast,
+	"s":  South,
+	"sw": SouthWest,
+	"w":  West,
+	"nw": NorthWest,
+	"c":  Center,
+}
+
+func (cp CompassPoint) String() string {
+	return compassPointStrings[cp]
+}
+
+func IsCompassPoint(in string) (CompassPoint, bool) {
+	v, ok := compassPoints[in]
+	return v, ok
 }
 
 type EdgeStmt struct {

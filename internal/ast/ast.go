@@ -5,12 +5,36 @@ import (
 	"strings"
 )
 
-// Graph is a dot graph.
+// Graph is a directed or undirected dot graph.
 type Graph struct {
 	Strict   bool
 	Directed bool   // Directed indicates that the graph is a directed graph.
 	ID       string // ID is the optional identifier of a graph.
 	Stmts    []Stmt
+}
+
+func (g Graph) String() string {
+	var out strings.Builder
+	if g.Strict {
+		out.WriteString("strict ")
+	}
+	if g.Directed {
+		out.WriteString("digraph ")
+	} else {
+		out.WriteString("graph ")
+	}
+	out.WriteRune('{')
+	if len(g.Stmts) > 0 {
+		out.WriteRune('\n')
+	}
+	for _, stmt := range g.Stmts {
+		out.WriteRune('\t')
+		out.WriteString(stmt.String())
+		out.WriteRune('\n')
+	}
+	out.WriteRune('}')
+
+	return out.String()
 }
 
 // TODO add another marker as this right now means that any Stringer is an AST node
@@ -25,6 +49,7 @@ type Stmt interface {
 	stmtNode()
 }
 
+// NodeStmt is a dot node statement defining a node with optional attributes.
 type NodeStmt struct {
 	ID       NodeID    // ID is the identifier of the node targeted by the node statement.
 	AttrList *AttrList // AttrList is an optional list of attributes for the node targeted by the node statement.
@@ -44,14 +69,22 @@ func (ns *NodeStmt) String() string {
 
 func (ns *NodeStmt) stmtNode() {}
 
-// NodeID identifies a dot node.
+// NodeID identifies a dot node with an optional port.
 type NodeID struct {
 	ID   string // ID is the identifier of the node.
 	Port *Port  // Port is an optioal port an edge can attach to.
 }
 
 func (ni NodeID) String() string {
-	return ni.ID
+	var out strings.Builder
+
+	out.WriteString(ni.ID)
+	if ni.Port != nil {
+		out.WriteRune(':')
+		out.WriteString(ni.Port.String())
+	}
+
+	return out.String()
 }
 
 func (ni NodeID) edgeOperand() {}
@@ -63,7 +96,7 @@ type Port struct {
 }
 
 func (p Port) String() string {
-	return p.Name
+	return p.Name + ":" + p.CompassPoint.String()
 }
 
 // CompassPoint position at which an edge can attach to a node https://graphviz.org/docs/attr-types/portPos.
@@ -117,23 +150,18 @@ func IsCompassPoint(in string) (CompassPoint, bool) {
 	return v, ok
 }
 
+// EdgeStmt is a dot edge statement connecting nodes or subgraphs.
 type EdgeStmt struct {
 	Left     EdgeOperand // Left is the left node identifier or subgraph of the edge statement.
 	Right    EdgeRHS     // Right is the edge statements right hand side.
 	AttrList *AttrList   // AttrList is an optional list of attributes for the edge.
 }
 
-type EdgeRHS struct {
-	Directed bool        // Directed indicates that this is a directed edge.
-	Right    EdgeOperand // Right is the right node identifier or subgraph of the edge right hand side.
-	Next     *EdgeRHS    // Next is an optional edge right hand side.
-}
-
 func (ns *EdgeStmt) String() string {
 	var out strings.Builder
 
 	out.WriteString(ns.Left.String())
-	// TODO do the right and next
+	out.WriteString(ns.Right.String())
 	if ns.AttrList != nil {
 		out.WriteRune(' ')
 		out.WriteString(ns.AttrList.String())
@@ -144,11 +172,44 @@ func (ns *EdgeStmt) String() string {
 
 func (ns *EdgeStmt) stmtNode() {}
 
+// EdgeRHS is the right-hand side of an edge statement.
+type EdgeRHS struct {
+	Directed bool        // Directed indicates that this is a directed edge.
+	Right    EdgeOperand // Right is the right node identifier or subgraph of the edge right hand side.
+	Next     *EdgeRHS    // Next is an optional edge right hand side.
+}
+
+func (er EdgeRHS) String() string {
+	var out strings.Builder
+
+	if er.Directed {
+		out.WriteString(" -> ")
+	} else {
+		out.WriteString(" -- ")
+	}
+	out.WriteString(er.Right.String())
+
+	for cur := er.Next; cur != nil; cur = cur.Next {
+		if cur.Directed {
+			out.WriteString(" -> ")
+		} else {
+			out.WriteString(" -- ")
+		}
+		out.WriteString(cur.Right.String())
+	}
+
+	return out.String()
+}
+
+// EdgeOperand is an operand in an edge statement that can either be a graph or a subgraph.
 type EdgeOperand interface {
 	Node
 	edgeOperand()
 }
 
+// TODO the AttrList is not optional in (graph|node|edge) attr_list
+// AttrStmt is an attribute list defining default attributes for graphs, nodes or edges defined
+// after this statement.
 type AttrStmt struct {
 	ID       string    // ID is either graph, node or edge.
 	AttrList *AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
@@ -179,7 +240,7 @@ func (atl *AttrList) String() string {
 
 	for cur := atl; cur != nil; cur = cur.Next {
 		out.WriteRune('[')
-		out.WriteString(atl.AList.String())
+		out.WriteString(cur.AList.String())
 		out.WriteRune(']')
 		if cur.Next != nil {
 			out.WriteRune(' ')
@@ -201,7 +262,7 @@ func (al *AList) String() string {
 	for cur := al; cur != nil; cur = cur.Next {
 		out.WriteString(cur.Attribute.String())
 		if cur.Next != nil {
-			out.WriteRune(';')
+			out.WriteRune(',')
 		}
 	}
 
@@ -220,7 +281,7 @@ func (a Attribute) String() string {
 	var out strings.Builder
 
 	out.WriteString(a.Name)
-	out.WriteString(" = ")
+	out.WriteString("=")
 	out.WriteString(a.Value)
 
 	return out.String()
@@ -235,7 +296,23 @@ type Subgraph struct {
 }
 
 func (s Subgraph) String() string {
-	return ""
+	var out strings.Builder
+
+	out.WriteString("subgraph ")
+	if s.ID != "" {
+		out.WriteString(s.ID)
+		out.WriteRune(' ')
+	}
+	out.WriteRune('{')
+	for i, stmt := range s.Stmts {
+		out.WriteString(stmt.String())
+		if i != len(s.Stmts)-1 {
+			out.WriteRune(' ')
+		}
+	}
+	out.WriteRune('}')
+
+	return out.String()
 }
 
 func (s Subgraph) stmtNode()    {}

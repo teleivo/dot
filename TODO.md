@@ -1,9 +1,14 @@
 * write parser
-  * test the String() methods at least using one test for all statements
   * parse comments
+    * support multi-line comments
   * handle EOF better and move these special tokens up top like Go does
-  * parse multiple statements by using a graph I want to parse for my skeleton tests
+  * test:
+    * parse multiple statements by using a graph I want to parse for my skeleton tests
 * write cmd/dotfmt
+    * test using dot examples from gallery
+    * test using invalid input
+    * connect vim with dotfmt so gq works with it/formats on write 
+* improve error handling based on above tests
 
 I want to be able to at least parse what I need for my current test setup
 
@@ -311,6 +316,7 @@ func assertContains(t *testing.T, got, want string) {
 }
 ```
 
+* write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
 * write cmd/validate
 * write cmd/stats that tells me how many nodes, edges there are
 * profile any of the above on a large file, generate a pprof dot file and feed that back into the

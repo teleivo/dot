@@ -19,6 +19,7 @@ const (
 	DirectedEgde                    // ->
 	UndirectedEgde                  // --
 	Identifier                      // like _A 12 "234"
+	Comment                         // like C pre-processor ones '# 34'
 
 	// Keywords
 	Digraph  // digraph
@@ -47,6 +48,7 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	DirectedEgde:   "->",
 	UndirectedEgde: "--",
 	Identifier:     "identifier",
+	Comment:        "comment",
 	// Keywords,
 	Digraph:  "digraph",
 	Edge:     "edge",
@@ -69,6 +71,7 @@ var types map[string]TokenType = map[string]TokenType{
 	"->":         DirectedEgde,
 	"--":         UndirectedEgde,
 	"identifier": Identifier,
+	"comment":    Comment,
 	// Keywords,
 	"digraph":  Digraph,
 	"edge":     Edge,

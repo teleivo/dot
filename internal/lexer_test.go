@@ -63,9 +63,7 @@ func TestLexer(t *testing.T) {
 		"AttributeList": {
 			in: `	graph [
 				labelloc = t
-				# such lines are considered a line output from a C preprocessor which should be discarded
 				fontname = "Helvetica,Arial,sans-serif",fontsize=16
-				// C++-style single-line comments are discarded as well
 			]
 					edge [arrowhead=none color="#00008844",style = filled];  `,
 			want: []token.Token{
@@ -503,9 +501,100 @@ func TestLexer(t *testing.T) {
 			}
 		})
 	})
+
+	// https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
+	t.Run("Comments", func(t *testing.T) {
+		t.Run("Valid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want token.Token
+			}{
+				{
+					in:   ` # C preprocessor style comment "noidentifier" /* ignore this */ edge`,
+					want: token.Token{Type: token.Comment, Literal: `# C preprocessor style comment "noidentifier" /* ignore this */ edge`},
+				},
+				{
+					in: ` // C++ style line comment "noidentifier" /* ignore this */ edge
+			`,
+					want: token.Token{Type: token.Comment, Literal: `// C++ style line comment "noidentifier" /* ignore this */ edge`},
+				},
+				{
+					in: ` /* C++ style multi-line comment "noidentifier" edge
+					# don't treat this as a separate comment
+					# don't treat this as a separate comment
+					*\ sneaky
+spacious
+					*/
+			`,
+					want: token.Token{Type: token.Comment, Literal: `/* C++ style multi-line comment "noidentifier" edge
+					# don't treat this as a separate comment
+					# don't treat this as a separate comment
+					*\ sneaky
+spacious
+					*/`},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer, err := NewLexer(strings.NewReader(test.in))
+
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+
+					assertTokens(t, lexer, []token.Token{test.want})
+				})
+			}
+		})
+		t.Run("Invalid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want LexError
+			}{
+				{
+					in: "/ is not a valid comment",
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 1,
+						Character:   '/',
+						Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+					},
+				},
+				{
+					in: "/# is not a valid comment",
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 1,
+						Character:   '/',
+						Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+					},
+				},
+				{
+					in: "/* is not a valid comment",
+					want: LexError{
+						LineNr:      1,
+						CharacterNr: 26,
+						Character:   0,
+						Reason:      "missing closing marker '*/' for multi-line comment",
+					},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					lexer, err := NewLexer(strings.NewReader(test.in))
+
+					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+
+					assertLexError(t, lexer, test.want)
+				})
+			}
+		})
+	})
 }
 
 func assertTokens(t *testing.T, lexer *Lexer, want []token.Token) {
+	t.Helper()
+
 	for i, wantTok := range want {
 		tok, err := lexer.NextToken()
 
@@ -516,6 +605,8 @@ func assertTokens(t *testing.T, lexer *Lexer, want []token.Token) {
 }
 
 func assertEOF(t *testing.T, lexer *Lexer) {
+	t.Helper()
+
 	tok, err := lexer.NextToken()
 
 	assert.NoErrorf(t, err, "NextToken()")
@@ -523,6 +614,8 @@ func assertEOF(t *testing.T, lexer *Lexer) {
 }
 
 func assertLexError(t *testing.T, lexer *Lexer, want LexError) {
+	t.Helper()
+
 	tok, err := lexer.NextToken()
 
 	var wantTok token.Token
@@ -533,6 +626,7 @@ func assertLexError(t *testing.T, lexer *Lexer, want LexError) {
 		assert.EqualValuesf(t, got, want, "NextToken()")
 	}
 
+	// TODO is this so that subsequent calls will always get the same error?
 	_, err = lexer.NextToken()
 	got, ok = err.(LexError)
 	assert.Truef(t, ok, "NextToken() wanted LexError, instead got %v", err)

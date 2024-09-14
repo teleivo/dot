@@ -41,18 +41,21 @@ func NewLexer(r io.Reader) (*Lexer, error) {
 	return &lexer, nil
 }
 
-const maxUnquotedStringLen = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
-const unquotedStringErr = `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`
+const (
+	maxUnquotedStringLen = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
+	unquotedStringErr    = `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`
+)
 
 // NextToken advances the lexers position by one token and returns it. The lexer will stop trying to
 // tokenize more tokens on the first error it encounters. A token of typen [token.EOF] is returned
 // once the underlying reader returns [io.EOF] and the peek token has been consumed.
 func (l *Lexer) NextToken() (token.Token, error) {
 	var tok token.Token
+	var err error
 
-	err := l.skipWhitespaceAndComments()
-	if err != nil {
-		return tok, err
+	l.skipWhitespace()
+	if l.err != nil {
+		return tok, l.err
 	}
 	if l.isEOF() {
 		tok.Type = token.EOF
@@ -76,6 +79,8 @@ func (l *Lexer) NextToken() (token.Token, error) {
 		tok = l.tokenizeRuneAs(token.Semicolon)
 	case '=':
 		tok = l.tokenizeRuneAs(token.Equal)
+	case '#', '/':
+		tok, err = l.tokenizeComment()
 	default:
 		if isEdgeOperator(l.cur, l.next) {
 			tok, err = l.tokenizeEdgeOperator()
@@ -134,33 +139,6 @@ func (l *Lexer) readRune() error {
 	return nil
 }
 
-func (l *Lexer) skipWhitespaceAndComments() error {
-	l.skipWhitespace()
-	if l.err != nil {
-		return l.err
-	}
-	if l.isEOF() {
-		return nil
-	}
-
-	// C preprocessor output # and C++ style single line comments
-	if l.cur != '#' && !(l.cur == '/' && l.next == '/') {
-		return nil
-	}
-
-	l.skipLine()
-	if l.err != nil {
-		return l.err
-	}
-
-	l.skipWhitespace()
-	if l.err != nil {
-		return l.err
-	}
-
-	return nil
-}
-
 func (l *Lexer) skipWhitespace() {
 	for isWhitespace(l.cur) {
 		err := l.readRune()
@@ -208,6 +186,37 @@ func (l *Lexer) skipLine() {
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) token.Token {
 	return token.Token{Type: tokenType, Literal: string(l.cur)}
+}
+
+func (l *Lexer) tokenizeComment() (token.Token, error) {
+	var tok token.Token
+	var err error
+	var comment []rune
+	var hasClosingMarker bool
+
+	if l.cur == '/' && l.hasNext() && l.next != '/' && l.next != '*' {
+		return token.Token{}, l.lexError("missing '/' for single-line or a '*' for a multi-line comment")
+	}
+
+	isMultiLine := l.cur == '/' && l.hasNext() && l.next == '*'
+	for ; l.hasNext() && err == nil && (isMultiLine || l.cur != '\n'); err = l.readRune() {
+		comment = append(comment, l.cur)
+		if isMultiLine && l.cur == '*' && l.hasNext() && l.next == '/' {
+			hasClosingMarker = true
+			comment = append(comment, l.next)
+			err = l.readRune()
+			break
+		}
+	}
+
+	if isMultiLine && !hasClosingMarker {
+		err = l.lexError("missing closing marker '*/' for multi-line comment")
+	}
+	if err != nil {
+		return tok, err
+	}
+
+	return token.Token{Type: token.Comment, Literal: string(comment)}, nil
 }
 
 func isEdgeOperator(first, second rune) bool {

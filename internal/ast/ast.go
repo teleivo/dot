@@ -317,3 +317,15 @@ func (s Subgraph) String() string {
 
 func (s Subgraph) stmtNode()    {}
 func (s Subgraph) edgeOperand() {}
+
+// Comment is a dot comment as defined in
+// https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting.
+type Comment struct {
+	Text string
+}
+
+func (c Comment) String() string {
+	return c.Text
+}
+
+func (c Comment) stmtNode() {}

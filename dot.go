@@ -211,6 +211,8 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 		return es, nil
 	} else if p.curTokenIsOneOf(token.Graph, token.Node, token.Edge) {
 		return p.parseAttrStatement()
+	} else if p.curTokenIs(token.Comment) {
+		return p.parseComment()
 	} else if p.curTokenIs(token.Equal) {
 		return nil, errors.New(`expected an "identifier" before the '='`)
 	}
@@ -272,7 +274,6 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 	}
 
 	return *first, nil
-
 }
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
@@ -470,6 +471,11 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 	subraph.Stmts = stmts
 
 	return subraph, nil
+}
+
+func (p *Parser) parseComment() (ast.Comment, error) {
+	fmt.Println("parseComment")
+	return ast.Comment{Text: string(p.curToken.Literal)}, nil
 }
 
 func (p *Parser) isDone() bool {

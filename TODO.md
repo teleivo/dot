@@ -1,13 +1,17 @@
 * write parser
-  * parse comments
-    * support multi-line comments
+https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
+  * fix lint errors
+  * string parsing: test/improve my support
+  > As another aid for readability, dot allows double-quoted strings to span multiple physical lines
+  > using the standard C convention of a backslash immediately preceding a newline character². In
+  > addition, double-quoted strings can be concatenated using a '+' operator. As HTML strings can
+  > contain newline characters, which are used solely for formatting, the language does not allow
+  > escaped newlines or concatenation operators to be used within them.
+
   * handle EOF better and move these special tokens up top like Go does
   * test:
     * parse multiple statements by using a graph I want to parse for my skeleton tests
 * write cmd/dotfmt
-    * test using dot examples from gallery
-    * test using invalid input
-    * connect vim with dotfmt so gq works with it/formats on write 
 * improve error handling based on above tests
 
 I want to be able to at least parse what I need for my current test setup
@@ -338,7 +342,8 @@ recursive definition?
 * Lexical and Semantic Notes https://graphviz.org/doc/info/lang.html
   * should some of these influence the parser/should it err
   * how does strict affect a graph? no cycles? is that something my parser should validate?
-* how to continue generating tokens when finding invalid ones?
+* how to continue generating tokens when finding invalid ones? create an invalid/illegal token? how
+  does treesitter do it? they have a missing node and an illegal one?
 * Add position start, end to tokens as in Gos' token package. Add them to ast/Node as well like Go
 does? Their columns are bytes not runes, should I use bytes as well?
 * Where are commas legal?
@@ -392,7 +397,7 @@ String starting:"A
 ## Nice to have
 
 * lex html string
-* expose the knowledge of quoted, unquoted, numeral, html identifiers? 
+* expose the knowledge of quoted, unquoted, numeral, html identifiers?
 * how complicated is it to use the bufio.Readers buffer instead of creating intermediate slices for
 identifiers? how much would that even matter at the expense of how much code :sweat_smile:
 
@@ -406,3 +411,28 @@ following the -. Is that understandable enough?
 echo 'graph{ 100 200 }' | dot -Tsvg -O
 Warning: syntax ambiguity - badly delimited number '100' in line 1 of <stdin> splits into two tokens
 
+## dotfmt
+
+* first only format from stdin to stdout
+* test using dot examples from gallery
+* test using invalid input
+* connect vim/conform with dotfmt so gq works with it/formats on write
+* uses positional args as files and reads from stdin if non given
+```go
+    args := flag.Args()
+    if len(args) == 0 {
+```
+* this is a hint on how gofumpt can format pieces of go
+// If we are formatting stdin, we accept a program fragment in lieu of a
+// complete source file.
+fragmentOk = true
+
+if tries `parser.ParseFile` and returns if there is no error
+in case of an error it adds `package p;` and tries `parser.ParseFile` again
+if that fails it assumes the src might be statements and wraps it in a package with a function and
+tries to ParseFile again. It creates an adjustSrc func to adjust the src again afterwards. It also
+uses `;` so line numbers stay correct.
+
+I could also try parsing a Graph, if that fails due to an error in the parseHeader I could wrap it
+in a `graph { }` assuming that the src is a []Stmt. This might fail if src contains directed edges
+so I need to detect such errors and try with `digraph {}`.

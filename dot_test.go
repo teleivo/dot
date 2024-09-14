@@ -895,6 +895,91 @@ func TestParser(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("Comment", func(t *testing.T) {
+		tests := map[string]struct {
+			in   string
+			want ast.Graph
+			err  error
+		}{
+			"CPreprocessorStyle": {
+				in: `graph {	 # ok
+				}`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						ast.Comment{
+							Text: "# ok",
+						},
+					},
+				},
+			},
+			"Single": {
+				in: `graph { 
+				// ok
+				}`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						ast.Comment{
+							Text: "// ok",
+						},
+					},
+				},
+			},
+			"MultiLine": {
+				in: `graph { /* ok
+				then */
+				}`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						ast.Comment{
+							Text: `/* ok
+				then */`,
+						},
+					},
+				},
+			},
+		}
+
+		for name, test := range tests {
+			t.Run(name, func(t *testing.T) {
+				p, err := dot.New(strings.NewReader(test.in))
+
+				require.NoErrorf(t, err, "New(%q)", test.in)
+
+				g, err := p.Parse()
+
+				assert.NoErrorf(t, err, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+			})
+		}
+
+		t.Run("Invalid", func(t *testing.T) {
+			t.Skip()
+
+			tests := map[string]struct {
+				in     string
+				errMsg string
+			}{
+				"CPreprocessorStyleEatsClosingBrace": {
+					in:     "graph { # ok }",
+					errMsg: `expected next token to be one of ["}" "identifier"]`,
+				},
+			}
+
+			for name, test := range tests {
+				t.Run(name, func(t *testing.T) {
+					p, err := dot.New(strings.NewReader(test.in))
+
+					require.NoErrorf(t, err, "New(%q)", test.in)
+
+					_, err = p.Parse()
+
+					require.NotNilf(t, err, "Parse(%q)", test.in)
+					assertContains(t, err.Error(), test.errMsg)
+				})
+			}
+		})
+	})
 }
 
 func assertContains(t *testing.T, got, want string) {

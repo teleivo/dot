@@ -760,6 +760,29 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			"QuotedAttributeValueSpanningMultipleLines": {
+				in: `graph { 	label="Rainy days
+				in summer"
+}`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						ast.Attribute{Name: "label", Value: `"Rainy days
+				in summer"`},
+					},
+				},
+			},
+			// https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
+			"QuotedAttributeValueSpanningMultipleLinesWithBackslashFollowedByNewline": {
+				in: `graph { 	label="Rainy days\
+				in summer"
+}`,
+				want: ast.Graph{
+					Stmts: []ast.Stmt{
+						ast.Attribute{Name: "label", Value: `"Rainy days\
+				in summer"`},
+					},
+				},
+			},
 		}
 
 		for name, test := range tests {

@@ -1,15 +1,7 @@
 * write parser
-https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
-  * string parsing: test/improve my support
-  > As another aid for readability, dot allows double-quoted strings to span multiple physical lines
-  > using the standard C convention of a backslash immediately preceding a newline character². In
-  > addition, double-quoted strings can be concatenated using a '+' operator. As HTML strings can
-  > contain newline characters, which are used solely for formatting, the language does not allow
-  > escaped newlines or concatenation operators to be used within them.
-
-  * handle EOF better and move these special tokens up top like Go does
   * test:
     * parse multiple statements by using a graph I want to parse for my skeleton tests
+  * handle EOF better and move these special tokens up top like Go does
 * write cmd/dotfmt
 * improve error handling based on above tests
 
@@ -335,6 +327,12 @@ recursive definition?
 * make error messages more user friendly
   * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
     I could say that
+
+## Language Feature Support
+
+* support concatenating strings?
+https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
+> In addition, double-quoted strings can be concatenated using a '+' operator.
 
 ## Parser
 

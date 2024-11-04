@@ -159,7 +159,7 @@ func isWhitespace(r rune) bool {
 }
 
 func (l *Lexer) hasNext() bool {
-	return !(l.eof && l.cur == 0)
+	return !l.eof || l.cur != 0
 }
 
 func (l *Lexer) isDone() bool {
@@ -168,20 +168,6 @@ func (l *Lexer) isDone() bool {
 
 func (l *Lexer) isEOF() bool {
 	return !l.hasNext()
-}
-
-func (l *Lexer) skipLine() {
-	for l.cur != '\n' {
-		err := l.readRune()
-		if err != nil {
-			return
-		}
-	}
-
-	err := l.readRune()
-	if err != nil {
-		return
-	}
 }
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) token.Token {
@@ -262,10 +248,6 @@ func isStartOfNumeral(r rune) bool {
 
 func isStartOfQuotedString(r rune) bool {
 	return r == '"'
-}
-
-func isStartOfHTMLString(r rune) bool {
-	return r == '<'
 }
 
 func (l *Lexer) tokenizeIdentifier() (token.Token, error) {

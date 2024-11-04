@@ -1,6 +1,5 @@
 * write parser
 https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
-  * fix lint errors
   * string parsing: test/improve my support
   > As another aid for readability, dot allows double-quoted strings to span multiple physical lines
   > using the standard C convention of a backslash immediately preceding a newline character². In

@@ -10,7 +10,6 @@ go get -u github.com/teleivo/dot
 
 ## Limitations
 
-* does not support multi-line comments https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 * does not support https://graphviz.org/doc/info/lang.html#html-strings as I have not needed them
 for my purposes
 * does not support [double-quoted strings can be concatenated using a '+'

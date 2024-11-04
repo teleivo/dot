@@ -1,9 +1,13 @@
 * write parser
   * test:
     * parse multiple statements by using a graph I want to parse for my skeleton tests
-  * handle EOF better and move these special tokens up top like Go does
+    * remove example dot files in repo once they are in the test
+
 * write cmd/dotfmt
-* improve error handling based on above tests
+
+improve
+* handling of EOF better and move these special tokens up top like Go does
+* error handling based on feedback from dotfmt
 
 I want to be able to at least parse what I need for my current test setup
 

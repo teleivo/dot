@@ -337,6 +337,7 @@ recursive definition?
 * support concatenating strings?
 https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 > In addition, double-quoted strings can be concatenated using a '+' operator.
+* lex html string
 
 ## Parser
 
@@ -397,7 +398,6 @@ String starting:"A
 
 ## Nice to have
 
-* lex html string
 * expose the knowledge of quoted, unquoted, numeral, html identifiers?
 * how complicated is it to use the bufio.Readers buffer instead of creating intermediate slices for
 identifiers? how much would that even matter at the expense of how much code :sweat_smile:

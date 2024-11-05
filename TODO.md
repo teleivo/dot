@@ -1,4 +1,17 @@
 * write cmd/dotfmt
+  * hook into conform.nvim
+  * try formatting invalid dot and improve error handling
+  * what style do I want? should this be documented?
+
+* indentation: which one?
+* no ';' unless necessary
+* comments should have one " " after the marker
+* attribute values:
+  * ", " separators instead of just whitespace
+  * whitespace separating '=' left from rhs? or no
+* whitespace after NodeID if followed by a '{', '[' or EdgeOp
+* strip quotes if not necessary?
+* newlines: how to make it ok on other platforms?
 
 improve
 * handling of EOF better and move these special tokens up top like Go does

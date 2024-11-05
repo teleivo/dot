@@ -1,31 +1,8 @@
-* write parser
-  * test:
-    * parse multiple statements by using a graph I want to parse for my skeleton tests
-    * remove example dot files in repo once they are in the test
-
 * write cmd/dotfmt
 
 improve
 * handling of EOF better and move these special tokens up top like Go does
 * error handling based on feedback from dotfmt
-
-I want to be able to at least parse what I need for my current test setup
-
-```
-strict digraph {
-	3 -> 2 [label="L"]
-	5 -> 3 [label="L"]
-	3 -> 4 [label="R"]
-	10 -> 5 [label="L", color = red]
-	7 -> 6 [label="L"]
-	5 -> 7 [label="R"]
-	9 -> 8 [label="L", color = red]
-	7 -> 9 [label="R"]
-	20 -> 15 [label="L"]
-	10 -> 20 [label="R"]
-	20 -> 23 [label="R"]
-}
-```
 
 * count opening braces and brackets and decrement them on closing to validate they match?
 or is that to simplistic as there are rules as to when you are allowed/have to close them?

@@ -50,7 +50,7 @@ func TestParser(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
+				p, err := dot.NewParser(strings.NewReader(test.in))
 
 				require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -82,7 +82,7 @@ func TestParser(t *testing.T) {
 
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
+					p, err := dot.NewParser(strings.NewReader(test.in))
 
 					require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -374,7 +374,7 @@ func TestParser(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
+				p, err := dot.NewParser(strings.NewReader(test.in))
 
 				require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -410,7 +410,7 @@ func TestParser(t *testing.T) {
 
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
+					p, err := dot.NewParser(strings.NewReader(test.in))
 
 					require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -591,7 +591,7 @@ func TestParser(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
+				p, err := dot.NewParser(strings.NewReader(test.in))
 
 				require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -623,7 +623,7 @@ func TestParser(t *testing.T) {
 
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
+					p, err := dot.NewParser(strings.NewReader(test.in))
 
 					require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -715,7 +715,7 @@ func TestParser(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
+				p, err := dot.NewParser(strings.NewReader(test.in))
 
 				require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -747,7 +747,7 @@ func TestParser(t *testing.T) {
 
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
+					p, err := dot.NewParser(strings.NewReader(test.in))
 
 					require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -801,7 +801,7 @@ func TestParser(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
+				p, err := dot.NewParser(strings.NewReader(test.in))
 
 				require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -829,7 +829,7 @@ func TestParser(t *testing.T) {
 
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
+					p, err := dot.NewParser(strings.NewReader(test.in))
 
 					require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -894,7 +894,7 @@ func TestParser(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
+				p, err := dot.NewParser(strings.NewReader(test.in))
 
 				require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -920,7 +920,7 @@ func TestParser(t *testing.T) {
 
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
+					p, err := dot.NewParser(strings.NewReader(test.in))
 
 					require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -979,7 +979,7 @@ func TestParser(t *testing.T) {
 
 		for name, test := range tests {
 			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
+				p, err := dot.NewParser(strings.NewReader(test.in))
 
 				require.NoErrorf(t, err, "New(%q)", test.in)
 
@@ -1005,7 +1005,7 @@ func TestParser(t *testing.T) {
 
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
+					p, err := dot.NewParser(strings.NewReader(test.in))
 
 					require.NoErrorf(t, err, "New(%q)", test.in)
 

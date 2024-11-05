@@ -18,7 +18,7 @@ type Parser struct {
 	peekToken token.Token
 }
 
-func New(r io.Reader) (*Parser, error) {
+func NewParser(r io.Reader) (*Parser, error) {
 	lexer, err := dot.NewLexer(r)
 	if err != nil {
 		return nil, err

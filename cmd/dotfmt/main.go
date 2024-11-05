@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/teleivo/dot"
 )
 
 func main() {
@@ -12,6 +14,18 @@ func main() {
 	}
 }
 
-func run(in io.Reader, out io.Writer) error {
+func run(r io.Reader, w io.Writer) error {
+	p, err := dot.NewParser(r)
+	if err != nil {
+		return err
+	}
+
+	g, err := p.Parse()
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprint(w, g)
+
 	return nil
 }

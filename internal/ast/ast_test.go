@@ -79,8 +79,9 @@ func TestStringer(t *testing.T) {
 			in: Graph{
 				Strict:   true,
 				Directed: true,
+				ID:       `"wonder"`,
 			},
-			want: "strict digraph {}",
+			want: `strict digraph "wonder" {}`,
 		},
 		{
 			in: Graph{

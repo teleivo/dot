@@ -19,11 +19,15 @@ func (g Graph) String() string {
 		out.WriteString("strict ")
 	}
 	if g.Directed {
-		out.WriteString("digraph ")
+		out.WriteString("digraph")
 	} else {
-		out.WriteString("graph ")
+		out.WriteString("graph")
 	}
-	out.WriteRune('{')
+	if g.ID != "" {
+		out.WriteRune(' ')
+		out.WriteString(g.ID)
+	}
+	out.WriteString(" {")
 	if len(g.Stmts) > 0 {
 		out.WriteRune('\n')
 	}

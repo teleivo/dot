@@ -1,7 +1,6 @@
 package dot_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 

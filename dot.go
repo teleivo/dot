@@ -223,13 +223,10 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
 	fmt.Println("parseEdgeOperand")
 	if p.curTokenIs(token.Identifier) {
-		return ast.NodeID{ID: p.curToken.Literal}, nil
+		return p.parseNodeID()
 	}
 	subgraph, err := p.parseSubgraph(graph)
-	if err != nil {
-		return subgraph, err
-	}
-	return subgraph, nil
+	return subgraph, err
 }
 
 func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {

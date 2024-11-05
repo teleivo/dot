@@ -1,6 +1,7 @@
 package dot_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -569,6 +570,20 @@ func TestParser(t *testing.T) {
 									},
 								},
 							},
+						},
+					},
+				},
+			},
+			"EdgeWithPorts": {
+				in: `digraph {
+			"node4":f0:n -> node5:f1;
+}`,
+				want: ast.Graph{
+					Directed: true,
+					Stmts: []ast.Stmt{
+						&ast.EdgeStmt{
+							Left:  ast.NodeID{ID: `"node4"`, Port: &ast.Port{Name: "f0", CompassPoint: ast.North}},
+							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: "node5", Port: &ast.Port{Name: "f1"}}},
 						},
 					},
 				},

@@ -44,7 +44,6 @@ func (p *Parser) nextToken() error {
 		return err
 	}
 	p.peekToken = tok
-	fmt.Printf("%#v\n", p)
 
 	return nil
 }
@@ -60,7 +59,6 @@ func (p *Parser) Parse() (ast.Graph, error) {
 	if err != nil {
 		return graph, err
 	}
-	fmt.Println("after parseHeader")
 
 	err = p.expectPeekTokenIsOneOf(token.LeftBrace)
 	if err != nil {
@@ -82,7 +80,6 @@ func (p *Parser) Parse() (ast.Graph, error) {
 }
 
 func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
-	fmt.Println("parseStatementList")
 	var stmts []ast.Stmt
 	var err error
 	for ; !p.curTokenIsOneOf(token.EOF, token.RightBrace) && err == nil; err = p.nextToken() {
@@ -97,12 +94,10 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 		}
 	}
 
-	fmt.Println("parseStatementList return")
 	return stmts, nil
 }
 
 func (p *Parser) parseHeader() (ast.Graph, error) {
-	fmt.Println("parseHeader")
 	var graph ast.Graph
 
 	err := p.expectPeekTokenIsOneOf(token.Strict, token.Graph, token.Digraph)
@@ -137,7 +132,6 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 }
 
 func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
-	fmt.Println("parseStatement")
 	if p.curTokenIs(token.Identifier) && p.peekTokenIs(token.Equal) {
 		return p.parseAttribute()
 	} else if p.curTokenIsOneOf(token.Identifier, token.Subgraph, token.LeftBrace) {
@@ -221,7 +215,6 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 }
 
 func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
-	fmt.Println("parseEdgeOperand")
 	if p.curTokenIs(token.Identifier) {
 		return p.parseNodeID()
 	}
@@ -230,7 +223,6 @@ func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
 }
 
 func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
-	fmt.Println("parseEdgeRHS")
 	var first, cur *ast.EdgeRHS
 	for p.curTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
 		var directed bool
@@ -274,7 +266,6 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 }
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
-	fmt.Println("parseNodeID")
 	nid := ast.NodeID{ID: p.curToken.Literal}
 
 	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Colon)
@@ -292,7 +283,6 @@ func (p *Parser) parseNodeID() (ast.NodeID, error) {
 }
 
 func (p *Parser) parsePort() (*ast.Port, error) {
-	fmt.Println("parsePort")
 	err := p.expectPeekTokenIsOneOf(token.Identifier)
 	if err != nil {
 		return nil, err
@@ -328,7 +318,6 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 }
 
 func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
-	fmt.Println("parseAttrStatement")
 	ns := &ast.AttrStmt{ID: p.curToken.Literal}
 
 	err := p.expectPeekTokenIsOneOf(token.LeftBracket)
@@ -347,7 +336,6 @@ func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
 }
 
 func (p *Parser) parseAttrList() (*ast.AttrList, error) {
-	fmt.Println("parseAttrList")
 	var first, cur *ast.AttrList
 	for p.curTokenIs(token.LeftBracket) {
 		err := p.expectPeekTokenIsOneOf(token.RightBracket, token.Identifier)
@@ -385,7 +373,6 @@ func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 }
 
 func (p *Parser) parseAList() (*ast.AList, error) {
-	fmt.Println("parseAList")
 	var first, cur *ast.AList
 	for p.curTokenIs(token.Identifier) {
 		attr, err := p.parseAttribute()
@@ -418,7 +405,6 @@ func (p *Parser) parseAList() (*ast.AList, error) {
 }
 
 func (p *Parser) parseAttribute() (ast.Attribute, error) {
-	fmt.Println("parseAttribute")
 	attr := ast.Attribute{
 		Name: p.curToken.Literal,
 	}
@@ -438,7 +424,6 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 }
 
 func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
-	fmt.Println("parseSubgraph")
 	var subraph ast.Subgraph
 	if p.curTokenIs(token.Subgraph) {
 		// subgraph ID is optional
@@ -471,7 +456,6 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 }
 
 func (p *Parser) parseComment() (ast.Comment, error) {
-	fmt.Println("parseComment")
 	return ast.Comment{Text: string(p.curToken.Literal)}, nil
 }
 

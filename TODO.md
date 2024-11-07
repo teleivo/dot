@@ -24,6 +24,9 @@
     * capture profiles formatting the profile dot file
     * all of this to find any lingering bugs I have
 * try formatting invalid dot and improve error handling
+  * `2->4` leads to error
+  "2:15: a numeral can only be prefixed with a `-`"
+  allow that :) and turn it into `2 -> 4`
 
 improve
 * handling of EOF better and move these special tokens up top like Go does

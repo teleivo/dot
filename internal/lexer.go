@@ -327,7 +327,7 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 	var id []rune
 	var hasDigit bool
 
-	for pos, hasDot := 0, false; l.hasNext() && err == nil && !isNumeralSeparator(l.cur); err, pos = l.readRune(), pos+1 {
+	for pos, hasDot := 0, false; l.hasNext() && err == nil && !l.isNumeralSeparator(); err, pos = l.readRune(), pos+1 {
 		if l.cur == '-' && pos != 0 {
 			return tok, l.lexError("a numeral can only be prefixed with a `-`")
 		}
@@ -359,8 +359,8 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
 }
 
-func isNumeralSeparator(r rune) bool {
-	return isTerminal(r) || isWhitespace(r)
+func (l *Lexer) isNumeralSeparator() bool {
+	return isTerminal(l.cur) || isWhitespace(l.cur) || isEdgeOperator(l.cur, l.next)
 }
 
 func (l *Lexer) tokenizeQuotedString() (token.Token, error) {

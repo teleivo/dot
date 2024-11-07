@@ -131,6 +131,26 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF},
 			},
 		},
+		"EdgesWithNumeralOperands": {
+			in: `  1->2 3 ->4  5--6 7-- 8 9 --10`,
+			want: []token.Token{
+				{Type: token.Identifier, Literal: "1"},
+				{Type: token.DirectedEgde, Literal: "->"},
+				{Type: token.Identifier, Literal: "2"},
+				{Type: token.Identifier, Literal: "3"},
+				{Type: token.DirectedEgde, Literal: "->"},
+				{Type: token.Identifier, Literal: "4"},
+				{Type: token.Identifier, Literal: "5"},
+				{Type: token.UndirectedEgde, Literal: "--"},
+				{Type: token.Identifier, Literal: "6"},
+				{Type: token.Identifier, Literal: "7"},
+				{Type: token.UndirectedEgde, Literal: "--"},
+				{Type: token.Identifier, Literal: "8"},
+				{Type: token.Identifier, Literal: "9"},
+				{Type: token.UndirectedEgde, Literal: "--"},
+				{Type: token.Identifier, Literal: "10"},
+			},
+		},
 	}
 
 	for name, test := range tests {

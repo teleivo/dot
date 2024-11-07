@@ -30,12 +30,12 @@ func TestPrint(t *testing.T) {
 		},
 		{
 			in: `strict digraph {
-			3 	->     2
+			3 	->     2->4
 }
 
 			`, // TODO add some semicolons in here?
 			want: `strict digraph {
-	3 -> 2
+	3 -> 2 -> 4
 }`,
 		},
 	}

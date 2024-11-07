@@ -104,6 +104,7 @@ func printEdgeStmt(w io.Writer, edgeStmt *ast.EdgeStmt) error {
 		} else {
 			fmt.Fprint(w, token.UndirectedEgde)
 		}
+		fmt.Fprint(w, " ")
 		err = printEdgeOperand(w, cur.Right)
 		if err != nil {
 			return err

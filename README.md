@@ -1,11 +1,22 @@
 # DOT
 
-Parser for the [DOT language](https://graphviz.org/doc/info/lang.html) written in Go.
+Parser and formatter for the [DOT language](https://graphviz.org/doc/info/lang.html) written in Go.
 
 ## Install
 
 ```sh
 go get -u github.com/teleivo/dot
+```
+
+## Formatter
+
+Format your DOT files with `dotfmt`. `dotfmt` is inspired by [gofmt](https://pkg.go.dev/cmd/gofmt).
+As such it is opinionated and has no options to change its format.
+
+TODO complete example
+```sh
+go run ./cmd/dotfmt/main.go <<EOF
+EOF
 ```
 
 ## Limitations

@@ -1,6 +1,4 @@
 * write cmd/dotfmt
-  * hook into conform.nvim
-  * try formatting invalid dot and improve error handling
   * what style do I want? should this be documented?
 
 * indentation: which one?
@@ -11,11 +9,24 @@
   * whitespace separating '=' left from rhs? or no
 * whitespace after NodeID if followed by a '{', '[' or EdgeOp
 * strip quotes if not necessary?
+* linewidth?
+  * break up all types of comments that are too long
+  * break up "" that are too long with "\\n"?
 * newlines: how to make it ok on other platforms?
+
+* how to handle error on fmt.Fprint?
+* how to handle errors?
+
+* add section in readme or add own readme in ./cmd/dotfmt/?
+
+* add profiling flags
+    * capture profile formatting example dot files
+    * capture profiles formatting the profile dot file
+    * all of this to find any lingering bugs I have
+* try formatting invalid dot and improve error handling
 
 improve
 * handling of EOF better and move these special tokens up top like Go does
-* error handling based on feedback from dotfmt
 
 * count opening braces and brackets and decrement them on closing to validate they match?
 or is that to simplistic as there are rules as to when you are allowed/have to close them?

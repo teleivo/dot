@@ -15,17 +15,5 @@ func main() {
 }
 
 func run(r io.Reader, w io.Writer) error {
-	p, err := dot.NewParser(r)
-	if err != nil {
-		return err
-	}
-
-	g, err := p.Parse()
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprint(w, g)
-
-	return nil
+	return dot.Print(r, w)
 }

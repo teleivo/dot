@@ -11,24 +11,26 @@ import (
 )
 
 func TestPrint(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		in   string
 		want string
 	}{
-		{
-			in:   `graph {}`,
-			want: `graph {}`,
-		},
-		{
+		"EmptyGraph": {
 			in:   `strict graph {}`,
 			want: `strict graph {}`,
 		},
-		{
+		"GraphWithID": {
 			in: `strict graph 
-					"galaxy" {}`,
-			want: `strict graph "galaxy" {}`,
+					"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {}`,
+			want: `strict graph "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {}`,
 		},
-		{
+		"GraphIDAboveMaxLen": {
+			in: `strict graph 
+					"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" {}`,
+			want: `strict graph "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+b" {}`,
+		},
+		"DigraphWithMulipleEdges": {
 			in: `strict digraph {
 			3 	->     2->4
 }

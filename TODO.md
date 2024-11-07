@@ -1,18 +1,20 @@
 * write cmd/dotfmt
-  * what style do I want? should this be documented?
-
-* indentation: which one?
-* no ';' unless necessary
-* comments should have one " " after the marker
-* attribute values:
-  * ", " separators instead of just whitespace
-  * whitespace separating '=' left from rhs? or no
-* whitespace after NodeID if followed by a '{', '[' or EdgeOp
-* strip quotes if not necessary?
-* linewidth?
-  * break up all types of comments that are too long
-  * break up "" that are too long with "\\n"?
-* newlines: how to make it ok on other platforms?
+    * quoted string
+        * fix breaking up > 100 runes
+        keeping current indentation
+        * strip quotes if not necessary
+    * semicolon
+        * ? when are they necessary
+        * remove them if they are not
+    * comments
+        * should have one " " after the marker
+        * break up > 100 runes keeping the type of comment. so // will get another // on the next
+        line
+    * attribute values:
+        * ", " separators instead of just whitespace
+        * whitespace separating '=' left from rhs? or no
+    * whitespace after NodeID if followed by a '{', '[' or EdgeOp
+    * newlines: how to make it ok on other platforms?
 
 * how to handle error on fmt.Fprint?
 * how to handle errors?

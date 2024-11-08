@@ -15,5 +15,6 @@ func main() {
 }
 
 func run(r io.Reader, w io.Writer) error {
-	return dot.Print(r, w)
+	p := dot.NewPrinter(r, w)
+	return p.Print()
 }

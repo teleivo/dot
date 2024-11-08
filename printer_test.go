@@ -32,13 +32,29 @@ func TestPrint(t *testing.T) {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
 }`,
 		},
-		// TODO add escaped quote in here
+		"NodeWithUnquotedIDOfMaxWidth": {
+			in: `graph {
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+}`,
+			want: `graph {
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+}`,
+		},
 		"NodeWithQuotedIDPastMaxWidth": {
 			in: `graph {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
 }`,
 			want: `graph {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+ab"
+}`,
+		},
+		"NodeWithUnquotedIDPastMaxWidth": {
+			in: `graph {
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+}`,
+			want: `graph {
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
 ab"
 }`,
 		},
@@ -58,7 +74,8 @@ ab"
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			var got bytes.Buffer
-			err := dot.Print(strings.NewReader(test.in), &got)
+			p := dot.NewPrinter(strings.NewReader(test.in), &got)
+			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
 			assert.EqualValuesf(t, got.String(), test.want, "Print(%q)", test.in)

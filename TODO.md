@@ -1,6 +1,8 @@
 * write cmd/dotfmt
     * quoted string
         * strip quotes if not necessary
+        * I cannot keep the indentation when splitting right? as otherwise it would lead to extra
+        characters in the ID. I could if the parser would support +. How could I add that?
     * semicolon
         * ? when are they necessary
         * remove them if they are not
@@ -8,6 +10,8 @@
         * should have one " " after the marker
         * break up > 100 runes keeping the type of comment. so // will get another // on the next
         line
+    * strip trailing newlines
+    * what decisions would make a good diff?
     * attribute values:
         * ", " separators instead of just whitespace
         * whitespace separating '=' left from rhs? or no

@@ -58,17 +58,17 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 	} else {
 		fmt.Fprint(p.w, token.Graph)
 	}
-	fmt.Fprint(p.w, " ")
+	p.printSpace()
 	if graph.ID != "" {
 		err := p.printID(graph.ID)
 		if err != nil {
 			return err
 		}
-		fmt.Fprint(p.w, " ")
+		p.printSpace()
 	}
 	fmt.Fprint(p.w, token.LeftBrace)
 	for _, stmt := range graph.Stmts {
-		fmt.Fprintln(p.w)
+		p.printNewline()
 		p.printIndent(1)
 		err := p.printStatement(stmt)
 		if err != nil {
@@ -76,14 +76,25 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		}
 	}
 	if len(graph.Stmts) > 0 { // no statements print as {}
-		fmt.Fprintln(p.w)
+		p.printNewline()
 	}
 	fmt.Fprint(p.w, token.RightBrace)
 	return nil
 }
 
+func (p *Printer) printNewline() {
+	fmt.Fprintln(p.w)
+	p.col = 0
+}
+
+func (p *Printer) printSpace() {
+	fmt.Fprint(p.w, " ")
+	p.col++
+}
+
 func (p *Printer) printID(id ast.ID) error {
-	if utf8.RuneCountInString(string(id)) <= maxWidth {
+	if utf8.RuneCountInString(string(id)) <= p.col+maxWidth {
+		// TODO should I wrap fmt.Fprint so I can keep track of p.col?
 		fmt.Fprint(p.w, id)
 		return nil
 	}
@@ -120,26 +131,26 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 		return err
 	}
 
-	fmt.Fprint(p.w, " ")
+	p.printSpace()
 	if edgeStmt.Right.Directed {
 		fmt.Fprint(p.w, token.DirectedEgde)
 	} else {
 		fmt.Fprint(p.w, token.UndirectedEgde)
 	}
-	fmt.Fprint(p.w, " ")
+	p.printSpace()
 	err = p.printEdgeOperand(edgeStmt.Right.Right)
 	if err != nil {
 		return err
 	}
 
 	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
-		fmt.Fprint(p.w, " ")
+		p.printSpace()
 		if edgeStmt.Right.Directed {
 			fmt.Fprint(p.w, token.DirectedEgde)
 		} else {
 			fmt.Fprint(p.w, token.UndirectedEgde)
 		}
-		fmt.Fprint(p.w, " ")
+		p.printSpace()
 		err = p.printEdgeOperand(cur.Right)
 		if err != nil {
 			return err

@@ -1,7 +1,5 @@
 * write cmd/dotfmt
     * quoted string
-        * fix breaking up > 100 runes
-        keeping current indentation
         * strip quotes if not necessary
     * semicolon
         * ? when are they necessary
@@ -20,6 +18,24 @@
 * how to handle errors?
 
 * add section in readme or add own readme in ./cmd/dotfmt/?
+  * indentation: tabs
+  * alignment: spaces
+    * every comment starts with one space only, extra whitespace is removed
+  * max number of utf8 characters per line 100
+    * only if the indentation is < than ???
+    * IDs are broken up into multiple lines and quoted if they were not already quoted
+    * comments are broken up into multiple lines using the same marker that was used
+
+    ```dot
+        # comment that is too long
+    ```
+
+    turns into
+
+    ```dot
+        # comment that
+        # is too long
+    ```
 
 * add profiling flags
     * capture profile formatting example dot files

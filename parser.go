@@ -125,7 +125,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	}
 
 	if hasID {
-		graph.ID = p.curToken.Literal
+		graph.ID = ast.ID(p.curToken.Literal)
 	}
 
 	return graph, nil
@@ -155,11 +155,11 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 				if err != nil {
 					return stmt, err
 				}
-				return &ast.NodeStmt{ID: nid, AttrList: attrs}, nil
+				return &ast.NodeStmt{NodeID: nid, AttrList: attrs}, nil
 			}
 
 			left = nid
-			stmt = &ast.NodeStmt{ID: nid}
+			stmt = &ast.NodeStmt{NodeID: nid}
 		} else if p.curTokenIs(token.Subgraph) || p.curTokenIs(token.LeftBrace) {
 			subraph, err := p.parseSubgraph(graph)
 			if err != nil {
@@ -266,7 +266,7 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 }
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
-	nid := ast.NodeID{ID: p.curToken.Literal}
+	nid := ast.NodeID{ID: ast.ID(p.curToken.Literal)}
 
 	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Colon)
 	if err != nil || !hasID {
@@ -318,7 +318,7 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 }
 
 func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
-	ns := &ast.AttrStmt{ID: p.curToken.Literal}
+	ns := &ast.AttrStmt{ID: ast.ID(p.curToken.Literal)}
 
 	err := p.expectPeekTokenIsOneOf(token.LeftBracket)
 	if err != nil {
@@ -433,7 +433,7 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 		}
 
 		if hasID {
-			subraph.ID = p.curToken.Literal
+			subraph.ID = ast.ID(p.curToken.Literal)
 		}
 
 		err = p.expectPeekTokenIsOneOf(token.LeftBrace)

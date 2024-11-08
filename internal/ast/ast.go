@@ -8,8 +8,8 @@ import (
 // Graph is a directed or undirected dot graph.
 type Graph struct {
 	Strict   bool
-	Directed bool   // Directed indicates that the graph is a directed graph.
-	ID       string // ID is the optional identifier of a graph.
+	Directed bool // Directed indicates that the graph is a directed graph.
+	ID       ID   // ID is the optional identifier of a graph.
 	Stmts    []Stmt
 }
 
@@ -25,7 +25,7 @@ func (g Graph) String() string {
 	}
 	if g.ID != "" {
 		out.WriteRune(' ')
-		out.WriteString(g.ID)
+		out.WriteString(g.ID.String())
 	}
 	out.WriteString(" {")
 	if len(g.Stmts) > 0 {
@@ -53,16 +53,24 @@ type Stmt interface {
 	stmtNode()
 }
 
+// ID is a dot identifier as defined by https://graphviz.org/doc/info/lang.html#ids. HTML strings
+// are not supported.
+type ID string
+
+func (id ID) String() string {
+	return string(id)
+}
+
 // NodeStmt is a dot node statement defining a node with optional attributes.
 type NodeStmt struct {
-	ID       NodeID    // ID is the identifier of the node targeted by the node statement.
+	NodeID   NodeID    // NodeID is the identifier of the node targeted by the node statement.
 	AttrList *AttrList // AttrList is an optional list of attributes for the node targeted by the node statement.
 }
 
 func (ns *NodeStmt) String() string {
 	var out strings.Builder
 
-	out.WriteString(ns.ID.String())
+	out.WriteString(ns.NodeID.String())
 	if ns.AttrList != nil {
 		out.WriteRune(' ')
 		out.WriteString(ns.AttrList.String())
@@ -75,14 +83,14 @@ func (ns *NodeStmt) stmtNode() {}
 
 // NodeID identifies a dot node with an optional port.
 type NodeID struct {
-	ID   string // ID is the identifier of the node.
-	Port *Port  // Port is an optioal port an edge can attach to.
+	ID   ID    // ID is the identifier of the node.
+	Port *Port // Port is an optioal port an edge can attach to.
 }
 
 func (ni NodeID) String() string {
 	var out strings.Builder
 
-	out.WriteString(ni.ID)
+	out.WriteString(ni.ID.String())
 	if ni.Port != nil {
 		out.WriteRune(':')
 		out.WriteString(ni.Port.String())
@@ -215,14 +223,14 @@ type EdgeOperand interface {
 // AttrStmt is an attribute list defining default attributes for graphs, nodes or edges defined
 // after this statement.
 type AttrStmt struct {
-	ID       string    // ID is either graph, node or edge.
+	ID       ID        // ID is either graph, node or edge.
 	AttrList *AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
 }
 
 func (ns *AttrStmt) String() string {
 	var out strings.Builder
 
-	out.WriteString(ns.ID)
+	out.WriteString(ns.ID.String())
 	if ns.AttrList != nil {
 		out.WriteRune(' ')
 		out.WriteString(ns.AttrList.String())
@@ -295,7 +303,7 @@ func (a Attribute) stmtNode() {}
 
 // Subgraph is a dot subgraph.
 type Subgraph struct {
-	ID    string // ID is the optional identifier.
+	ID    ID // ID is the optional identifier.
 	Stmts []Stmt
 }
 
@@ -304,7 +312,7 @@ func (s Subgraph) String() string {
 
 	out.WriteString("subgraph ")
 	if s.ID != "" {
-		out.WriteString(s.ID)
+		out.WriteString(s.ID.String())
 		out.WriteRune(' ')
 	}
 	out.WriteRune('{')

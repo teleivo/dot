@@ -3,10 +3,15 @@ package dot
 import (
 	"fmt"
 	"io"
+	"unicode/utf8"
 
 	"github.com/teleivo/dot/internal/ast"
 	"github.com/teleivo/dot/internal/token"
 )
+
+// maxWidth is the max number of runes after which lines are broken up into multiple lines. Not
+// every dot construct can be broken up though.
+const maxWidth = 100
 
 func Print(r io.Reader, w io.Writer) error {
 	p, err := NewParser(r)
@@ -63,10 +68,25 @@ func printGraph(w io.Writer, graph ast.Graph) error {
 	return nil
 }
 
-// TODO maybe ID should be its own thing in the ast so I can handle large IDs instead of only
-// dealing with strings
-func printID(w io.Writer, id string) error {
-	fmt.Fprint(w, id)
+func printID(w io.Writer, id ast.ID) error {
+	fmt.Println("debug", utf8.RuneCountInString(string(id)))
+	if utf8.RuneCountInString(string(id)) <= maxWidth {
+		fmt.Fprint(w, id)
+		return nil
+	}
+
+	var runeCount int
+	for i, r := range id {
+		if runeCount < maxWidth-2 {
+			fmt.Fprintf(w, "%s", string(r))
+		} else {
+			fmt.Fprint(w, "\\n")
+			fmt.Fprintf(w, "%s", id[i:])
+			return nil
+		}
+		runeCount++
+	}
+
 	return nil
 }
 
@@ -75,6 +95,8 @@ func printStatement(w io.Writer, stmt ast.Stmt) error {
 	switch st := stmt.(type) {
 	case *ast.EdgeStmt:
 		err = printEdgeStmt(w, st)
+	case *ast.NodeStmt:
+		err = printNodeStmt(w, st)
 	}
 	return err
 }
@@ -133,4 +155,8 @@ func printNodeID(w io.Writer, nodeID ast.NodeID) error {
 
 func printIndent(w io.Writer, level int) {
 	fmt.Fprint(w, "\t")
+}
+
+func printNodeStmt(w io.Writer, nodeStmt *ast.NodeStmt) error {
+	return printNodeID(w, nodeStmt.NodeID)
 }

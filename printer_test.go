@@ -21,32 +21,47 @@ func TestPrint(t *testing.T) {
 		},
 		"GraphWithID": {
 			in: `strict graph 
-					"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {}`,
-			want: `strict graph "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {}`,
+					galaxy     {}`,
+			want: `strict graph galaxy {}`,
 		},
-		"GraphIDAboveMaxLen": {
-			in: `strict graph 
-					"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" {}`,
-			want: `strict graph "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-b" {}`,
+		"NodeWithQuotedIDOfMaxWidth": {
+			in: `graph {
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+}`,
+			want: `graph {
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+}`,
 		},
+		// TODO add escaped quote in here
+		"NodeWithQuotedIDPastMaxWidth": {
+			in: `graph {
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+}`,
+			want: `graph {
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+ab"
+}`,
+		},
+		// TODO strip quotes unless needed = quoted keyword or > 100
 		"DigraphWithMulipleEdges": {
-			in: `strict digraph {
+			in: `digraph {
 			3 	->     2->4
 }
 
 			`, // TODO add some semicolons in here?
-			want: `strict digraph {
+			want: `digraph {
 	3 -> 2 -> 4
 }`,
 		},
 	}
 
-	for _, test := range tests {
-		var got bytes.Buffer
-		err := dot.Print(strings.NewReader(test.in), &got)
-		require.NoErrorf(t, err, "Print(%q)", test.in)
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			var got bytes.Buffer
+			err := dot.Print(strings.NewReader(test.in), &got)
+			require.NoErrorf(t, err, "Print(%q)", test.in)
 
-		assert.EqualValuesf(t, got.String(), test.want, "Print()")
+			assert.EqualValuesf(t, got.String(), test.want, "Print(%q)", test.in)
+		})
 	}
 }

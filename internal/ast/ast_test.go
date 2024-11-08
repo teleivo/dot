@@ -13,7 +13,7 @@ func TestStringer(t *testing.T) {
 	}{
 		{
 			in: &NodeStmt{
-				ID: NodeID{ID: "foo"},
+				NodeID: NodeID{ID: "foo"},
 				AttrList: &AttrList{
 					AList: &AList{
 						Attribute: Attribute{Name: "a", Value: "b"},
@@ -32,13 +32,13 @@ func TestStringer(t *testing.T) {
 		},
 		{
 			in: &NodeStmt{
-				ID: NodeID{ID: "foo", Port: &Port{Name: `"f0"`}},
+				NodeID: NodeID{ID: "foo", Port: &Port{Name: `"f0"`}},
 			},
 			want: `foo:"f0":_`,
 		},
 		{
 			in: &NodeStmt{
-				ID: NodeID{ID: "foo", Port: &Port{Name: `"f0"`, CompassPoint: NorthWest}},
+				NodeID: NodeID{ID: "foo", Port: &Port{Name: `"f0"`, CompassPoint: NorthWest}},
 			},
 			want: `foo:"f0":nw`,
 		},
@@ -50,7 +50,7 @@ func TestStringer(t *testing.T) {
 					Right: Subgraph{
 						ID: "internal",
 						Stmts: []Stmt{
-							&NodeStmt{ID: NodeID{ID: "2"}},
+							&NodeStmt{NodeID: NodeID{ID: "2"}},
 						},
 					},
 					Next: &EdgeRHS{
@@ -60,8 +60,8 @@ func TestStringer(t *testing.T) {
 							Directed: true,
 							Right: Subgraph{
 								Stmts: []Stmt{
-									&NodeStmt{ID: NodeID{ID: "4"}},
-									&NodeStmt{ID: NodeID{ID: "5"}},
+									&NodeStmt{NodeID: NodeID{ID: "4"}},
+									&NodeStmt{NodeID: NodeID{ID: "5"}},
 								},
 							},
 						},

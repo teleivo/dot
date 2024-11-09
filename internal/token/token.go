@@ -120,23 +120,15 @@ var keywords = map[string]TokenType{
 // keyword or a dot id. Dot keywords are case-insensitive. This function expects that the input is a
 // valid dot id as specified in https://graphviz.org/doc/info/lang.html#ids.
 func LookupKeyword(identifier string) TokenType {
-	tokenType, ok := IsKeyword(identifier)
+	if len(identifier) > maxKeywordLen {
+		return Identifier
+	}
+
+	identifier = strings.ToLower(identifier)
+	tokenType, ok := keywords[identifier]
 	if ok {
 		return tokenType
 	}
 
 	return Identifier
-}
-
-// IsKeyword returns the type of keyword and true if the identifier is a dot keyword. The type is
-// not to be used when false is returned. Dot keywords are case-insensitive. This function expects
-// that the input is unquoted.
-func IsKeyword(identifier string) (TokenType, bool) {
-	if len(identifier) > maxKeywordLen {
-		return 0, false
-	}
-
-	identifier = strings.ToLower(identifier)
-	t, ok := keywords[identifier]
-	return t, ok
 }

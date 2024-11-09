@@ -19,17 +19,30 @@ func TestPrint(t *testing.T) {
 			in:   `strict graph {}`,
 			want: `strict graph {}`,
 		},
-		"GraphWithID": {
+		// TODO add test for quoted keywords which have to stay quoted
+		// TODO are there any special characters that require me to keep things quoted, yes escaped
+		// quotes
+		// TODO add/adjust test with a rune > 1 byte
+		"GraphWithQuotedID": {
 			in: `strict graph 
-					galaxy     {}`,
+					"galaxy"     {}`,
 			want: `strict graph galaxy {}`,
 		},
-		"NodeWithQuotedIDOfMaxWidth": {
+		"NodeWithQuotedIDOfMaxWidthThatCanBeUnquoted": { // as the resulting ID is below maxColumn
 			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
 }`,
 			want: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+}`,
+		},
+		"NodeWithQuotedIDPastMaxWidthThatCannotBeUnquoted": { // as the resulting ID would be above maxColumn
+			in: `graph {
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+}`,
+			want: `graph {
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+aaab"
 }`,
 		},
 		"NodeWithUnquotedIDOfMaxWidth": {
@@ -38,15 +51,6 @@ func TestPrint(t *testing.T) {
 }`,
 			want: `graph {
 	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
-}`,
-		},
-		"NodeWithQuotedIDPastMaxWidth": {
-			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
-}`,
-			want: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-ab"
 }`,
 		},
 		"NodeWithUnquotedIDPastMaxWidth": {
@@ -58,7 +62,6 @@ ab"
 aab"
 }`,
 		},
-		// TODO strip quotes unless needed = quoted keyword or > 100
 		"DigraphWithMulipleEdges": {
 			in: `digraph {
 			3 	->     2->4

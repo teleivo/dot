@@ -19,10 +19,14 @@ func TestPrint(t *testing.T) {
 			in:   `strict graph {}`,
 			want: `strict graph {}`,
 		},
-		// TODO add test for quoted keywords which have to stay quoted
 		// TODO are there any special characters that require me to keep things quoted, yes escaped
 		// quotes
 		// TODO add/adjust test with a rune > 1 byte
+		"GraphWithQuotedIDThatIsAKeyword": {
+			in: `strict graph 
+					"graph"     {}`,
+			want: `strict graph "graph" {}`,
+		},
 		"GraphWithQuotedID": {
 			in: `strict graph 
 					"galaxy"     {}`,

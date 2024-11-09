@@ -103,9 +103,11 @@ func (p *Printer) printID(id ast.ID) error {
 
 	runeCount := utf8.RuneCountInString(string(id))
 	if isQuoted && p.column+runeCount-2 <= maxColumn { // strip quotes if ID stays below maxColumn
-		id = id[1 : len(id)-1]
-		runeCount -= 2
-		isQuoted = false
+		if _, ok := token.IsKeyword(string(id[1 : len(id)-1])); !ok {
+			id = id[1 : len(id)-1]
+			runeCount -= 2
+			isQuoted = false
+		}
 	}
 
 	if p.column+runeCount <= maxColumn {

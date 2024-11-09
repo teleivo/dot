@@ -19,34 +19,27 @@ func TestPrint(t *testing.T) {
 			in:   `strict graph {}`,
 			want: `strict graph {}`,
 		},
-		// TODO are there any special characters that require me to keep things quoted, yes escaped
-		// quotes
-		"GraphWithQuotedIDThatIsAKeyword": {
-			in: `strict graph 
-					"graph"     {}`,
-			want: `strict graph "graph" {}`,
-		},
-		"GraphWithQuotedID": {
+		"GraphWithID": {
 			in: `strict graph 
 					"galaxy"     {}`,
-			want: `strict graph galaxy {}`,
+			want: `strict graph "galaxy" {}`,
 		},
 		// World in Chinese each rune is 3 bytes long 世界
-		"NodeWithQuotedIDOfMaxWidthThatCanBeUnquoted": { // as the resulting ID is below maxColumn
+		"NodeWithQuotedIDOfMaxWidth": {
 			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }`,
 			want: `graph {
-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }`,
 		},
-		"NodeWithQuotedIDPastMaxWidthThatCannotBeUnquoted": { // as the resulting ID would be above maxColumn
+		"NodeWithQuotedIDPastMaxWidth": {
 			in: `graph {
-	"世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }`,
 			want: `graph {
-	"世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-aaab"
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+aa"
 }`,
 		},
 		"NodeWithUnquotedIDOfMaxWidth": {

@@ -94,30 +94,17 @@ func (p *Printer) printSpace() {
 }
 
 func (p *Printer) printID(id ast.ID) error {
-	// TODO what can I move into the ast? the lexer already loops over all runes to check for
-	// invalid ones. Let it add a runeCount and a flag for mustBeQuoted if it contains escaped runes
-	var isQuoted bool
-	if id[0] == '"' {
-		isQuoted = true
-	}
-
 	runeCount := utf8.RuneCountInString(string(id))
-	if isQuoted && p.column+runeCount-2 <= maxColumn { // strip quotes if ID stays below maxColumn
-		if _, ok := token.IsKeyword(string(id[1 : len(id)-1])); !ok {
-			id = id[1 : len(id)-1]
-			runeCount -= 2
-			isQuoted = false
-		}
-	}
-
 	if p.column+runeCount <= maxColumn {
 		p.print(id)
 		return nil
 	}
 
+	var isUnquoted bool
 	runeIndex := p.column
 	breakPointCol := maxColumn - 2 // 2 = "\\n"
-	if !isQuoted {
+	if id[0] != '"' {
+		isUnquoted = true
 		// accounting for the added quote
 		runeIndex++
 		breakPointCol++
@@ -133,7 +120,7 @@ func (p *Printer) printID(id ast.ID) error {
 		}
 	}
 
-	if !isQuoted { // opening quote
+	if isUnquoted { // opening quote
 		p.print(`"`)
 	}
 	p.print(id[:breakPointBytes])
@@ -141,7 +128,7 @@ func (p *Printer) printID(id ast.ID) error {
 	p.print(`\`)
 	p.printNewline()
 	p.print(id[breakPointBytes:])
-	if !isQuoted { // closing quote
+	if isUnquoted { // closing quote
 		p.print(`"`)
 	}
 

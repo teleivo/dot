@@ -59,6 +59,26 @@ aa"
 aab"
 }`,
 		},
+		// TODO test attr_stmt
+		// TODO test node_stmt
+		// 		"SingleAttributeStatement": {
+		// 			in: `graph {
+		// graph     [ 	label="blue"]
+		// 			}`,
+		// 			want: `graph {
+		// 	graph [label="blue"]
+		// }`,
+		// 		},
+		// TODO add tests for trailing , and ; that are stripped
+		// TODO add tests for A [a=b,c=d] [e=f] -> [a=b,c=d,e=f]
+		"NodeStatementWithSingleAttribute": {
+			in: `graph {
+A     [ 	label="blue"]
+			}`,
+			want: `graph {
+	A [label="blue"]
+}`,
+		},
 		"DigraphWithMulipleEdges": {
 			in: `digraph {
 			3 	->     2->4

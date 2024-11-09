@@ -199,7 +199,47 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 }
 
 func (p *Printer) printNodeStmt(nodeStmt *ast.NodeStmt) error {
-	return p.printNodeID(nodeStmt.NodeID)
+	err := p.printNodeID(nodeStmt.NodeID)
+	if err != nil {
+		return err
+	}
+	return p.printAttrList(nodeStmt.AttrList)
+}
+
+func (p *Printer) printAttrList(attrList *ast.AttrList) error {
+	if attrList == nil {
+		return nil
+	}
+
+	p.printSpace()
+	for cur := attrList; cur != nil; cur = cur.Next {
+		p.print(token.LeftBracket)
+		err := p.printAList(cur.AList)
+		if err != nil {
+			return err
+		}
+		p.print(token.RightBracket)
+		if cur.Next != nil {
+			p.printSpace()
+		}
+	}
+	return nil
+}
+
+func (p *Printer) printAList(aList *ast.AList) error {
+	for cur := aList; cur != nil; cur = cur.Next {
+		err := p.printID(cur.Attribute.Name)
+		if err != nil {
+			return err
+		}
+		p.print(token.Equal)
+		p.print(cur.Attribute.Value)
+		if cur.Next != nil {
+			p.printSpace()
+		}
+	}
+
+	return nil
 }
 
 func (p *Printer) printIndent() {

@@ -406,7 +406,7 @@ func (p *Parser) parseAList() (*ast.AList, error) {
 
 func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	attr := ast.Attribute{
-		Name: p.curToken.Literal,
+		Name: ast.ID(p.curToken.Literal),
 	}
 
 	err := p.expectPeekTokenIsOneOf(token.Equal)

@@ -121,12 +121,12 @@ func (p *Printer) printID(id ast.ID) error {
 		breakPointCol++
 	}
 
+	// find the starting byte of the rune that will end up on the next line
 	var breakPointBytes int
 	for i := range id {
 		runeIndex++
 		if runeIndex > breakPointCol {
 			breakPointBytes = i
-			fmt.Println(breakPointBytes)
 			break
 		}
 	}

@@ -73,10 +73,22 @@ aab"
 		// TODO add tests for A [a=b,c=d] [e=f] -> [a=b,c=d,e=f]
 		"NodeStatementWithSingleAttribute": {
 			in: `graph {
-A     [ 	label="blue"]
+A     [ 	label="blue",]
 			}`,
 			want: `graph {
 	A [label="blue"]
+}`,
+		},
+		"NodeStatementWithMultipleAttributes": {
+			in: `graph {
+A     [ 	label="blue", color=grey; size=0.1,]
+			}`,
+			want: `graph {
+	A [
+		label="blue"
+		color=grey
+		size=0.1
+	]
 }`,
 		},
 		"DigraphWithMulipleEdges": {

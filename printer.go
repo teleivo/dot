@@ -9,15 +9,15 @@ import (
 	"github.com/teleivo/dot/internal/token"
 )
 
-// maxWidth is the max number of runes after which lines are broken up into multiple lines. Not
+// maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
 // every dot construct can be broken up though.
-const maxWidth = 100
+const maxColumn = 100
 
 // Printer formats dot code.
 type Printer struct {
-	r   io.Reader // r reader to parse dot code from
-	w   io.Writer // w writer to output formatted dot code to
-	col int       // col is the current column in terms of runes the printer is at
+	r      io.Reader // r reader to parse dot code from
+	w      io.Writer // w writer to output formatted dot code to
+	column int       // column is the current column in terms of runes the printer is at
 }
 
 func NewPrinter(r io.Reader, w io.Writer) *Printer {
@@ -51,12 +51,13 @@ func (p *Printer) printNode(node ast.Node) error {
 
 func (p *Printer) printGraph(graph ast.Graph) error {
 	if graph.Strict {
-		fmt.Fprintf(p.w, "%s ", token.Strict)
+		p.print(token.Strict)
+		p.printSpace()
 	}
 	if graph.Directed {
-		fmt.Fprint(p.w, token.Digraph)
+		p.print(token.Digraph)
 	} else {
-		fmt.Fprint(p.w, token.Graph)
+		p.print(token.Graph)
 	}
 	p.printSpace()
 	if graph.ID != "" {
@@ -66,10 +67,10 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		}
 		p.printSpace()
 	}
-	fmt.Fprint(p.w, token.LeftBrace)
+	p.print(token.LeftBrace)
 	for _, stmt := range graph.Stmts {
 		p.printNewline()
-		p.printIndent(1)
+		p.printIndent()
 		err := p.printStatement(stmt)
 		if err != nil {
 			return err
@@ -78,37 +79,56 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 	if len(graph.Stmts) > 0 { // no statements print as {}
 		p.printNewline()
 	}
-	fmt.Fprint(p.w, token.RightBrace)
+	p.print(token.RightBrace)
 	return nil
 }
 
 func (p *Printer) printNewline() {
 	fmt.Fprintln(p.w)
-	p.col = 0
+	p.column = 0
 }
 
 func (p *Printer) printSpace() {
-	fmt.Fprint(p.w, " ")
-	p.col++
+	p.print(" ")
+	p.column++
 }
 
 func (p *Printer) printID(id ast.ID) error {
-	if utf8.RuneCountInString(string(id)) <= p.col+maxWidth {
-		// TODO should I wrap fmt.Fprint so I can keep track of p.col?
-		fmt.Fprint(p.w, id)
+	if p.column+utf8.RuneCountInString(string(id)) <= maxColumn {
+		p.print(id)
 		return nil
 	}
 
-	var runeCount int
-	for i, r := range id {
-		if runeCount < maxWidth-2 {
-			fmt.Fprintf(p.w, "%s", string(r))
-		} else {
-			fmt.Fprint(p.w, "\\n")
-			fmt.Fprintf(p.w, "%s", id[i:])
-			return nil
+	runeIndex := p.column
+	breakPointCol := maxColumn - 2 // 2 = "\\n"
+	var isUnquoted bool
+	if id[0] != '"' {
+		isUnquoted = true
+		// accounting for the added quote
+		runeIndex++
+		breakPointCol++
+	}
+
+	var breakPointBytes int
+	for i := range id {
+		runeIndex++
+		if runeIndex > breakPointCol {
+			breakPointBytes = i
+			fmt.Println(breakPointBytes)
+			break
 		}
-		runeCount++
+	}
+
+	if isUnquoted { // opening quote
+		p.print(`"`)
+	}
+	p.print(id[:breakPointBytes])
+	// standard C convention of a backslash immediately preceding a newline character
+	p.print(`\`)
+	p.printNewline()
+	p.print(id[breakPointBytes:])
+	if isUnquoted { // closing quote
+		p.print(`"`)
 	}
 
 	return nil
@@ -133,9 +153,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 
 	p.printSpace()
 	if edgeStmt.Right.Directed {
-		fmt.Fprint(p.w, token.DirectedEgde)
+		p.print(token.DirectedEgde)
 	} else {
-		fmt.Fprint(p.w, token.UndirectedEgde)
+		p.print(token.UndirectedEgde)
 	}
 	p.printSpace()
 	err = p.printEdgeOperand(edgeStmt.Right.Right)
@@ -146,9 +166,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
 		p.printSpace()
 		if edgeStmt.Right.Directed {
-			fmt.Fprint(p.w, token.DirectedEgde)
+			p.print(token.DirectedEgde)
 		} else {
-			fmt.Fprint(p.w, token.UndirectedEgde)
+			p.print(token.UndirectedEgde)
 		}
 		p.printSpace()
 		err = p.printEdgeOperand(cur.Right)
@@ -177,11 +197,15 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 	return nil
 }
 
-func (p *Printer) printIndent(level int) {
-	fmt.Fprint(p.w, "\t")
-	p.col++
-}
-
 func (p *Printer) printNodeStmt(nodeStmt *ast.NodeStmt) error {
 	return p.printNodeID(nodeStmt.NodeID)
+}
+
+func (p *Printer) printIndent() {
+	p.print("\t")
+}
+
+func (p *Printer) print(a ...any) {
+	fmt.Fprint(p.w, a...)
+	p.column++
 }

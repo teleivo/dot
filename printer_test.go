@@ -55,7 +55,7 @@ ab"
 }`,
 			want: `graph {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-ab"
+aab"
 }`,
 		},
 		// TODO strip quotes unless needed = quoted keyword or > 100

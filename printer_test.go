@@ -21,7 +21,6 @@ func TestPrint(t *testing.T) {
 		},
 		// TODO are there any special characters that require me to keep things quoted, yes escaped
 		// quotes
-		// TODO add/adjust test with a rune > 1 byte
 		"GraphWithQuotedIDThatIsAKeyword": {
 			in: `strict graph 
 					"graph"     {}`,
@@ -32,20 +31,21 @@ func TestPrint(t *testing.T) {
 					"galaxy"     {}`,
 			want: `strict graph galaxy {}`,
 		},
+		// World in Chinese each rune is 3 bytes long 世界
 		"NodeWithQuotedIDOfMaxWidthThatCanBeUnquoted": { // as the resulting ID is below maxColumn
 			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
 }`,
 			want: `graph {
-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
 }`,
 		},
 		"NodeWithQuotedIDPastMaxWidthThatCannotBeUnquoted": { // as the resulting ID would be above maxColumn
 			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+	"世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
 }`,
 			want: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+	"世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
 aaab"
 }`,
 		},

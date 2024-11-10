@@ -156,6 +156,8 @@ func (p *Printer) printStmt(stmt ast.Stmt) error {
 		err = p.printNodeStmt(st)
 	case *ast.AttrStmt:
 		err = p.printAttrStmt(st)
+	case ast.Attribute:
+		err = p.printAttribute(st)
 	case *ast.EdgeStmt:
 		err = p.printEdgeStmt(st)
 	case ast.Subgraph:
@@ -183,7 +185,6 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 		if err != nil {
 			return err
 		}
-		// TODO do not print default CompassPoint
 		if nodeID.Port.CompassPoint != ast.CompassPointUnderscore {
 			p.print(token.Colon)
 			p.print(nodeID.Port.CompassPoint)
@@ -232,12 +233,10 @@ func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, err
 			p.printIndent()
 			p.printIndent()
 		}
-		err := p.printID(cur.Attribute.Name)
+		err := p.printAttribute(cur.Attribute)
 		if err != nil {
 			return hasMultipleAttrs, err
 		}
-		p.print(token.Equal)
-		p.print(cur.Attribute.Value)
 		if hasMultipleAttrs {
 			p.print(token.Comma)
 		} else if cur.Next != nil {
@@ -298,6 +297,17 @@ func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
 		return err
 	}
 	return p.printAttrList(attrStmt.AttrList)
+}
+
+func (p *Printer) printAttribute(attribute ast.Attribute) error {
+	err := p.printID(attribute.Name)
+	if err != nil {
+		return err
+	}
+
+	p.print(token.Equal)
+	p.print(attribute.Value)
+	return nil
 }
 
 func (p *Printer) printSubgraph(subraph ast.Subgraph) error {

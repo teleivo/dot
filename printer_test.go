@@ -119,12 +119,23 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	3 -> 2 -> 4
 }`,
 		},
-		"AttributeStatementWithSingleAttribute": {
+		"AttrStatementWithSingleAttribute": {
 			in: `graph {
 graph     [ 	label="blue",]
 			}`,
 			want: `graph {
 	graph [label="blue"]
+}`,
+		},
+		"AttributeStatementWithSingleAttribute": {
+			in: `graph {
+label="blue", minlen=2;
+ color=grey;
+			}`,
+			want: `graph {
+	label="blue"
+	minlen=2
+	color=grey
 }`,
 		},
 		"Subgraph": {

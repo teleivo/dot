@@ -1,8 +1,7 @@
 * write cmd/dotfmt
+    * support `ID '=' ID`
     * subgraphs
       * do I want to always add `subgraph` even if I used the shorthand of `{}`?
-    * test nesting and its influence on indentation
-    * what is `ID '=' ID` again as a stmt. what's it for?
     * anything more to implement/test in edge_stmt
     * double check dotfmt supports all stmtNodes
     * test parser/lexer with invalid ID as ID for port. check the places were convert literals to

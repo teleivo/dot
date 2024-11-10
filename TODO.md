@@ -1,19 +1,19 @@
 * write cmd/dotfmt
-    * support `ID '=' ID`
     * subgraphs
       * do I want to always add `subgraph` even if I used the shorthand of `{}`?
     * anything more to implement/test in edge_stmt
+      * attr_list for edges?
     * double check dotfmt supports all stmtNodes
-    * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
-    ast.ID without parsing the identifier, should I not parse it first?
+
     * semicolon
         * ? when are they necessary
         * remove them if they are not
-    * comments
-        * should have one " " after the marker
-        * break up > 100 runes keeping the type of comment. so // will get another // on the next
-        line
-    * whitespace after NodeID if followed by a '{', '[' or EdgeOp
+
+    * try formatting all https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
+    any errors?
+
+    * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
+    ast.ID without parsing the identifier, should I not parse it first?
 
 * how to handle error on fmt.Fprint?
 * how to handle errors?
@@ -437,10 +437,24 @@ Warning: syntax ambiguity - badly delimited number '100' in line 1 of <stdin> sp
 
 ## dotfmt
 
+* comments
+    * should have one " " after the marker
+    * break up > 100 runes keeping the type of comment. so // will get another // on the next
+    line
 * test using dot examples from gallery
+https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
 * test using invalid input
   * invalid input should be printed as is, it should not delete user input!
-* uses positional args as files and reads from stdin if non given
+
+* add profiling flags
+
+* support formatting file/dirs in place
+  * goroutines could be fun once its working ;)
+  * format all of https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
+    * profile, anything obvious I could improve?
+    * add a benchmark to ensure no regressions
+
+  * gofumpt uses positional args as files and reads from stdin if non given
 ```go
     args := flag.Args()
     if len(args) == 0 {

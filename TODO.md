@@ -482,3 +482,28 @@ so I need to detect such errors and try with `digraph {}`.
 * keep the indentation when splitting?
   * the parser would need to support +
 
+## Highl Level API
+
+I would like to define dot graphs in Go without having to create an ast. Like
+
+```go
+dot.Graph{
+    ID: "galaxy",
+    Attributes: []dot.Attribute{
+        dot.Attribute{
+            Name: "",
+            Value: "",
+        }
+    }
+}
+```
+
+I then want to print that to `io.Writer` in dot format. I could achieve that by going from the above
+to an `ast.Graph` then use the `Printer`.
+
+Would also be great to go from an `ast.Graph` to a `dot.Graph`. Here I need to evaluate the `ast` as
+attributes apply to the current "scope" in order.
+
+Questions
+* how to deal represent an `ast.ID`? If I just use a `string` in `dot.Graph.ID` it would lead to an
+  invalid ID in the ast. Validate that before? Or deal with such errors later? Or sanitize myself?

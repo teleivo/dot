@@ -15,15 +15,17 @@ const maxColumn = 100
 
 // Printer formats dot code.
 type Printer struct {
-	r      io.Reader // r reader to parse dot code from
-	w      io.Writer // w writer to output formatted dot code to
-	column int       // column is the current column in terms of runes the printer is at
+	r           io.Reader // r reader to parse dot code from
+	w           io.Writer // w writer to output formatted dot code to
+	column      int       // column is the current column in terms of runes the printer is at
+	indentLevel int       // indentLevel is the current level of indentation to be applied when indenting
 }
 
 func NewPrinter(r io.Reader, w io.Writer) *Printer {
 	return &Printer{
-		r: r,
-		w: w,
+		r:           r,
+		w:           w,
+		indentLevel: 1,
 	}
 }
 
@@ -67,16 +69,21 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		}
 		p.printSpace()
 	}
+	return p.printStmts(graph.Stmts)
+}
+
+func (p *Printer) printStmts(stmts []ast.Stmt) error {
 	p.print(token.LeftBrace)
-	for _, stmt := range graph.Stmts {
+	for _, stmt := range stmts {
 		p.printNewline()
 		p.printIndent()
-		err := p.printStatement(stmt)
+		err := p.printStmt(stmt)
 		if err != nil {
 			return err
 		}
 	}
-	if len(graph.Stmts) > 0 { // no statements print as {}
+	// no statements print as {}
+	if len(stmts) > 0 {
 		p.printNewline()
 	}
 	p.print(token.RightBrace)
@@ -135,7 +142,7 @@ func (p *Printer) printID(id ast.ID) error {
 	return nil
 }
 
-func (p *Printer) printStatement(stmt ast.Stmt) error {
+func (p *Printer) printStmt(stmt ast.Stmt) error {
 	var err error
 	switch st := stmt.(type) {
 	case *ast.NodeStmt:
@@ -144,6 +151,8 @@ func (p *Printer) printStatement(stmt ast.Stmt) error {
 		err = p.printAttrStmt(st)
 	case *ast.EdgeStmt:
 		err = p.printEdgeStmt(st)
+	case ast.Subgraph:
+		err = p.printSubgraph(st)
 	}
 	return err
 }
@@ -284,8 +293,30 @@ func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
 	return p.printAttrList(attrStmt.AttrList)
 }
 
+func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
+	p.print(token.Subgraph)
+	p.printSpace()
+	if subraph.ID != "" {
+		err := p.printID(subraph.ID)
+		if err != nil {
+			return err
+		}
+		p.printSpace()
+	}
+
+	p.indentLevel++
+	err := p.printStmts(subraph.Stmts)
+	if err != nil {
+		return err
+	}
+	p.indentLevel--
+	return nil
+}
+
 func (p *Printer) printIndent() {
-	p.print("\t")
+	for range p.indentLevel {
+		p.print("\t")
+	}
 }
 
 func (p *Printer) print(a ...any) {

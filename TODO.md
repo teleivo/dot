@@ -1,7 +1,9 @@
 * write cmd/dotfmt
     * subgraphs
     * test nesting and its influence on indentation
+    * what is `ID '=' ID` again as a stmt. what's it for?
     * anything more to implement/test in edge_stmt
+    * double check dotfmt supports all stmtNodes
     * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
     ast.ID without parsing the identifier, should I not parse it first?
     * semicolon

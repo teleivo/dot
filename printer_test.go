@@ -62,14 +62,6 @@ aa"
 aab"
 }`,
 		},
-		"AttributeStatementWithSingleAttribute": {
-			in: `graph {
-graph     [ 	label="blue",]
-			}`,
-			want: `graph {
-	graph [label="blue"]
-}`,
-		},
 		"NodeStatementsWithPorts": {
 			in: `graph {
 		
@@ -117,7 +109,7 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	]
 }`,
 		},
-		"DigraphWithMulipleEdges": {
+		"DigraphEdgeStmt": {
 			in: `digraph {
 			3 	->     2->4
 }
@@ -125,6 +117,28 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 			`, // TODO add some semicolons in here?
 			want: `digraph {
 	3 -> 2 -> 4
+}`,
+		},
+		"AttributeStatementWithSingleAttribute": {
+			in: `graph {
+graph     [ 	label="blue",]
+			}`,
+			want: `graph {
+	graph [label="blue"]
+}`,
+		},
+		"Subgraph": {
+			in: `digraph {
+A;subgraph family { 
+			Parent1 -> Child1; Parent2 -> Child2
+			}
+}`,
+			want: `digraph {
+	A
+	subgraph family {
+		Parent1 -> Child1
+		Parent2 -> Child2
+	}
 }`,
 		},
 	}

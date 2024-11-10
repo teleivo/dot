@@ -1,5 +1,6 @@
 * write cmd/dotfmt
     * subgraphs
+      * do I want to always add `subgraph` even if I used the shorthand of `{}`?
     * test nesting and its influence on indentation
     * what is `ID '=' ID` again as a stmt. what's it for?
     * anything more to implement/test in edge_stmt

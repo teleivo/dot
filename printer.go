@@ -56,11 +56,13 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		p.print(token.Strict)
 		p.printSpace()
 	}
+
 	if graph.Directed {
 		p.print(token.Digraph)
 	} else {
 		p.print(token.Graph)
 	}
+
 	p.printSpace()
 	if graph.ID != "" {
 		err := p.printID(graph.ID)
@@ -69,11 +71,17 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		}
 		p.printSpace()
 	}
-	return p.printStmts(graph.Stmts)
+
+	p.print(token.LeftBrace)
+	err := p.printStmts(graph.Stmts)
+	if err != nil {
+		return err
+	}
+	p.print(token.RightBrace)
+	return nil
 }
 
 func (p *Printer) printStmts(stmts []ast.Stmt) error {
-	p.print(token.LeftBrace)
 	for _, stmt := range stmts {
 		p.printNewline()
 		p.printIndent()
@@ -86,7 +94,6 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 	if len(stmts) > 0 {
 		p.printNewline()
 	}
-	p.print(token.RightBrace)
 	return nil
 }
 
@@ -304,13 +311,24 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 		p.printSpace()
 	}
 
-	p.indentLevel++
+	p.increaseIndentation()
+	p.print(token.LeftBrace)
 	err := p.printStmts(subraph.Stmts)
 	if err != nil {
 		return err
 	}
-	p.indentLevel--
+	p.decreaseIndentation()
+	p.printIndent()
+	p.print(token.RightBrace)
 	return nil
+}
+
+func (p *Printer) increaseIndentation() {
+	p.indentLevel++
+}
+
+func (p *Printer) decreaseIndentation() {
+	p.indentLevel--
 }
 
 func (p *Printer) printIndent() {

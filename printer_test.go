@@ -85,9 +85,9 @@ A     [ 	label="blue", color=grey; size=0.1,]
 			}`,
 			want: `graph {
 	A [
-		label="blue"
-		color=grey
-		size=0.1
+		label="blue",
+		color=grey,
+		size=0.1,
 	]
 }`,
 		},

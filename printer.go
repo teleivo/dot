@@ -211,35 +211,55 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 		return nil
 	}
 
+	var hasMultipleAttrs bool
+	if attrList.Next != nil {
+		hasMultipleAttrs = true
+	}
+
 	p.printSpace()
+	p.print(token.LeftBracket)
 	for cur := attrList; cur != nil; cur = cur.Next {
-		p.print(token.LeftBracket)
-		err := p.printAList(cur.AList)
+		split, err := p.printAList(cur.AList, hasMultipleAttrs)
 		if err != nil {
 			return err
 		}
-		p.print(token.RightBracket)
-		if cur.Next != nil {
-			p.printSpace()
+		if split {
+			hasMultipleAttrs = true
 		}
 	}
+	if hasMultipleAttrs {
+		p.printNewline()
+		p.printIndent()
+	}
+	p.print(token.RightBracket)
 	return nil
 }
 
-func (p *Printer) printAList(aList *ast.AList) error {
+func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, error) {
+	if aList.Next != nil {
+		hasMultipleAttrs = true
+	}
+
 	for cur := aList; cur != nil; cur = cur.Next {
+		if hasMultipleAttrs {
+			p.printNewline()
+			p.printIndent()
+			p.printIndent()
+		}
 		err := p.printID(cur.Attribute.Name)
 		if err != nil {
-			return err
+			return hasMultipleAttrs, err
 		}
 		p.print(token.Equal)
 		p.print(cur.Attribute.Value)
-		if cur.Next != nil {
+		if hasMultipleAttrs {
+			p.print(token.Comma)
+		} else if cur.Next != nil {
 			p.printSpace()
 		}
 	}
 
-	return nil
+	return hasMultipleAttrs, nil
 }
 
 func (p *Printer) printIndent() {

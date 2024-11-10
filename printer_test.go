@@ -141,8 +141,10 @@ label="blue", minlen=2;
 		"Subgraph": {
 			in: `digraph {
 A;subgraph family { 
+				label   = "parents";
 			Parent1 -> Child1; Parent2 -> Child2
 				subgraph 	"grandparents"  {
+		label   = "grandparents"
 Grandparent1  -> Parent1; Grandparent2 -> Parent1;
  Grandparent3  -> Parent2; Grandparent4 -> Parent2;
 	  	}
@@ -151,9 +153,11 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			want: `digraph {
 	A
 	subgraph family {
+		label="parents"
 		Parent1 -> Child1
 		Parent2 -> Child2
 		subgraph "grandparents" {
+			label="grandparents"
 			Grandparent1 -> Parent1
 			Grandparent2 -> Parent1
 			Grandparent3 -> Parent2

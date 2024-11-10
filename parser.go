@@ -310,7 +310,7 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 
 	cp, ok := ast.IsCompassPoint(p.curToken.Literal)
 	if !ok {
-		return &port, fmt.Errorf("expected a compass point %v instead got %q", []ast.CompassPoint{ast.Underscore, ast.North, ast.NorthEast, ast.East, ast.SouthEast, ast.South, ast.SouthWest, ast.West, ast.NorthWest, ast.Center}, p.curToken.Literal)
+		return &port, fmt.Errorf("expected a compass point %v instead got %q", []ast.CompassPoint{ast.CompassPointUnderscore, ast.CompassPointNorth, ast.CompassPointNorthEast, ast.CompassPointEast, ast.CompassPointSouthEast, ast.CompassPointSouth, ast.CompassPointSouthWest, ast.CompassPointWest, ast.CompassPointNorthWest, ast.CompassPointCenter}, p.curToken.Literal)
 	}
 	port.CompassPoint = cp
 

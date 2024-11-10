@@ -115,29 +115,29 @@ func (p Port) String() string {
 type CompassPoint int
 
 const (
-	Underscore CompassPoint = iota // Underscore is the default compass point in a port with a name https://graphviz.org/docs/attr-types/portPos.
-	North
-	NorthEast
-	East
-	SouthEast
-	South
-	SouthWest
-	West
-	NorthWest
-	Center
+	CompassPointUnderscore CompassPoint = iota // Underscore is the default compass point in a port with a name https://graphviz.org/docs/attr-types/portPos.
+	CompassPointNorth
+	CompassPointNorthEast
+	CompassPointEast
+	CompassPointSouthEast
+	CompassPointSouth
+	CompassPointSouthWest
+	CompassPointWest
+	CompassPointNorthWest
+	CompassPointCenter
 )
 
 var compassPointStrings = map[CompassPoint]string{
-	Underscore: "_",
-	North:      "n",
-	NorthEast:  "ne",
-	East:       "e",
-	SouthEast:  "se",
-	South:      "s",
-	SouthWest:  "sw",
-	West:       "w",
-	NorthWest:  "nw",
-	Center:     "c",
+	CompassPointUnderscore: "_",
+	CompassPointNorth:      "n",
+	CompassPointNorthEast:  "ne",
+	CompassPointEast:       "e",
+	CompassPointSouthEast:  "se",
+	CompassPointSouth:      "s",
+	CompassPointSouthWest:  "sw",
+	CompassPointWest:       "w",
+	CompassPointNorthWest:  "nw",
+	CompassPointCenter:     "c",
 }
 
 func (cp CompassPoint) String() string {
@@ -145,16 +145,16 @@ func (cp CompassPoint) String() string {
 }
 
 var compassPoints = map[string]CompassPoint{
-	"_":  Underscore,
-	"n":  North,
-	"ne": NorthEast,
-	"e":  East,
-	"se": SouthEast,
-	"s":  South,
-	"sw": SouthWest,
-	"w":  West,
-	"nw": NorthWest,
-	"c":  Center,
+	"_":  CompassPointUnderscore,
+	"n":  CompassPointNorth,
+	"ne": CompassPointNorthEast,
+	"e":  CompassPointEast,
+	"se": CompassPointSouthEast,
+	"s":  CompassPointSouth,
+	"sw": CompassPointSouthWest,
+	"w":  CompassPointWest,
+	"nw": CompassPointNorthWest,
+	"c":  CompassPointCenter,
 }
 
 func IsCompassPoint(in string) (CompassPoint, bool) {

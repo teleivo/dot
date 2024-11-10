@@ -126,7 +126,7 @@ func TestParser(t *testing.T) {
 				in: "graph { foo:f0 }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.Underscore}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointUnderscore}}},
 					},
 				},
 			},
@@ -134,7 +134,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:"f0":_ }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.Underscore}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.CompassPointUnderscore}}},
 					},
 				},
 			},
@@ -142,7 +142,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:"f0":n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.North}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.CompassPointNorth}}},
 					},
 				},
 			},
@@ -150,7 +150,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:ne }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.NorthEast}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointNorthEast}}},
 					},
 				},
 			},
@@ -158,7 +158,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:e }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.East}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointEast}}},
 					},
 				},
 			},
@@ -166,7 +166,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:se }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.SouthEast}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointSouthEast}}},
 					},
 				},
 			},
@@ -174,7 +174,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:s }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.South}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointSouth}}},
 					},
 				},
 			},
@@ -182,7 +182,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:sw }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.SouthWest}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointSouthWest}}},
 					},
 				},
 			},
@@ -190,7 +190,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:w }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.West}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointWest}}},
 					},
 				},
 			},
@@ -198,7 +198,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:nw }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.NorthWest}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointNorthWest}}},
 					},
 				},
 			},
@@ -206,7 +206,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:c }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.Center}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointCenter}}},
 					},
 				},
 			},
@@ -214,7 +214,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{CompassPoint: ast.North}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{CompassPoint: ast.CompassPointNorth}}},
 					},
 				},
 			},
@@ -222,7 +222,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:n:n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "n", CompassPoint: ast.North}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "n", CompassPoint: ast.CompassPointNorth}}},
 					},
 				},
 			},
@@ -581,7 +581,7 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left:  ast.NodeID{ID: `"node4"`, Port: &ast.Port{Name: "f0", CompassPoint: ast.North}},
+							Left:  ast.NodeID{ID: `"node4"`, Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointNorth}},
 							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: "node5", Port: &ast.Port{Name: "f1"}}},
 						},
 					},

@@ -259,6 +259,7 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 	} else {
 		p.print(token.UndirectedEgde)
 	}
+
 	p.printSpace()
 	err = p.printEdgeOperand(edgeStmt.Right.Right)
 	if err != nil {
@@ -279,7 +280,7 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 		}
 	}
 
-	return err
+	return p.printAttrList(edgeStmt.AttrList)
 }
 
 func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {

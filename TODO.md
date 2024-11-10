@@ -1,6 +1,4 @@
 * write cmd/dotfmt
-    * subgraphs
-      * do I want to always add `subgraph` even if I used the shorthand of `{}`?
     * anything more to implement/test in edge_stmt
       * attr_list for edges?
     * double check dotfmt supports all stmtNodes
@@ -11,6 +9,7 @@
 
     * try formatting all https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
     any errors?
+    * update README with an example
 
     * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
     ast.ID without parsing the identifier, should I not parse it first?
@@ -476,6 +475,11 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
+* align multiple attributes like
+	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
+		color = "blue"
+		len   = 2.6
+	]`
 * strip unnecessary quotes
   * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
   * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them

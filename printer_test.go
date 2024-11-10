@@ -111,12 +111,16 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		},
 		"DigraphEdgeStmt": {
 			in: `digraph {
-			3 	->     2->4
-}
-
-			`, // TODO add some semicolons in here?
+			3 	->     2->4  [
+		color = "blue", len = 2.6
+	]; rank=same;}
+`,
 			want: `digraph {
-	3 -> 2 -> 4
+	3 -> 2 -> 4 [
+		color="blue",
+		len=2.6,
+	]
+	rank=same
 }`,
 		},
 		"AttrStatementWithSingleAttribute": {
@@ -163,6 +167,18 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			Grandparent3 -> Parent2
 			Grandparent4 -> Parent2
 		}
+	}
+}`,
+		},
+		"SubgraphWithoutKeyword": {
+			in: `graph
+				{
+			{A -- B; C--E}
+}`,
+			want: `graph {
+	subgraph {
+		A -- B
+		C -- E
 	}
 }`,
 		},

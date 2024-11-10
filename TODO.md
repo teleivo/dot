@@ -1,5 +1,6 @@
 * write cmd/dotfmt
     * subgraphs
+    * anything more to implement/test in edge_stmt
     * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
     ast.ID without parsing the identifier, should I not parse it first?
     * semicolon
@@ -9,7 +10,6 @@
         * should have one " " after the marker
         * break up > 100 runes keeping the type of comment. so // will get another // on the next
         line
-    * strip trailing newlines
     * what decisions would make a good diff?
     * whitespace after NodeID if followed by a '{', '[' or EdgeOp
 

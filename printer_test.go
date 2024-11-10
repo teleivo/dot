@@ -16,7 +16,10 @@ func TestPrint(t *testing.T) {
 		want string
 	}{
 		"EmptyGraph": {
-			in:   `strict graph {}`,
+			in: `strict graph {}
+
+
+			`,
 			want: `strict graph {}`,
 		},
 		"GraphWithID": {

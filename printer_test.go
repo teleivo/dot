@@ -104,7 +104,7 @@ A     [ 	label="blue", color=grey; size=0.1,]
 		},
 		"NodeStatementWithMultipleAttributeLists": {
 			in: `graph {
-A     [ 	label="blue", ] [color=grey ;	size =	0.1,]
+A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 			}`,
 			want: `graph {
 	A [

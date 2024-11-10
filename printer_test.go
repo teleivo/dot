@@ -123,6 +123,26 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	rank=same
 }`,
 		},
+		"EdgeStmtWithSubgraphs": {
+			in: `
+graph {
+{1;2} -- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}
+}
+`,
+			want: `graph {
+	subgraph {
+		1
+		2
+	} -- subgraph "numbers" {
+		node [
+			color=blue,
+			style=filled,
+		]
+		3
+		4
+	}
+}`,
+		},
 		"AttrStatementWithSingleAttribute": {
 			in: `graph {
 graph     [ 	label="blue",]

@@ -288,6 +288,8 @@ func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {
 	switch op := edgeOperand.(type) {
 	case ast.NodeID:
 		err = p.printNodeID(op)
+	case ast.Subgraph:
+		err = p.printSubgraph(op)
 	}
 	return err
 }

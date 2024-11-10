@@ -59,18 +59,14 @@ aa"
 aab"
 }`,
 		},
-		// TODO test attr_stmt
-		// TODO test node_stmt
-		// 		"SingleAttributeStatement": {
-		// 			in: `graph {
-		// graph     [ 	label="blue"]
-		// 			}`,
-		// 			want: `graph {
-		// 	graph [label="blue"]
-		// }`,
-		// 		},
-		// TODO add tests for trailing , and ; that are stripped
-		// TODO add tests for A [a=b,c=d] [e=f] -> [a=b,c=d,e=f]
+		"AttributeStatementWithSingleAttribute": {
+			in: `graph {
+graph     [ 	label="blue",]
+			}`,
+			want: `graph {
+	graph [label="blue"]
+}`,
+		},
 		"NodeStatementWithSingleAttribute": {
 			in: `graph {
 A     [ 	label="blue",]
@@ -82,6 +78,18 @@ A     [ 	label="blue",]
 		"NodeStatementWithMultipleAttributes": {
 			in: `graph {
 A     [ 	label="blue", color=grey; size=0.1,]
+			}`,
+			want: `graph {
+	A [
+		label="blue",
+		color=grey,
+		size=0.1,
+	]
+}`,
+		},
+		"NodeStatementWithMultipleAttributeLists": {
+			in: `graph {
+A     [ 	label="blue", ] [color=grey ;	size =	0.1,]
 			}`,
 			want: `graph {
 	A [

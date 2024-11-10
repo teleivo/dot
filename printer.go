@@ -138,64 +138,14 @@ func (p *Printer) printID(id ast.ID) error {
 func (p *Printer) printStatement(stmt ast.Stmt) error {
 	var err error
 	switch st := stmt.(type) {
-	case *ast.EdgeStmt:
-		err = p.printEdgeStmt(st)
 	case *ast.NodeStmt:
 		err = p.printNodeStmt(st)
+	case *ast.AttrStmt:
+		err = p.printAttrStmt(st)
+	case *ast.EdgeStmt:
+		err = p.printEdgeStmt(st)
 	}
 	return err
-}
-
-func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
-	err := p.printEdgeOperand(edgeStmt.Left)
-	if err != nil {
-		return err
-	}
-
-	p.printSpace()
-	if edgeStmt.Right.Directed {
-		p.print(token.DirectedEgde)
-	} else {
-		p.print(token.UndirectedEgde)
-	}
-	p.printSpace()
-	err = p.printEdgeOperand(edgeStmt.Right.Right)
-	if err != nil {
-		return err
-	}
-
-	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
-		p.printSpace()
-		if edgeStmt.Right.Directed {
-			p.print(token.DirectedEgde)
-		} else {
-			p.print(token.UndirectedEgde)
-		}
-		p.printSpace()
-		err = p.printEdgeOperand(cur.Right)
-		if err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {
-	var err error
-	switch op := edgeOperand.(type) {
-	case ast.NodeID:
-		err = p.printNodeID(op)
-	}
-	return err
-}
-
-func (p *Printer) printNodeID(nodeID ast.NodeID) error {
-	err := p.printID(nodeID.ID)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (p *Printer) printNodeStmt(nodeStmt *ast.NodeStmt) error {
@@ -204,6 +154,14 @@ func (p *Printer) printNodeStmt(nodeStmt *ast.NodeStmt) error {
 		return err
 	}
 	return p.printAttrList(nodeStmt.AttrList)
+}
+
+func (p *Printer) printNodeID(nodeID ast.NodeID) error {
+	err := p.printID(nodeID.ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (p *Printer) printAttrList(attrList *ast.AttrList) error {
@@ -260,6 +218,58 @@ func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, err
 	}
 
 	return hasMultipleAttrs, nil
+}
+
+func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
+	err := p.printEdgeOperand(edgeStmt.Left)
+	if err != nil {
+		return err
+	}
+
+	p.printSpace()
+	if edgeStmt.Right.Directed {
+		p.print(token.DirectedEgde)
+	} else {
+		p.print(token.UndirectedEgde)
+	}
+	p.printSpace()
+	err = p.printEdgeOperand(edgeStmt.Right.Right)
+	if err != nil {
+		return err
+	}
+
+	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
+		p.printSpace()
+		if edgeStmt.Right.Directed {
+			p.print(token.DirectedEgde)
+		} else {
+			p.print(token.UndirectedEgde)
+		}
+		p.printSpace()
+		err = p.printEdgeOperand(cur.Right)
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {
+	var err error
+	switch op := edgeOperand.(type) {
+	case ast.NodeID:
+		err = p.printNodeID(op)
+	}
+	return err
+}
+
+func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
+	err := p.printID(attrStmt.ID)
+	if err != nil {
+		return err
+	}
+	return p.printAttrList(attrStmt.AttrList)
 }
 
 func (p *Printer) printIndent() {

@@ -131,6 +131,10 @@ graph     [ 	label="blue",]
 			in: `digraph {
 A;subgraph family { 
 			Parent1 -> Child1; Parent2 -> Child2
+				subgraph 	"grandparents"  {
+Grandparent1  -> Parent1; Grandparent2 -> Parent1;
+ Grandparent3  -> Parent2; Grandparent4 -> Parent2;
+	  	}
 			}
 }`,
 			want: `digraph {
@@ -138,6 +142,12 @@ A;subgraph family {
 	subgraph family {
 		Parent1 -> Child1
 		Parent2 -> Child2
+		subgraph "grandparents" {
+			Grandparent1 -> Parent1
+			Grandparent2 -> Parent1
+			Grandparent3 -> Parent2
+			Grandparent4 -> Parent2
+		}
 	}
 }`,
 		},

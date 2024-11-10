@@ -67,9 +67,39 @@ graph     [ 	label="blue",]
 	graph [label="blue"]
 }`,
 		},
+		"NodeStatementWithPort": {
+			in: `graph {
+		
+ A:"north":n
+				
+			}`,
+			want: `graph {
+	A:"north":n
+}`,
+		},
+		"NodeStatementWithPortWithoutCompassPoint": {
+			in: `graph {
+		
+ A:"north"
+				
+			}`,
+			want: `graph {
+	A:"north"
+}`,
+		},
+		"NodeStatementWithPortWithDefaultCompassPoint": {
+			in: `graph {
+		
+		A:"north":_
+				
+			}`,
+			want: `graph {
+	A:"north"
+}`,
+		},
 		"NodeStatementWithSingleAttribute": {
 			in: `graph {
-A     [ 	label="blue",]
+A        	[ 	label="blue",]
 			}`,
 			want: `graph {
 	A [label="blue"]

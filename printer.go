@@ -161,6 +161,18 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 	if err != nil {
 		return err
 	}
+	if nodeID.Port != nil {
+		p.print(token.Colon)
+		err := p.printID(nodeID.Port.Name)
+		if err != nil {
+			return err
+		}
+		// TODO do not print default CompassPoint
+		if nodeID.Port.CompassPoint != ast.Underscore {
+			p.print(token.Colon)
+			p.print(nodeID.Port.CompassPoint)
+		}
+	}
 	return nil
 }
 

@@ -103,12 +103,12 @@ func (ni NodeID) edgeOperand() {}
 
 // Port defines a node port where an edge can attach to.
 type Port struct {
-	Name         string       // Name is the identifier of the port.
+	Name         ID           // Name is the identifier of the port.
 	CompassPoint CompassPoint // Position at which an edge can attach to.
 }
 
 func (p Port) String() string {
-	return p.Name + ":" + p.CompassPoint.String()
+	return p.Name.String() + ":" + p.CompassPoint.String()
 }
 
 // CompassPoint position at which an edge can attach to a node https://graphviz.org/docs/attr-types/portPos.

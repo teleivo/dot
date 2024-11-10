@@ -1,8 +1,7 @@
 * write cmd/dotfmt
-    * quoted string
-        * strip quotes if not necessary
-        * I cannot keep the indentation when splitting right? as otherwise it would lead to extra
-        characters in the ID. I could if the parser would support +. How could I add that?
+    * subgraphs
+    * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
+    ast.ID without parsing the identifier, should I not parse it first?
     * semicolon
         * ? when are they necessary
         * remove them if they are not
@@ -12,11 +11,7 @@
         line
     * strip trailing newlines
     * what decisions would make a good diff?
-    * attribute values:
-        * ", " separators instead of just whitespace
-        * whitespace separating '=' left from rhs? or no
     * whitespace after NodeID if followed by a '{', '[' or EdgeOp
-    * newlines: how to make it ok on other platforms?
 
 * how to handle error on fmt.Fprint?
 * how to handle errors?
@@ -440,10 +435,9 @@ Warning: syntax ambiguity - badly delimited number '100' in line 1 of <stdin> sp
 
 ## dotfmt
 
-* first only format from stdin to stdout
 * test using dot examples from gallery
 * test using invalid input
-* connect vim/conform with dotfmt so gq works with it/formats on write
+  * invalid input should be printed as is, it should not delete user input!
 * uses positional args as files and reads from stdin if non given
 ```go
     args := flag.Args()
@@ -463,3 +457,12 @@ uses `;` so line numbers stay correct.
 I could also try parsing a Graph, if that fails due to an error in the parseHeader I could wrap it
 in a `graph { }` assuming that the src is a []Stmt. This might fail if src contains directed edges
 so I need to detect such errors and try with `digraph {}`.
+
+### Features
+
+* strip unnecessary quotes
+  * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
+  * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
+* keep the indentation when splitting?
+  * the parser would need to support +
+

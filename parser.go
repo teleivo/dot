@@ -293,11 +293,11 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 		if ok {
 			return &ast.Port{CompassPoint: cp}, nil
 		}
-		return &ast.Port{Name: p.curToken.Literal}, nil
+		return &ast.Port{Name: ast.ID(p.curToken.Literal)}, nil
 	}
 
 	// port with name and compass_pt :ID:compass_pt
-	port := ast.Port{Name: p.curToken.Literal}
+	port := ast.Port{Name: ast.ID(p.curToken.Literal)}
 
 	err = p.expectPeekTokenIsOneOf(token.Colon)
 	if err != nil {

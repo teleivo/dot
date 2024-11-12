@@ -3,7 +3,15 @@
     any errors?
     * update README with an example
 
-    * support comment
+    * support comments
+      * first the parser needs to parse comments anywhere. right now comments lead to errors in a
+      lot of places they should be legal
+
+    * allow multiple nodes on the same line?
+    * how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
+    Allow users to do that. No more than one empty line though. And will that line be completely
+    empty or be indented as the surrounding code?
+
     * support parsing/formatting ranges
 
     * test parser/lexer with invalid ID as ID for port. check the places were convert literals to

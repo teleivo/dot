@@ -90,9 +90,9 @@ A     [ 	label="blue", color=grey; size=0.1,]
 			}`,
 			want: `graph {
 	A [
-		label="blue",
-		color=grey,
-		size=0.1,
+		label="blue"
+		color=grey
+		size=0.1
 	]
 }`,
 		},
@@ -102,9 +102,9 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 			}`,
 			want: `graph {
 	A [
-		label="blue",
-		color=grey,
-		size=0.1,
+		label="blue"
+		color=grey
+		size=0.1
 	]
 }`,
 		},
@@ -116,8 +116,8 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 `,
 			want: `digraph {
 	3 -> 2 -> 4 [
-		color="blue",
-		len=2.6,
+		color="blue"
+		len=2.6
 	]
 	rank=same
 }`,
@@ -134,8 +134,8 @@ graph {
 		2
 	} -- subgraph "numbers" {
 		node [
-			color=blue,
-			style=filled,
+			color=blue
+			style=filled
 		]
 		3
 		4

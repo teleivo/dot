@@ -238,9 +238,7 @@ func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, err
 		if err != nil {
 			return hasMultipleAttrs, err
 		}
-		if hasMultipleAttrs {
-			p.print(token.Comma)
-		} else if cur.Next != nil {
+		if !hasMultipleAttrs && cur.Next != nil {
 			p.printSpace()
 		}
 	}

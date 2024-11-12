@@ -6,8 +6,50 @@
     * support comments
       * first the parser needs to parse comments anywhere. right now comments lead to errors in a
       lot of places they should be legal
+      interestingly comments are ok on their own line or inside a subgraph
+      ../graphviz/graphs/uncommented/honda-tokoro.gv
+      `{/*L=m*/rank=same n001 n011}`
+      the comment turns into an empty line right now
+      ```dot
+      	subgraph {
 
-    * allow multiple nodes on the same line?
+		rank=same
+		n001
+		n011
+	}
+      ```
+
+* why is the ../graphviz/graphs/uncommented/russian.gv not stripping the leading whitespace from
+  before graph?
+
+* remove empty statements? like or does that serve any purpose?
+
+```
+graph [
+];
+```
+
+* why is ../graphviz/graphs/uncommented/pgram.gv label ID not broken up?
+
+```
+	subgraph {
+		rank=same
+		node [shape=parallelogram]
+		"Parallelogram" [label="This is a test\nof a multiline\nlabel in an\nparallelogram with approx\nsquare aspect"]
+		"a ----- long thin parallelogram"
+		"xx" [label="m"]
+		"yy" [label="a\nb\nc\nd\ne\nf"]
+		node [shape=octagon]
+		"Octagon" [label="This is a test\nof a multiline\nlabel in an\noctagon with approx\nsquare aspect"]
+		node [shape=parallelogram]
+		"Parallelogram" [label="This is a test\nof a multiline\nlabel in an\nparallelogram with approx\nsquare aspect"]
+		"a ----- long thin parallelogram"
+		"zz" [label="m"]
+		"qq" [label="a\nb\nc\nd\ne\nf"]
+		ordering=out
+	}
+```
+    * allow multiple nodes on the same line. how to break them up when > maxCol
 
     * how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
     Allow users to do that. No more than one empty line though. And will that line be completely

@@ -205,6 +205,7 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 
 	p.printSpace()
 	p.print(token.LeftBracket)
+	p.increaseIndentation()
 	for cur := attrList; cur != nil; cur = cur.Next {
 		split, err := p.printAList(cur.AList, hasMultipleAttrs)
 		if err != nil {
@@ -214,6 +215,7 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 			hasMultipleAttrs = true
 		}
 	}
+	p.decreaseIndentation()
 	if hasMultipleAttrs {
 		p.printNewline()
 		p.printIndent()
@@ -230,7 +232,6 @@ func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, err
 	for cur := aList; cur != nil; cur = cur.Next {
 		if hasMultipleAttrs {
 			p.printNewline()
-			p.printIndent()
 			p.printIndent()
 		}
 		err := p.printAttribute(cur.Attribute)
@@ -324,8 +325,8 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 		p.printSpace()
 	}
 
-	p.increaseIndentation()
 	p.print(token.LeftBrace)
+	p.increaseIndentation()
 	err := p.printStmts(subraph.Stmts)
 	if err != nil {
 		return err

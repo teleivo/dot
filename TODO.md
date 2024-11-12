@@ -2,10 +2,12 @@
     * anything more to implement/test in edge_stmt
       * attr_list for edges?
     * double check dotfmt supports all stmtNodes
+    * double check dotfmt supports all edgeoperands
+    * are there any other interfaces I do type switches on? are all supported?
 
     * semicolon
         * ? when are they necessary
-        * remove them if they are not
+        * remove them if they are not or always add them after statements?
 
     * try formatting all https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
     any errors?

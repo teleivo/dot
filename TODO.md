@@ -1,17 +1,10 @@
 * write cmd/dotfmt
-    * anything more to implement/test in edge_stmt
-      * attr_list for edges?
-    * double check dotfmt supports all stmtNodes
-    * double check dotfmt supports all edgeoperands
-    * are there any other interfaces I do type switches on? are all supported?
-
-    * semicolon
-        * ? when are they necessary
-        * remove them if they are not or always add them after statements?
-
     * try formatting all https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
     any errors?
     * update README with an example
+
+    * support comment
+    * support parsing/formatting ranges
 
     * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
     ast.ID without parsing the identifier, should I not parse it first?
@@ -477,7 +470,9 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
-* align multiple attributes like
+* can I not print `subgraph` by looking at the literal? might need to add that to the ast as
+only the parser has access to the lexemes
+* align multiple attribute values (and `=`)
 	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
 		color = "blue"
 		len   = 2.6
@@ -485,8 +480,8 @@ so I need to detect such errors and try with `digraph {}`.
 * strip unnecessary quotes
   * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
   * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
-* keep the indentation when splitting?
-  * the parser would need to support +
+* keep the indentation when splitting to multiple lines?
+  * the parser would need to support + so I can concatenat IDs
 
 ## Highl Level API
 

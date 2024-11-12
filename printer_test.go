@@ -66,9 +66,8 @@ aab"
 			in: `graph {
 		
 				A:"north":n
-		B:"center":_
-		
-	C:"south"
+
+		B:"center":_ C:"south"
 				
 			}`,
 			want: `graph {

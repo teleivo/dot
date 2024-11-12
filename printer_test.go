@@ -68,12 +68,14 @@ aab"
 				A:"north":n
 
 		B:"center":_ C:"south"
+			D:n
 				
 			}`,
 			want: `graph {
 	A:"north":n
 	B:"center"
 	C:"south"
+	D:n
 }`,
 		},
 		"NodeStatementWithSingleAttribute": {

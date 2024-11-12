@@ -8,9 +8,11 @@
       lot of places they should be legal
 
     * allow multiple nodes on the same line?
+
     * how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
     Allow users to do that. No more than one empty line though. And will that line be completely
     empty or be indented as the surrounding code?
+    I need proper token/ast position. for this row and column
 
     * support parsing/formatting ranges
 
@@ -478,18 +480,20 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
-* can I not print `subgraph` by looking at the literal? might need to add that to the ast as
 only the parser has access to the lexemes
 * align multiple attribute values (and `=`)
 	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
 		color = "blue"
 		len   = 2.6
 	]`
+ should that then apply to the entire file :joy:? as global attributes can be set on the
+graph/subraph as well
 * strip unnecessary quotes
   * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
   * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
 * keep the indentation when splitting to multiple lines?
   * the parser would need to support + so I can concatenat IDs
+* maybe: support subraph shorthand using `{}` and don't always print `subgraph` by looking at the literal? might need to add that to the ast as
 
 ## Highl Level API
 

@@ -522,7 +522,14 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
-only the parser has access to the lexemes
+* ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates
+unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit
+https://graphviz.org/doc/info/lang.html#ids
+
+dot -Tsvg <../graphviz/graphs/directed/russian.gv > russian.svg
+
+also works so is that language reference outdated?
+
 * align multiple attribute values (and `=`)
 	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
 		color = "blue"

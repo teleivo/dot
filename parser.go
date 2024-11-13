@@ -418,7 +418,7 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	if err != nil {
 		return attr, err
 	}
-	attr.Value = p.curToken.Literal
+	attr.Value = ast.ID(p.curToken.Literal)
 
 	return attr, nil
 }

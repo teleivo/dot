@@ -285,8 +285,8 @@ func (al *AList) String() string {
 // name is not defined in the abstract grammar of the dot language. It is defined as a statement and
 // as part of the a_list as ID '=' ID.
 type Attribute struct {
-	Name  ID     // Name is an identifier naming the attribute.
-	Value string // Value is the identifier representing the value of the attribute.
+	Name  ID // Name is an identifier naming the attribute.
+	Value ID // Value is the identifier representing the value of the attribute.
 }
 
 func (a Attribute) String() string {
@@ -294,7 +294,7 @@ func (a Attribute) String() string {
 
 	out.WriteString(a.Name.String())
 	out.WriteString("=")
-	out.WriteString(a.Value)
+	out.WriteString(a.Value.String())
 
 	return out.String()
 }

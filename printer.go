@@ -300,6 +300,10 @@ func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {
 }
 
 func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
+	if attrStmt.AttrList == nil {
+		return nil
+	}
+
 	err := p.printID(attrStmt.ID)
 	if err != nil {
 		return err
@@ -312,10 +316,8 @@ func (p *Printer) printAttribute(attribute ast.Attribute) error {
 	if err != nil {
 		return err
 	}
-
 	p.print(token.Equal)
-	p.print(attribute.Value)
-	return nil
+	return p.printID(attribute.Value)
 }
 
 func (p *Printer) printSubgraph(subraph ast.Subgraph) error {

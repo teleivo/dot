@@ -161,6 +161,23 @@ graph     [ 	label="blue",]
 	graph [label="blue"]
 }`,
 		},
+		"AttrStatementWithIDOfMaxWidth": {
+			in: `graph {
+	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
+}`,
+			want: `graph {
+	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
+}`,
+		},
+		"AttrStatementWithIDPastMaxWidth": {
+			in: `graph {
+	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col."]
+}`,
+			want: `graph {
+	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max co\
+l."]
+}`,
+		},
 		"AttributeStatementWithSingleAttribute": {
 			in: `graph {
 label="blue", minlen=2;

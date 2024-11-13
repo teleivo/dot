@@ -53,14 +53,14 @@ func (p *Printer) printNode(node ast.Node) error {
 
 func (p *Printer) printGraph(graph ast.Graph) error {
 	if graph.Strict {
-		p.print(token.Strict)
+		p.printToken(token.Strict)
 		p.printSpace()
 	}
 
 	if graph.Directed {
-		p.print(token.Digraph)
+		p.printToken(token.Digraph)
 	} else {
-		p.print(token.Graph)
+		p.printToken(token.Graph)
 	}
 
 	p.printSpace()
@@ -72,12 +72,12 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		p.printSpace()
 	}
 
-	p.print(token.LeftBrace)
+	p.printToken(token.LeftBrace)
 	err := p.printStmts(graph.Stmts)
 	if err != nil {
 		return err
 	}
-	p.print(token.RightBrace)
+	p.printToken(token.RightBrace)
 	return nil
 }
 
@@ -103,8 +103,7 @@ func (p *Printer) printNewline() {
 }
 
 func (p *Printer) printSpace() {
-	p.print(" ")
-	p.column++
+	p.printRune(' ')
 }
 
 func (p *Printer) printID(id ast.ID) error {
@@ -135,15 +134,15 @@ func (p *Printer) printID(id ast.ID) error {
 	}
 
 	if isUnquoted { // opening quote
-		p.print(`"`)
+		p.printRune('"')
 	}
 	p.print(id[:breakPointBytes])
 	// standard C convention of a backslash immediately preceding a newline character
-	p.print(`\`)
+	p.printRune('\\')
 	p.printNewline()
 	p.print(id[breakPointBytes:])
 	if isUnquoted { // closing quote
-		p.print(`"`)
+		p.printRune('"')
 	}
 
 	return nil
@@ -185,14 +184,14 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 	}
 
 	if nodeID.Port.Name != "" {
-		p.print(token.Colon)
+		p.printToken(token.Colon)
 		err := p.printID(nodeID.Port.Name)
 		if err != nil {
 			return err
 		}
 	}
 	if nodeID.Port.CompassPoint != ast.CompassPointUnderscore {
-		p.print(token.Colon)
+		p.printToken(token.Colon)
 		p.print(nodeID.Port.CompassPoint)
 	}
 
@@ -210,7 +209,7 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 	}
 
 	p.printSpace()
-	p.print(token.LeftBracket)
+	p.printToken(token.LeftBracket)
 	p.increaseIndentation()
 	for cur := attrList; cur != nil; cur = cur.Next {
 		split, err := p.printAList(cur.AList, hasMultipleAttrs)
@@ -226,7 +225,7 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 		p.printNewline()
 		p.printIndent()
 	}
-	p.print(token.RightBracket)
+	p.printToken(token.RightBracket)
 	return nil
 }
 
@@ -260,9 +259,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 
 	p.printSpace()
 	if edgeStmt.Right.Directed {
-		p.print(token.DirectedEgde)
+		p.printToken(token.DirectedEgde)
 	} else {
-		p.print(token.UndirectedEgde)
+		p.printToken(token.UndirectedEgde)
 	}
 
 	p.printSpace()
@@ -274,9 +273,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
 		p.printSpace()
 		if edgeStmt.Right.Directed {
-			p.print(token.DirectedEgde)
+			p.printToken(token.DirectedEgde)
 		} else {
-			p.print(token.UndirectedEgde)
+			p.printToken(token.UndirectedEgde)
 		}
 		p.printSpace()
 		err = p.printEdgeOperand(cur.Right)
@@ -316,12 +315,12 @@ func (p *Printer) printAttribute(attribute ast.Attribute) error {
 	if err != nil {
 		return err
 	}
-	p.print(token.Equal)
+	p.printToken(token.Equal)
 	return p.printID(attribute.Value)
 }
 
 func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
-	p.print(token.Subgraph)
+	p.printToken(token.Subgraph)
 	p.printSpace()
 	if subraph.ID != "" {
 		err := p.printID(subraph.ID)
@@ -331,7 +330,7 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 		p.printSpace()
 	}
 
-	p.print(token.LeftBrace)
+	p.printToken(token.LeftBrace)
 	p.increaseIndentation()
 	err := p.printStmts(subraph.Stmts)
 	if err != nil {
@@ -339,7 +338,7 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 	}
 	p.decreaseIndentation()
 	p.printIndent()
-	p.print(token.RightBrace)
+	p.printToken(token.RightBrace)
 	return nil
 }
 
@@ -353,11 +352,21 @@ func (p *Printer) decreaseIndentation() {
 
 func (p *Printer) printIndent() {
 	for range p.indentLevel {
-		p.print("\t")
+		p.printRune('\t')
 	}
 }
 
-func (p *Printer) print(a ...any) {
-	fmt.Fprint(p.w, a...)
+func (p *Printer) print(a fmt.Stringer) {
+	fmt.Fprint(p.w, a.String())
+	p.column += utf8.RuneCountInString(a.String())
+}
+
+func (p *Printer) printRune(a rune) {
+	fmt.Fprintf(p.w, "%c", a)
 	p.column++
+}
+
+func (p *Printer) printToken(a token.TokenType) {
+	fmt.Fprint(p.w, a.String())
+	p.column += utf8.RuneCountInString(a.String())
 }

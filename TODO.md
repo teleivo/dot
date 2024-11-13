@@ -1,8 +1,4 @@
 * write cmd/dotfmt
-    * try formatting all https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
-    any errors?
-    * update README with an example
-
     * support comments
       * first the parser needs to parse comments anywhere. right now comments lead to errors in a
       lot of places they should be legal
@@ -19,42 +15,14 @@
 	}
       ```
 
-* why is the ../graphviz/graphs/uncommented/russian.gv not stripping the leading whitespace from
-  before graph?
-
-* remove empty statements? like or does that serve any purpose?
-
-```
-graph [
-];
-```
-
-* why is ../graphviz/graphs/uncommented/pgram.gv label ID not broken up?
-
-```
-	subgraph {
-		rank=same
-		node [shape=parallelogram]
-		"Parallelogram" [label="This is a test\nof a multiline\nlabel in an\nparallelogram with approx\nsquare aspect"]
-		"a ----- long thin parallelogram"
-		"xx" [label="m"]
-		"yy" [label="a\nb\nc\nd\ne\nf"]
-		node [shape=octagon]
-		"Octagon" [label="This is a test\nof a multiline\nlabel in an\noctagon with approx\nsquare aspect"]
-		node [shape=parallelogram]
-		"Parallelogram" [label="This is a test\nof a multiline\nlabel in an\nparallelogram with approx\nsquare aspect"]
-		"a ----- long thin parallelogram"
-		"zz" [label="m"]
-		"qq" [label="a\nb\nc\nd\ne\nf"]
-		ordering=out
-	}
-```
     * allow multiple nodes on the same line. how to break them up when > maxCol
 
     * how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
     Allow users to do that. No more than one empty line though. And will that line be completely
     empty or be indented as the surrounding code?
     I need proper token/ast position. for this row and column
+
+    * update README with an example
 
     * support parsing/formatting ranges
 
@@ -529,6 +497,15 @@ https://graphviz.org/doc/info/lang.html#ids
 dot -Tsvg <../graphviz/graphs/directed/russian.gv > russian.svg
 
 also works so is that language reference outdated?
+
+* improve breaking up long lines
+  * Only the ID individually is considered right now. In this example `]` exceeds the maxCol
+
+```dot
+	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
+```
+
+  * Only break on word boundaries? So `col` does not turn into `co\l`
 
 * align multiple attribute values (and `=`)
 	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [

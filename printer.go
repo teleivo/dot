@@ -357,8 +357,9 @@ func (p *Printer) printIndent() {
 }
 
 func (p *Printer) print(a fmt.Stringer) {
-	fmt.Fprint(p.w, a.String())
-	p.column += utf8.RuneCountInString(a.String())
+	for _, r := range a.String() {
+		p.printRune(r)
+	}
 }
 
 func (p *Printer) printRune(a rune) {
@@ -367,6 +368,8 @@ func (p *Printer) printRune(a rune) {
 }
 
 func (p *Printer) printToken(a token.TokenType) {
-	fmt.Fprint(p.w, a.String())
-	p.column += utf8.RuneCountInString(a.String())
+	token := a.String()
+	fmt.Fprint(p.w, token)
+	// tokens are single byte runes i.e. byte count = rune count
+	p.column += len(token)
 }

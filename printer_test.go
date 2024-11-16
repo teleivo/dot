@@ -229,17 +229,13 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		// TODO break up comments that are too long
 		// TODO test comments on the same line as other statements
 		// TODO turn a multi-line comment that fits on one line into a // comment?
-		"EmptyComments": { // TODO remove newlines with empty statements
+		"EmptyComments": {
 			in: `graph {
 		#    	
 			//    
   /*    */
 }`,
-			want: `graph {
-	
-	
-	
-}`,
+			want: `graph {}`,
 		},
 		"CommentsGetOneLeadingSpace": {
 			in: `graph {
@@ -258,7 +254,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	/* this is a multi-line comment
 		next line gets the current indentation added
 
-			*/
+}	*/
 }`,
 		},
 	}

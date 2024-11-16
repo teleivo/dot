@@ -372,9 +372,6 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 }
 
 func (p *Printer) printComment(comment ast.Comment) error {
-	p.printNewline()
-	p.printIndent()
-
 	text := comment.Text
 	var openingMarker []rune
 	var closingMarker []rune
@@ -396,6 +393,8 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			continue
 		}
 		if !hasText {
+			p.printNewline()
+			p.printIndent()
 			for _, m := range openingMarker {
 				p.printRune(m)
 			}

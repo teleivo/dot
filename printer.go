@@ -82,16 +82,22 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 }
 
 func (p *Printer) printStmts(stmts []ast.Stmt) error {
+	// TODO consider change of lines as well as the column is reset to 0 on printNewline
+	var hasPrinted bool
+	colStart := p.column
+
 	for _, stmt := range stmts {
-		p.printNewline()
-		p.printIndent()
 		err := p.printStmt(stmt)
 		if err != nil {
 			return err
 		}
+		if !hasPrinted && colStart != p.column {
+			hasPrinted = true
+		}
 	}
-	// no statements print as {}
-	if len(stmts) > 0 {
+
+	// no statements are printed as {}
+	if hasPrinted {
 		p.printNewline()
 	}
 	return nil
@@ -153,13 +159,19 @@ func (p *Printer) printStmt(stmt ast.Stmt) error {
 	switch st := stmt.(type) {
 	case *ast.NodeStmt:
 		err = p.printNodeStmt(st)
+	case *ast.EdgeStmt:
+		p.printNewline()
+		p.printIndent()
+		err = p.printEdgeStmt(st)
 	case *ast.AttrStmt:
 		err = p.printAttrStmt(st)
 	case ast.Attribute:
+		p.printNewline()
+		p.printIndent()
 		err = p.printAttribute(st)
-	case *ast.EdgeStmt:
-		err = p.printEdgeStmt(st)
 	case ast.Subgraph:
+		p.printNewline()
+		p.printIndent()
 		err = p.printSubgraph(st)
 	case ast.Comment:
 		err = p.printComment(st)
@@ -168,6 +180,8 @@ func (p *Printer) printStmt(stmt ast.Stmt) error {
 }
 
 func (p *Printer) printNodeStmt(nodeStmt *ast.NodeStmt) error {
+	p.printNewline()
+	p.printIndent()
 	err := p.printNodeID(nodeStmt.NodeID)
 	if err != nil {
 		return err
@@ -301,15 +315,28 @@ func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {
 }
 
 func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
-	if attrStmt.AttrList == nil {
+	if !hasAttr(attrStmt.AttrList) {
 		return nil
 	}
 
+	p.printNewline()
+	p.printIndent()
 	err := p.printID(attrStmt.ID)
 	if err != nil {
 		return err
 	}
 	return p.printAttrList(attrStmt.AttrList)
+}
+
+func hasAttr(attrList *ast.AttrList) bool {
+	if attrList == nil {
+		return false
+	}
+
+	for cur := attrList.AList; cur != nil; cur = cur.Next {
+		return true
+	}
+	return false
 }
 
 func (p *Printer) printAttribute(attribute ast.Attribute) error {
@@ -345,6 +372,9 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 }
 
 func (p *Printer) printComment(comment ast.Comment) error {
+	p.printNewline()
+	p.printIndent()
+
 	text := comment.Text
 	var openingMarker []rune
 	var closingMarker []rune

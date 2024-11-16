@@ -144,14 +144,9 @@ graph {
 	}
 }`,
 		},
-		// TODO only print newline and indentation if it actually printed a statement
 		"EmptyAttrStatements": {
-			in: `graph { node []; edge[]; graph[];}`,
-			want: `graph {
-	
-	
-	
-}`,
+			in:   `graph { node []; edge[]; graph[];}`,
+			want: `graph {}`,
 		},
 		"AttrStatementWithSingleAttribute": {
 			in: `graph {

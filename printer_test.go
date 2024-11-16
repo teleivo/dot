@@ -229,7 +229,6 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	}
 }`,
 		},
-		// TODO make sure that the multi-line comment has only one space before the closing marker
 		// TODO break up comments that are too long
 		// TODO test comments on the same line as other statements
 		// TODO turn a multi-line comment that fits on one line into a // comment?
@@ -249,12 +248,20 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			in: `graph {
 //indent and add one space
 		#		indent and remove leading whitespace, adding one space
-			/* this is a multi-line comment */
+			/*	  this is a multi-line marker comment on a single line */
+  			/*	  this is a multi-line comment
+		next line gets the current indentation added
+
+			*/
 }`,
 			want: `graph {
 	// indent and add one space
 	# indent and remove leading whitespace, adding one space
-	/* this is a multi-line comment */
+	/* this is a multi-line marker comment on a single line */
+	/* this is a multi-line comment
+		next line gets the current indentation added
+
+			*/
 }`,
 		},
 	}

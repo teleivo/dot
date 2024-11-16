@@ -360,21 +360,22 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	var isPrinted bool
+	var hasText bool
 	for _, r := range text {
-		if !isPrinted && (r == ' ' || r == '\t') {
+		if !hasText && (r == ' ' || r == '\t') {
 			continue
 		}
-		if !isPrinted {
+		if !hasText {
 			for _, m := range openingMarker {
 				p.printRune(m)
 			}
 			p.printSpace()
-			isPrinted = true
+			hasText = true
 		}
 		p.printRune(r)
 	}
-	if isPrinted && len(closingMarker) > 0 {
+
+	if hasText && len(closingMarker) > 0 {
 		for _, m := range closingMarker {
 			p.printRune(m)
 		}

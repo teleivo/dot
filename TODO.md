@@ -1,11 +1,11 @@
 * write cmd/dotfmt
     * support comments
-      * first the parser needs to parse comments anywhere. right now comments lead to errors in a
-      lot of places they should be legal
-      interestingly comments are ok on their own line or inside a subgraph
+      * comments are ok on their own line or inside a subgraph
       ../graphviz/graphs/uncommented/honda-tokoro.gv
       `{/*L=m*/rank=same n001 n011}`
-      the comment turns into an empty line right now
+      the comment turns into an empty line right now as these statements are not printed. that
+      should be an easy fix
+
       ```dot
       	subgraph {
 
@@ -14,6 +14,10 @@
 		n011
 	}
       ```
+
+      * first the parser needs to parse comments anywhere. right now comments lead to errors in a
+      lot of places they should be legal
+      * break up long comments
 
     * allow multiple nodes on the same line. how to break them up when > maxCol
 

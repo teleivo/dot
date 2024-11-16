@@ -161,6 +161,8 @@ func (p *Printer) printStmt(stmt ast.Stmt) error {
 		err = p.printEdgeStmt(st)
 	case ast.Subgraph:
 		err = p.printSubgraph(st)
+	case ast.Comment:
+		err = p.printComment(st)
 	}
 	return err
 }
@@ -339,6 +341,44 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 	p.decreaseIndentation()
 	p.printIndent()
 	p.printToken(token.RightBrace)
+	return nil
+}
+
+func (p *Printer) printComment(comment ast.Comment) error {
+	text := comment.Text
+	var openingMarker []rune
+	var closingMarker []rune
+	if text[0] == '#' {
+		openingMarker = []rune{'#'}
+		text = text[1:]
+	} else if text[1] == '/' {
+		openingMarker = []rune{'/', '/'}
+		text = text[2:]
+	} else {
+		openingMarker = []rune{'/', '*'}
+		closingMarker = []rune{'*', '/'}
+		text = text[2 : len(text)-2]
+	}
+
+	var isPrinted bool
+	for _, r := range text {
+		if !isPrinted && (r == ' ' || r == '\t') {
+			continue
+		}
+		if !isPrinted {
+			for _, m := range openingMarker {
+				p.printRune(m)
+			}
+			p.printSpace()
+			isPrinted = true
+		}
+		p.printRune(r)
+	}
+	if isPrinted && len(closingMarker) > 0 {
+		for _, m := range closingMarker {
+			p.printRune(m)
+		}
+	}
 	return nil
 }
 

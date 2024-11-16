@@ -27,6 +27,13 @@ func TestParser(t *testing.T) {
 					Directed: true,
 				},
 			},
+			// TODO how to deal with this? as the ast.Comment is not part of the ast.Graph.Stmts
+			// do I actually need to return an ast.Node from Parse?
+			// fix this together with supporting parsing of ranges
+			// "GraphPrefixedWithComment": {
+			// 	in:   `/** this is typical */ graph {}`,
+			// 	want: ast.Graph{},
+			// },
 			"EmptyUndirectedGraph": {
 				in:   "graph {}",
 				want: ast.Graph{},

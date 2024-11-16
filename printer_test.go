@@ -229,6 +229,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	}
 }`,
 		},
+		// TODO align closing marker as gofumpt does, I need to know keep track of p.row or maybe
+		// know the tokens range
 		// TODO break up comments that are too long
 		// TODO test comments on the same line as other statements
 		// TODO turn a multi-line comment that fits on one line into a // comment?

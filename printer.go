@@ -465,6 +465,15 @@ func (p *Printer) printComment(comment ast.Comment) error {
 				runeCount++
 			}
 
+			if inWord {
+				if !isFirstWord {
+					p.printSpace()
+				}
+				for _, c := range words[start:] {
+					p.printRune(c)
+				}
+			}
+
 			words = nil
 			runeCountInWords = 0
 			hasNonWhitespace = false

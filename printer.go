@@ -384,7 +384,8 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	wordCount, isMultiLine := isMultiLineComment(p.column, text)
+	const singleMarkerRunes = 3
+	wordCount, isMultiLine := isMultiLineComment(p.indentLevel+singleMarkerRunes, text)
 	if wordCount == 0 {
 		// discard empty comments
 		return nil
@@ -494,6 +495,13 @@ func isMultiLineComment(column int, text string) (int, bool) {
 			return wordCount, true
 		}
 		runeCount++
+	}
+
+	if inWord {
+		wordCount++
+	}
+	if wordCount >= 2 && column+runeCount > maxColumn {
+		return wordCount, true
 	}
 	return wordCount, false
 }

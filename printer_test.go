@@ -226,8 +226,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		},
 		// TODO fix current test
 		// TODO add test showing that single/multi-line comments can be 100 runes wide
-		// TODO improve by breaking up at - as well? is - valid in urls or only percent encoded?
 		// TODO test comments on the same line as other statements
+		// TODO improve by breaking up at - as well? is - valid in urls or only percent encoded?
 		// TODO cleanup implementation
 		"EmptyCommentsAreDiscarded": {
 			in: `graph {
@@ -241,12 +241,10 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		},
 		"CommentsSingleLineUseSameMarker": {
 			in: `graph {
-//indent and add one space  
-		#		indent and remove leading whitespace, adding one space  
+		//this   is a comment! that has exactly 100 runes, 	which is the max column of dotfmt like it or not!
 }`,
 			want: `graph {
-	// indent and add one space
-	// indent and remove leading whitespace, adding one space
+	// this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
 }`,
 		},
 		"CommentsMultiLineThatFitsOntoSingleLineIsTransformed": {

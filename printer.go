@@ -380,41 +380,43 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[1:]
 	} else if text[1] == '/' {
 		text = text[2:]
-	} else {
+	} else { // discard multi-line markers
 		text = text[2 : len(text)-2]
 	}
 
-	// TODO use a true buffer on the printer instead of the rune slice; I can also use that for the
+	// TODO use a true words on the printer instead of the rune slice; I can also use that for the
 	// multi-line IDs
-	var buffer []rune
+	var words []rune
+	var runeCountInWords int
 	var printedMultiLineMarker bool
 	var hasNonWhitespace bool
 	var waitingOnNonWhitespace bool
 	for _, r := range text {
 		if !hasNonWhitespace && (r == ' ' || r == '\t' || r == '\n') {
-			// discard whitespace before opening marker is printed as empty comments are discarded
-			// and opening marker is followed by exactly one space
+			// discard whitespace before any non-whitespace runes
 			continue
 		} else if r == ' ' || r == '\t' || r == '\n' {
-			// discard any whitespace between words
+			// discard any whitespace between words so words are separated by exactly one
 			waitingOnNonWhitespace = true
 			continue
 		}
 
 		if waitingOnNonWhitespace {
-			buffer = append(buffer, ' ')
+			words = append(words, ' ')
 			waitingOnNonWhitespace = false
 		}
-		buffer = append(buffer, r)
+		words = append(words, r)
 		hasNonWhitespace = true
-		// fmt.Fprintf(os.Stderr, "p.col=%d, len=%d, buffer=%s\n", p.column, len(buffer), string(buffer))
+		runeCountInWords++
 
 		// TODO does this already need to capture an entire word even if already > maxColumn?
 		// TODO test edge case properly, how many runes do we need to know that this is a multi-line comment?
 		// is the addition of the indentLevel correct?
 
+		// TODO might also have to deal with single line comments that are broken up as they are
+		// next to a statement
 		// deals with multi-line comments
-		if len(buffer)+p.column+p.indentLevel >= maxColumn {
+		if p.column+p.indentLevel+runeCountInWords >= maxColumn {
 			if !printedMultiLineMarker {
 				p.printNewline()
 				p.printIndent()
@@ -425,34 +427,59 @@ func (p *Printer) printComment(comment ast.Comment) error {
 				p.printIndent()
 				printedMultiLineMarker = true
 			}
-			count := maxColumn - p.column
-			for _, b := range buffer {
-				if count == 0 {
-					p.printNewline()
-					p.printIndent()
-					count = maxColumn - p.column - p.indentLevel
+
+			// print words from buffer
+			var inWord bool
+			var start int
+			var runeCount int
+			isFirstWord := true
+			for i, b := range words {
+				if !inWord {
+					inWord = true
+					start = i
+					runeCount = 1
+					continue
 				}
-				p.printRune(b)
-				count--
+
+				if b == ' ' {
+					// print word without space if it fits on line
+					if p.column+runeCount <= maxColumn {
+						if !isFirstWord {
+							p.printSpace()
+						}
+					} else {
+						p.printNewline()
+						p.printIndent()
+					}
+					for _, c := range words[start:i] {
+						p.printRune(c)
+					}
+					inWord = false
+					isFirstWord = false
+
+					continue
+				}
+
+				runeCount++
 			}
-			buffer = nil
+
+			words = nil
 			hasNonWhitespace = false
 			waitingOnNonWhitespace = false
 		}
-
 	}
 
-	if len(buffer) > 0 && !printedMultiLineMarker { // means comment fits onto single line
+	if len(words) > 0 && !printedMultiLineMarker { // means comment fits onto single line
 		p.printNewline()
 		p.printIndent()
 		p.printRune('/')
 		p.printRune('/')
 		p.printSpace()
-		p.printRunes(buffer)
+		p.printRunes(words)
 		return nil
 	}
 
-	p.printRunes(buffer)
+	p.printRunes(words)
 	p.decreaseIndentation()
 	p.printNewline()
 	p.printIndent()

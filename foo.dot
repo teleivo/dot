@@ -1,7 +1,5 @@
 graph {
 	// this is ok
-	/*
-		this is a multi-line comment that will not fit on why to a single line so it will staya multi-line
-		sco m ment but ge t stripped of its superfluouswhitespace nonetheless
+	/*this is a multi-line comment that will not fit on why to a single line so it will stay a multi-lines comment but ge t stripped of its superfluous whitespace nonetheless
 	*/
 }

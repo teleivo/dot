@@ -375,59 +375,86 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 
 func (p *Printer) printComment(comment ast.Comment) error {
 	text := comment.Text
-	var openingMarker []rune
-	var closingMarker []rune
+	// discard comment markers
 	if text[0] == '#' {
-		openingMarker = []rune{'#'}
 		text = text[1:]
 	} else if text[1] == '/' {
-		openingMarker = []rune{'/', '/'}
 		text = text[2:]
 	} else {
-		openingMarker = []rune{'/', '*'}
-		closingMarker = []rune{'*', '/'}
 		text = text[2 : len(text)-2]
 	}
 
+	// TODO use a true buffer instead of the rune slice
+	var printedMultiLineMarker bool
 	var hasNonWhitespace bool
-	var printedOpeningMarker bool
-	var whitespace []rune
+	var waitingOnNonWhitespace bool
+	var buffer []rune
 	for _, r := range text {
-		if !printedOpeningMarker && (r == ' ' || r == '\t') {
+		if !hasNonWhitespace && (r == ' ' || r == '\t' || r == '\n') {
 			// discard whitespace before opening marker is printed as empty comments are discarded
 			// and opening marker is followed by exactly one space
 			continue
+		} else if r == ' ' || r == '\t' || r == '\n' {
+			// discard any whitespace between words
+			waitingOnNonWhitespace = true
+			continue
 		}
 
-		if !printedOpeningMarker {
-			p.printNewline()
-			p.printIndent()
-			for _, m := range openingMarker {
-				p.printRune(m)
-			}
-			p.printSpace()
-			p.printRune(r)
-			hasNonWhitespace = true
-			printedOpeningMarker = true
-		} else if !hasNonWhitespace && (r == ' ' || r == '\t') {
-			// collect whitespace and only print if followed by non-whitespace
-			whitespace = append(whitespace, r)
-		} else if r == '\n' {
-			hasNonWhitespace = false
-		} else {
-			if !hasNonWhitespace && len(whitespace) > 0 {
-				p.printRunes(whitespace)
-				whitespace = nil
-				hasNonWhitespace = true
-			}
-			p.printRune(r)
+		if waitingOnNonWhitespace {
+			buffer = append(buffer, ' ')
+			waitingOnNonWhitespace = false
 		}
+		buffer = append(buffer, r)
+		hasNonWhitespace = true
+
+		// TODO this will only be reached for multi-line comments right?
+		if len(buffer) > maxColumn+p.column+1 { // TODO test edge case properly, how many runes do we need to know that this is a multi-line comment?
+			if !printedMultiLineMarker {
+				p.printNewline()
+				p.printIndent()
+				p.printRune('/')
+				p.printRune('*')
+				p.increaseIndentation()
+				p.printNewline()
+				p.printIndent()
+				printedMultiLineMarker = true
+			}
+			var count int
+			for _, b := range buffer {
+				if count+p.column >= maxColumn {
+					p.printNewline()
+					p.printIndent()
+					count = 0
+				}
+				p.printRune(b)
+				count++
+			}
+			buffer = nil
+			hasNonWhitespace = false
+			waitingOnNonWhitespace = false
+		}
+
 	}
 
-	if printedOpeningMarker && len(closingMarker) > 0 {
-		for _, m := range closingMarker {
-			p.printRune(m)
+	if len(buffer) > 0 {
+		if !printedMultiLineMarker {
+			p.printNewline()
+			p.printIndent()
+			p.printRune('/')
+			p.printRune('/')
+			p.printSpace()
+			p.printRunes(buffer)
+			return nil
 		}
+		p.printRunes(buffer)
+	}
+
+	if printedMultiLineMarker {
+		p.decreaseIndentation()
+		p.printNewline()
+		p.printIndent()
+		p.printRune('*')
+		p.printRune('/')
 	}
 	return nil
 }

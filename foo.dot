@@ -1,0 +1,7 @@
+graph {
+	/*
+		this is a multi-line comment that will not fit on
+		 to a single line so it will stay a multi-line co
+		m ment but get stripped of its superfluous whitespace nonetheless
+	*/
+}

@@ -228,38 +228,48 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		// know the tokens range
 		// TODO break up comments that are too long
 		// TODO test comments on the same line as other statements
-		"EmptyComments": {
+		"EmptyCommentsAreDiscarded": {
 			in: `graph {
 		#    	
 			//    
-  /*    */
+  /*   
+
+			*/
 }`,
 			want: `graph {}`,
 		},
-		"CommentsGetOneLeadingSpace": {
+		"CommentsSingleLine": {
 			in: `graph {
-//indent and add one space
-		#		indent and remove leading whitespace, adding one space
-			/*	  this is a multi-line marker comment on a single line */
-  			/*	  this is a multi-line comment
-		next line gets the current indentation added
+//indent and add one space  
+		#		indent and remove leading whitespace, adding one space  
+			/*	  this is a multi-line marker  
+			comment that fits onto a single line                            */
+}`,
+			want: `graph {
+	// indent and add one space
+	// indent and remove leading whitespace, adding one space
+	// this is a multi-line marker comment that fits onto a single line
+}`,
+		},
+		"CommentsMultiLine": {
+			in: `graph {
+	/* this is a multi-line comment that will not fit onto a single line so it will stay a
+			 multi-line comment but get stripped of its      superfluous    whitespace	
+
+			nonetheless
 
 			*/
 }`,
 			want: `graph {
-	// indent and add one space
-	# indent and remove leading whitespace, adding one space
-	/* this is a multi-line marker comment on a single line */
-	/* this is a multi-line comment
-		next line gets the current indentation added
+	/* this is a multi-line comment that will not fit onto a single line so it will stay a
+			 multi-line comment but get stripped of its      superfluous    whitespace	
+
+			nonetheless
 
 			*/
 }`,
 		},
 	}
-	/*
-		asdf asdff sad asd  as dfasd
-	*/
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

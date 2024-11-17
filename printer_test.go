@@ -224,9 +224,6 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	}
 }`,
 		},
-		// TODO align closing marker as gofumpt does, I need to know keep track of p.row or maybe
-		// know the tokens range
-		// TODO break up comments that are too long
 		// TODO test comments on the same line as other statements
 		"EmptyCommentsAreDiscarded": {
 			in: `graph {
@@ -238,16 +235,22 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 }`,
 			want: `graph {}`,
 		},
-		"CommentsSingleLine": {
+		"CommentsSingleLineUseSameMarker": {
 			in: `graph {
 //indent and add one space  
 		#		indent and remove leading whitespace, adding one space  
-			/*	  this is a multi-line marker  
-			comment that fits onto a single line                            */
 }`,
 			want: `graph {
 	// indent and add one space
 	// indent and remove leading whitespace, adding one space
+}`,
+		},
+		"CommentsMultiLineThatFitsOntoSingleLineIsTransformed": {
+			in: `graph {
+			/*	  this is a multi-line marker  
+			comment that fits onto a single line                            */
+}`,
+			want: `graph {
 	// this is a multi-line marker comment that fits onto a single line
 }`,
 		},
@@ -261,12 +264,10 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			*/
 }`,
 			want: `graph {
-	/* this is a multi-line comment that will not fit onto a single line so it will stay a
-			 multi-line comment but get stripped of its      superfluous    whitespace	
-
-			nonetheless
-
-			*/
+	/*
+		this is a multi-line comment that will not fit onto a single line so it will stay a multi-line
+		comment but get stripped of its superfluous whitespace nonetheless
+	*/
 }`,
 		},
 	}

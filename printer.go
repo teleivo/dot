@@ -465,9 +465,18 @@ func (p *Printer) printComment(comment ast.Comment) error {
 				runeCount++
 			}
 
+			// TODO test with a word equal to or greater than the maxColumn, it should not be broken
+			// up
+			// https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 			if inWord {
-				if !isFirstWord {
-					p.printSpace()
+				// print word without space if it fits on line
+				if p.column+runeCount <= maxColumn {
+					if !isFirstWord {
+						p.printSpace()
+					}
+				} else {
+					p.printNewline()
+					p.printIndent()
 				}
 				for _, c := range words[start:] {
 					p.printRune(c)
@@ -491,12 +500,14 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		return nil
 	}
 
-	p.printRunes(words)
-	p.decreaseIndentation()
-	p.printNewline()
-	p.printIndent()
-	p.printRune('*')
-	p.printRune('/')
+	if printedMultiLineMarker {
+		p.printRunes(words)
+		p.decreaseIndentation()
+		p.printNewline()
+		p.printIndent()
+		p.printRune('*')
+		p.printRune('/')
+	}
 	return nil
 }
 

@@ -224,8 +224,6 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	}
 }`,
 		},
-		// TODO fix current test
-		// TODO add test showing that single/multi-line comments can be 100 runes wide
 		// TODO test comments on the same line as other statements
 		// TODO improve by breaking up at - as well? is - valid in urls or only percent encoded?
 		// TODO cleanup implementation
@@ -242,9 +240,27 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		"CommentsSingleLineUseSameMarker": {
 			in: `graph {
 		//this   is a comment! that has exactly 100 runes, 	which is the max column of dotfmt like it or not!
+#this   is a comment! that has exactly 100 runes, 	which is the max column of dotfmt like it or not!
 }`,
 			want: `graph {
 	// this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
+	// this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
+}`,
+		},
+		"CommentsSingleLineThatExceedMaxColumnAreTransformed": {
+			in: `graph {
+		//this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
+#this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
+}`,
+			want: `graph {
+	/*
+		this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
+		or not!
+	*/
+	/*
+		this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
+		or not!
+	*/
 }`,
 		},
 		"CommentsMultiLineThatFitsOntoSingleLineIsTransformed": {

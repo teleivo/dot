@@ -422,7 +422,11 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		}
 
 		if isWhitespace(r) { // word boundary
-			if p.column+runeCount <= maxColumn {
+			col := p.column + runeCount
+			if !isFirstWord {
+				col++ // for the space
+			}
+			if col <= maxColumn {
 				if !isFirstWord {
 					p.printSpace()
 				}

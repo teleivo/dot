@@ -1,5 +1,7 @@
 * write cmd/dotfmt
     * support comments
+      * is there a bug in the lexer/parser? check if two single marker comments are two separate
+      tokens
       * add test like: comments are ok on their own line or inside a subgraph
       ../graphviz/graphs/uncommented/honda-tokoro.gv
 

@@ -384,7 +384,7 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	// TODO use a true words on the printer instead of the rune slice; I can also use that for the
+	// TODO use a true buffer on the printer instead of the rune slice; I can also use that for the
 	// multi-line IDs
 	var words []rune
 	var runeCountInWords int
@@ -417,6 +417,8 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		// next to a statement
 		// deals with multi-line comments
 		if p.column+p.indentLevel+runeCountInWords >= maxColumn {
+			// fmt.Fprintf(os.Stderr, "\np.column=%d, p.indentLevel=%d, runeCountInWords=%d, %s\n", p.column, p.indentLevel, runeCountInWords, string(words))
+			// return nil
 			if !printedMultiLineMarker {
 				p.printNewline()
 				p.printIndent()
@@ -464,6 +466,7 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			}
 
 			words = nil
+			runeCountInWords = 0
 			hasNonWhitespace = false
 			waitingOnNonWhitespace = false
 		}

@@ -375,7 +375,7 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 
 func (p *Printer) printComment(comment ast.Comment) error {
 	text := comment.Text
-	// discard comment markers
+	// discard markers
 	if text[0] == '#' {
 		text = text[1:]
 	} else if text[1] == '/' {
@@ -384,11 +384,12 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	// TODO use a true buffer instead of the rune slice
+	// TODO use a true buffer on the printer instead of the rune slice; I can also use that for the
+	// multi-line IDs
+	var buffer []rune
 	var printedMultiLineMarker bool
 	var hasNonWhitespace bool
 	var waitingOnNonWhitespace bool
-	var buffer []rune
 	for _, r := range text {
 		if !hasNonWhitespace && (r == ' ' || r == '\t' || r == '\n') {
 			// discard whitespace before opening marker is printed as empty comments are discarded
@@ -406,9 +407,14 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		}
 		buffer = append(buffer, r)
 		hasNonWhitespace = true
+		// fmt.Fprintf(os.Stderr, "p.col=%d, len=%d, buffer=%s\n", p.column, len(buffer), string(buffer))
 
-		// TODO this will only be reached for multi-line comments right?
-		if len(buffer) > maxColumn+p.column+1 { // TODO test edge case properly, how many runes do we need to know that this is a multi-line comment?
+		// TODO does this already need to capture an entire word even if already > maxColumn?
+		// TODO test edge case properly, how many runes do we need to know that this is a multi-line comment?
+		// is the addition of the indentLevel correct?
+
+		// deals with multi-line comments
+		if len(buffer)+p.column+p.indentLevel >= maxColumn {
 			if !printedMultiLineMarker {
 				p.printNewline()
 				p.printIndent()
@@ -419,15 +425,15 @@ func (p *Printer) printComment(comment ast.Comment) error {
 				p.printIndent()
 				printedMultiLineMarker = true
 			}
-			var count int
+			count := maxColumn - p.column
 			for _, b := range buffer {
-				if count+p.column >= maxColumn {
+				if count == 0 {
 					p.printNewline()
 					p.printIndent()
-					count = 0
+					count = maxColumn - p.column - p.indentLevel
 				}
 				p.printRune(b)
-				count++
+				count--
 			}
 			buffer = nil
 			hasNonWhitespace = false
@@ -436,26 +442,22 @@ func (p *Printer) printComment(comment ast.Comment) error {
 
 	}
 
-	if len(buffer) > 0 {
-		if !printedMultiLineMarker {
-			p.printNewline()
-			p.printIndent()
-			p.printRune('/')
-			p.printRune('/')
-			p.printSpace()
-			p.printRunes(buffer)
-			return nil
-		}
-		p.printRunes(buffer)
-	}
-
-	if printedMultiLineMarker {
-		p.decreaseIndentation()
+	if len(buffer) > 0 && !printedMultiLineMarker { // means comment fits onto single line
 		p.printNewline()
 		p.printIndent()
-		p.printRune('*')
 		p.printRune('/')
+		p.printRune('/')
+		p.printSpace()
+		p.printRunes(buffer)
+		return nil
 	}
+
+	p.printRunes(buffer)
+	p.decreaseIndentation()
+	p.printNewline()
+	p.printIndent()
+	p.printRune('*')
+	p.printRune('/')
 	return nil
 }
 

@@ -384,124 +384,78 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	// TODO use a true buffer on the printer instead of the rune slice; I can also use that for the
-	// multi-line IDs
-	var words []rune
-	var runeCountInWords int
-	var printedMultiLineMarker bool
-	var hasNonWhitespace bool
-	var waitingOnNonWhitespace bool
-	for _, r := range text {
-		if !hasNonWhitespace && (r == ' ' || r == '\t' || r == '\n') {
-			// discard whitespace before any non-whitespace runes
-			continue
-		} else if r == ' ' || r == '\t' || r == '\n' {
-			// discard any whitespace between words so words are separated by exactly one
-			waitingOnNonWhitespace = true
-			continue
-		}
-
-		if waitingOnNonWhitespace {
-			words = append(words, ' ')
-			waitingOnNonWhitespace = false
-		}
-		words = append(words, r)
-		hasNonWhitespace = true
-		runeCountInWords++
-
-		// TODO does this already need to capture an entire word even if already > maxColumn?
-		// TODO test edge case properly, how many runes do we need to know that this is a multi-line comment?
-		// is the addition of the indentLevel correct?
-
-		// TODO might also have to deal with single line comments that are broken up as they are
-		// next to a statement
-		// deals with multi-line comments
-		if p.column+p.indentLevel+runeCountInWords >= maxColumn {
-			// fmt.Fprintf(os.Stderr, "\np.column=%d, p.indentLevel=%d, runeCountInWords=%d, %s\n", p.column, p.indentLevel, runeCountInWords, string(words))
-			// return nil
-			if !printedMultiLineMarker {
-				p.printNewline()
-				p.printIndent()
-				p.printRune('/')
-				p.printRune('*')
-				p.increaseIndentation()
-				p.printNewline()
-				p.printIndent()
-				printedMultiLineMarker = true
-			}
-
-			// print words from buffer
-			var inWord bool
-			var start int
-			var runeCount int
-			isFirstWord := true
-			for i, b := range words {
-				if !inWord {
-					inWord = true
-					start = i
-					runeCount = 1
-					continue
-				}
-
-				if b == ' ' {
-					// print word without space if it fits on line
-					if p.column+runeCount <= maxColumn {
-						if !isFirstWord {
-							p.printSpace()
-						}
-					} else {
-						p.printNewline()
-						p.printIndent()
-					}
-					for _, c := range words[start:i] {
-						p.printRune(c)
-					}
-					inWord = false
-					isFirstWord = false
-
-					continue
-				}
-
-				runeCount++
-			}
-
-			// TODO test with a word equal to or greater than the maxColumn, it should not be broken
-			// up
-			// https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
-			if inWord {
-				// print word without space if it fits on line
-				if p.column+runeCount <= maxColumn {
-					if !isFirstWord {
-						p.printSpace()
-					}
-				} else {
-					p.printNewline()
-					p.printIndent()
-				}
-				for _, c := range words[start:] {
-					p.printRune(c)
-				}
-			}
-
-			words = nil
-			runeCountInWords = 0
-			hasNonWhitespace = false
-			waitingOnNonWhitespace = false
-		}
-	}
-
-	if len(words) > 0 && !printedMultiLineMarker { // means comment fits onto single line
-		p.printNewline()
-		p.printIndent()
-		p.printRune('/')
-		p.printRune('/')
-		p.printSpace()
-		p.printRunes(words)
+	wordCount, isMultiLine := isMultiLineComment(p.column, text)
+	if wordCount == 0 {
+		// discard empty comments
 		return nil
 	}
 
-	if printedMultiLineMarker {
-		p.printRunes(words)
+	p.printNewline()
+	p.printIndent()
+	if isMultiLine {
+		p.printRune('/')
+		p.printRune('*')
+		p.increaseIndentation()
+		p.printNewline()
+		p.printIndent()
+	} else {
+		p.printRune('/')
+		p.printRune('/')
+		p.printSpace()
+	}
+
+	var inWord bool
+	var start, runeCount int
+	isFirstWord := true
+	for i, r := range text {
+		if !inWord {
+			if isWhitespace(r) {
+				// skip whitespace
+				continue
+			}
+
+			inWord = true
+			start = i
+			runeCount = 1
+			continue
+		}
+
+		if isWhitespace(r) { // word boundary
+			if p.column+runeCount <= maxColumn {
+				if !isFirstWord {
+					p.printSpace()
+				}
+			} else {
+				p.printNewline()
+				p.printIndent()
+			}
+			for _, c := range text[start:i] {
+				p.printRune(c)
+			}
+			inWord = false
+			isFirstWord = false
+
+			continue
+		}
+
+		runeCount++
+	}
+
+	if inWord {
+		if p.column+runeCount <= maxColumn {
+			if !isFirstWord {
+				p.printSpace()
+			}
+		} else {
+			p.printNewline()
+			p.printIndent()
+		}
+		for _, c := range text[start:] {
+			p.printRune(c)
+		}
+	}
+
+	if isMultiLine {
 		p.decreaseIndentation()
 		p.printNewline()
 		p.printIndent()
@@ -509,6 +463,43 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		p.printRune('/')
 	}
 	return nil
+}
+
+// isMultiLineComment determines if a comment text needs to be broken up into a multi-line comment.
+// The comment text needs to have at least two words which exceed the maxColumn. A single word will
+// not be broken up. The word count of up to two words is returned as well as a bool which is true
+// if the comment has to be broken up. The word count can be used to determine if the comment text
+// is solely composed of whitespace.
+func isMultiLineComment(column int, text string) (int, bool) {
+	var inWord bool
+	var runeCount, wordCount int
+	for _, r := range text {
+		if !inWord {
+			if isWhitespace(r) {
+				// skip whitespace
+				continue
+			}
+
+			inWord = true
+			runeCount++
+			continue
+		}
+
+		if isWhitespace(r) { // word boundary
+			wordCount++
+			inWord = false
+		}
+
+		if wordCount >= 2 && column+runeCount > maxColumn {
+			return wordCount, true
+		}
+		runeCount++
+	}
+	return wordCount, false
+}
+
+func isWhitespace(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\n'
 }
 
 func (p *Printer) increaseIndentation() {

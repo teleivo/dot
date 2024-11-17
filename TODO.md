@@ -5,8 +5,6 @@
 
       `{/*L=m*/rank=same n001 n011}`
 
-      * break up comments that are too long
-
       * first the parser needs to parse comments anywhere. right now comments lead to errors in a
       lot of places they should be legal
 

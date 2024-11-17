@@ -28,7 +28,7 @@ func TestPrint(t *testing.T) {
 			want: `strict graph "galaxy" {}`,
 		},
 		// World in Chinese each rune is 3 bytes long 世界
-		"NodeWithQuotedIDOfMaxWidth": {
+		"NodeWithQuotedIDOfMaxColumn": {
 			in: `graph {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }`,
@@ -36,7 +36,7 @@ func TestPrint(t *testing.T) {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }`,
 		},
-		"NodeWithQuotedIDPastMaxWidth": {
+		"NodeWithQuotedIDPastMaxColumn": {
 			in: `graph {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }`,
@@ -45,7 +45,7 @@ func TestPrint(t *testing.T) {
 aa"
 }`,
 		},
-		"NodeWithUnquotedIDOfMaxWidth": {
+		"NodeWithUnquotedIDOfMaxColumn": {
 			in: `graph {
 	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
 }`,
@@ -53,7 +53,7 @@ aa"
 	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
 }`,
 		},
-		"NodeWithUnquotedIDPastMaxWidth": {
+		"NodeWithUnquotedIDPastMaxColumn": {
 			in: `graph {
 	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
 }`,
@@ -156,7 +156,7 @@ graph     [ 	label="blue",]
 	graph [label="blue"]
 }`,
 		},
-		"AttrStatementWithIDOfMaxWidth": {
+		"AttrStatementWithIDOfMaxColumn": {
 			in: `graph {
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 }`,
@@ -164,7 +164,7 @@ graph     [ 	label="blue",]
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 }`,
 		},
-		"AttrStatementWithIDPastMaxWidth": {
+		"AttrStatementWithIDPastMaxColumn": {
 			in: `graph {
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col."]
 }`,
@@ -224,7 +224,11 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	}
 }`,
 		},
+		// TODO fix current test
+		// TODO add test showing that single/multi-line comments can be 100 runes wide
+		// TODO improve by breaking up at - as well? is - valid in urls or only percent encoded?
 		// TODO test comments on the same line as other statements
+		// TODO cleanup implementation
 		"EmptyCommentsAreDiscarded": {
 			in: `graph {
 		#    	
@@ -254,7 +258,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// this is a multi-line marker comment that fits onto a single line
 }`,
 		},
-		"CommentsMultiLine": {
+		"CommentsMultiLineIsBrokenUpAtWordBoundary": {
 			in: `graph {
 	/* this is a multi-line comment that will not fit onto a single line so it will stay a
 			 multi-line comment but get stripped of its      superfluous    whitespace	
@@ -267,6 +271,17 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	/*
 		this is a multi-line comment that will not fit onto a single line so it will stay a multi-line
 		comment but get stripped of its superfluous whitespace nonetheless
+	*/
+}`,
+		},
+		"CommentsMultiLineDoesNotBreakupWordsWhichAreGreaterThanMaxColumn": {
+			in: `graph {
+	// this uses a single-line marker but is too long for a single line https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
+}`,
+			want: `graph {
+	/*
+		this uses a single-line marker but is too long for a single line
+		https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 	*/
 }`,
 		},

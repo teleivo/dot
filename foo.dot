@@ -1,7 +1,6 @@
 graph {
-	// this is ok
 	/*
-		this is a multi-line comment that will not fit on why to a single line so it will stay a
-		multi-lines comment but get stripped of its superfluous whitespace nonetheless
+		this uses a single-line marker but is too long for a single line
+https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 	*/
 }

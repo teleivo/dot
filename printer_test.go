@@ -228,7 +228,6 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		// know the tokens range
 		// TODO break up comments that are too long
 		// TODO test comments on the same line as other statements
-		// TODO turn a multi-line comment that fits on one line into a // comment?
 		"EmptyComments": {
 			in: `graph {
 		#    	
@@ -254,10 +253,13 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	/* this is a multi-line comment
 		next line gets the current indentation added
 
-}	*/
+			*/
 }`,
 		},
 	}
+	/*
+		asdf asdff sad asd  as dfasd
+	*/
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

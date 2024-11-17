@@ -17,7 +17,8 @@ const maxColumn = 100
 type Printer struct {
 	r           io.Reader // r reader to parse dot code from
 	w           io.Writer // w writer to output formatted dot code to
-	column      int       // column is the current column in terms of runes the printer is at
+	row         int       // row is the current zero-indexed row the printer is at i.e. how many newlines it has printed
+	column      int       // column is the current zero-indexed column in terms of runes the printer is at
 	indentLevel int       // indentLevel is the current level of indentation to be applied when indenting
 }
 
@@ -82,8 +83,8 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 }
 
 func (p *Printer) printStmts(stmts []ast.Stmt) error {
-	// TODO consider change of lines as well as the column is reset to 0 on printNewline
 	var hasPrinted bool
+	rowStart := p.row
 	colStart := p.column
 
 	for _, stmt := range stmts {
@@ -91,7 +92,7 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 		if err != nil {
 			return err
 		}
-		if !hasPrinted && colStart != p.column {
+		if !hasPrinted && (rowStart != p.row || colStart != p.column) {
 			hasPrinted = true
 		}
 	}
@@ -106,6 +107,7 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 func (p *Printer) printNewline() {
 	fmt.Fprintln(p.w)
 	p.column = 0
+	p.row++
 }
 
 func (p *Printer) printSpace() {
@@ -387,24 +389,42 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	var hasText bool
+	var hasNonWhitespace bool
+	var printedOpeningMarker bool
+	var whitespace []rune
 	for _, r := range text {
-		if !hasText && (r == ' ' || r == '\t') {
+		if !printedOpeningMarker && (r == ' ' || r == '\t') {
+			// discard whitespace before opening marker is printed as empty comments are discarded
+			// and opening marker is followed by exactly one space
 			continue
 		}
-		if !hasText {
+
+		if !printedOpeningMarker {
 			p.printNewline()
 			p.printIndent()
 			for _, m := range openingMarker {
 				p.printRune(m)
 			}
 			p.printSpace()
-			hasText = true
+			p.printRune(r)
+			hasNonWhitespace = true
+			printedOpeningMarker = true
+		} else if !hasNonWhitespace && (r == ' ' || r == '\t') {
+			// collect whitespace and only print if followed by non-whitespace
+			whitespace = append(whitespace, r)
+		} else if r == '\n' {
+			hasNonWhitespace = false
+		} else {
+			if !hasNonWhitespace && len(whitespace) > 0 {
+				p.printRunes(whitespace)
+				whitespace = nil
+				hasNonWhitespace = true
+			}
+			p.printRune(r)
 		}
-		p.printRune(r)
 	}
 
-	if hasText && len(closingMarker) > 0 {
+	if printedOpeningMarker && len(closingMarker) > 0 {
 		for _, m := range closingMarker {
 			p.printRune(m)
 		}
@@ -428,6 +448,12 @@ func (p *Printer) printIndent() {
 
 func (p *Printer) print(a fmt.Stringer) {
 	for _, r := range a.String() {
+		p.printRune(r)
+	}
+}
+
+func (p *Printer) printRunes(a []rune) {
+	for _, r := range a {
 		p.printRune(r)
 	}
 }

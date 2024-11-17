@@ -1,8 +1,11 @@
 * write cmd/dotfmt
     * support comments
-      * comments are ok on their own line or inside a subgraph
+      * add test like: comments are ok on their own line or inside a subgraph
       ../graphviz/graphs/uncommented/honda-tokoro.gv
+
       `{/*L=m*/rank=same n001 n011}`
+
+      * break up comments that are too long
 
       * first the parser needs to parse comments anywhere. right now comments lead to errors in a
       lot of places they should be legal
@@ -506,12 +509,19 @@ also works so is that language reference outdated?
 	]`
  should that then apply to the entire file :joy:? as global attributes can be set on the
 graph/subraph as well
+
 * strip unnecessary quotes
   * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
   * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
+
 * keep the indentation when splitting to multiple lines?
   * the parser would need to support + so I can concatenat IDs
+
 * maybe: support subraph shorthand using `{}` and don't always print `subgraph` by looking at the literal? might need to add that to the ast as
+
+* turn multi-line marker comment that fits on one line into // do I need the position on the token?
+that would not tell me if the comment is purely whitespace keep track of the row in the printer,
+would that help?
 
 ## Highl Level API
 

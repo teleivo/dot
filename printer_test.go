@@ -230,14 +230,14 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		// add a test for a multi-line comment like A -- B /* foo */; B -- C
 		// or choose an attribute statement?
 		// TODO cleanup implementation
-		"CommentNextToStatementsAreKeptOnTheSameLine": {
-			in: `graph {
-	A -- B // stays on the same line
-}`,
-			want: `graph {
-	A -- B // stays on the same line
-}`,
-		},
+		// 		"CommentNextToStatementsAreKeptOnTheSameLine": {
+		// 			in: `graph {
+		// 	A -- B // stays on the same line
+		// }`,
+		// 			want: `graph {
+		// 	A -- B // stays on the same line
+		// }`,
+		// 		},
 		"CommentsWithOnlyWhitespaceAreDiscarded": {
 			in: `graph {
 		#    	

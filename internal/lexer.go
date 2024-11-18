@@ -13,8 +13,8 @@ import (
 type Lexer struct {
 	r         *bufio.Reader
 	cur       rune
-	curLineNr int
-	curCharNr int
+	curRow    int
+	curColumn int
 	next      rune
 	eof       bool
 	err       error
@@ -22,8 +22,8 @@ type Lexer struct {
 
 func NewLexer(r io.Reader) (*Lexer, error) {
 	lexer := Lexer{
-		r:         bufio.NewReader(r),
-		curLineNr: 1,
+		r:      bufio.NewReader(r),
+		curRow: 1,
 	}
 
 	// initialize current and next runes
@@ -36,7 +36,7 @@ func NewLexer(r io.Reader) (*Lexer, error) {
 		return nil, err
 	}
 	// 2 readRune calls are needed to fill the cur and next runes
-	lexer.curCharNr = 1
+	lexer.curColumn = 1
 
 	return &lexer, nil
 }
@@ -128,10 +128,10 @@ func (l *Lexer) readRune() error {
 	}
 
 	if l.cur == '\n' {
-		l.curLineNr++
-		l.curCharNr = 1
+		l.curRow++
+		l.curColumn = 1
 	} else {
-		l.curCharNr++
+		l.curColumn++
 	}
 	l.cur = l.next
 	l.next = r
@@ -171,7 +171,8 @@ func (l *Lexer) isEOF() bool {
 }
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) token.Token {
-	return token.Token{Type: tokenType, Literal: string(l.cur)}
+	pos := token.Position{Row: l.curRow, Column: l.curColumn}
+	return token.Token{Type: tokenType, Literal: string(l.cur), From: pos, To: pos}
 }
 
 func (l *Lexer) tokenizeComment() (token.Token, error) {
@@ -265,8 +266,8 @@ func (l *Lexer) tokenizeIdentifier() (token.Token, error) {
 
 func (l *Lexer) lexError(reason string) LexError {
 	return LexError{
-		LineNr:      l.curLineNr,
-		CharacterNr: l.curCharNr,
+		LineNr:      l.curRow,
+		CharacterNr: l.curColumn,
 		Character:   l.cur,
 		Reason:      reason,
 	}

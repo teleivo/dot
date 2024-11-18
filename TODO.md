@@ -1,3 +1,6 @@
+* change assertions for multi-rune token positions
+  * start with edge operators
+
 * write cmd/dotfmt
     * allow multiple nodes on the same line. how to break them up when > maxCol
 

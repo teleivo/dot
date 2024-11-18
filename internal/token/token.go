@@ -92,8 +92,9 @@ func Type(in string) (TokenType, bool) {
 
 // Token represents a token of the dot language.
 type Token struct {
-	Type    TokenType
-	Literal string
+	Type     TokenType
+	Literal  string
+	From, To Position
 }
 
 func (t Token) String() string {
@@ -102,6 +103,11 @@ func (t Token) String() string {
 	}
 
 	return t.Type.String()
+}
+
+type Position struct {
+	Row    int // Row is the line number starting at 1. A row of zero is not valid.
+	Column int // Column is the horizontal position of in terms of runes starting at 1. A column of zero is not valid.
 }
 
 // maxKeywordLen is the length of the longest dot keyword which is "subgraph".

@@ -84,20 +84,20 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 
 func (p *Printer) printStmts(stmts []ast.Stmt) error {
 	var hasPrinted bool
-	rowStart := p.row
-	colStart := p.column
+	rowBefore := p.row
+	colBefore := p.column
 
 	for _, stmt := range stmts {
 		err := p.printStmt(stmt)
 		if err != nil {
 			return err
 		}
-		if !hasPrinted && (rowStart != p.row || colStart != p.column) {
+		if !hasPrinted && (rowBefore != p.row || colBefore != p.column) {
 			hasPrinted = true
 		}
 	}
 
-	// no statements are printed as {}
+	// allows no statements to be printed as {}
 	if hasPrinted {
 		p.printNewline()
 	}

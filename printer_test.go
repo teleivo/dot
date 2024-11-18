@@ -15,8 +15,9 @@ func TestPrint(t *testing.T) {
 		in   string
 		want string
 	}{
-		"EmptyGraph": {
-			in: `strict graph {}
+		"GraphEmpty": {
+			in: `strict graph {	
+			}
 
 
 			`,
@@ -110,7 +111,7 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	]
 }`,
 		},
-		"DigraphEdgeStmt": {
+		"EdgeStmtDigraph": {
 			in: `digraph {
 			3 	->     2->4  [
 		color = "blue", len = 2.6
@@ -144,7 +145,7 @@ graph {
 	}
 }`,
 		},
-		"EmptyAttrStatements": {
+		"AttrStatementsEmpty": {
 			in:   `graph { node []; edge[]; graph[];}`,
 			want: `graph {}`,
 		},
@@ -225,9 +226,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 }`,
 		},
 		// TODO test comments on the same line as other statements
-		// TODO improve by breaking up at - as well? is - valid in urls or only percent encoded?
 		// TODO cleanup implementation
-		"EmptyCommentsAreDiscarded": {
+		"CommentsWithOnlyWhitespaceAreDiscarded": {
 			in: `graph {
 		#    	
 			//    
@@ -237,7 +237,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 }`,
 			want: `graph {}`,
 		},
-		"CommentsSingleLineUseSameMarker": {
+		"CommentsSingleLineAreChangedToCppMarker": {
 			in: `graph {
 		//this   is a comment! that has exactly 100 runes, 	which is the max column of dotfmt like it or not!
 #this   is a comment! that has exactly 100 runes, 	which is the max column of dotfmt like it or not!
@@ -247,10 +247,11 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
 }`,
 		},
-		"CommentsSingleLineThatExceedMaxColumnAreTransformed": {
+		"CommentsSingleLineThatExceedMaxColumnAreChangedToMultiLineMarker": {
 			in: `graph {
 		//this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
 #this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
+	// this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or knot!
 }`,
 			want: `graph {
 	/*
@@ -261,9 +262,12 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
 		or not!
 	*/
+	/*
+		this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or knot!
+	*/
 }`,
 		},
-		"CommentsMultiLineThatFitsOntoSingleLineIsTransformed": {
+		"CommentsMultiLineThatFitOntoSingleLineAreChangedToSingleLineMarker": {
 			in: `graph {
 			/*	  this is a multi-line marker  
 			comment that fits onto a single line                            */
@@ -272,7 +276,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// this is a multi-line marker comment that fits onto a single line
 }`,
 		},
-		"CommentsMultiLineIsBrokenUpAtWordBoundary": {
+		"CommentsMultiLineAreBrokenUpAtWordBoundary": {
 			in: `graph {
 	/* this is a multi-line comment that will not fit onto a single line so it will stay a
 			 multi-line comment but get stripped of its      superfluous    whitespace	
@@ -288,7 +292,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	*/
 }`,
 		},
-		"CommentsMultiLineDoesNotBreakupWordsWhichAreGreaterThanMaxColumn": {
+		"CommentsMultiLineWithWordsWhichAreGreaterThanMaxColumnAreNotBrokenUp": {
 			in: `graph {
 	// this uses a single-line marker but is too long for a single line https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 }`,

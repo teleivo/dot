@@ -17,8 +17,8 @@ const maxColumn = 100
 type Printer struct {
 	r           io.Reader // r reader to parse dot code from
 	w           io.Writer // w writer to output formatted dot code to
-	row         int       // row is the current zero-indexed row the printer is at i.e. how many newlines it has printed
-	column      int       // column is the current zero-indexed column in terms of runes the printer is at
+	row         int       // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. Zero means nothing has been printed.
+	column      int       // column is the current one-indexed column in terms of runes the printer is at. Zero means no rune has been printed on the current row.
 	indentLevel int       // indentLevel is the current level of indentation to be applied when indenting
 }
 
@@ -102,16 +102,6 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 		p.printNewline()
 	}
 	return nil
-}
-
-func (p *Printer) printNewline() {
-	fmt.Fprintln(p.w)
-	p.column = 0
-	p.row++
-}
-
-func (p *Printer) printSpace() {
-	p.printRune(' ')
 }
 
 func (p *Printer) printID(id ast.ID) error {
@@ -391,8 +381,14 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		return nil
 	}
 
+	// TODO this is where I need to know if the comment should fit on the same line or not
+	// also how does this interact with me always using /* for multi-line comments?
+	// if p.column <= p.indentLevel {
 	p.printNewline()
 	p.printIndent()
+	// } else {
+	// 	p.printSpace()
+	// }
 	if isMultiLine {
 		p.printRune('/')
 		p.printRune('*')
@@ -534,20 +530,30 @@ func (p *Printer) print(a fmt.Stringer) {
 	}
 }
 
-func (p *Printer) printRunes(a []rune) {
-	for _, r := range a {
-		p.printRune(r)
-	}
+func (p *Printer) printSpace() {
+	p.printRune(' ')
 }
 
 func (p *Printer) printRune(a rune) {
 	fmt.Fprintf(p.w, "%c", a)
+	if p.row == 0 {
+		p.row = 1
+	}
 	p.column++
 }
 
 func (p *Printer) printToken(a token.TokenType) {
 	token := a.String()
 	fmt.Fprint(p.w, token)
+	if p.row == 0 {
+		p.row = 1
+	}
 	// tokens are single byte runes i.e. byte count = rune count
 	p.column += len(token)
+}
+
+func (p *Printer) printNewline() {
+	fmt.Fprintln(p.w)
+	p.column = 0
+	p.row++
 }

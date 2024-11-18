@@ -1,15 +1,4 @@
 * write cmd/dotfmt
-    * support comments
-      * is there a bug in the lexer/parser? check if two single marker comments are two separate
-      tokens
-      * add test like: comments are ok on their own line or inside a subgraph
-      ../graphviz/graphs/uncommented/honda-tokoro.gv
-
-      `{/*L=m*/rank=same n001 n011}`
-
-      * first the parser needs to parse comments anywhere. right now comments lead to errors in a
-      lot of places they should be legal
-
     * allow multiple nodes on the same line. how to break them up when > maxCol
 
     * how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
@@ -17,15 +6,7 @@
     empty or be indented as the surrounding code?
     I need proper token/ast position. for this row and column
 
-    * update README with an example
-
-    * support parsing/formatting ranges
-
-    * test parser/lexer with invalid ID as ID for port. check the places were convert literals to
-    ast.ID without parsing the identifier, should I not parse it first?
-
-* how to handle error on fmt.Fprint?
-* how to handle errors?
+    * update README with docs on `dotfmt` and then merge the branch
 
 * add section in readme or add own readme in ./cmd/dotfmt/?
   * indentation: tabs
@@ -46,21 +27,6 @@
         # comment that
         # is too long
     ```
-
-* add profiling flags
-    * capture profile formatting example dot files
-    * capture profiles formatting the profile dot file
-    * all of this to find any lingering bugs I have
-* try formatting invalid dot and improve error handling
-  * `2->4` leads to error
-  "2:15: a numeral can only be prefixed with a `-`"
-  allow that :) and turn it into `2 -> 4`
-
-improve
-* handling of EOF better and move these special tokens up top like Go does
-
-* count opening braces and brackets and decrement them on closing to validate they match?
-or is that to simplistic as there are rules as to when you are allowed/have to close them?
 
 * still needed? Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
 
@@ -349,29 +315,19 @@ func assertContains(t *testing.T, got, want string) {
 
 * write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
 * write cmd/validate
-* write cmd/stats that tells me how many nodes, edges there are
 * profile any of the above on a large file, generate a pprof dot file and feed that back into the
 parser as a test via testdata
 
 
-## API
-
-* should I add the token to the AttrStmt? so it is easier to check if its a graph/node/edge?
-* is it nicer to work with slices then my choice of linked lists with *Next whenever there was a
-recursive definition?
-* should I remove the Directed field from EdgeRHS as that is clear from graph.Directed?
-* make error messages more user friendly
-  * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
-    I could say that
-
-## Language Feature Support
-
-* support concatenating strings?
-https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
-> In addition, double-quoted strings can be concatenated using a '+' operator.
-* lex html string
-
 ## Parser
+
+* ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates
+unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit
+https://graphviz.org/doc/info/lang.html#ids
+
+dot -Tsvg <../graphviz/graphs/directed/russian.gv > russian.svg
+
+also works so is that language reference outdated?
 
 * Lexical and Semantic Notes https://graphviz.org/doc/info/lang.html
   * should some of these influence the parser/should it err
@@ -393,6 +349,29 @@ does? Their columns are bytes not runes, should I use bytes as well?
 ```
 
 sets the attributes on given nodes in the `{}` but will it affect nodes outside?
+
+### API
+
+* should I add the token to the AttrStmt? so it is easier to check if its a graph/node/edge?
+* is it nicer to work with slices then my choice of linked lists with *Next whenever there was a
+recursive definition?
+* should I remove the Directed field from EdgeRHS as that is clear from graph.Directed?
+* make error messages more user friendly
+  * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
+    I could say that
+
+#### Nice to have
+
+* expose the knowledge of quoted, unquoted, numeral, html identifiers?
+* how complicated is it to use the bufio.Readers buffer instead of creating intermediate slices for
+identifiers? how much would that even matter at the expense of how much code :sweat_smile:
+
+### Language Feature Support
+
+* support concatenating strings?
+https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
+> In addition, double-quoted strings can be concatenated using a '+' operator.
+* lex html string
 
 ### Compatibility & Fault Tolerance
 
@@ -419,21 +398,6 @@ Error: <stdin>: syntax error in line 1 scanning a quoted string (missing endquot
 String starting:"A
 ```
 
-## Serializer
-
-* serialize a dot.Graph given a writer
-* test Parser/Serializer by feeding one to the other which should give the same result
-
-## Questions
-
-* should I strip the quotes from the literal? or leave that up to the parser?
-
-## Nice to have
-
-* expose the knowledge of quoted, unquoted, numeral, html identifiers?
-* how complicated is it to use the bufio.Readers buffer instead of creating intermediate slices for
-identifiers? how much would that even matter at the expense of how much code :sweat_smile:
-
 ### Hints
 
 * "\n\n\n\t  - F" leads to "a numeral must have at least one digit" pointing to the whitespace
@@ -446,16 +410,43 @@ Warning: syntax ambiguity - badly delimited number '100' in line 1 of <stdin> sp
 
 ## dotfmt
 
-* comments
-    * should have one " " after the marker
-    * break up > 100 runes keeping the type of comment. so // will get another // on the next
-    line
-* test using dot examples from gallery
-https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
+* support parsing/formatting ranges
+    * parser should be ok with comments before a graph. how to support that in terms of the parser
+    API? right now it returns an ast.Graph but the leading comment comes before the ast.Graph
+    Can I solve this requirement together with parsing of ranges?
+
+```go
+    Parse(io.Reader) ast.Node // at least right now there is no node that would fit the above
+
+    Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a slice of
+    // {ast.Graph} or {ast.Comment, ast.Graph} only but this could also work with parsing a
+    // range
+```
+
+* test parser/lexer with invalid ID as ID for port. check the places were convert literals to
+ast.ID without parsing the identifier, should I not parse it first?
+
+* try formatting invalid dot and improve error handling
+  * `2->4` leads to error
+  "2:15: a numeral can only be prefixed with a `-`"
+  allow that :) and turn it into `2 -> 4`
+
+improve
+* handling of EOF better and move these special tokens up top like Go does
+
+* count opening braces and brackets and decrement them on closing to validate they match?
+or is that to simplistic as there are rules as to when you are allowed/have to close them?
+
+* how to handle error on fmt.Fprint?
+* how to handle errors?
+
 * test using invalid input
   * invalid input should be printed as is, it should not delete user input!
 
 * add profiling flags
+    * capture profile formatting example dot files
+    * capture profiles formatting the profile dot file
+    * all of this to find any lingering bugs I have
 
 * support formatting file/dirs in place
   * goroutines could be fun once its working ;)
@@ -485,22 +476,13 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
-* ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates
-unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit
-https://graphviz.org/doc/info/lang.html#ids
-
-dot -Tsvg <../graphviz/graphs/directed/russian.gv > russian.svg
-
-also works so is that language reference outdated?
-
 * improve breaking up long lines
   * Only the ID individually is considered right now. In this example `]` exceeds the maxCol
 
 ```dot
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 ```
-
-  * Only break on word boundaries? So `col` does not turn into `co\l`
+  * Reuse what I did for comments: Only break on word boundaries? So `col` does not turn into `co\l`
 
 * align multiple attribute values (and `=`)
 	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
@@ -514,14 +496,11 @@ graph/subraph as well
   * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
   * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
 
-* keep the indentation when splitting to multiple lines?
+* keep the indentation when splitting IDs to multiple lines?
   * the parser would need to support + so I can concatenat IDs
 
-* maybe: support subraph shorthand using `{}` and don't always print `subgraph` by looking at the literal? might need to add that to the ast as
-
-* turn multi-line marker comment that fits on one line into // do I need the position on the token?
-that would not tell me if the comment is purely whitespace keep track of the row in the printer,
-would that help?
+* maybe: support subraph shorthand using `{}` and don't always print `subgraph` by looking at the
+literal? might need to add that to the ast as
 
 ## Highl Level API
 

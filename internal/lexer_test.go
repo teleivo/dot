@@ -223,6 +223,8 @@ func TestLexer(t *testing.T) {
 				{
 					Type:    token.Identifier,
 					Literal: "16",
+					Start:   token.Position{Row: 3, Column: 54},
+					End:     token.Position{Row: 3, Column: 55},
 				},
 				{
 					Type: token.RightBracket, Literal: "]",
@@ -450,46 +452,96 @@ func TestLexer(t *testing.T) {
 		"EdgesWithNumeralOperands": {
 			in: `  1->2 3 ->4  5--6 7-- 8 9 --10`,
 			want: []token.Token{
-				{Type: token.Identifier, Literal: "1"},
+				{
+					Type:    token.Identifier,
+					Literal: "1",
+					Start:   token.Position{Row: 1, Column: 3},
+					End:     token.Position{Row: 1, Column: 3},
+				},
 				{
 					Type:    token.DirectedEgde,
 					Literal: "->",
 					Start:   token.Position{Row: 1, Column: 4},
 					End:     token.Position{Row: 1, Column: 5},
 				},
-				{Type: token.Identifier, Literal: "2"},
-				{Type: token.Identifier, Literal: "3"},
+				{
+					Type:    token.Identifier,
+					Literal: "2",
+					Start:   token.Position{Row: 1, Column: 6},
+					End:     token.Position{Row: 1, Column: 6},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "3",
+					Start:   token.Position{Row: 1, Column: 8},
+					End:     token.Position{Row: 1, Column: 8},
+				},
 				{
 					Type:    token.DirectedEgde,
 					Literal: "->",
 					Start:   token.Position{Row: 1, Column: 10},
 					End:     token.Position{Row: 1, Column: 11},
 				},
-				{Type: token.Identifier, Literal: "4"},
-				{Type: token.Identifier, Literal: "5"},
+				{
+					Type:    token.Identifier,
+					Literal: "4",
+					Start:   token.Position{Row: 1, Column: 12},
+					End:     token.Position{Row: 1, Column: 12},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "5",
+					Start:   token.Position{Row: 1, Column: 15},
+					End:     token.Position{Row: 1, Column: 15},
+				},
 				{
 					Type:    token.UndirectedEgde,
 					Literal: "--",
 					Start:   token.Position{Row: 1, Column: 16},
 					End:     token.Position{Row: 1, Column: 17},
 				},
-				{Type: token.Identifier, Literal: "6"},
-				{Type: token.Identifier, Literal: "7"},
+				{
+					Type:    token.Identifier,
+					Literal: "6",
+					Start:   token.Position{Row: 1, Column: 18},
+					End:     token.Position{Row: 1, Column: 18},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "7",
+					Start:   token.Position{Row: 1, Column: 20},
+					End:     token.Position{Row: 1, Column: 20},
+				},
 				{
 					Type:    token.UndirectedEgde,
 					Literal: "--",
 					Start:   token.Position{Row: 1, Column: 21},
 					End:     token.Position{Row: 1, Column: 22},
 				},
-				{Type: token.Identifier, Literal: "8"},
-				{Type: token.Identifier, Literal: "9"},
+				{
+					Type:    token.Identifier,
+					Literal: "8",
+					Start:   token.Position{Row: 1, Column: 24},
+					End:     token.Position{Row: 1, Column: 24},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "9",
+					Start:   token.Position{Row: 1, Column: 26},
+					End:     token.Position{Row: 1, Column: 26},
+				},
 				{
 					Type:    token.UndirectedEgde,
 					Literal: "--",
 					Start:   token.Position{Row: 1, Column: 28},
 					End:     token.Position{Row: 1, Column: 29},
 				},
-				{Type: token.Identifier, Literal: "10"},
+				{
+					Type:    token.Identifier,
+					Literal: "10",
+					Start:   token.Position{Row: 1, Column: 30},
+					End:     token.Position{Row: 1, Column: 31},
+				},
 			},
 		},
 	}
@@ -631,44 +683,94 @@ func TestLexer(t *testing.T) {
 				want token.Token
 			}{
 				{
-					in:   " -.9\t\n",
-					want: token.Token{Type: token.Identifier, Literal: "-.9"},
+					in: " -.9\t\n",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "-.9",
+						Start:   token.Position{Row: 1, Column: 2},
+						End:     token.Position{Row: 1, Column: 4},
+					},
 				},
 				{
-					in:   "-0.13",
-					want: token.Token{Type: token.Identifier, Literal: "-0.13"},
+					in: "-0.13",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "-0.13",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 5},
+					},
 				},
 				{
-					in:   "-0.",
-					want: token.Token{Type: token.Identifier, Literal: "-0."},
+					in: "-0.",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "-0.",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 3},
+					},
 				},
 				{
-					in:   "-92.58",
-					want: token.Token{Type: token.Identifier, Literal: "-92.58"},
+					in: "-92.58",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "-92.58",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 6},
+					},
 				},
 				{
-					in:   "-92",
-					want: token.Token{Type: token.Identifier, Literal: "-92"},
+					in: "-92",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "-92",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 3},
+					},
 				},
 				{
-					in:   ".13",
-					want: token.Token{Type: token.Identifier, Literal: ".13"},
+					in: ".13",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: ".13",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 3},
+					},
 				},
 				{
-					in:   "0.",
-					want: token.Token{Type: token.Identifier, Literal: "0."},
+					in: "0.",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "0.",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 2},
+					},
 				},
 				{
-					in:   "0.13",
-					want: token.Token{Type: token.Identifier, Literal: "0.13"},
+					in: "0.13",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "0.13",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 4},
+					},
 				},
 				{
-					in:   "47",
-					want: token.Token{Type: token.Identifier, Literal: "47"},
+					in: "47",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "47",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 2},
+					},
 				},
 				{
-					in:   "47.58",
-					want: token.Token{Type: token.Identifier, Literal: "47.58"},
+					in: "47.58",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "47.58",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 5},
+					},
 				},
 			}
 

@@ -347,8 +347,11 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 	var err error
 	var id []rune
 	var hasDigit bool
+	start := token.Position{Row: l.curRow, Column: l.curColumn}
+	var end token.Position
 
 	for pos, hasDot := 0, false; l.hasNext() && err == nil && !l.isNumeralSeparator(); err, pos = l.readRune(), pos+1 {
+		end = token.Position{Row: l.curRow, Column: l.curColumn}
 		if l.cur == '-' && pos != 0 {
 			return tok, l.lexError("a numeral can only be prefixed with a `-`")
 		}
@@ -377,7 +380,12 @@ func (l *Lexer) tokenizeNumeral() (token.Token, error) {
 		return tok, err
 	}
 
-	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
+	return token.Token{
+		Type:    token.Identifier,
+		Literal: string(id),
+		Start:   start,
+		End:     end,
+	}, nil
 }
 
 func (l *Lexer) isNumeralSeparator() bool {

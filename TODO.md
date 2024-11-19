@@ -2,6 +2,7 @@
   * keywords
   * ids
   * comments
+  * LexError return the starting position? or return the invalid token at some point?
 * add From, To positions to ast.Node? or is it enough to have access to the token which has the
 position? do I even give access to all tokens that make up a node? do I want that?
 

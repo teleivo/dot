@@ -304,7 +304,12 @@ func TestLexer(t *testing.T) {
 			  rank = same; A;B;C;
 			}`,
 			want: []token.Token{
-				{Type: token.Identifier, Literal: "A"},
+				{
+					Type:    token.Identifier,
+					Literal: "A",
+					Start:   token.Position{Row: 1, Column: 3},
+					End:     token.Position{Row: 1, Column: 3},
+				},
 				{
 					Type: token.DirectedEgde, Literal: "->",
 					Start: token.Position{Row: 1, Column: 5},
@@ -315,52 +320,105 @@ func TestLexer(t *testing.T) {
 					Start: token.Position{Row: 1, Column: 8},
 					End:   token.Position{Row: 1, Column: 8},
 				},
-				{Type: token.Identifier, Literal: "B"},
-				{Type: token.Identifier, Literal: "C"},
+				{
+					Type:    token.Identifier,
+					Literal: "B",
+					Start:   token.Position{Row: 1, Column: 9},
+					End:     token.Position{Row: 1, Column: 9},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "C",
+					Start:   token.Position{Row: 1, Column: 11},
+					End:     token.Position{Row: 1, Column: 11},
+				},
 				{
 					Type: token.RightBrace, Literal: "}",
 					Start: token.Position{Row: 1, Column: 12},
 					End:   token.Position{Row: 1, Column: 12},
 				},
-				{Type: token.Identifier, Literal: "D"},
+				{
+					Type:    token.Identifier,
+					Literal: "D",
+					Start:   token.Position{Row: 2, Column: 5},
+					End:     token.Position{Row: 2, Column: 5},
+				},
 				{
 					Type: token.UndirectedEgde, Literal: "--",
 					Start: token.Position{Row: 2, Column: 7},
 					End:   token.Position{Row: 2, Column: 8},
 				},
-				{Type: token.Identifier, Literal: "E"},
-				{Type: token.Subgraph, Literal: "subgraph"},
+				{
+					Type:    token.Identifier,
+					Literal: "E",
+					Start:   token.Position{Row: 2, Column: 10},
+					End:     token.Position{Row: 2, Column: 10},
+				},
+				{
+					Type:    token.Subgraph,
+					Literal: "subgraph",
+					Start:   token.Position{Row: 3, Column: 4},
+					End:     token.Position{Row: 3, Column: 11},
+				},
 				{
 					Type: token.LeftBrace, Literal: "{",
 					Start: token.Position{Row: 3, Column: 13},
 					End:   token.Position{Row: 3, Column: 13},
 				},
-				{Type: token.Identifier, Literal: `"F"`},
-				{Type: token.Identifier, Literal: "rank"},
+				{
+					Type:    token.Identifier,
+					Literal: `"F"`,
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "rank",
+					Start:   token.Position{Row: 5, Column: 6},
+					End:     token.Position{Row: 5, Column: 9},
+				},
 				{
 					Type: token.Equal, Literal: "=",
 					Start: token.Position{Row: 5, Column: 11},
 					End:   token.Position{Row: 5, Column: 11},
 				},
-				{Type: token.Identifier, Literal: "same"},
+				{
+					Type:    token.Identifier,
+					Literal: "same",
+					Start:   token.Position{Row: 5, Column: 13},
+					End:     token.Position{Row: 5, Column: 16},
+				},
 				{
 					Type: token.Semicolon, Literal: ";",
 					Start: token.Position{Row: 5, Column: 17},
 					End:   token.Position{Row: 5, Column: 17},
 				},
-				{Type: token.Identifier, Literal: "A"},
+				{
+					Type:    token.Identifier,
+					Literal: "A",
+					Start:   token.Position{Row: 5, Column: 19},
+					End:     token.Position{Row: 5, Column: 19},
+				},
 				{
 					Type: token.Semicolon, Literal: ";",
 					Start: token.Position{Row: 5, Column: 20},
 					End:   token.Position{Row: 5, Column: 20},
 				},
-				{Type: token.Identifier, Literal: "B"},
+				{
+					Type:    token.Identifier,
+					Literal: "B",
+					Start:   token.Position{Row: 5, Column: 21},
+					End:     token.Position{Row: 5, Column: 21},
+				},
 				{
 					Type: token.Semicolon, Literal: ";",
 					Start: token.Position{Row: 5, Column: 22},
 					End:   token.Position{Row: 5, Column: 22},
 				},
-				{Type: token.Identifier, Literal: "C"},
+				{
+					Type:    token.Identifier,
+					Literal: "C",
+					Start:   token.Position{Row: 5, Column: 23},
+					End:     token.Position{Row: 5, Column: 23},
+				},
 				{
 					Type: token.Semicolon, Literal: ";",
 					Start: token.Position{Row: 5, Column: 24},
@@ -439,20 +497,40 @@ func TestLexer(t *testing.T) {
 				want token.Token
 			}{
 				{
-					in:   "_A",
-					want: token.Token{Type: token.Identifier, Literal: "_A"},
+					in: "_A",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "_A",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 2},
+					},
 				},
 				{
-					in:   "A_cZ",
-					want: token.Token{Type: token.Identifier, Literal: "A_cZ"},
+					in: "A_cZ",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "A_cZ",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 4},
+					},
 				},
 				{
-					in:   "A10",
-					want: token.Token{Type: token.Identifier, Literal: "A10"},
+					in: "A10",
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: "A10",
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 3},
+					},
 				},
 				{
-					in:   `ÿ  `,
-					want: token.Token{Type: token.Identifier, Literal: `ÿ`},
+					in: `ÿ  `,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `ÿ`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 2},
+					},
 				},
 			}
 

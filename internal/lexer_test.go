@@ -159,20 +159,40 @@ func TestLexer(t *testing.T) {
 			]
 					edge [arrowhead=none color="#00008844",style = filled];  `,
 			want: []token.Token{
-				{Type: token.Graph, Literal: "graph"},
+				{
+					Type:    token.Graph,
+					Literal: "graph",
+					Start:   token.Position{Row: 1, Column: 2},
+					End:     token.Position{Row: 1, Column: 6},
+				},
 				{
 					Type: token.LeftBracket, Literal: "[",
 					Start: token.Position{Row: 1, Column: 8},
 					End:   token.Position{Row: 1, Column: 8},
 				},
-				{Type: token.Identifier, Literal: "labelloc"},
+				{
+					Type:    token.Identifier,
+					Literal: "labelloc",
+					Start:   token.Position{Row: 2, Column: 5},
+					End:     token.Position{Row: 2, Column: 12},
+				},
 				{
 					Type: token.Equal, Literal: "=",
 					Start: token.Position{Row: 2, Column: 14},
 					End:   token.Position{Row: 2, Column: 14},
 				},
-				{Type: token.Identifier, Literal: "t"},
-				{Type: token.Identifier, Literal: "fontname"},
+				{
+					Type:    token.Identifier,
+					Literal: "t",
+					Start:   token.Position{Row: 2, Column: 16},
+					End:     token.Position{Row: 2, Column: 16},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "fontname",
+					Start:   token.Position{Row: 3, Column: 5},
+					End:     token.Position{Row: 3, Column: 12},
+				},
 				{
 					Type: token.Equal, Literal: "=",
 					Start: token.Position{Row: 3, Column: 14},
@@ -184,7 +204,12 @@ func TestLexer(t *testing.T) {
 					Start: token.Position{Row: 3, Column: 44},
 					End:   token.Position{Row: 3, Column: 44},
 				},
-				{Type: token.Identifier, Literal: "fontsize"},
+				{
+					Type:    token.Identifier,
+					Literal: "fontsize",
+					Start:   token.Position{Row: 3, Column: 45},
+					End:     token.Position{Row: 3, Column: 52},
+				},
 				{
 					Type: token.Equal, Literal: "=",
 					Start: token.Position{Row: 3, Column: 53},
@@ -196,20 +221,40 @@ func TestLexer(t *testing.T) {
 					Start: token.Position{Row: 4, Column: 4},
 					End:   token.Position{Row: 4, Column: 4},
 				},
-				{Type: token.Edge, Literal: "edge"},
+				{
+					Type:    token.Edge,
+					Literal: "edge",
+					Start:   token.Position{Row: 5, Column: 6},
+					End:     token.Position{Row: 5, Column: 9},
+				},
 				{
 					Type: token.LeftBracket, Literal: "[",
 					Start: token.Position{Row: 5, Column: 11},
 					End:   token.Position{Row: 5, Column: 11},
 				},
-				{Type: token.Identifier, Literal: "arrowhead"},
+				{
+					Type:    token.Identifier,
+					Literal: "arrowhead",
+					Start:   token.Position{Row: 5, Column: 12},
+					End:     token.Position{Row: 5, Column: 20},
+				},
 				{
 					Type: token.Equal, Literal: "=",
 					Start: token.Position{Row: 5, Column: 21},
 					End:   token.Position{Row: 5, Column: 21},
 				},
-				{Type: token.Identifier, Literal: "none"},
-				{Type: token.Identifier, Literal: "color"},
+				{
+					Type:    token.Identifier,
+					Literal: "none",
+					Start:   token.Position{Row: 5, Column: 22},
+					End:     token.Position{Row: 5, Column: 25},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "color",
+					Start:   token.Position{Row: 5, Column: 27},
+					End:     token.Position{Row: 5, Column: 31},
+				},
 				{
 					Type: token.Equal, Literal: "=",
 					Start: token.Position{Row: 5, Column: 32},
@@ -221,13 +266,23 @@ func TestLexer(t *testing.T) {
 					Start: token.Position{Row: 5, Column: 44},
 					End:   token.Position{Row: 5, Column: 44},
 				},
-				{Type: token.Identifier, Literal: "style"},
+				{
+					Type:    token.Identifier,
+					Literal: "style",
+					Start:   token.Position{Row: 5, Column: 45},
+					End:     token.Position{Row: 5, Column: 49},
+				},
 				{
 					Type: token.Equal, Literal: "=",
 					Start: token.Position{Row: 5, Column: 51},
 					End:   token.Position{Row: 5, Column: 51},
 				},
-				{Type: token.Identifier, Literal: "filled"},
+				{
+					Type:    token.Identifier,
+					Literal: "filled",
+					Start:   token.Position{Row: 5, Column: 53},
+					End:     token.Position{Row: 5, Column: 58},
+				},
 				{
 					Type: token.RightBracket, Literal: "]",
 					Start: token.Position{Row: 5, Column: 59},

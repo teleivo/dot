@@ -1,5 +1,4 @@
 * change assertions for multi-rune token positions
-  * edge operators
   * keywords
   * ids
   * comments

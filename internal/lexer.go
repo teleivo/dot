@@ -291,8 +291,11 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
 	var id []rune
+	start := token.Position{Row: l.curRow, Column: l.curColumn}
+	var end token.Position
 
 	for ; l.hasNext() && err == nil && !isUnquotedStringSeparator(l.cur); err = l.readRune() {
+		end = token.Position{Row: l.curRow, Column: l.curColumn}
 		if !isLegalInUnquotedString(l.cur) {
 			return tok, l.lexError(unquotedStringErr)
 		}
@@ -305,7 +308,12 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 	}
 
 	literal := string(id)
-	tok = token.Token{Type: token.LookupKeyword(literal), Literal: literal}
+	tok = token.Token{
+		Type:    token.LookupKeyword(literal),
+		Literal: literal,
+		Start:   start,
+		End:     end,
+	}
 
 	return tok, nil
 }

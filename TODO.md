@@ -1,6 +1,5 @@
 * change assertions for multi-rune token positions
-  * keywords
-  * ids
+  * quoted ids
   * comments
   * LexError return the starting position? or return the invalid token at some point?
 * add From, To positions to ast.Node? or is it enough to have access to the token which has the

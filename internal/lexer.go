@@ -389,8 +389,11 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 	var err error
 	var id []rune
 	var hasClosingQuote bool
+	start := token.Position{Row: l.curRow, Column: l.curColumn}
+	var end token.Position
 
 	for pos, prev := 0, rune(0); l.hasNext() && err == nil; err, pos = l.readRune(), pos+1 {
+		end = token.Position{Row: l.curRow, Column: l.curColumn}
 		id = append(id, l.cur)
 
 		if pos != 0 && l.cur == '"' && prev != '\\' { // assuming a non-escaped quote after pos 0 closes the string
@@ -411,7 +414,12 @@ func (l *Lexer) tokenizeQuotedString() (token.Token, error) {
 		return tok, err
 	}
 
-	return token.Token{Type: token.Identifier, Literal: string(id)}, nil
+	return token.Token{
+		Type:    token.Identifier,
+		Literal: string(id),
+		Start:   start,
+		End:     end,
+	}, nil
 }
 
 type LexError struct {

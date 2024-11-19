@@ -198,7 +198,12 @@ func TestLexer(t *testing.T) {
 					Start: token.Position{Row: 3, Column: 14},
 					End:   token.Position{Row: 3, Column: 14},
 				},
-				{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
+				{
+					Type:    token.Identifier,
+					Literal: `"Helvetica,Arial,sans-serif"`,
+					Start:   token.Position{Row: 3, Column: 16},
+					End:     token.Position{Row: 3, Column: 43},
+				},
 				{
 					Type: token.Comma, Literal: ",",
 					Start: token.Position{Row: 3, Column: 44},
@@ -215,7 +220,10 @@ func TestLexer(t *testing.T) {
 					Start: token.Position{Row: 3, Column: 53},
 					End:   token.Position{Row: 3, Column: 53},
 				},
-				{Type: token.Identifier, Literal: "16"},
+				{
+					Type:    token.Identifier,
+					Literal: "16",
+				},
 				{
 					Type: token.RightBracket, Literal: "]",
 					Start: token.Position{Row: 4, Column: 4},
@@ -260,7 +268,12 @@ func TestLexer(t *testing.T) {
 					Start: token.Position{Row: 5, Column: 32},
 					End:   token.Position{Row: 5, Column: 32},
 				},
-				{Type: token.Identifier, Literal: `"#00008844"`},
+				{
+					Type:    token.Identifier,
+					Literal: `"#00008844"`,
+					Start:   token.Position{Row: 5, Column: 33},
+					End:     token.Position{Row: 5, Column: 43},
+				},
 				{
 					Type: token.Comma, Literal: ",",
 					Start: token.Position{Row: 5, Column: 44},
@@ -368,6 +381,8 @@ func TestLexer(t *testing.T) {
 				{
 					Type:    token.Identifier,
 					Literal: `"F"`,
+					Start:   token.Position{Row: 4, Column: 5},
+					End:     token.Position{Row: 4, Column: 7},
 				},
 				{
 					Type:    token.Identifier,
@@ -757,56 +772,112 @@ func TestLexer(t *testing.T) {
 				want token.Token
 			}{
 				{
-					in:   `"graph"`,
-					want: token.Token{Type: token.Identifier, Literal: `"graph"`},
+					in: `"graph"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"graph"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 7},
+					},
 				},
 				{
-					in:   `"strict"`,
-					want: token.Token{Type: token.Identifier, Literal: `"strict"`},
+					in: `"strict"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"strict"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 8},
+					},
 				},
 				{
-					in:   `"\"d"`,
-					want: token.Token{Type: token.Identifier, Literal: `"\"d"`},
+					in: `"\"d"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"\"d"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 5},
+					},
 				},
 				{
-					in:   `"\nd"`,
-					want: token.Token{Type: token.Identifier, Literal: `"\nd"`},
+					in: `"\nd"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"\nd"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 5},
+					},
 				},
 				{
-					in:   `"\\d"`,
-					want: token.Token{Type: token.Identifier, Literal: `"\\d"`},
+					in: `"\\d"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"\\d"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 5},
+					},
 				},
 				{
-					in:   `"_A"`,
-					want: token.Token{Type: token.Identifier, Literal: `"_A"`},
+					in: `"_A"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"_A"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 4},
+					},
 				},
 				{
-					in:   `"_A"`,
-					want: token.Token{Type: token.Identifier, Literal: `"_A"`},
+					in: `"-.9"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"-.9"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 5},
+					},
 				},
 				{
-					in:   `"-.9"`,
-					want: token.Token{Type: token.Identifier, Literal: `"-.9"`},
+					in: `"A--B"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"A--B"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 6},
+					},
 				},
 				{
-					in:   `"A--B"`,
-					want: token.Token{Type: token.Identifier, Literal: `"A--B"`},
+					in: `"A->B"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"A->B"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 6},
+					},
 				},
 				{
-					in:   `"A->B"`,
-					want: token.Token{Type: token.Identifier, Literal: `"A->B"`},
+					in: `"A-B"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"A-B"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 5},
+					},
 				},
 				{
-					in:   `"A-B"`,
-					want: token.Token{Type: token.Identifier, Literal: `"A-B"`},
+					in: `"Helvetica,Arial,sans-serif"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"Helvetica,Arial,sans-serif"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 28},
+					},
 				},
 				{
-					in:   `"Helvetica,Arial,sans-serif"`,
-					want: token.Token{Type: token.Identifier, Literal: `"Helvetica,Arial,sans-serif"`},
-				},
-				{
-					in:   `"#00008844"`,
-					want: token.Token{Type: token.Identifier, Literal: `"#00008844"`},
+					in: `"#00008844"`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `"#00008844"`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 11},
+					},
 				},
 			}
 

@@ -172,7 +172,7 @@ func (l *Lexer) isEOF() bool {
 
 func (l *Lexer) tokenizeRuneAs(tokenType token.TokenType) token.Token {
 	pos := token.Position{Row: l.curRow, Column: l.curColumn}
-	return token.Token{Type: tokenType, Literal: string(l.cur), From: pos, To: pos}
+	return token.Token{Type: tokenType, Literal: string(l.cur), Start: pos, End: pos}
 }
 
 func (l *Lexer) tokenizeComment() (token.Token, error) {
@@ -211,16 +211,28 @@ func isEdgeOperator(first, second rune) bool {
 }
 
 func (l *Lexer) tokenizeEdgeOperator() (token.Token, error) {
+	start := token.Position{Row: l.curRow, Column: l.curColumn}
 	err := l.readRune()
 	if err != nil {
 		var tok token.Token
 		return tok, err
 	}
 
+	end := token.Position{Row: l.curRow, Column: l.curColumn}
 	if l.cur == '-' {
-		return token.Token{Type: token.UndirectedEgde, Literal: token.UndirectedEgde.String()}, err
+		return token.Token{
+			Type:    token.UndirectedEgde,
+			Literal: token.UndirectedEgde.String(),
+			Start:   start,
+			End:     end,
+		}, err
 	}
-	return token.Token{Type: token.DirectedEgde, Literal: token.DirectedEgde.String()}, err
+	return token.Token{
+		Type:    token.DirectedEgde,
+		Literal: token.DirectedEgde.String(),
+		Start:   start,
+		End:     end,
+	}, err
 }
 
 func isStartofIdentifier(r rune) bool {

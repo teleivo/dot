@@ -1,5 +1,10 @@
 * change assertions for multi-rune token positions
-  * start with edge operators
+  * edge operators
+  * keywords
+  * ids
+  * comments
+* add From, To positions to ast.Node? or is it enough to have access to the token which has the
+position? do I even give access to all tokens that make up a node? do I want that?
 
 * write cmd/dotfmt
     * allow multiple nodes on the same line. how to break them up when > maxCol

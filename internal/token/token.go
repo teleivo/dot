@@ -94,7 +94,7 @@ func Type(in string) (TokenType, bool) {
 type Token struct {
 	Type     TokenType
 	Literal  string
-	From, To Position
+	Start, End Position
 }
 
 func (t Token) String() string {

@@ -1,7 +1,4 @@
 * change assertions for multi-rune token positions
-  * quoted ids
-  * comments
-  * LexError return the starting position? or return the invalid token at some point?
 * add From, To positions to ast.Node? or is it enough to have access to the token which has the
 position? do I even give access to all tokens that make up a node? do I want that?
 
@@ -437,6 +434,7 @@ ast.ID without parsing the identifier, should I not parse it first?
   * `2->4` leads to error
   "2:15: a numeral can only be prefixed with a `-`"
   allow that :) and turn it into `2 -> 4`
+  * LexError return the token.Token.Start token.Position? or return the invalid token at some point?
 
 improve
 * handling of EOF better and move these special tokens up top like Go does

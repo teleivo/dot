@@ -185,13 +185,18 @@ func (l *Lexer) tokenizeComment() (token.Token, error) {
 		return token.Token{}, l.lexError("missing '/' for single-line or a '*' for a multi-line comment")
 	}
 
+	start := token.Position{Row: l.curRow, Column: l.curColumn}
+	var end token.Position
 	isMultiLine := l.cur == '/' && l.hasNext() && l.next == '*'
 	for ; l.hasNext() && err == nil && (isMultiLine || l.cur != '\n'); err = l.readRune() {
+		end = token.Position{Row: l.curRow, Column: l.curColumn}
 		comment = append(comment, l.cur)
+
 		if isMultiLine && l.cur == '*' && l.hasNext() && l.next == '/' {
 			hasClosingMarker = true
 			comment = append(comment, l.next)
-			err = l.readRune()
+			err = l.readRune() // consume last rune '/' of closing marker
+			end = token.Position{Row: l.curRow, Column: l.curColumn}
 			break
 		}
 	}
@@ -203,7 +208,12 @@ func (l *Lexer) tokenizeComment() (token.Token, error) {
 		return tok, err
 	}
 
-	return token.Token{Type: token.Comment, Literal: string(comment)}, nil
+	return token.Token{
+		Type:    token.Comment,
+		Literal: string(comment),
+		Start:   start,
+		End:     end,
+	}, nil
 }
 
 func isEdgeOperator(first, second rune) bool {

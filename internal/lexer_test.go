@@ -1049,13 +1049,26 @@ func TestLexer(t *testing.T) {
 				want token.Token
 			}{
 				{
-					in:   ` # C preprocessor style comment "noidentifier" /* ignore this */ edge`,
-					want: token.Token{Type: token.Comment, Literal: `# C preprocessor style comment "noidentifier" /* ignore this */ edge`},
+					in: `
+						
+							#  C preprocessor style comment "noidentifier" /* ignore this */ edge  `,
+					want: token.Token{
+						Type:    token.Comment,
+						Literal: `#  C preprocessor style comment "noidentifier" /* ignore this */ edge  `,
+						Start:   token.Position{Row: 3, Column: 8},
+						End:     token.Position{Row: 3, Column: 78},
+					},
 				},
 				{
-					in: ` // C++ style line comment "noidentifier" /* ignore this */ edge
+					in: ` 
+							//	C++ style line comment "noidentifier" /* ignore this */ edge 
 			`,
-					want: token.Token{Type: token.Comment, Literal: `// C++ style line comment "noidentifier" /* ignore this */ edge`},
+					want: token.Token{
+						Type:    token.Comment,
+						Literal: `//	C++ style line comment "noidentifier" /* ignore this */ edge `,
+						Start:   token.Position{Row: 2, Column: 8},
+						End:     token.Position{Row: 2, Column: 71},
+					},
 				},
 				{
 					in: ` /* C++ style multi-line comment "noidentifier" edge
@@ -1065,12 +1078,17 @@ func TestLexer(t *testing.T) {
 spacious
 					*/
 			`,
-					want: token.Token{Type: token.Comment, Literal: `/* C++ style multi-line comment "noidentifier" edge
+					want: token.Token{
+						Type: token.Comment,
+						Literal: `/* C++ style multi-line comment "noidentifier" edge
 					# don't treat this as a separate comment
 					# don't treat this as a separate comment
 					*\ sneaky
 spacious
-					*/`},
+					*/`,
+						Start: token.Position{Row: 1, Column: 2},
+						End:   token.Position{Row: 6, Column: 7},
+					},
 				},
 			}
 

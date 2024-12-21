@@ -378,19 +378,13 @@ func (p *Printer) printComment(comment ast.Comment) error {
 	var inWord bool
 	var start, runeCount int
 	for i, r := range text {
-		if !inWord {
-			if isWhitespace(r) {
-				// skip whitespace
-				continue
-			}
-
+		if !inWord && !isWhitespace(r) {
 			inWord = true
 			start = i
 			runeCount = 1
-			continue
-		}
-
-		if isWhitespace(r) { // word boundary
+		} else if inWord && !isWhitespace(r) {
+			runeCount++
+		} else if inWord && isWhitespace(r) { // word boundary
 			col := p.column + 1 + runeCount // 1 for the space separating words
 			// TODO isFirstWord assumes the first always goes onto a new line. This is where I need to
 			// know if the comment should fit on the same line or not
@@ -406,11 +400,7 @@ func (p *Printer) printComment(comment ast.Comment) error {
 				p.printRune(c)
 			}
 			inWord = false
-
-			continue
 		}
-
-		runeCount++
 	}
 
 	if inWord {

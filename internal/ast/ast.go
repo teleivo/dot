@@ -333,7 +333,7 @@ func (s Subgraph) edgeOperand() {}
 // Comment is a dot comment as defined in
 // https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting.
 type Comment struct {
-	Text string
+	Text string // comment text including any opening and closing markers
 }
 
 func (c Comment) String() string {

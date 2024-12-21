@@ -1,6 +1,27 @@
-* change assertions for multi-rune token positions
-* add From, To positions to ast.Node? or is it enough to have access to the token which has the
+* add positions to ast.Node? or is it enough to have access to the token which has the
 position? do I even give access to all tokens that make up a node? do I want that?
+
+This is what I currently have for ast.Comment for example
+
+```go
+type Comment struct {
+	Text string
+}
+```
+
+That is the Go ast.Node interface. I could add Start(), End() which return a token.Position. I would
+not want to hold on/expose all tokens in the ast. The positions should be enough
+
+```go
+// All node types implement the Node interface.
+type Node interface {
+	Pos() token.Pos // position of first character belonging to the node
+	End() token.Pos // position of first character immediately after the node
+}
+```
+
+* implement isValid and Stringer on token.Position like Go does? the EOF token for example does not
+  have a valid token.Position
 
 * write cmd/dotfmt
     * allow multiple nodes on the same line. how to break them up when > maxCol
@@ -31,6 +52,8 @@ position? do I even give access to all tokens that make up a node? do I want tha
         # comment that
         # is too long
     ```
+
+* properly godoc all the things
 
 * still needed? Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
 

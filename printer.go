@@ -375,6 +375,8 @@ func (p *Printer) printComment(comment ast.Comment) error {
 	}
 
 	const singleMarkerRunes = 3 // two runes for '//' and one for a whitespace before the comment text
+	// TODO optimize by finding returning first non-whitespace index, then loop below using
+	// text[start] and print the header in the loop
 	wordCount, _ := isMultiLineComment(p.indentLevel+singleMarkerRunes, text)
 	if wordCount == 0 {
 		// discard empty comments
@@ -390,11 +392,10 @@ func (p *Printer) printComment(comment ast.Comment) error {
 	// }
 	p.printRune('/')
 	p.printRune('/')
-	p.printSpace()
+	// p.printSpace()
 
 	var inWord bool
 	var start, runeCount int
-	isFirstWord := true
 	for i, r := range text {
 		if !inWord {
 			if isWhitespace(r) {
@@ -409,26 +410,18 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		}
 
 		if isWhitespace(r) { // word boundary
-			col := p.column + runeCount
-			if !isFirstWord {
-				col++ // for the space
-			}
-			if col <= maxColumn {
-				if !isFirstWord {
-					p.printSpace()
-				}
-			} else {
+			col := p.column + 1 + runeCount // 1 for the space
+			if col > maxColumn {
 				p.printNewline()
 				p.printIndent()
 				p.printRune('/')
 				p.printRune('/')
-				p.printSpace()
 			}
+			p.printSpace()
 			for _, c := range text[start:i] {
 				p.printRune(c)
 			}
 			inWord = false
-			isFirstWord = false
 
 			continue
 		}
@@ -437,17 +430,14 @@ func (p *Printer) printComment(comment ast.Comment) error {
 	}
 
 	if inWord {
-		if p.column+runeCount <= maxColumn {
-			if !isFirstWord {
-				p.printSpace()
-			}
-		} else {
+		col := p.column + 1 + runeCount // 1 for the space
+		if col > maxColumn {
 			p.printNewline()
 			p.printIndent()
 			p.printRune('/')
 			p.printRune('/')
-			p.printSpace()
 		}
+		p.printSpace()
 		for _, c := range text[start:] {
 			p.printRune(c)
 		}

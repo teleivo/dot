@@ -225,19 +225,6 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	}
 }`,
 		},
-		// TODO test comments on the same line as other statements
-		// add a test for breaking up the comment
-		// add a test for a multi-line comment like A -- B /* foo */; B -- C
-		// or choose an attribute statement?
-		// TODO cleanup implementation
-		// 		"CommentNextToStatementsAreKeptOnTheSameLine": {
-		// 			in: `graph {
-		// 	A -- B // stays on the same line
-		// }`,
-		// 			want: `graph {
-		// 	A -- B // stays on the same line
-		// }`,
-		// 		},
 		"CommentsWithOnlyWhitespaceAreDiscarded": {
 			in: `graph {
 		#    	
@@ -269,7 +256,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// or not!
 	// this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
 	// or not!
-	// this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or knot!
+	// this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or
+	// knot!
 }`,
 		},
 		"CommentsMultiLineThatFitOntoSingleLineAreChangedToSingleLineMarker": {
@@ -304,6 +292,19 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 }`,
 		},
+		// TODO test comments on the same line as other statements
+		// add a test for breaking up the comment
+		// add a test for a multi-line comment like A -- B /* foo */; B -- C
+		// or choose an attribute statement?
+		// TODO cleanup implementation
+		// 		"CommentsNextToStatementsAreKeptOnTheSameLine": {
+		// 			in: `graph {
+		// 	A -- B  //   stays on the same line
+		// }`,
+		// 			want: `graph {
+		// 	A -- B // stays on the same line
+		// }`,
+		// 		},
 	}
 
 	for name, test := range tests {

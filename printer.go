@@ -374,26 +374,7 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	const singleMarkerRunes = 3 // two runes for '//' and one for a whitespace before the comment text
-	// TODO optimize by finding returning first non-whitespace index, then loop below using
-	// text[start] and print the header in the loop
-	wordCount, _ := isMultiLineComment(p.indentLevel+singleMarkerRunes, text)
-	if wordCount == 0 {
-		// discard empty comments
-		return nil
-	}
-
-	// TODO this is where I need to know if the comment should fit on the same line or not
-	// if p.column <= p.indentLevel {
-	p.printNewline()
-	p.printIndent()
-	// } else {
-	// 	p.printSpace()
-	// }
-	p.printRune('/')
-	p.printRune('/')
-	// p.printSpace()
-
+	isFirstWord := true
 	var inWord bool
 	var start, runeCount int
 	for i, r := range text {
@@ -410,12 +391,15 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		}
 
 		if isWhitespace(r) { // word boundary
-			col := p.column + 1 + runeCount // 1 for the space
-			if col > maxColumn {
+			col := p.column + 1 + runeCount // 1 for the space separating words
+			// TODO isFirstWord assumes the first always goes onto a new line. This is where I need to
+			// know if the comment should fit on the same line or not
+			if col > maxColumn || isFirstWord {
 				p.printNewline()
 				p.printIndent()
 				p.printRune('/')
 				p.printRune('/')
+				isFirstWord = false
 			}
 			p.printSpace()
 			for _, c := range text[start:i] {
@@ -430,7 +414,7 @@ func (p *Printer) printComment(comment ast.Comment) error {
 	}
 
 	if inWord {
-		col := p.column + 1 + runeCount // 1 for the space
+		col := p.column + 1 + runeCount // 1 for the space separating words
 		if col > maxColumn {
 			p.printNewline()
 			p.printIndent()
@@ -444,46 +428,6 @@ func (p *Printer) printComment(comment ast.Comment) error {
 	}
 
 	return nil
-}
-
-// isMultiLineComment determines if a comment text needs to be broken up into a multi-line comment.
-// The comment text needs to have at least two words which exceed the maxColumn. A single word will
-// not be broken up. The word count of up to two words is returned as well as a bool which is true
-// if the comment has to be broken up. The word count can be used to determine if the comment text
-// is solely composed of whitespace.
-func isMultiLineComment(column int, text string) (int, bool) {
-	var inWord bool
-	var runeCount, wordCount int
-	for _, r := range text {
-		if !inWord {
-			if isWhitespace(r) {
-				// skip whitespace
-				continue
-			}
-
-			inWord = true
-			runeCount++
-			continue
-		}
-
-		if isWhitespace(r) { // word boundary
-			wordCount++
-			inWord = false
-		}
-
-		if wordCount >= 2 && column+runeCount > maxColumn {
-			return wordCount, true
-		}
-		runeCount++
-	}
-
-	if inWord {
-		wordCount++
-	}
-	if wordCount >= 2 && column+runeCount > maxColumn {
-		return wordCount, true
-	}
-	return wordCount, false
 }
 
 func isWhitespace(r rune) bool {

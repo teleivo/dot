@@ -374,32 +374,23 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
-	const singleMarkerRunes = 3
-	wordCount, isMultiLine := isMultiLineComment(p.indentLevel+singleMarkerRunes, text)
+	const singleMarkerRunes = 3 // two runes for '//' and one for a whitespace before the comment text
+	wordCount, _ := isMultiLineComment(p.indentLevel+singleMarkerRunes, text)
 	if wordCount == 0 {
 		// discard empty comments
 		return nil
 	}
 
 	// TODO this is where I need to know if the comment should fit on the same line or not
-	// also how does this interact with me always using /* for multi-line comments?
 	// if p.column <= p.indentLevel {
 	p.printNewline()
 	p.printIndent()
 	// } else {
 	// 	p.printSpace()
 	// }
-	if isMultiLine {
-		p.printRune('/')
-		p.printRune('*')
-		p.increaseIndentation()
-		p.printNewline()
-		p.printIndent()
-	} else {
-		p.printRune('/')
-		p.printRune('/')
-		p.printSpace()
-	}
+	p.printRune('/')
+	p.printRune('/')
+	p.printSpace()
 
 	var inWord bool
 	var start, runeCount int
@@ -429,6 +420,9 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			} else {
 				p.printNewline()
 				p.printIndent()
+				p.printRune('/')
+				p.printRune('/')
+				p.printSpace()
 			}
 			for _, c := range text[start:i] {
 				p.printRune(c)
@@ -450,19 +444,15 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		} else {
 			p.printNewline()
 			p.printIndent()
+			p.printRune('/')
+			p.printRune('/')
+			p.printSpace()
 		}
 		for _, c := range text[start:] {
 			p.printRune(c)
 		}
 	}
 
-	if isMultiLine {
-		p.decreaseIndentation()
-		p.printNewline()
-		p.printIndent()
-		p.printRune('*')
-		p.printRune('/')
-	}
 	return nil
 }
 

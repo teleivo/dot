@@ -258,24 +258,18 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
 }`,
 		},
-		"CommentsSingleLineThatExceedMaxColumnAreChangedToMultiLineMarker": {
+		"CommentsSingleLineThatExceedMaxColumnAreBrokenUp": {
 			in: `graph {
 		//this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
 #this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
 	// this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or knot!
 }`,
 			want: `graph {
-	/*
-		this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
-		or not!
-	*/
-	/*
-		this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
-		or not!
-	*/
-	/*
-		this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or knot!
-	*/
+	// this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
+	// or not!
+	// this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
+	// or not!
+	// this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or knot!
 }`,
 		},
 		"CommentsMultiLineThatFitOntoSingleLineAreChangedToSingleLineMarker": {
@@ -287,7 +281,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// this is a multi-line marker comment that fits onto a single line
 }`,
 		},
-		"CommentsMultiLineAreBrokenUpAtWordBoundary": {
+		"CommentsMultiLineAreAreChangedToCppMarkerRespectingWordBoundaries": {
 			in: `graph {
 	/* this is a multi-line comment that will not fit onto a single line so it will stay a
 			 multi-line comment but get stripped of its      superfluous    whitespace	
@@ -297,10 +291,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			*/
 }`,
 			want: `graph {
-	/*
-		this is a multi-line comment that will not fit onto a single line so it will stay a multi-line
-		comment but get stripped of its superfluous whitespace nonetheless
-	*/
+	// this is a multi-line comment that will not fit onto a single line so it will stay a multi-line
+	// comment but get stripped of its superfluous whitespace nonetheless
 }`,
 		},
 		"CommentsMultiLineWithWordsWhichAreGreaterThanMaxColumnAreNotBrokenUp": {
@@ -308,10 +300,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	// this uses a single-line marker but is too long for a single line https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 }`,
 			want: `graph {
-	/*
-		this uses a single-line marker but is too long for a single line
-		https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
-	*/
+	// this uses a single-line marker but is too long for a single line
+	// https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 }`,
 		},
 	}

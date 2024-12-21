@@ -530,6 +530,8 @@ graph/subraph as well
 * maybe: support subraph shorthand using `{}` and don't always print `subgraph` by looking at the
 literal? might need to add that to the ast as
 
+* join adjacent comments? unless there is an empty newline in between them
+
 ## Highl Level API
 
 I would like to define dot graphs in Go without having to create an ast. Like

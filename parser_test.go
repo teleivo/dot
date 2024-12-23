@@ -162,7 +162,11 @@ func TestParser(t *testing.T) {
 							Literal:  "foo",
 							StartPos: token.Position{Row: 1, Column: 9},
 							EndPos:   token.Position{Row: 1, Column: 11},
-						}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointUnderscore}}},
+						}, Port: &ast.Port{Name: &ast.ID{
+							Literal:  "f0",
+							StartPos: token.Position{Row: 1, Column: 13},
+							EndPos:   token.Position{Row: 1, Column: 14},
+						}, CompassPoint: ast.CompassPointUnderscore}}},
 					},
 				},
 			},
@@ -174,7 +178,13 @@ func TestParser(t *testing.T) {
 							Literal:  "foo",
 							StartPos: token.Position{Row: 1, Column: 9},
 							EndPos:   token.Position{Row: 1, Column: 11},
-						}, Port: &ast.Port{Name: &ast.ID{Literal: `"f0"`}, CompassPoint: ast.CompassPointUnderscore}}},
+						}, Port: &ast.Port{
+							Name: &ast.ID{
+								Literal:  `"f0"`,
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 16},
+							}, CompassPoint: ast.CompassPointUnderscore,
+						}}},
 					},
 				},
 			},
@@ -186,7 +196,11 @@ func TestParser(t *testing.T) {
 							Literal:  "foo",
 							StartPos: token.Position{Row: 1, Column: 9},
 							EndPos:   token.Position{Row: 1, Column: 11},
-						}, Port: &ast.Port{Name: &ast.ID{Literal: `"f0"`}, CompassPoint: ast.CompassPointNorth}}},
+						}, Port: &ast.Port{Name: &ast.ID{
+							Literal:  `"f0"`,
+							StartPos: token.Position{},
+							EndPos:   token.Position{},
+						}, CompassPoint: ast.CompassPointNorth}}},
 					},
 				},
 			},
@@ -793,16 +807,34 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left: ast.NodeID{ID: ast.ID{
-								Literal:  `"node4"`,
-								StartPos: token.Position{Row: 2, Column: 4},
-								EndPos:   token.Position{Row: 2, Column: 10},
-							}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointNorth}},
-							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: ast.ID{
-								Literal:  "node5",
-								StartPos: token.Position{Row: 2, Column: 20},
-								EndPos:   token.Position{Row: 2, Column: 24},
-							}, Port: &ast.Port{Name: &ast.ID{Literal: "f1"}}}},
+							Left: ast.NodeID{
+								ID: ast.ID{
+									Literal:  `"node4"`,
+									StartPos: token.Position{Row: 2, Column: 4},
+									EndPos:   token.Position{Row: 2, Column: 10},
+								},
+								Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 2, Column: 12},
+										EndPos:   token.Position{Row: 2, Column: 13},
+									}, CompassPoint: ast.CompassPointNorth,
+								},
+							},
+							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "node5",
+									StartPos: token.Position{Row: 2, Column: 20},
+									EndPos:   token.Position{Row: 2, Column: 24},
+								},
+								Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f1",
+										StartPos: token.Position{Row: 2, Column: 26},
+										EndPos:   token.Position{Row: 2, Column: 27},
+									},
+								},
+							}},
 						},
 					},
 				},

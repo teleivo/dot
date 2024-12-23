@@ -270,11 +270,13 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 }
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
-	nid := ast.NodeID{ID: ast.ID{
-		Literal:  p.curToken.Literal,
-		StartPos: p.curToken.Start,
-		EndPos:   p.curToken.End,
-	}}
+	nid := ast.NodeID{
+		ID: ast.ID{
+			Literal:  p.curToken.Literal,
+			StartPos: p.curToken.Start,
+			EndPos:   p.curToken.End,
+		},
+	}
 
 	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Colon)
 	if err != nil || !hasID {
@@ -301,11 +303,23 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 		if ok {
 			return &ast.Port{CompassPoint: cp}, nil
 		}
-		return &ast.Port{Name: &ast.ID{Literal: p.curToken.Literal}}, nil
+		return &ast.Port{
+			Name: &ast.ID{
+				Literal:  p.curToken.Literal,
+				StartPos: p.curToken.Start,
+				EndPos:   p.curToken.End,
+			},
+		}, nil
 	}
 
 	// port with name and compass_pt :ID:compass_pt
-	port := ast.Port{Name: &ast.ID{Literal: p.curToken.Literal}}
+	port := ast.Port{
+		Name: &ast.ID{
+			Literal:  p.curToken.Literal,
+			StartPos: p.curToken.Start,
+			EndPos:   p.curToken.End,
+		},
+	}
 
 	err = p.expectPeekTokenIsOneOf(token.Colon)
 	if err != nil {

@@ -92,8 +92,8 @@ func Type(in string) (TokenType, bool) {
 
 // Token represents a token of the dot language.
 type Token struct {
-	Type     TokenType
-	Literal  string
+	Type       TokenType
+	Literal    string
 	Start, End Position
 }
 

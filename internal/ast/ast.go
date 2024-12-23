@@ -2,8 +2,9 @@
 package ast
 
 import (
-	"go/token"
 	"strings"
+
+	"github.com/teleivo/dot/internal/token"
 )
 
 // Graph is a directed or undirected dot graph.
@@ -59,8 +60,9 @@ type Stmt interface {
 // ID is a dot identifier as defined by https://graphviz.org/doc/info/lang.html#ids. HTML strings
 // are not supported.
 type ID struct {
-	Literal string         // Identifier literal
-	Pos     token.Position // Position of the first rune of the ID
+	Literal  string         // Identifier literal
+	StartPos token.Position // Position of the first rune of the ID
+	EndPos   token.Position // Position of the last rune of the ID
 }
 
 func (id ID) String() string {
@@ -68,12 +70,11 @@ func (id ID) String() string {
 }
 
 func (id ID) Start() token.Position {
-	return id.Pos
+	return id.StartPos
 }
 
 func (id ID) End() token.Position {
-	// TODO this could be a multiline string
-	return id.Pos
+	return id.EndPos
 }
 
 // NodeStmt is a dot node statement defining a node with optional attributes.

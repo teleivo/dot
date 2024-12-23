@@ -8,6 +8,7 @@ import (
 	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/ast"
+	"github.com/teleivo/dot/internal/token"
 )
 
 func TestParser(t *testing.T) {
@@ -50,7 +51,11 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Strict:   true,
 					Directed: true,
-					ID:       &ast.ID{Literal: "dependencies"},
+					ID: &ast.ID{
+						Literal:  "dependencies",
+						StartPos: token.Position{Row: 1, Column: 16},
+						EndPos:   token.Position{Row: 1, Column: 27},
+					},
 				},
 			},
 		}

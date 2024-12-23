@@ -125,7 +125,11 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	}
 
 	if hasID {
-		graph.ID = &ast.ID{Literal: p.curToken.Literal}
+		graph.ID = &ast.ID{
+			Literal:  p.curToken.Literal,
+			StartPos: p.curToken.Start,
+			EndPos:   p.curToken.End,
+		}
 	}
 
 	return graph, nil

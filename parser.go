@@ -270,7 +270,11 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 }
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
-	nid := ast.NodeID{ID: ast.ID{Literal: p.curToken.Literal}}
+	nid := ast.NodeID{ID: ast.ID{
+		Literal:  p.curToken.Literal,
+		StartPos: p.curToken.Start,
+		EndPos:   p.curToken.End,
+	}}
 
 	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Colon)
 	if err != nil || !hasID {
@@ -437,7 +441,11 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 		}
 
 		if hasID {
-			subraph.ID = &ast.ID{Literal: p.curToken.Literal}
+			subraph.ID = &ast.ID{
+				Literal:  p.curToken.Literal,
+				StartPos: p.curToken.Start,
+				EndPos:   p.curToken.End,
+			}
 		}
 
 		err = p.expectPeekTokenIsOneOf(token.LeftBrace)

@@ -2,6 +2,7 @@
 package ast
 
 import (
+	"go/token"
 	"strings"
 )
 
@@ -9,7 +10,7 @@ import (
 type Graph struct {
 	Strict   bool
 	Directed bool // Directed indicates that the graph is a directed graph.
-	ID       ID   // ID is the optional identifier of a graph.
+	ID       *ID  // ID is the optional identifier of a graph.
 	Stmts    []Stmt
 }
 
@@ -23,7 +24,7 @@ func (g Graph) String() string {
 	} else {
 		out.WriteString("graph")
 	}
-	if g.ID != "" {
+	if g.ID != nil {
 		out.WriteRune(' ')
 		out.WriteString(g.ID.String())
 	}
@@ -41,10 +42,12 @@ func (g Graph) String() string {
 	return out.String()
 }
 
-// TODO add another marker as this right now means that any Stringer is an AST node
 // Node represents an AST node of a dot graph.
 type Node interface {
 	String() string
+	// TODO implement them first, then add the methods to the interface
+	// Start() token.Position
+	// End() token.Position
 }
 
 // Statement nodes implement the Stmt interface.
@@ -55,10 +58,22 @@ type Stmt interface {
 
 // ID is a dot identifier as defined by https://graphviz.org/doc/info/lang.html#ids. HTML strings
 // are not supported.
-type ID string
+type ID struct {
+	Literal string         // Identifier literal
+	Pos     token.Position // Position of the first rune of the ID
+}
 
 func (id ID) String() string {
-	return string(id)
+	return string(id.Literal)
+}
+
+func (id ID) Start() token.Position {
+	return id.Pos
+}
+
+func (id ID) End() token.Position {
+	// TODO this could be a multiline string
+	return id.Pos
 }
 
 // NodeStmt is a dot node statement defining a node with optional attributes.
@@ -101,13 +116,19 @@ func (ni NodeID) String() string {
 
 func (ni NodeID) edgeOperand() {}
 
-// Port defines a node port where an edge can attach to.
+// Port defines a node port where an edge can attach to. Note that the port name is considered
+// optional by the graphviz tools despite it not being optional in the
+// https://graphviz.org/doc/info/lang.html grammar.
 type Port struct {
-	Name         ID           // Name is the identifier of the port.
+	Name         *ID          // Name is the optional identifier of the port.
 	CompassPoint CompassPoint // Position at which an edge can attach to.
 }
 
 func (p Port) String() string {
+	if p.Name == nil {
+		return ":" + p.CompassPoint.String()
+	}
+
 	return p.Name.String() + ":" + p.CompassPoint.String()
 }
 
@@ -303,7 +324,7 @@ func (a Attribute) stmtNode() {}
 
 // Subgraph is a dot subgraph.
 type Subgraph struct {
-	ID    ID // ID is the optional identifier.
+	ID    *ID // ID is the optional identifier.
 	Stmts []Stmt
 }
 
@@ -311,7 +332,7 @@ func (s Subgraph) String() string {
 	var out strings.Builder
 
 	out.WriteString("subgraph ")
-	if s.ID != "" {
+	if s.ID != nil {
 		out.WriteString(s.ID.String())
 		out.WriteRune(' ')
 	}

@@ -65,8 +65,8 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 	}
 
 	p.printSpace()
-	if graph.ID != "" {
-		err := p.printID(graph.ID)
+	if graph.ID != nil {
+		err := p.printID(*graph.ID)
 		if err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 }
 
 func (p *Printer) printID(id ast.ID) error {
-	runeCount := utf8.RuneCountInString(string(id))
+	runeCount := utf8.RuneCountInString(string(id.Literal))
 	if p.column+runeCount <= maxColumn {
 		p.print(id)
 		return nil
@@ -114,7 +114,7 @@ func (p *Printer) printID(id ast.ID) error {
 	var isUnquoted bool
 	runeIndex := p.column
 	breakPointCol := maxColumn - 2 // 2 = "\\n"
-	if id[0] != '"' {
+	if id.Literal[0] != '"' {
 		isUnquoted = true
 		// accounting for the added quote
 		runeIndex++
@@ -123,7 +123,7 @@ func (p *Printer) printID(id ast.ID) error {
 
 	// find the starting byte of the rune that will end up on the next line
 	var breakPointBytes int
-	for i := range id {
+	for i := range id.Literal {
 		runeIndex++
 		if runeIndex > breakPointCol {
 			breakPointBytes = i
@@ -134,11 +134,11 @@ func (p *Printer) printID(id ast.ID) error {
 	if isUnquoted { // opening quote
 		p.printRune('"')
 	}
-	p.print(id[:breakPointBytes])
+	p.printString(id.Literal[:breakPointBytes])
 	// standard C convention of a backslash immediately preceding a newline character
 	p.printRune('\\')
 	p.printNewline()
-	p.print(id[breakPointBytes:])
+	p.printString(id.Literal[breakPointBytes:])
 	if isUnquoted { // closing quote
 		p.printRune('"')
 	}
@@ -191,9 +191,9 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 		return nil
 	}
 
-	if nodeID.Port.Name != "" {
+	if nodeID.Port.Name != nil {
 		p.printToken(token.Colon)
-		err := p.printID(nodeID.Port.Name)
+		err = p.printID(*nodeID.Port.Name)
 		if err != nil {
 			return err
 		}
@@ -343,8 +343,8 @@ func (p *Printer) printAttribute(attribute ast.Attribute) error {
 func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 	p.printToken(token.Subgraph)
 	p.printSpace()
-	if subraph.ID != "" {
-		err := p.printID(subraph.ID)
+	if subraph.ID != nil {
+		err := p.printID(*subraph.ID)
 		if err != nil {
 			return err
 		}
@@ -435,6 +435,12 @@ func (p *Printer) decreaseIndentation() {
 func (p *Printer) printIndent() {
 	for range p.indentLevel {
 		p.printRune('\t')
+	}
+}
+
+func (p *Printer) printString(a string) {
+	for _, r := range a {
+		p.printRune(r)
 	}
 }
 

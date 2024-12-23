@@ -125,7 +125,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	}
 
 	if hasID {
-		graph.ID = ast.ID(p.curToken.Literal)
+		graph.ID = &ast.ID{Literal: p.curToken.Literal}
 	}
 
 	return graph, nil
@@ -266,7 +266,7 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 }
 
 func (p *Parser) parseNodeID() (ast.NodeID, error) {
-	nid := ast.NodeID{ID: ast.ID(p.curToken.Literal)}
+	nid := ast.NodeID{ID: ast.ID{Literal: p.curToken.Literal}}
 
 	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Colon)
 	if err != nil || !hasID {
@@ -293,11 +293,11 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 		if ok {
 			return &ast.Port{CompassPoint: cp}, nil
 		}
-		return &ast.Port{Name: ast.ID(p.curToken.Literal)}, nil
+		return &ast.Port{Name: &ast.ID{Literal: p.curToken.Literal}}, nil
 	}
 
 	// port with name and compass_pt :ID:compass_pt
-	port := ast.Port{Name: ast.ID(p.curToken.Literal)}
+	port := ast.Port{Name: &ast.ID{Literal: p.curToken.Literal}}
 
 	err = p.expectPeekTokenIsOneOf(token.Colon)
 	if err != nil {
@@ -318,7 +318,7 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 }
 
 func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
-	ns := &ast.AttrStmt{ID: ast.ID(p.curToken.Literal)}
+	ns := &ast.AttrStmt{ID: ast.ID{Literal: p.curToken.Literal}}
 
 	err := p.expectPeekTokenIsOneOf(token.LeftBracket)
 	if err != nil {
@@ -406,7 +406,7 @@ func (p *Parser) parseAList() (*ast.AList, error) {
 
 func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	attr := ast.Attribute{
-		Name: ast.ID(p.curToken.Literal),
+		Name: ast.ID{Literal: p.curToken.Literal},
 	}
 
 	err := p.expectPeekTokenIsOneOf(token.Equal)
@@ -418,7 +418,7 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	if err != nil {
 		return attr, err
 	}
-	attr.Value = ast.ID(p.curToken.Literal)
+	attr.Value = ast.ID{Literal: p.curToken.Literal}
 
 	return attr, nil
 }
@@ -433,7 +433,7 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 		}
 
 		if hasID {
-			subraph.ID = ast.ID(p.curToken.Literal)
+			subraph.ID = &ast.ID{Literal: p.curToken.Literal}
 		}
 
 		err = p.expectPeekTokenIsOneOf(token.LeftBrace)

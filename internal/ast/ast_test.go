@@ -13,17 +13,17 @@ func TestStringer(t *testing.T) {
 	}{
 		{
 			in: &NodeStmt{
-				NodeID: NodeID{ID: "foo"},
+				NodeID: NodeID{ID: ID{Literal: "foo"}},
 				AttrList: &AttrList{
 					AList: &AList{
-						Attribute: Attribute{Name: "a", Value: "b"},
+						Attribute: Attribute{Name: ID{Literal: "a"}, Value: ID{Literal: "b"}},
 						Next: &AList{
-							Attribute: Attribute{Name: "c", Value: "d"},
+							Attribute: Attribute{Name: ID{Literal: "c"}, Value: ID{Literal: "d"}},
 						},
 					},
 					Next: &AttrList{
 						AList: &AList{
-							Attribute: Attribute{Name: "e", Value: "f"},
+							Attribute: Attribute{Name: ID{Literal: "e"}, Value: ID{Literal: "f"}},
 						},
 					},
 				},
@@ -32,36 +32,36 @@ func TestStringer(t *testing.T) {
 		},
 		{
 			in: &NodeStmt{
-				NodeID: NodeID{ID: "foo", Port: &Port{Name: `"f0"`}},
+				NodeID: NodeID{ID: ID{Literal: "foo"}, Port: &Port{Name: &ID{Literal: `"f0"`}}},
 			},
 			want: `foo:"f0":_`,
 		},
 		{
 			in: &NodeStmt{
-				NodeID: NodeID{ID: "foo", Port: &Port{Name: `"f0"`, CompassPoint: CompassPointNorthWest}},
+				NodeID: NodeID{ID: ID{Literal: "foo"}, Port: &Port{Name: &ID{Literal: `"f0"`}, CompassPoint: CompassPointNorthWest}},
 			},
 			want: `foo:"f0":nw`,
 		},
 		{
 			in: &EdgeStmt{
-				Left: NodeID{ID: "1"},
+				Left: NodeID{ID: ID{Literal: "1"}},
 				Right: EdgeRHS{
 					Directed: true,
 					Right: Subgraph{
-						ID: "internal",
+						ID: &ID{Literal: "internal"},
 						Stmts: []Stmt{
-							&NodeStmt{NodeID: NodeID{ID: "2"}},
+							&NodeStmt{NodeID: NodeID{ID: ID{Literal: "2"}}},
 						},
 					},
 					Next: &EdgeRHS{
 						Directed: true,
-						Right:    NodeID{ID: "3"},
+						Right:    NodeID{ID: ID{Literal: "3"}},
 						Next: &EdgeRHS{
 							Directed: true,
 							Right: Subgraph{
 								Stmts: []Stmt{
-									&NodeStmt{NodeID: NodeID{ID: "4"}},
-									&NodeStmt{NodeID: NodeID{ID: "5"}},
+									&NodeStmt{NodeID: NodeID{ID: ID{Literal: "4"}}},
+									&NodeStmt{NodeID: NodeID{ID: ID{Literal: "5"}}},
 								},
 							},
 						},
@@ -69,7 +69,7 @@ func TestStringer(t *testing.T) {
 				},
 				AttrList: &AttrList{
 					AList: &AList{
-						Attribute: Attribute{Name: "a", Value: "b"},
+						Attribute: Attribute{Name: ID{Literal: "a"}, Value: ID{Literal: "b"}},
 					},
 				},
 			},
@@ -79,14 +79,14 @@ func TestStringer(t *testing.T) {
 			in: Graph{
 				Strict:   true,
 				Directed: true,
-				ID:       `"wonder"`,
+				ID:       &ID{Literal: `"wonder"`},
 			},
 			want: `strict digraph "wonder" {}`,
 		},
 		{
 			in: Graph{
 				Stmts: []Stmt{
-					Attribute{Name: "foo", Value: "bar"},
+					Attribute{Name: ID{Literal: "foo"}, Value: ID{Literal: "bar"}},
 				},
 			},
 			want: `graph {

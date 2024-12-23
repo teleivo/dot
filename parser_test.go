@@ -50,7 +50,7 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Strict:   true,
 					Directed: true,
-					ID:       "dependencies",
+					ID:       &ast.ID{Literal: "dependencies"},
 				},
 			},
 		}
@@ -112,7 +112,7 @@ func TestParser(t *testing.T) {
 				in: "graph { foo }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo"}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}}},
 					},
 				},
 			},
@@ -122,10 +122,10 @@ func TestParser(t *testing.T) {
 				}`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo"}},
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "bar"}},
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "baz"}},
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "trash"}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "bar"}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "baz"}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "trash"}}},
 					},
 				},
 			},
@@ -133,7 +133,7 @@ func TestParser(t *testing.T) {
 				in: "graph { foo:f0 }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointUnderscore}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointUnderscore}}},
 					},
 				},
 			},
@@ -141,7 +141,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:"f0":_ }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.CompassPointUnderscore}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: `"f0"`}, CompassPoint: ast.CompassPointUnderscore}}},
 					},
 				},
 			},
@@ -149,7 +149,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:"f0":n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: `"f0"`, CompassPoint: ast.CompassPointNorth}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: `"f0"`}, CompassPoint: ast.CompassPointNorth}}},
 					},
 				},
 			},
@@ -157,7 +157,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:ne }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointNorthEast}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointNorthEast}}},
 					},
 				},
 			},
@@ -165,7 +165,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:e }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointEast}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointEast}}},
 					},
 				},
 			},
@@ -173,7 +173,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:se }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointSouthEast}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointSouthEast}}},
 					},
 				},
 			},
@@ -181,7 +181,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:s }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointSouth}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointSouth}}},
 					},
 				},
 			},
@@ -189,7 +189,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:sw }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointSouthWest}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointSouthWest}}},
 					},
 				},
 			},
@@ -197,7 +197,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:w }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointWest}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointWest}}},
 					},
 				},
 			},
@@ -205,7 +205,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:nw }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointNorthWest}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointNorthWest}}},
 					},
 				},
 			},
@@ -213,7 +213,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:f0:c }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointCenter}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointCenter}}},
 					},
 				},
 			},
@@ -221,7 +221,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{CompassPoint: ast.CompassPointNorth}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{CompassPoint: ast.CompassPointNorth}}},
 					},
 				},
 			},
@@ -229,7 +229,7 @@ func TestParser(t *testing.T) {
 				in: `graph { foo:n:n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo", Port: &ast.Port{Name: "n", CompassPoint: ast.CompassPointNorth}}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}, Port: &ast.Port{Name: &ast.ID{Literal: "n"}, CompassPoint: ast.CompassPointNorth}}},
 					},
 				},
 			},
@@ -237,7 +237,7 @@ func TestParser(t *testing.T) {
 				in: "graph { foo [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{ID: "foo"}},
+						&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}}},
 					},
 				},
 			},
@@ -246,10 +246,10 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -261,10 +261,10 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -276,10 +276,10 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -291,10 +291,10 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -306,21 +306,21 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 									Next: &ast.AList{
-										Attribute: ast.Attribute{Name: "c", Value: "d"},
+										Attribute: ast.Attribute{Name: ast.ID{Literal: "c"}, Value: ast.ID{Literal: "d"}},
 									},
 								},
 							},
 						},
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "e"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "e"}},
 								},
 							},
 						},
@@ -332,16 +332,16 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 									Next: &ast.AList{
-										Attribute: ast.Attribute{Name: "c", Value: "d"},
+										Attribute: ast.Attribute{Name: ast.ID{Literal: "c"}, Value: ast.ID{Literal: "d"}},
 										Next: &ast.AList{
-											Attribute: ast.Attribute{Name: "e", Value: "f"},
+											Attribute: ast.Attribute{Name: ast.ID{Literal: "e"}, Value: ast.ID{Literal: "f"}},
 											Next: &ast.AList{
-												Attribute: ast.Attribute{Name: "g", Value: "h"},
+												Attribute: ast.Attribute{Name: ast.ID{Literal: "g"}, Value: ast.ID{Literal: "h"}},
 											},
 										},
 									},
@@ -356,19 +356,19 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: "foo"},
+							NodeID: ast.NodeID{ID: ast.ID{Literal: "foo"}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 									Next: &ast.AList{
-										Attribute: ast.Attribute{Name: "c", Value: "d"},
+										Attribute: ast.Attribute{Name: ast.ID{Literal: "c"}, Value: ast.ID{Literal: "d"}},
 									},
 								},
 								Next: &ast.AttrList{
 									AList: &ast.AList{
-										Attribute: ast.Attribute{Name: "e", Value: "f"},
+										Attribute: ast.Attribute{Name: ast.ID{Literal: "e"}, Value: ast.ID{Literal: "f"}},
 										Next: &ast.AList{
-											Attribute: ast.Attribute{Name: "g", Value: "h"},
+											Attribute: ast.Attribute{Name: ast.ID{Literal: "g"}, Value: ast.ID{Literal: "h"}},
 										},
 									},
 								},
@@ -441,8 +441,8 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left:  ast.NodeID{ID: "1"},
-							Right: ast.EdgeRHS{Right: ast.NodeID{ID: "2"}},
+							Left:  ast.NodeID{ID: ast.ID{Literal: "1"}},
+							Right: ast.EdgeRHS{Right: ast.NodeID{ID: ast.ID{Literal: "2"}}},
 						},
 					},
 				},
@@ -453,8 +453,8 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left:  ast.NodeID{ID: "1"},
-							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: "2"}},
+							Left:  ast.NodeID{ID: ast.ID{Literal: "1"}},
+							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: ast.ID{Literal: "2"}}},
 						},
 					},
 				},
@@ -465,22 +465,22 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left: ast.NodeID{ID: "1"},
+							Left: ast.NodeID{ID: ast.ID{Literal: "1"}},
 							Right: ast.EdgeRHS{
 								Directed: true,
-								Right:    ast.NodeID{ID: "2"},
+								Right:    ast.NodeID{ID: ast.ID{Literal: "2"}},
 								Next: &ast.EdgeRHS{
 									Directed: true,
-									Right:    ast.NodeID{ID: "3"},
+									Right:    ast.NodeID{ID: ast.ID{Literal: "3"}},
 									Next: &ast.EdgeRHS{
 										Directed: true,
-										Right:    ast.NodeID{ID: "4"},
+										Right:    ast.NodeID{ID: ast.ID{Literal: "4"}},
 									},
 								},
 							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -495,13 +495,13 @@ func TestParser(t *testing.T) {
 						&ast.EdgeStmt{
 							Left: ast.Subgraph{
 								Stmts: []ast.Stmt{
-									&ast.NodeStmt{NodeID: ast.NodeID{ID: "A"}},
-									&ast.NodeStmt{NodeID: ast.NodeID{ID: "B"}},
+									&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "A"}}},
+									&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "B"}}},
 								},
 							},
 							Right: ast.EdgeRHS{
 								Directed: true,
-								Right:    ast.NodeID{ID: "C"},
+								Right:    ast.NodeID{ID: ast.ID{Literal: "C"}},
 							},
 						},
 					},
@@ -513,13 +513,13 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left: ast.NodeID{ID: "A"},
+							Left: ast.NodeID{ID: ast.ID{Literal: "A"}},
 							Right: ast.EdgeRHS{
 								Directed: true,
 								Right: ast.Subgraph{
 									Stmts: []ast.Stmt{
-										&ast.NodeStmt{NodeID: ast.NodeID{ID: "B"}},
-										&ast.NodeStmt{NodeID: ast.NodeID{ID: "C"}},
+										&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "B"}}},
+										&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "C"}}},
 									},
 								},
 							},
@@ -534,20 +534,20 @@ func TestParser(t *testing.T) {
 						&ast.EdgeStmt{
 							Left: ast.Subgraph{
 								Stmts: []ast.Stmt{
-									&ast.NodeStmt{NodeID: ast.NodeID{ID: "1"}},
-									&ast.NodeStmt{NodeID: ast.NodeID{ID: "2"}},
+									&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "1"}}},
+									&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "2"}}},
 								},
 							},
 							Right: ast.EdgeRHS{
 								Right: ast.Subgraph{
 									Stmts: []ast.Stmt{
 										&ast.EdgeStmt{
-											Left: ast.NodeID{ID: "3"},
+											Left: ast.NodeID{ID: ast.ID{Literal: "3"}},
 											Right: ast.EdgeRHS{
 												Right: ast.Subgraph{
 													Stmts: []ast.Stmt{
-														&ast.NodeStmt{NodeID: ast.NodeID{ID: "4"}},
-														&ast.NodeStmt{NodeID: ast.NodeID{ID: "5"}},
+														&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "4"}}},
+														&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "5"}}},
 													},
 												},
 											},
@@ -565,14 +565,14 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left: ast.NodeID{ID: "A"},
+							Left: ast.NodeID{ID: ast.ID{Literal: "A"}},
 							Right: ast.EdgeRHS{
 								Directed: true,
 								Right: ast.Subgraph{
-									ID: "foo",
+									ID: &ast.ID{Literal: "foo"},
 									Stmts: []ast.Stmt{
-										&ast.NodeStmt{NodeID: ast.NodeID{ID: "B"}},
-										&ast.NodeStmt{NodeID: ast.NodeID{ID: "C"}},
+										&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "B"}}},
+										&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "C"}}},
 									},
 								},
 							},
@@ -588,8 +588,8 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left:  ast.NodeID{ID: `"node4"`, Port: &ast.Port{Name: "f0", CompassPoint: ast.CompassPointNorth}},
-							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: "node5", Port: &ast.Port{Name: "f1"}}},
+							Left:  ast.NodeID{ID: ast.ID{Literal: `"node4"`}, Port: &ast.Port{Name: &ast.ID{Literal: "f0"}, CompassPoint: ast.CompassPointNorth}},
+							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{ID: ast.ID{Literal: "node5"}, Port: &ast.Port{Name: &ast.ID{Literal: "f1"}}}},
 						},
 					},
 				},
@@ -653,7 +653,7 @@ func TestParser(t *testing.T) {
 				in: "graph { graph [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.AttrStmt{ID: "graph"},
+						&ast.AttrStmt{ID: ast.ID{Literal: "graph"}},
 					},
 				},
 			},
@@ -661,7 +661,7 @@ func TestParser(t *testing.T) {
 				in: "graph { node [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.AttrStmt{ID: "node"},
+						&ast.AttrStmt{ID: ast.ID{Literal: "node"}},
 					},
 				},
 			},
@@ -669,7 +669,7 @@ func TestParser(t *testing.T) {
 				in: "graph { edge [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.AttrStmt{ID: "edge"},
+						&ast.AttrStmt{ID: ast.ID{Literal: "edge"}},
 					},
 				},
 			},
@@ -678,10 +678,10 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
-							ID: "graph",
+							ID: ast.ID{Literal: "graph"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -693,10 +693,10 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
-							ID: "node",
+							ID: ast.ID{Literal: "node"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -708,10 +708,10 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
-							ID: "edge",
+							ID: ast.ID{Literal: "edge"},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: "a", Value: "b"},
+									Attribute: ast.Attribute{Name: ast.ID{Literal: "a"}, Value: ast.ID{Literal: "b"}},
 								},
 							},
 						},
@@ -777,7 +777,7 @@ func TestParser(t *testing.T) {
 				in: "graph { rank = same; }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Attribute{Name: "rank", Value: "same"},
+						ast.Attribute{Name: ast.ID{Literal: "rank"}, Value: ast.ID{Literal: "same"}},
 					},
 				},
 			},
@@ -787,8 +787,8 @@ func TestParser(t *testing.T) {
 }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Attribute{Name: "label", Value: `"Rainy days
-				in summer"`},
+						ast.Attribute{Name: ast.ID{Literal: "label"}, Value: ast.ID{Literal: `"Rainy days
+				in summer"`}},
 					},
 				},
 			},
@@ -799,8 +799,8 @@ func TestParser(t *testing.T) {
 }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Attribute{Name: "label", Value: `"Rainy days\
-				in summer"`},
+						ast.Attribute{Name: ast.ID{Literal: "label"}, Value: ast.ID{Literal: `"Rainy days\
+				in summer"`}},
 					},
 				},
 			},
@@ -875,7 +875,7 @@ func TestParser(t *testing.T) {
 				in: "graph { subgraph foo {} }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Subgraph{ID: "foo"},
+						ast.Subgraph{ID: &ast.ID{Literal: "foo"}},
 					},
 				},
 			},
@@ -889,9 +889,9 @@ func TestParser(t *testing.T) {
 					Stmts: []ast.Stmt{
 						ast.Subgraph{
 							Stmts: []ast.Stmt{
-								ast.Attribute{Name: "rank", Value: "same"},
-								&ast.NodeStmt{NodeID: ast.NodeID{ID: "A"}},
-								&ast.NodeStmt{NodeID: ast.NodeID{ID: "B"}},
+								ast.Attribute{Name: ast.ID{Literal: "rank"}, Value: ast.ID{Literal: "same"}},
+								&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "A"}}},
+								&ast.NodeStmt{NodeID: ast.NodeID{ID: ast.ID{Literal: "B"}}},
 							},
 						},
 					},

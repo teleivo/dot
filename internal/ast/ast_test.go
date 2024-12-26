@@ -35,7 +35,7 @@ func TestStringer(t *testing.T) {
 			in: &NodeStmt{
 				NodeID: NodeID{ID: ID{Literal: "foo"}, Port: &Port{Name: &ID{Literal: `"f0"`}}},
 			},
-			want: `foo:"f0":_`,
+			want: `foo:"f0"`,
 		},
 		{
 			in: &NodeStmt{
@@ -43,7 +43,7 @@ func TestStringer(t *testing.T) {
 					ID: ID{Literal: "foo"},
 					Port: &Port{
 						Name:         &ID{Literal: `"f0"`},
-						CompassPoint: CompassPoint{Type: CompassPointNorthWest},
+						CompassPoint: &CompassPoint{Type: CompassPointNorthWest},
 					},
 				},
 			},

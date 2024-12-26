@@ -198,7 +198,7 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 			return err
 		}
 	}
-	if nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
+	if nodeID.Port.CompassPoint != nil && nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
 		p.printToken(token.Colon)
 		p.print(nodeID.Port.CompassPoint)
 	}

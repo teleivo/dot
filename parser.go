@@ -302,7 +302,7 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 		cp, ok := ast.IsCompassPoint(p.curToken.Literal)
 		if ok {
 			return &ast.Port{
-				CompassPoint: ast.CompassPoint{
+				CompassPoint: &ast.CompassPoint{
 					Type:     cp,
 					StartPos: p.curToken.Start,
 					EndPos:   p.curToken.End,
@@ -355,7 +355,7 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 			p.curToken.Literal,
 		)
 	}
-	port.CompassPoint = ast.CompassPoint{
+	port.CompassPoint = &ast.CompassPoint{
 		Type:     cp,
 		StartPos: p.curToken.Start,
 		EndPos:   p.curToken.End,

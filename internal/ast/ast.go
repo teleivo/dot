@@ -121,13 +121,15 @@ func (ni NodeID) edgeOperand() {}
 // optional by the graphviz tools despite it not being optional in the
 // https://graphviz.org/doc/info/lang.html grammar.
 type Port struct {
-	Name         *ID          // Name is the optional identifier of the port.
-	CompassPoint CompassPoint // Position at which an edge can attach to.
+	Name         *ID           // Name is the optional identifier of the port.
+	CompassPoint *CompassPoint // CompassPoint is the optional position at which an edge can attach to.
 }
 
 func (p Port) String() string {
 	if p.Name == nil {
 		return ":" + p.CompassPoint.String()
+	} else if p.CompassPoint == nil {
+		return p.Name.String()
 	}
 
 	return p.Name.String() + ":" + p.CompassPoint.String()

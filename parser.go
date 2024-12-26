@@ -340,7 +340,11 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 }
 
 func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
-	ns := &ast.AttrStmt{ID: ast.ID{Literal: p.curToken.Literal}}
+	ns := &ast.AttrStmt{ID: ast.ID{
+		Literal:  p.curToken.Literal,
+		StartPos: p.curToken.Start,
+		EndPos:   p.curToken.End,
+	}}
 
 	err := p.expectPeekTokenIsOneOf(token.LeftBracket)
 	if err != nil {
@@ -428,7 +432,11 @@ func (p *Parser) parseAList() (*ast.AList, error) {
 
 func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	attr := ast.Attribute{
-		Name: ast.ID{Literal: p.curToken.Literal},
+		Name: ast.ID{
+			Literal:  p.curToken.Literal,
+			StartPos: p.curToken.Start,
+			EndPos:   p.curToken.End,
+		},
 	}
 
 	err := p.expectPeekTokenIsOneOf(token.Equal)
@@ -440,7 +448,11 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	if err != nil {
 		return attr, err
 	}
-	attr.Value = ast.ID{Literal: p.curToken.Literal}
+	attr.Value = ast.ID{
+		Literal:  p.curToken.Literal,
+		StartPos: p.curToken.Start,
+		EndPos:   p.curToken.End,
+	}
 
 	return attr, nil
 }

@@ -301,7 +301,13 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 	if !p.peekTokenIsOneOf(token.Colon) { // port is either :ID | :compass_pt
 		cp, ok := ast.IsCompassPoint(p.curToken.Literal)
 		if ok {
-			return &ast.Port{CompassPoint: cp}, nil
+			return &ast.Port{
+				CompassPoint: ast.CompassPoint{
+					Type:     cp,
+					StartPos: p.curToken.Start,
+					EndPos:   p.curToken.End,
+				},
+			}, nil
 		}
 		return &ast.Port{
 			Name: &ast.ID{
@@ -332,9 +338,28 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 
 	cp, ok := ast.IsCompassPoint(p.curToken.Literal)
 	if !ok {
-		return &port, fmt.Errorf("expected a compass point %v instead got %q", []ast.CompassPoint{ast.CompassPointUnderscore, ast.CompassPointNorth, ast.CompassPointNorthEast, ast.CompassPointEast, ast.CompassPointSouthEast, ast.CompassPointSouth, ast.CompassPointSouthWest, ast.CompassPointWest, ast.CompassPointNorthWest, ast.CompassPointCenter}, p.curToken.Literal)
+		return &port, fmt.Errorf(
+			"expected a compass point %v instead got %q",
+			[]string{
+				ast.CompassPointUnderscore.String(),
+				ast.CompassPointNorth.String(),
+				ast.CompassPointNorthEast.String(),
+				ast.CompassPointEast.String(),
+				ast.CompassPointSouthEast.String(),
+				ast.CompassPointSouth.String(),
+				ast.CompassPointSouthWest.String(),
+				ast.CompassPointWest.String(),
+				ast.CompassPointNorthWest.String(),
+				ast.CompassPointCenter.String(),
+			},
+			p.curToken.Literal,
+		)
 	}
-	port.CompassPoint = cp
+	port.CompassPoint = ast.CompassPoint{
+		Type:     cp,
+		StartPos: p.curToken.Start,
+		EndPos:   p.curToken.End,
+	}
 
 	return &port, nil
 }

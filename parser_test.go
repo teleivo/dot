@@ -168,17 +168,28 @@ func TestParser(t *testing.T) {
 				in: "graph { foo:f0 }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointUnderscore},
-						}},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+								Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									// TODO should be a pointer with nil here
+									CompassPoint: ast.CompassPoint{
+										Type:     ast.CompassPointUnderscore,
+										StartPos: token.Position{Row: 1, Column: 10},
+										EndPos:   token.Position{Row: 1, Column: 11},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -196,7 +207,12 @@ func TestParser(t *testing.T) {
 									Literal:  `"f0"`,
 									StartPos: token.Position{Row: 1, Column: 13},
 									EndPos:   token.Position{Row: 1, Column: 16},
-								}, CompassPoint: ast.CompassPointUnderscore,
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointUnderscore,
+									StartPos: token.Position{Row: 1, Column: 18},
+									EndPos:   token.Position{Row: 1, Column: 18},
+								},
 							},
 						}},
 					},
@@ -211,11 +227,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  `"f0"`,
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 16},
-							}, CompassPoint: ast.CompassPointNorth},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  `"f0"`,
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 16},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointNorth,
+									StartPos: token.Position{Row: 1, Column: 18},
+									EndPos:   token.Position{Row: 1, Column: 18},
+								},
+							},
 						}},
 					},
 				},
@@ -229,11 +252,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointNorthEast},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointNorthEast,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 17},
+								},
+							},
 						}},
 					},
 				},
@@ -247,11 +277,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointEast},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointEast,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 16},
+								},
+							},
 						}},
 					},
 				},
@@ -265,11 +302,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointSouthEast},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointSouthEast,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 17},
+								},
+							},
 						}},
 					},
 				},
@@ -283,11 +327,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointSouth},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointSouth,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 16},
+								},
+							},
 						}},
 					},
 				},
@@ -301,11 +352,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointSouthWest},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointSouthWest,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 17},
+								},
+							},
 						}},
 					},
 				},
@@ -319,11 +377,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointWest},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointWest,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 16},
+								},
+							},
 						}},
 					},
 				},
@@ -337,11 +402,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointNorthWest},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointNorthWest,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 17},
+								},
+							},
 						}},
 					},
 				},
@@ -355,11 +427,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "f0",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, CompassPoint: ast.CompassPointCenter},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "f0",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 14},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointCenter,
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 16},
+								},
+							},
 						}},
 					},
 				},
@@ -373,7 +452,13 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{CompassPoint: ast.CompassPointNorth},
+							}, Port: &ast.Port{
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointNorth,
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 13},
+								},
+							},
 						}},
 					},
 				},
@@ -387,11 +472,18 @@ func TestParser(t *testing.T) {
 								Literal:  "foo",
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{Name: &ast.ID{
-								Literal:  "n",
-								StartPos: token.Position{Row: 1, Column: 13},
-								EndPos:   token.Position{Row: 1, Column: 13},
-							}, CompassPoint: ast.CompassPointNorth},
+							}, Port: &ast.Port{
+								Name: &ast.ID{
+									Literal:  "n",
+									StartPos: token.Position{Row: 1, Column: 13},
+									EndPos:   token.Position{Row: 1, Column: 13},
+								},
+								CompassPoint: ast.CompassPoint{
+									Type:     ast.CompassPointNorth,
+									StartPos: token.Position{Row: 1, Column: 15},
+									EndPos:   token.Position{Row: 1, Column: 15},
+								},
+							},
 						}},
 					},
 				},
@@ -1064,7 +1156,12 @@ func TestParser(t *testing.T) {
 										Literal:  "f0",
 										StartPos: token.Position{Row: 2, Column: 12},
 										EndPos:   token.Position{Row: 2, Column: 13},
-									}, CompassPoint: ast.CompassPointNorth,
+									},
+									CompassPoint: ast.CompassPoint{
+										Type:     ast.CompassPointNorth,
+										StartPos: token.Position{Row: 2, Column: 15},
+										EndPos:   token.Position{Row: 2, Column: 15},
+									},
 								},
 							},
 							Right: ast.EdgeRHS{Directed: true, Right: ast.NodeID{

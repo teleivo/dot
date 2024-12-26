@@ -39,7 +39,13 @@ func TestStringer(t *testing.T) {
 		},
 		{
 			in: &NodeStmt{
-				NodeID: NodeID{ID: ID{Literal: "foo"}, Port: &Port{Name: &ID{Literal: `"f0"`}, CompassPoint: CompassPointNorthWest}},
+				NodeID: NodeID{
+					ID: ID{Literal: "foo"},
+					Port: &Port{
+						Name:         &ID{Literal: `"f0"`},
+						CompassPoint: CompassPoint{Type: CompassPointNorthWest},
+					},
+				},
 			},
 			want: `foo:"f0":nw`,
 		},
@@ -102,57 +108,3 @@ func TestStringer(t *testing.T) {
 		assert.EqualValuesf(t, got, tc.want, "String()")
 	}
 }
-
-// func TestID(t *testing.T) {
-// 	tests := []struct {
-// 		in        ID
-// 		wantStart token.Position
-// 		wantEnd   token.Position
-// 	}{
-// 		{
-// 			in: ID{
-// 				Literal: `"apples"`,
-// 				Pos: token.Position{
-// 					Row:    2,
-// 					Column: 5,
-// 				},
-// 			},
-// 			wantStart: token.Position{
-// 				Row:    2,
-// 				Column: 5,
-// 			},
-// 			wantEnd: token.Position{
-// 				Row:    2,
-// 				Column: 13,
-// 			},
-// 		},
-// 		{
-// 			in: ID{
-// 				Literal: `"apples are
-//
-// 				🤤"`,
-// 				Pos: token.Position{
-// 					Row:    2,
-// 					Column: 5,
-// 				},
-// 			},
-// 			wantStart: token.Position{
-// 				Row:    2,
-// 				Column: 5,
-// 			},
-// 			wantEnd: token.Position{
-// 				Row:    4,
-// 				Column: 6,
-// 			},
-// 		},
-// 	}
-//
-// 	for _, test := range tests {
-// 		gotStart := test.in.Start()
-//
-// 		assert.EqualValuesf(t, gotStart, test.wantStart, "Start(%v)", test.in)
-//
-// 		gotEnd := test.in.End()
-// 		assert.EqualValuesf(t, gotEnd, test.wantEnd, "End(%v)", test.in)
-// 	}
-// }

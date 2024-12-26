@@ -133,11 +133,37 @@ func (p Port) String() string {
 	return p.Name.String() + ":" + p.CompassPoint.String()
 }
 
+// TODO these need their own tests as there is logic when there is or is not one of the optional
+// components
+func (p Port) Start() token.Position {
+	if p.Name == nil {
+		// TODO how do I know where the Port starts if there is no name?
+		// do I need to make the CompassPoint a full struct like I did with ID?
+	}
+
+	return p.Name.StartPos
+}
+
+// TODO I need to make CompassPoint a struct with its position
+// func (p Port) End() token.Position{
+//
+// }
+
 // CompassPoint position at which an edge can attach to a node https://graphviz.org/docs/attr-types/portPos.
-type CompassPoint int
+type CompassPoint struct {
+	Type     CompassPointType
+	StartPos token.Position // Position of the first rune of the compass point
+	EndPos   token.Position // Position of the last rune of the compass point
+}
+
+func (cp CompassPoint) String() string {
+	return cp.Type.String()
+}
+
+type CompassPointType int
 
 const (
-	CompassPointUnderscore CompassPoint = iota // Underscore is the default compass point in a port with a name https://graphviz.org/docs/attr-types/portPos.
+	CompassPointUnderscore CompassPointType = iota // Underscore is the default compass point in a port with a name https://graphviz.org/docs/attr-types/portPos.
 	CompassPointNorth
 	CompassPointNorthEast
 	CompassPointEast
@@ -149,7 +175,11 @@ const (
 	CompassPointCenter
 )
 
-var compassPointStrings = map[CompassPoint]string{
+func (cpt CompassPointType) String() string {
+	return compassPointStrings[cpt]
+}
+
+var compassPointStrings = map[CompassPointType]string{
 	CompassPointUnderscore: "_",
 	CompassPointNorth:      "n",
 	CompassPointNorthEast:  "ne",
@@ -162,11 +192,7 @@ var compassPointStrings = map[CompassPoint]string{
 	CompassPointCenter:     "c",
 }
 
-func (cp CompassPoint) String() string {
-	return compassPointStrings[cp]
-}
-
-var compassPoints = map[string]CompassPoint{
+var compassPoints = map[string]CompassPointType{
 	"_":  CompassPointUnderscore,
 	"n":  CompassPointNorth,
 	"ne": CompassPointNorthEast,
@@ -179,7 +205,7 @@ var compassPoints = map[string]CompassPoint{
 	"c":  CompassPointCenter,
 }
 
-func IsCompassPoint(in string) (CompassPoint, bool) {
+func IsCompassPoint(in string) (CompassPointType, bool) {
 	v, ok := compassPoints[in]
 	return v, ok
 }

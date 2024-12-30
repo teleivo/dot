@@ -8,11 +8,11 @@ import (
 )
 
 func TestStringer(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		in   Node
 		want string
 	}{
-		{
+		"NodeStmtWithAttrLists": {
 			in: &NodeStmt{
 				NodeID: NodeID{ID: ID{Literal: "foo"}},
 				AttrList: &AttrList{
@@ -31,13 +31,13 @@ func TestStringer(t *testing.T) {
 			},
 			want: `foo [a=b,c=d] [e=f]`,
 		},
-		{
+		"NodeStmtWithPortWithName": {
 			in: &NodeStmt{
 				NodeID: NodeID{ID: ID{Literal: "foo"}, Port: &Port{Name: &ID{Literal: `"f0"`}}},
 			},
 			want: `foo:"f0"`,
 		},
-		{
+		"NodeStmtWithPortWithNameAndCompassPoint": {
 			in: &NodeStmt{
 				NodeID: NodeID{
 					ID: ID{Literal: "foo"},
@@ -49,7 +49,7 @@ func TestStringer(t *testing.T) {
 			},
 			want: `foo:"f0":nw`,
 		},
-		{
+		"EdgeStmtWithSubgraph": {
 			in: &EdgeStmt{
 				Left: NodeID{ID: ID{Literal: "1"}},
 				Right: EdgeRHS{
@@ -82,7 +82,7 @@ func TestStringer(t *testing.T) {
 			},
 			want: `1 -> subgraph internal {2} -> 3 -> subgraph {4 5} [a=b]`,
 		},
-		{
+		"DigraphWithID": {
 			in: Graph{
 				Strict:   true,
 				Directed: true,
@@ -90,7 +90,7 @@ func TestStringer(t *testing.T) {
 			},
 			want: `strict digraph "wonder" {}`,
 		},
-		{
+		"Attribute": {
 			in: Graph{
 				Stmts: []Stmt{
 					Attribute{Name: ID{Literal: "foo"}, Value: ID{Literal: "bar"}},

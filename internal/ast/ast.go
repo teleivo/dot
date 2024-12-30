@@ -117,12 +117,11 @@ func (ni NodeID) String() string {
 
 func (ni NodeID) edgeOperand() {}
 
-// Port defines a node port where an edge can attach to. Note that the port name is considered
-// optional by the graphviz tools despite it not being optional in the
-// https://graphviz.org/doc/info/lang.html grammar.
+// Port defines a node port where an edge can attach to as defined by
+// https://graphviz.org/doc/info/lang.html. At least one of name and compass point must be defined.
 type Port struct {
-	Name         *ID           // Name is the optional identifier of the port.
-	CompassPoint *CompassPoint // CompassPoint is the optional position at which an edge can attach to.
+	Name         *ID           // Name is the identifier of the port.
+	CompassPoint *CompassPoint // CompassPoint is the position at which an edge can attach to.
 }
 
 func (p Port) String() string {
@@ -135,21 +134,21 @@ func (p Port) String() string {
 	return p.Name.String() + ":" + p.CompassPoint.String()
 }
 
-// TODO these need their own tests as there is logic when there is or is not one of the optional
-// components
 func (p Port) Start() token.Position {
-	if p.Name == nil {
-		// TODO how do I know where the Port starts if there is no name?
-		// do I need to make the CompassPoint a full struct like I did with ID?
+	if p.Name != nil {
+		return p.Name.StartPos
 	}
 
-	return p.Name.StartPos
+	return p.CompassPoint.StartPos
 }
 
-// TODO I need to make CompassPoint a struct with its position
-// func (p Port) End() token.Position{
-//
-// }
+func (p Port) End() token.Position {
+	if p.CompassPoint == nil {
+		return p.Name.EndPos
+	}
+
+	return p.CompassPoint.EndPos
+}
 
 // CompassPoint position at which an edge can attach to a node https://graphviz.org/docs/attr-types/portPos.
 type CompassPoint struct {

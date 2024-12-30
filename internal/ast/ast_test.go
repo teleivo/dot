@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/teleivo/assertive/assert"
-	// "github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot/internal/token"
 )
 
 func TestStringer(t *testing.T) {
@@ -102,9 +102,111 @@ func TestStringer(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		got := tc.in.String()
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := test.in.String()
 
-		assert.EqualValuesf(t, got, tc.want, "String()")
+			assert.EqualValuesf(t, got, test.want, "String()")
+		})
+	}
+}
+
+func TestPosition(t *testing.T) {
+	tests := map[string]struct {
+		in        Port
+		wantStart token.Position
+		wantEnd   token.Position
+	}{
+		"NodeStmtWithPortWithName": {
+			in: Port{
+				Name: &ID{
+					Literal: `"f0"`,
+					StartPos: token.Position{
+						Row:    1,
+						Column: 1,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 4,
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 4,
+			},
+		},
+		"NodeStmtWithPortWithCompassPoint": {
+			in: Port{
+				CompassPoint: &CompassPoint{
+					Type: CompassPointSouth,
+					StartPos: token.Position{
+						Row:    1,
+						Column: 1,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 4,
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 4,
+			},
+		},
+		"NodeStmtWithPortWithNameAndCompassPoint": {
+			in: Port{
+				Name: &ID{
+					Literal: `"f0"`,
+					StartPos: token.Position{
+						Row:    1,
+						Column: 1,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 4,
+					},
+				},
+				CompassPoint: &CompassPoint{
+					Type: CompassPointSouthWest,
+					StartPos: token.Position{
+						Row:    1,
+						Column: 5,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 6,
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 6,
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := test.in.Start()
+
+			assert.EqualValuesf(t, got, test.wantStart, "Start()")
+
+			got = test.in.End()
+			assert.EqualValuesf(t, got, test.wantEnd, "End()")
+		})
 	}
 }

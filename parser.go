@@ -519,7 +519,11 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 }
 
 func (p *Parser) parseComment() (ast.Comment, error) {
-	return ast.Comment{Text: string(p.curToken.Literal)}, nil
+	return ast.Comment{
+		Text:     string(p.curToken.Literal),
+		StartPos: p.curToken.Start,
+		EndPos:   p.curToken.End,
+	}, nil
 }
 
 func (p *Parser) isDone() bool {

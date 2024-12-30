@@ -1632,7 +1632,9 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						ast.Comment{
-							Text: "# ok",
+							Text:     "# ok",
+							StartPos: token.Position{Row: 1, Column: 10},
+							EndPos:   token.Position{Row: 1, Column: 13},
 						},
 					},
 				},
@@ -1644,7 +1646,9 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						ast.Comment{
-							Text: "// ok",
+							Text:     "// ok",
+							StartPos: token.Position{Row: 2, Column: 5},
+							EndPos:   token.Position{Row: 2, Column: 9},
 						},
 					},
 				},
@@ -1658,6 +1662,8 @@ func TestParser(t *testing.T) {
 						ast.Comment{
 							Text: `/* ok
 				then */`,
+							StartPos: token.Position{Row: 1, Column: 9},
+							EndPos:   token.Position{Row: 2, Column: 11},
 						},
 					},
 				},

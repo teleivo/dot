@@ -256,6 +256,104 @@ func TestPosition(t *testing.T) {
 				Column: 6,
 			},
 		},
+		"AList": {
+			in: &AList{
+				Attribute: Attribute{
+					Name: ID{
+						Literal: "pc",
+						StartPos: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 2,
+						},
+					},
+					Value: ID{
+						Literal: "2",
+						StartPos: token.Position{
+							Row:    1,
+							Column: 6,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 6,
+						},
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 6,
+			},
+		},
+		"AListWithNext": {
+			in: &AList{
+				Attribute: Attribute{
+					Name: ID{
+						Literal: "pc",
+						StartPos: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 2,
+						},
+					},
+					Value: ID{
+						Literal: "2",
+						StartPos: token.Position{
+							Row:    1,
+							Column: 6,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 6,
+						},
+					},
+				},
+				Next: &AList{
+					Attribute: Attribute{
+						Name: ID{
+							Literal: "int",
+							StartPos: token.Position{
+								Row:    1,
+								Column: 8,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 10,
+							},
+						},
+						Value: ID{
+							Literal: "3",
+							StartPos: token.Position{
+								Row:    1,
+								Column: 13,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 13,
+							},
+						},
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 13,
+			},
+		},
 	}
 
 	for name, test := range tests {

@@ -344,6 +344,18 @@ func (al *AList) String() string {
 	return out.String()
 }
 
+func (al *AList) Start() token.Position {
+	return al.Attribute.Start()
+}
+
+func (al *AList) End() token.Position {
+	var last Attribute
+	for cur := al; cur != nil; cur = cur.Next {
+		last = cur.Attribute
+	}
+	return last.End()
+}
+
 // Attribute is a name-value attribute pair https://graphviz.org/doc/info/attrs.html. Note that this
 // name is not defined in the abstract grammar of the dot language. It is defined as a statement and
 // as part of the a_list as ID '=' ID.
@@ -360,6 +372,14 @@ func (a Attribute) String() string {
 	out.WriteString(a.Value.String())
 
 	return out.String()
+}
+
+func (a Attribute) Start() token.Position {
+	return a.Name.Start()
+}
+
+func (a Attribute) End() token.Position {
+	return a.Value.End()
 }
 
 func (a Attribute) stmtNode() {}
@@ -396,11 +416,21 @@ func (s Subgraph) edgeOperand() {}
 // Comment is a dot comment as defined in
 // https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting.
 type Comment struct {
-	Text string // comment text including any opening and closing markers
+	Text     string         // Comment text including any opening and closing markers
+	StartPos token.Position // Position of the first rune of the comment
+	EndPos   token.Position // Position of the last rune of the comment
 }
 
 func (c Comment) String() string {
 	return c.Text
+}
+
+func (c Comment) Start() token.Position {
+	return c.StartPos
+}
+
+func (c Comment) End() token.Position {
+	return c.EndPos
 }
 
 func (c Comment) stmtNode() {}

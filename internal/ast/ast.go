@@ -46,9 +46,12 @@ func (g Graph) String() string {
 // Node represents an AST node of a dot graph.
 type Node interface {
 	String() string
-	// TODO implement them first, then add the methods to the interface
-	// Start() token.Position
-	// End() token.Position
+}
+
+// TODO move these into Node interface once all nodes implement it
+type Positioner interface {
+	Start() token.Position
+	End() token.Position
 }
 
 // Statement nodes implement the Stmt interface.
@@ -113,6 +116,17 @@ func (ni NodeID) String() string {
 	}
 
 	return out.String()
+}
+
+func (ni NodeID) Start() token.Position {
+	return ni.ID.StartPos
+}
+
+func (ni NodeID) End() token.Position {
+	if ni.Port != nil {
+		return ni.Port.End()
+	}
+	return ni.ID.EndPos
 }
 
 func (ni NodeID) edgeOperand() {}

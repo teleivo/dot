@@ -113,11 +113,70 @@ func TestStringer(t *testing.T) {
 
 func TestPosition(t *testing.T) {
 	tests := map[string]struct {
-		in        Port
+		in        Positioner
 		wantStart token.Position
 		wantEnd   token.Position
 	}{
-		"NodeStmtWithPortWithName": {
+		"NodeID": {
+			in: NodeID{
+				ID: ID{
+					Literal: "pc",
+					StartPos: token.Position{
+						Row:    1,
+						Column: 1,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 2,
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 2,
+			},
+		},
+		"NodeIDWithPort": {
+			in: NodeID{
+				ID: ID{
+					Literal: "pc",
+					StartPos: token.Position{
+						Row:    1,
+						Column: 1,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 2,
+					},
+				},
+				Port: &Port{
+					Name: &ID{
+						Literal: `"f0"`,
+						StartPos: token.Position{
+							Row:    1,
+							Column: 3,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 6,
+						},
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 6,
+			},
+		},
+		"PortWithName": {
 			in: Port{
 				Name: &ID{
 					Literal: `"f0"`,
@@ -140,7 +199,7 @@ func TestPosition(t *testing.T) {
 				Column: 4,
 			},
 		},
-		"NodeStmtWithPortWithCompassPoint": {
+		"PortWithCompassPoint": {
 			in: Port{
 				CompassPoint: &CompassPoint{
 					Type: CompassPointSouth,
@@ -163,7 +222,7 @@ func TestPosition(t *testing.T) {
 				Column: 4,
 			},
 		},
-		"NodeStmtWithPortWithNameAndCompassPoint": {
+		"PortWithNameAndCompassPoint": {
 			in: Port{
 				Name: &ID{
 					Literal: `"f0"`,

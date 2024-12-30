@@ -302,12 +302,23 @@ func (ns *AttrStmt) String() string {
 	return out.String()
 }
 
+func (ns *AttrStmt) Start() token.Position {
+	return ns.ID.Start()
+}
+
+func (ns *AttrStmt) End() token.Position {
+	return ns.ID.End()
+}
+
 func (ns *AttrStmt) stmtNode() {}
 
 // AttrList is a list of attributes as defined by https://graphviz.org/doc/info/attrs.html.
 type AttrList struct {
-	AList *AList    // AList is an optional list of attributes.
-	Next  *AttrList // Next optionally points to the attribute list following this one.
+	AList    *AList         // AList is an optional list of attributes.
+	Next     *AttrList      // Next optionally points to the attribute list following this one.
+	StartPos token.Position // Position of the opening '['.
+	EndPos   token.Position // Position of the first closing ']'. Note this is not be last ']' if
+	// there are Next AttrList which themselves have '[]'.
 }
 
 func (atl *AttrList) String() string {
@@ -323,6 +334,18 @@ func (atl *AttrList) String() string {
 	}
 
 	return out.String()
+}
+
+func (atl *AttrList) Start() token.Position {
+	return atl.StartPos
+}
+
+func (atl *AttrList) End() token.Position {
+	var end token.Position
+	for cur := atl; cur != nil; cur = cur.Next {
+		end = cur.EndPos
+	}
+	return end
 }
 
 // AList is a list of name-value attribute pairs https://graphviz.org/doc/info/attrs.html.
@@ -416,9 +439,9 @@ func (s Subgraph) edgeOperand() {}
 // Comment is a dot comment as defined in
 // https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting.
 type Comment struct {
-	Text     string         // Comment text including any opening and closing markers
-	StartPos token.Position // Position of the first rune of the comment
-	EndPos   token.Position // Position of the last rune of the comment
+	Text     string         // Comment text including any opening and closing markers.
+	StartPos token.Position // Position of the first rune of the comment.
+	EndPos   token.Position // Position of the last rune of the comment.
 }
 
 func (c Comment) String() string {

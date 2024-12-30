@@ -256,6 +256,154 @@ func TestPosition(t *testing.T) {
 				Column: 6,
 			},
 		},
+		"AttrListEmpty": {
+			in: &AttrList{
+				StartPos: token.Position{
+					Row:    1,
+					Column: 1,
+				},
+				EndPos: token.Position{
+					Row:    1,
+					Column: 4,
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 4,
+			},
+		},
+		"AttrList": {
+			in: &AttrList{
+				StartPos: token.Position{
+					Row:    1,
+					Column: 1,
+				},
+				EndPos: token.Position{
+					Row:    1,
+					Column: 8,
+				},
+				AList: &AList{
+					Attribute: Attribute{
+						Name: ID{
+							Literal: "pc",
+							StartPos: token.Position{
+								Row:    1,
+								Column: 1,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 2,
+							},
+						},
+						Value: ID{
+							Literal: "2",
+							StartPos: token.Position{
+								Row:    1,
+								Column: 6,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 6,
+							},
+						},
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 8,
+			},
+		},
+		"AttrListWithNext": {
+			in: &AttrList{
+				StartPos: token.Position{
+					Row:    1,
+					Column: 1,
+				},
+				EndPos: token.Position{
+					Row:    1,
+					Column: 8,
+				},
+				AList: &AList{
+					Attribute: Attribute{
+						Name: ID{
+							Literal: "pc",
+							StartPos: token.Position{
+								Row:    1,
+								Column: 1,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 2,
+							},
+						},
+						Value: ID{
+							Literal: "2",
+							StartPos: token.Position{
+								Row:    1,
+								Column: 6,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 6,
+							},
+						},
+					},
+				},
+				Next: &AttrList{
+					StartPos: token.Position{
+						Row:    1,
+						Column: 10,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 15,
+					},
+					AList: &AList{
+						Attribute: Attribute{
+							Name: ID{
+								Literal: "pc",
+								StartPos: token.Position{
+									Row:    1,
+									Column: 11,
+								},
+								EndPos: token.Position{
+									Row:    1,
+									Column: 12,
+								},
+							},
+							Value: ID{
+								Literal: "2",
+								StartPos: token.Position{
+									Row:    1,
+									Column: 14,
+								},
+								EndPos: token.Position{
+									Row:    1,
+									Column: 14,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 15,
+			},
+		},
 		"AList": {
 			in: &AList{
 				Attribute: Attribute{

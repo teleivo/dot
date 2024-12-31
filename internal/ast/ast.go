@@ -323,7 +323,7 @@ type AttrList struct {
 	AList    *AList         // AList is an optional list of attributes.
 	Next     *AttrList      // Next optionally points to the attribute list following this one.
 	StartPos token.Position // Position of the opening '['.
-	EndPos   token.Position // Position of the first closing ']'. Note this is not be last ']' if
+	EndPos   token.Position // Position of the first closing ']'. Note this might not be last ']' if
 	// there are Next AttrList which themselves have '[]'.
 }
 

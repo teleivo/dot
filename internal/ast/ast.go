@@ -288,9 +288,6 @@ type EdgeOperand interface {
 	edgeOperand()
 }
 
-// TODO the AttrList is not optional in (graph|node|edge) attr_list
-// even though the AList in the AttrList might be empty. feels like a bad language design
-// TODO add position here next
 // AttrStmt is an attribute list defining default attributes for graphs, nodes or edges defined
 // after this statement. The attr_stmt production requires an attr_list
 //
@@ -300,7 +297,7 @@ type EdgeOperand interface {
 //
 //	attr_list :	'[' [ a_list ] ']' [ attr_list ]
 //
-// This effectively means that the attr_list might be empty. To indicate an
+// This means that the attr_list might be empty.
 type AttrStmt struct {
 	ID       ID       // ID is either graph, node or edge.
 	AttrList AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
@@ -320,11 +317,11 @@ func (ns AttrStmt) Start() token.Position {
 	return ns.ID.Start()
 }
 
-func (ns *AttrStmt) End() token.Position {
-	return ns.ID.End()
+func (ns AttrStmt) End() token.Position {
+	return ns.AttrList.End()
 }
 
-func (ns *AttrStmt) stmtNode() {}
+func (ns AttrStmt) stmtNode() {}
 
 // AttrList is a list of attributes as defined by https://graphviz.org/doc/info/attrs.html.
 type AttrList struct {

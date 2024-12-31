@@ -256,6 +256,39 @@ func TestPosition(t *testing.T) {
 				Column: 8,
 			},
 		},
+		"AttrStmt": {
+			in: AttrStmt{
+				ID: ID{
+					Literal: `f1`,
+					StartPos: token.Position{
+						Row:    1,
+						Column: 1,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 2,
+					},
+				},
+				AttrList: AttrList{
+					StartPos: token.Position{
+						Row:    1,
+						Column: 3,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 5,
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 5,
+			},
+		},
 		"AttrListEmpty": {
 			in: &AttrList{
 				StartPos: token.Position{

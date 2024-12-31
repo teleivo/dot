@@ -79,7 +79,7 @@ aab"
 	D:n
 }`,
 		},
-		"NodeStatementWithSingleAttribute": {
+		"NodeStmtWithSingleAttribute": {
 			in: `graph {
 A        	[ 	label="blue",]
 			}`,
@@ -87,7 +87,7 @@ A        	[ 	label="blue",]
 	A [label="blue"]
 }`,
 		},
-		"NodeStatementWithMultipleAttributes": {
+		"NodeStmtWithMultipleAttributes": {
 			in: `graph {
 A     [ 	label="blue", color=grey; size=0.1,]
 			}`,
@@ -99,7 +99,7 @@ A     [ 	label="blue", color=grey; size=0.1,]
 	]
 }`,
 		},
-		"NodeStatementWithMultipleAttributeLists": {
+		"NodeStmtWithMultipleAttributeLists": {
 			in: `graph {
 A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 			}`,
@@ -145,11 +145,11 @@ graph {
 	}
 }`,
 		},
-		"AttrStatementsEmpty": {
+		"AttrStmtsEmpty": {
 			in:   `graph { node []; edge[]; graph[];}`,
 			want: `graph {}`,
 		},
-		"AttrStatementWithSingleAttribute": {
+		"AttrStmtWithSingleAttribute": {
 			in: `graph {
 graph     [ 	label="blue",]
 			}`,
@@ -157,7 +157,7 @@ graph     [ 	label="blue",]
 	graph [label="blue"]
 }`,
 		},
-		"AttrStatementWithIDOfMaxColumn": {
+		"AttrStmtWithIDOfMaxColumn": {
 			in: `graph {
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 }`,
@@ -165,7 +165,7 @@ graph     [ 	label="blue",]
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 }`,
 		},
-		"AttrStatementWithIDPastMaxColumn": {
+		"AttrStmtWithIDPastMaxColumn": {
 			in: `graph {
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col."]
 }`,
@@ -174,7 +174,7 @@ graph     [ 	label="blue",]
 l."]
 }`,
 		},
-		"AttributeStatementWithSingleAttribute": {
+		"AttributeStmtWithSingleAttribute": {
 			in: `graph {
 label="blue", minlen=2;
  color=grey;
@@ -297,7 +297,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		// add a test for a multi-line comment like A -- B /* foo */; B -- C
 		// or choose an attribute statement?
 		// TODO cleanup implementation
-		// 		"CommentsNextToStatementsAreKeptOnTheSameLine": {
+		// 		"CommentsNextToStmtsAreKeptOnTheSameLine": {
 		// 			in: `graph {
 		// 	A -- B  //   stays on the same line
 		// }`,

@@ -14,17 +14,28 @@ func TestStringer(t *testing.T) {
 	}{
 		"NodeStmtWithAttrLists": {
 			in: &NodeStmt{
-				NodeID: NodeID{ID: ID{Literal: "foo"}},
+				NodeID: NodeID{
+					ID: ID{Literal: "foo"},
+				},
 				AttrList: &AttrList{
 					AList: &AList{
-						Attribute: Attribute{Name: ID{Literal: "a"}, Value: ID{Literal: "b"}},
+						Attribute: Attribute{
+							Name:  ID{Literal: "a"},
+							Value: ID{Literal: "b"},
+						},
 						Next: &AList{
-							Attribute: Attribute{Name: ID{Literal: "c"}, Value: ID{Literal: "d"}},
+							Attribute: Attribute{
+								Name:  ID{Literal: "c"},
+								Value: ID{Literal: "d"},
+							},
 						},
 					},
 					Next: &AttrList{
 						AList: &AList{
-							Attribute: Attribute{Name: ID{Literal: "e"}, Value: ID{Literal: "f"}},
+							Attribute: Attribute{
+								Name:  ID{Literal: "e"},
+								Value: ID{Literal: "f"},
+							},
 						},
 					},
 				},
@@ -117,6 +128,66 @@ func TestPosition(t *testing.T) {
 		wantStart token.Position
 		wantEnd   token.Position
 	}{
+		"NodeStmt": {
+			in: &NodeStmt{
+				NodeID: NodeID{
+					ID: ID{
+						Literal: `f1`,
+						StartPos: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 2,
+						},
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 2,
+			},
+		},
+		"NodeStmtWithAttrList": {
+			in: &NodeStmt{
+				NodeID: NodeID{
+					ID: ID{
+						Literal: `f1`,
+						StartPos: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 2,
+						},
+					},
+				},
+				AttrList: &AttrList{
+					StartPos: token.Position{
+						Row:    1,
+						Column: 3,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 5,
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 5,
+			},
+		},
 		"NodeID": {
 			in: NodeID{
 				ID: ID{

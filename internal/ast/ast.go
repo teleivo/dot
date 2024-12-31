@@ -98,6 +98,18 @@ func (ns *NodeStmt) String() string {
 	return out.String()
 }
 
+func (ns *NodeStmt) Start() token.Position {
+	return ns.NodeID.Start()
+}
+
+func (ns *NodeStmt) End() token.Position {
+	if ns.AttrList != nil {
+		return ns.AttrList.End()
+	}
+
+	return ns.NodeID.End()
+}
+
 func (ns *NodeStmt) stmtNode() {}
 
 // NodeID identifies a dot node with an optional port.

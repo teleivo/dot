@@ -297,6 +297,8 @@ func (er EdgeRHS) String() string {
 // EdgeOperand is an operand in an edge statement that can either be a graph or a subgraph.
 type EdgeOperand interface {
 	Node
+	// TODO remove once its part of Node
+	Positioner
 	edgeOperand()
 }
 
@@ -432,8 +434,12 @@ func (a Attribute) stmtNode() {}
 
 // Subgraph is a dot subgraph.
 type Subgraph struct {
-	ID    *ID // ID is the optional identifier.
-	Stmts []Stmt
+	HasKeyword bool // HasKeyword indicates that the subgraph used the form of 'subgraph {}' when true
+	// and '{}' when false.
+	ID       *ID            // ID is the optional identifier.
+	Stmts    []Stmt         // Stmts contains all the subraphs statements.
+	StartPos token.Position // Position of the keyword 'subgraph' if HasKeyword is true, otherwise its the position of the opening '{'.
+	EndPos   token.Position // Position of the closing '}'.
 }
 
 func (s Subgraph) String() string {
@@ -454,6 +460,14 @@ func (s Subgraph) String() string {
 	out.WriteRune('}')
 
 	return out.String()
+}
+
+func (s Subgraph) Start() token.Position {
+	return s.StartPos
+}
+
+func (s Subgraph) End() token.Position {
+	return s.EndPos
 }
 
 func (s Subgraph) stmtNode()    {}

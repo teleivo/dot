@@ -493,8 +493,13 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 }
 
 func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
-	var subraph ast.Subgraph
+	subraph := ast.Subgraph{
+		StartPos: p.curToken.Start,
+	}
+
 	if p.curTokenIs(token.Subgraph) {
+		subraph.HasKeyword = true
+
 		// subgraph ID is optional
 		hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
 		if err != nil {
@@ -524,6 +529,7 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 		return subraph, nil
 	}
 	subraph.Stmts = stmts
+	subraph.EndPos = p.curToken.End
 
 	return subraph, nil
 }

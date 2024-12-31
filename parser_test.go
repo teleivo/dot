@@ -972,14 +972,18 @@ func TestParser(t *testing.T) {
 											EndPos:   token.Position{Row: 1, Column: 12},
 										},
 									}},
-									&ast.NodeStmt{NodeID: ast.NodeID{
-										ID: ast.ID{
-											Literal:  "B",
-											StartPos: token.Position{Row: 1, Column: 14},
-											EndPos:   token.Position{Row: 1, Column: 14},
+									&ast.NodeStmt{
+										NodeID: ast.NodeID{
+											ID: ast.ID{
+												Literal:  "B",
+												StartPos: token.Position{Row: 1, Column: 14},
+												EndPos:   token.Position{Row: 1, Column: 14},
+											},
 										},
-									}},
+									},
 								},
+								StartPos: token.Position{Row: 1, Column: 11},
+								EndPos:   token.Position{Row: 1, Column: 15},
 							},
 							Right: ast.EdgeRHS{
 								Directed: true,
@@ -1008,13 +1012,15 @@ func TestParser(t *testing.T) {
 								Directed: true,
 								Right: ast.Subgraph{
 									Stmts: []ast.Stmt{
-										&ast.NodeStmt{NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "B",
-												StartPos: token.Position{Row: 1, Column: 17},
-												EndPos:   token.Position{Row: 1, Column: 17},
+										&ast.NodeStmt{
+											NodeID: ast.NodeID{
+												ID: ast.ID{
+													Literal:  "B",
+													StartPos: token.Position{Row: 1, Column: 17},
+													EndPos:   token.Position{Row: 1, Column: 17},
+												},
 											},
-										}},
+										},
 										&ast.NodeStmt{NodeID: ast.NodeID{
 											ID: ast.ID{
 												Literal:  "C",
@@ -1023,6 +1029,8 @@ func TestParser(t *testing.T) {
 											},
 										}},
 									},
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 20},
 								},
 							},
 						},
@@ -1036,53 +1044,69 @@ func TestParser(t *testing.T) {
 						&ast.EdgeStmt{
 							Left: ast.Subgraph{
 								Stmts: []ast.Stmt{
-									&ast.NodeStmt{NodeID: ast.NodeID{
-										ID: ast.ID{
-											Literal:  "1",
-											StartPos: token.Position{Row: 1, Column: 10},
-											EndPos:   token.Position{Row: 1, Column: 10},
+									&ast.NodeStmt{
+										NodeID: ast.NodeID{
+											ID: ast.ID{
+												Literal:  "1",
+												StartPos: token.Position{Row: 1, Column: 10},
+												EndPos:   token.Position{Row: 1, Column: 10},
+											},
 										},
-									}},
-									&ast.NodeStmt{NodeID: ast.NodeID{
-										ID: ast.ID{
-											Literal:  "2",
-											StartPos: token.Position{Row: 1, Column: 12},
-											EndPos:   token.Position{Row: 1, Column: 12},
+									},
+									&ast.NodeStmt{
+										NodeID: ast.NodeID{
+											ID: ast.ID{
+												Literal:  "2",
+												StartPos: token.Position{Row: 1, Column: 12},
+												EndPos:   token.Position{Row: 1, Column: 12},
+											},
 										},
-									}},
+									},
 								},
+								StartPos: token.Position{Row: 1, Column: 9},
+								EndPos:   token.Position{Row: 1, Column: 13},
 							},
 							Right: ast.EdgeRHS{
 								Right: ast.Subgraph{
 									Stmts: []ast.Stmt{
 										&ast.EdgeStmt{
-											Left: ast.NodeID{ID: ast.ID{
-												Literal:  "3",
-												StartPos: token.Position{Row: 1, Column: 19},
-												EndPos:   token.Position{Row: 1, Column: 19},
-											}},
+											Left: ast.NodeID{
+												ID: ast.ID{
+													Literal:  "3",
+													StartPos: token.Position{Row: 1, Column: 19},
+													EndPos:   token.Position{Row: 1, Column: 19},
+												},
+											},
 											Right: ast.EdgeRHS{
 												Right: ast.Subgraph{
 													Stmts: []ast.Stmt{
-														&ast.NodeStmt{NodeID: ast.NodeID{
-															ID: ast.ID{
-																Literal:  "4",
-																StartPos: token.Position{Row: 1, Column: 25},
-																EndPos:   token.Position{Row: 1, Column: 25},
+														&ast.NodeStmt{
+															NodeID: ast.NodeID{
+																ID: ast.ID{
+																	Literal:  "4",
+																	StartPos: token.Position{Row: 1, Column: 25},
+																	EndPos:   token.Position{Row: 1, Column: 25},
+																},
 															},
-														}},
-														&ast.NodeStmt{NodeID: ast.NodeID{
-															ID: ast.ID{
-																Literal:  "5",
-																StartPos: token.Position{Row: 1, Column: 27},
-																EndPos:   token.Position{Row: 1, Column: 27},
+														},
+														&ast.NodeStmt{
+															NodeID: ast.NodeID{
+																ID: ast.ID{
+																	Literal:  "5",
+																	StartPos: token.Position{Row: 1, Column: 27},
+																	EndPos:   token.Position{Row: 1, Column: 27},
+																},
 															},
-														}},
+														},
 													},
+													StartPos: token.Position{Row: 1, Column: 24},
+													EndPos:   token.Position{Row: 1, Column: 28},
 												},
 											},
 										},
 									},
+									StartPos: token.Position{Row: 1, Column: 18},
+									EndPos:   token.Position{Row: 1, Column: 29},
 								},
 							},
 						},
@@ -1103,6 +1127,7 @@ func TestParser(t *testing.T) {
 							Right: ast.EdgeRHS{
 								Directed: true,
 								Right: ast.Subgraph{
+									HasKeyword: true,
 									ID: &ast.ID{
 										Literal:  "foo",
 										StartPos: token.Position{Row: 1, Column: 25},
@@ -1116,14 +1141,18 @@ func TestParser(t *testing.T) {
 												EndPos:   token.Position{Row: 1, Column: 30},
 											},
 										}},
-										&ast.NodeStmt{NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "C",
-												StartPos: token.Position{Row: 1, Column: 32},
-												EndPos:   token.Position{Row: 1, Column: 32},
+										&ast.NodeStmt{
+											NodeID: ast.NodeID{
+												ID: ast.ID{
+													Literal:  "C",
+													StartPos: token.Position{Row: 1, Column: 32},
+													EndPos:   token.Position{Row: 1, Column: 32},
+												},
 											},
-										}},
+										},
 									},
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 33},
 								},
 							},
 						},
@@ -1542,7 +1571,11 @@ func TestParser(t *testing.T) {
 				in: "graph { subgraph {} }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Subgraph{},
+						ast.Subgraph{
+							HasKeyword: true,
+							StartPos:   token.Position{Row: 1, Column: 9},
+							EndPos:     token.Position{Row: 1, Column: 19},
+						},
 					},
 				},
 			},
@@ -1550,7 +1583,10 @@ func TestParser(t *testing.T) {
 				in: "graph { {} }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Subgraph{},
+						ast.Subgraph{
+							StartPos: token.Position{Row: 1, Column: 9},
+							EndPos:   token.Position{Row: 1, Column: 10},
+						},
 					},
 				},
 			},
@@ -1558,11 +1594,16 @@ func TestParser(t *testing.T) {
 				in: "graph { subgraph foo {} }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Subgraph{ID: &ast.ID{
-							Literal:  "foo",
-							StartPos: token.Position{Row: 1, Column: 18},
-							EndPos:   token.Position{Row: 1, Column: 20},
-						}},
+						ast.Subgraph{
+							HasKeyword: true,
+							ID: &ast.ID{
+								Literal:  "foo",
+								StartPos: token.Position{Row: 1, Column: 18},
+								EndPos:   token.Position{Row: 1, Column: 20},
+							},
+							StartPos: token.Position{Row: 1, Column: 9},
+							EndPos:   token.Position{Row: 1, Column: 23},
+						},
 					},
 				},
 			},
@@ -1575,31 +1616,40 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						ast.Subgraph{
+							HasKeyword: true,
 							Stmts: []ast.Stmt{
-								ast.Attribute{Name: ast.ID{
-									Literal:  "rank",
-									StartPos: token.Position{Row: 3, Column: 7},
-									EndPos:   token.Position{Row: 3, Column: 10},
-								}, Value: ast.ID{
-									Literal:  "same",
-									StartPos: token.Position{Row: 3, Column: 14},
-									EndPos:   token.Position{Row: 3, Column: 17},
-								}},
-								&ast.NodeStmt{NodeID: ast.NodeID{
-									ID: ast.ID{
-										Literal:  "A",
-										StartPos: token.Position{Row: 3, Column: 20},
-										EndPos:   token.Position{Row: 3, Column: 20},
+								ast.Attribute{
+									Name: ast.ID{
+										Literal:  "rank",
+										StartPos: token.Position{Row: 3, Column: 7},
+										EndPos:   token.Position{Row: 3, Column: 10},
+									}, Value: ast.ID{
+										Literal:  "same",
+										StartPos: token.Position{Row: 3, Column: 14},
+										EndPos:   token.Position{Row: 3, Column: 17},
 									},
-								}},
-								&ast.NodeStmt{NodeID: ast.NodeID{
-									ID: ast.ID{
-										Literal:  "B",
-										StartPos: token.Position{Row: 3, Column: 23},
-										EndPos:   token.Position{Row: 3, Column: 23},
+								},
+								&ast.NodeStmt{
+									NodeID: ast.NodeID{
+										ID: ast.ID{
+											Literal:  "A",
+											StartPos: token.Position{Row: 3, Column: 20},
+											EndPos:   token.Position{Row: 3, Column: 20},
+										},
 									},
-								}},
+								},
+								&ast.NodeStmt{
+									NodeID: ast.NodeID{
+										ID: ast.ID{
+											Literal:  "B",
+											StartPos: token.Position{Row: 3, Column: 23},
+											EndPos:   token.Position{Row: 3, Column: 23},
+										},
+									},
+								},
 							},
+							StartPos: token.Position{Row: 2, Column: 6},
+							EndPos:   token.Position{Row: 4, Column: 6},
 						},
 					},
 				},

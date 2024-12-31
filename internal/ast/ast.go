@@ -289,26 +289,34 @@ type EdgeOperand interface {
 }
 
 // TODO the AttrList is not optional in (graph|node|edge) attr_list
+// even though the AList in the AttrList might be empty. feels like a bad language design
+// TODO add position here next
 // AttrStmt is an attribute list defining default attributes for graphs, nodes or edges defined
-// after this statement.
+// after this statement. The attr_stmt production requires an attr_list
+//
+//	attr_stmt :	(graph | node | edge) attr_list
+//
+// while the attr_list only requires opening and closing brackets.
+//
+//	attr_list :	'[' [ a_list ] ']' [ attr_list ]
+//
+// This effectively means that the attr_list might be empty. To indicate an
 type AttrStmt struct {
-	ID       ID        // ID is either graph, node or edge.
-	AttrList *AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
+	ID       ID       // ID is either graph, node or edge.
+	AttrList AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
 }
 
-func (ns *AttrStmt) String() string {
+func (ns AttrStmt) String() string {
 	var out strings.Builder
 
 	out.WriteString(ns.ID.String())
-	if ns.AttrList != nil {
-		out.WriteRune(' ')
-		out.WriteString(ns.AttrList.String())
-	}
+	out.WriteRune(' ')
+	out.WriteString(ns.AttrList.String())
 
 	return out.String()
 }
 
-func (ns *AttrStmt) Start() token.Position {
+func (ns AttrStmt) Start() token.Position {
 	return ns.ID.Start()
 }
 

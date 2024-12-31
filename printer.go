@@ -238,11 +238,11 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 }
 
 func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, error) {
-	if aList.Next != nil {
-		hasMultipleAttrs = true
-	}
-
 	for cur := aList; cur != nil; cur = cur.Next {
+		if aList.Next != nil {
+			hasMultipleAttrs = true
+		}
+
 		if hasMultipleAttrs {
 			p.printNewline()
 			p.printIndent()
@@ -317,14 +317,10 @@ func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
 	if err != nil {
 		return err
 	}
-	return p.printAttrList(attrStmt.AttrList)
+	return p.printAttrList(&attrStmt.AttrList)
 }
 
-func hasAttr(attrList *ast.AttrList) bool {
-	if attrList == nil {
-		return false
-	}
-
+func hasAttr(attrList ast.AttrList) bool {
 	for cur := attrList.AList; cur != nil; cur = cur.Next {
 		return true
 	}

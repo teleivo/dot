@@ -381,7 +381,7 @@ func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
 		return ns, err
 	}
 
-	ns.AttrList = attrs
+	ns.AttrList = *attrs
 
 	return ns, nil
 }
@@ -396,30 +396,32 @@ func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 		}
 
 		// a_list is optional
+		var alist *ast.AList
 		if p.curTokenIs(token.Identifier) {
-			alist, err := p.parseAList()
+			alist, err = p.parseAList()
 			if err != nil {
 				return first, err
 			}
-			if first == nil {
-				first = &ast.AttrList{
-					AList:    alist,
-					StartPos: openingBracketStart,
-				}
-				cur = first
-			} else {
-				cur.Next = &ast.AttrList{
-					AList:    alist,
-					StartPos: openingBracketStart,
-				}
-				cur = cur.Next
-			}
-
 			err = p.expectPeekTokenIsOneOf(token.RightBracket)
 			if err != nil {
 				return first, err
 			}
-			cur.EndPos = p.curToken.End
+		}
+
+		if first == nil {
+			first = &ast.AttrList{
+				AList:    alist,
+				StartPos: openingBracketStart,
+				EndPos:   p.curToken.End,
+			}
+			cur = first
+		} else {
+			cur.Next = &ast.AttrList{
+				AList:    alist,
+				StartPos: openingBracketStart,
+				EndPos:   p.curToken.End,
+			}
+			cur = cur.Next
 		}
 
 		_, err = p.advanceIfPeekTokenIsOneOf(token.LeftBracket)

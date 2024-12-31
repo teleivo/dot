@@ -486,13 +486,19 @@ func TestParser(t *testing.T) {
 				in: "graph { foo [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
 							},
-						}},
+							AttrList: &ast.AttrList{
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 14},
+							},
+						},
 					},
 				},
 			},
@@ -507,14 +513,18 @@ func TestParser(t *testing.T) {
 								EndPos:   token.Position{Row: 1, Column: 11},
 							}},
 							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name:  ast.ID{Literal: "a", StartPos: token.Position{Row: 1, Column: 17}, EndPos: token.Position{Row: 1, Column: 17}},
-										Value: ast.ID{Literal: "b", StartPos: token.Position{Row: 1, Column: 19}, EndPos: token.Position{Row: 1, Column: 19}},
+								Next: &ast.AttrList{
+									AList: &ast.AList{
+										Attribute: ast.Attribute{
+											Name:  ast.ID{Literal: "a", StartPos: token.Position{Row: 1, Column: 17}, EndPos: token.Position{Row: 1, Column: 17}},
+											Value: ast.ID{Literal: "b", StartPos: token.Position{Row: 1, Column: 19}, EndPos: token.Position{Row: 1, Column: 19}},
+										},
 									},
+									StartPos: token.Position{Row: 1, Column: 16},
+									EndPos:   token.Position{Row: 1, Column: 20},
 								},
-								StartPos: token.Position{Row: 1, Column: 16},
-								EndPos:   token.Position{Row: 1, Column: 20},
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 14},
 							},
 						},
 					},
@@ -1224,11 +1234,17 @@ func TestParser(t *testing.T) {
 				in: "graph { graph [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.AttrStmt{ID: ast.ID{
-							Literal:  "graph",
-							StartPos: token.Position{Row: 1, Column: 9},
-							EndPos:   token.Position{Row: 1, Column: 13},
-						}},
+						&ast.AttrStmt{
+							ID: ast.ID{
+								Literal:  "graph",
+								StartPos: token.Position{Row: 1, Column: 9},
+								EndPos:   token.Position{Row: 1, Column: 13},
+							},
+							AttrList: ast.AttrList{
+								StartPos: token.Position{Row: 1, Column: 15},
+								EndPos:   token.Position{Row: 1, Column: 16},
+							},
+						},
 					},
 				},
 			},
@@ -1242,6 +1258,10 @@ func TestParser(t *testing.T) {
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 12},
 							},
+							AttrList: ast.AttrList{
+								StartPos: token.Position{Row: 1, Column: 14},
+								EndPos:   token.Position{Row: 1, Column: 15},
+							},
 						},
 					},
 				},
@@ -1250,11 +1270,17 @@ func TestParser(t *testing.T) {
 				in: "graph { edge [] }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.AttrStmt{ID: ast.ID{
-							Literal:  "edge",
-							StartPos: token.Position{Row: 1, Column: 9},
-							EndPos:   token.Position{Row: 1, Column: 12},
-						}},
+						&ast.AttrStmt{
+							ID: ast.ID{
+								Literal:  "edge",
+								StartPos: token.Position{Row: 1, Column: 9},
+								EndPos:   token.Position{Row: 1, Column: 12},
+							},
+							AttrList: ast.AttrList{
+								StartPos: token.Position{Row: 1, Column: 14},
+								EndPos:   token.Position{Row: 1, Column: 15},
+							},
+						},
 					},
 				},
 			},
@@ -1268,7 +1294,7 @@ func TestParser(t *testing.T) {
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 13},
 							},
-							AttrList: &ast.AttrList{
+							AttrList: ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
 										Name: ast.ID{
@@ -1299,7 +1325,7 @@ func TestParser(t *testing.T) {
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 12},
 							},
-							AttrList: &ast.AttrList{
+							AttrList: ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
 										Name: ast.ID{
@@ -1330,7 +1356,7 @@ func TestParser(t *testing.T) {
 								StartPos: token.Position{Row: 1, Column: 9},
 								EndPos:   token.Position{Row: 1, Column: 12},
 							},
-							AttrList: &ast.AttrList{
+							AttrList: ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
 										Name: ast.ID{

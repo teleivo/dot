@@ -150,10 +150,16 @@ func (p Port) String() string {
 
 func (p Port) Start() token.Position {
 	if p.Name != nil {
-		return p.Name.StartPos
+		return token.Position{
+			Row:    p.Name.StartPos.Row,
+			Column: p.Name.StartPos.Column - 1, // account for leading ':'
+		}
 	}
 
-	return p.CompassPoint.StartPos
+	return token.Position{
+		Row:    p.CompassPoint.StartPos.Row,
+		Column: p.CompassPoint.StartPos.Column - 1, // account for leading ':'
+	}
 }
 
 func (p Port) End() token.Position {

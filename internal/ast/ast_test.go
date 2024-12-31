@@ -182,11 +182,11 @@ func TestPosition(t *testing.T) {
 					Literal: `"f0"`,
 					StartPos: token.Position{
 						Row:    1,
-						Column: 1,
+						Column: 2,
 					},
 					EndPos: token.Position{
 						Row:    1,
-						Column: 4,
+						Column: 5,
 					},
 				},
 			},
@@ -196,7 +196,7 @@ func TestPosition(t *testing.T) {
 			},
 			wantEnd: token.Position{
 				Row:    1,
-				Column: 4,
+				Column: 5,
 			},
 		},
 		"PortWithCompassPoint": {
@@ -205,11 +205,11 @@ func TestPosition(t *testing.T) {
 					Type: CompassPointSouth,
 					StartPos: token.Position{
 						Row:    1,
-						Column: 1,
+						Column: 2,
 					},
 					EndPos: token.Position{
 						Row:    1,
-						Column: 4,
+						Column: 3,
 					},
 				},
 			},
@@ -219,7 +219,7 @@ func TestPosition(t *testing.T) {
 			},
 			wantEnd: token.Position{
 				Row:    1,
-				Column: 4,
+				Column: 3,
 			},
 		},
 		"PortWithNameAndCompassPoint": {
@@ -228,22 +228,22 @@ func TestPosition(t *testing.T) {
 					Literal: `"f0"`,
 					StartPos: token.Position{
 						Row:    1,
-						Column: 1,
+						Column: 2,
 					},
 					EndPos: token.Position{
 						Row:    1,
-						Column: 4,
+						Column: 5,
 					},
 				},
 				CompassPoint: &CompassPoint{
 					Type: CompassPointSouthWest,
 					StartPos: token.Position{
 						Row:    1,
-						Column: 5,
+						Column: 7,
 					},
 					EndPos: token.Position{
 						Row:    1,
-						Column: 6,
+						Column: 8,
 					},
 				},
 			},
@@ -253,7 +253,7 @@ func TestPosition(t *testing.T) {
 			},
 			wantEnd: token.Position{
 				Row:    1,
-				Column: 6,
+				Column: 8,
 			},
 		},
 		"AttrListEmpty": {

@@ -1,13 +1,6 @@
-* add positions to ast.Node? or is it enough to have access to the token which has the
-position? do I even give access to all tokens that make up a node? do I want that?
+# Position
 
-This is what I currently have for ast.Comment for example
-
-```go
-type Comment struct {
-	Text string
-}
-```
+* add positions to ast.Node
 
 That is the Go ast.Node interface. I could add Start(), End() which return a token.Position. I would
 not want to hold on/expose all tokens in the ast. The positions should be enough

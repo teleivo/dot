@@ -389,6 +389,7 @@ func (p *Parser) parseAttrStatement() (*ast.AttrStmt, error) {
 func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 	var first, cur *ast.AttrList
 	for p.curTokenIs(token.LeftBracket) {
+		openingBracketStart := p.curToken.Start
 		err := p.expectPeekTokenIsOneOf(token.RightBracket, token.Identifier)
 		if err != nil {
 			return first, err
@@ -401,10 +402,16 @@ func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 				return first, err
 			}
 			if first == nil {
-				first = &ast.AttrList{AList: alist}
+				first = &ast.AttrList{
+					AList:    alist,
+					StartPos: openingBracketStart,
+				}
 				cur = first
 			} else {
-				cur.Next = &ast.AttrList{AList: alist}
+				cur.Next = &ast.AttrList{
+					AList:    alist,
+					StartPos: openingBracketStart,
+				}
 				cur = cur.Next
 			}
 
@@ -412,6 +419,7 @@ func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 			if err != nil {
 				return first, err
 			}
+			cur.EndPos = p.curToken.End
 		}
 
 		_, err = p.advanceIfPeekTokenIsOneOf(token.LeftBracket)
@@ -550,6 +558,8 @@ func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
+// expectPeekTokenIsOneOf advances the parser to the peek token if it is one of the wanted tokens.
+// Otherwise, the parser position is not changed and an error is returned.
 func (p *Parser) expectPeekTokenIsOneOf(want ...token.TokenType) error {
 	if !p.peekTokenIsOneOf(want...) {
 		if len(want) == 1 {

@@ -509,18 +509,12 @@ func TestParser(t *testing.T) {
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 17},
-											EndPos:   token.Position{Row: 1, Column: 17},
-										},
-										Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 19},
-											EndPos:   token.Position{Row: 1, Column: 19},
-										},
+										Name:  ast.ID{Literal: "a", StartPos: token.Position{Row: 1, Column: 17}, EndPos: token.Position{Row: 1, Column: 17}},
+										Value: ast.ID{Literal: "b", StartPos: token.Position{Row: 1, Column: 19}, EndPos: token.Position{Row: 1, Column: 19}},
 									},
 								},
+								StartPos: token.Position{Row: 1, Column: 16},
+								EndPos:   token.Position{Row: 1, Column: 20},
 							},
 						},
 					},
@@ -551,6 +545,8 @@ func TestParser(t *testing.T) {
 										},
 									},
 								},
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 17},
 							},
 						},
 					},
@@ -567,20 +563,9 @@ func TestParser(t *testing.T) {
 								EndPos:   token.Position{Row: 1, Column: 11},
 							}},
 							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 14},
-											EndPos:   token.Position{Row: 1, Column: 14},
-										},
-										Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 16},
-											EndPos:   token.Position{Row: 1, Column: 16},
-										},
-									},
-								},
+								AList:    &ast.AList{Attribute: ast.Attribute{Name: ast.ID{Literal: "a", StartPos: token.Position{Row: 1, Column: 14}, EndPos: token.Position{Row: 1, Column: 14}}, Value: ast.ID{Literal: "b", StartPos: token.Position{Row: 1, Column: 16}, EndPos: token.Position{Row: 1, Column: 16}}}},
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 18},
 							},
 						},
 					},
@@ -611,6 +596,8 @@ func TestParser(t *testing.T) {
 										},
 									},
 								},
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 18},
 							},
 						},
 					},
@@ -655,6 +642,8 @@ func TestParser(t *testing.T) {
 										},
 									},
 								},
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 21},
 							},
 						},
 						&ast.NodeStmt{
@@ -678,6 +667,8 @@ func TestParser(t *testing.T) {
 										},
 									},
 								},
+								StartPos: token.Position{Row: 1, Column: 28},
+								EndPos:   token.Position{Row: 1, Column: 32},
 							},
 						},
 					},
@@ -741,6 +732,8 @@ func TestParser(t *testing.T) {
 										},
 									},
 								},
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 29},
 							},
 						},
 					},
@@ -758,51 +751,43 @@ func TestParser(t *testing.T) {
 							}},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: ast.ID{
-										Literal:  "a",
-										StartPos: token.Position{Row: 1, Column: 14},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									}, Value: ast.ID{
-										Literal:  "b",
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									}},
+									Attribute: ast.Attribute{
+										Name: ast.ID{
+											Literal:  "a",
+											StartPos: token.Position{Row: 1, Column: 14},
+											EndPos:   token.Position{Row: 1, Column: 14},
+										},
+										Value: ast.ID{
+											Literal:  "b",
+											StartPos: token.Position{Row: 1, Column: 16},
+											EndPos:   token.Position{Row: 1, Column: 16},
+										},
+									},
 									Next: &ast.AList{
-										Attribute: ast.Attribute{Name: ast.ID{
-											Literal:  "c",
-											StartPos: token.Position{Row: 1, Column: 18},
-											EndPos:   token.Position{Row: 1, Column: 18},
-										}, Value: ast.ID{
-											Literal:  "d",
-											StartPos: token.Position{Row: 1, Column: 20},
-											EndPos:   token.Position{Row: 1, Column: 20},
-										}},
+										Attribute: ast.Attribute{
+											Name:  ast.ID{Literal: "c", StartPos: token.Position{Row: 1, Column: 18}, EndPos: token.Position{Row: 1, Column: 18}},
+											Value: ast.ID{Literal: "d", StartPos: token.Position{Row: 1, Column: 20}, EndPos: token.Position{Row: 1, Column: 20}},
+										},
 									},
 								},
 								Next: &ast.AttrList{
 									AList: &ast.AList{
-										Attribute: ast.Attribute{Name: ast.ID{
-											Literal:  "e",
-											StartPos: token.Position{Row: 1, Column: 23},
-											EndPos:   token.Position{Row: 1, Column: 23},
-										}, Value: ast.ID{
-											Literal:  "f",
-											StartPos: token.Position{Row: 1, Column: 25},
-											EndPos:   token.Position{Row: 1, Column: 25},
-										}},
+										Attribute: ast.Attribute{
+											Name:  ast.ID{Literal: "e", StartPos: token.Position{Row: 1, Column: 23}, EndPos: token.Position{Row: 1, Column: 23}},
+											Value: ast.ID{Literal: "f", StartPos: token.Position{Row: 1, Column: 25}, EndPos: token.Position{Row: 1, Column: 25}},
+										},
 										Next: &ast.AList{
-											Attribute: ast.Attribute{Name: ast.ID{
-												Literal:  "g",
-												StartPos: token.Position{Row: 1, Column: 27},
-												EndPos:   token.Position{Row: 1, Column: 27},
-											}, Value: ast.ID{
-												Literal:  "h",
-												StartPos: token.Position{Row: 1, Column: 29},
-												EndPos:   token.Position{Row: 1, Column: 29},
-											}},
+											Attribute: ast.Attribute{
+												Name:  ast.ID{Literal: "g", StartPos: token.Position{Row: 1, Column: 27}, EndPos: token.Position{Row: 1, Column: 27}},
+												Value: ast.ID{Literal: "h", StartPos: token.Position{Row: 1, Column: 29}, EndPos: token.Position{Row: 1, Column: 29}},
+											},
 										},
 									},
+									StartPos: token.Position{Row: 1, Column: 22},
+									EndPos:   token.Position{Row: 1, Column: 30},
 								},
+								StartPos: token.Position{Row: 1, Column: 13},
+								EndPos:   token.Position{Row: 1, Column: 21},
 							},
 						},
 					},
@@ -943,16 +928,20 @@ func TestParser(t *testing.T) {
 							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: ast.ID{
-										Literal:  "a",
-										StartPos: token.Position{Row: 1, Column: 29},
-										EndPos:   token.Position{Row: 1, Column: 29},
-									}, Value: ast.ID{
-										Literal:  "b",
-										StartPos: token.Position{Row: 1, Column: 31},
-										EndPos:   token.Position{Row: 1, Column: 31},
-									}},
+									Attribute: ast.Attribute{
+										Name: ast.ID{
+											Literal:  "a",
+											StartPos: token.Position{Row: 1, Column: 29},
+											EndPos:   token.Position{Row: 1, Column: 29},
+										}, Value: ast.ID{
+											Literal:  "b",
+											StartPos: token.Position{Row: 1, Column: 31},
+											EndPos:   token.Position{Row: 1, Column: 31},
+										},
+									},
 								},
+								StartPos: token.Position{Row: 1, Column: 28},
+								EndPos:   token.Position{Row: 1, Column: 32},
 							},
 						},
 					},
@@ -1281,16 +1270,20 @@ func TestParser(t *testing.T) {
 							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: ast.ID{
-										Literal:  "a",
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									}, Value: ast.ID{
-										Literal:  "b",
-										StartPos: token.Position{Row: 1, Column: 18},
-										EndPos:   token.Position{Row: 1, Column: 18},
-									}},
+									Attribute: ast.Attribute{
+										Name: ast.ID{
+											Literal:  "a",
+											StartPos: token.Position{Row: 1, Column: 16},
+											EndPos:   token.Position{Row: 1, Column: 16},
+										}, Value: ast.ID{
+											Literal:  "b",
+											StartPos: token.Position{Row: 1, Column: 18},
+											EndPos:   token.Position{Row: 1, Column: 18},
+										},
+									},
 								},
+								StartPos: token.Position{Row: 1, Column: 15},
+								EndPos:   token.Position{Row: 1, Column: 19},
 							},
 						},
 					},
@@ -1308,16 +1301,20 @@ func TestParser(t *testing.T) {
 							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: ast.ID{
-										Literal:  "a",
-										StartPos: token.Position{Row: 1, Column: 15},
-										EndPos:   token.Position{Row: 1, Column: 15},
-									}, Value: ast.ID{
-										Literal:  "b",
-										StartPos: token.Position{Row: 1, Column: 17},
-										EndPos:   token.Position{Row: 1, Column: 17},
-									}},
+									Attribute: ast.Attribute{
+										Name: ast.ID{
+											Literal:  "a",
+											StartPos: token.Position{Row: 1, Column: 15},
+											EndPos:   token.Position{Row: 1, Column: 15},
+										}, Value: ast.ID{
+											Literal:  "b",
+											StartPos: token.Position{Row: 1, Column: 17},
+											EndPos:   token.Position{Row: 1, Column: 17},
+										},
+									},
 								},
+								StartPos: token.Position{Row: 1, Column: 14},
+								EndPos:   token.Position{Row: 1, Column: 18},
 							},
 						},
 					},
@@ -1335,16 +1332,20 @@ func TestParser(t *testing.T) {
 							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: ast.ID{
-										Literal:  "a",
-										StartPos: token.Position{Row: 1, Column: 15},
-										EndPos:   token.Position{Row: 1, Column: 15},
-									}, Value: ast.ID{
-										Literal:  "b",
-										StartPos: token.Position{Row: 1, Column: 17},
-										EndPos:   token.Position{Row: 1, Column: 17},
-									}},
+									Attribute: ast.Attribute{
+										Name: ast.ID{
+											Literal:  "a",
+											StartPos: token.Position{Row: 1, Column: 15},
+											EndPos:   token.Position{Row: 1, Column: 15},
+										}, Value: ast.ID{
+											Literal:  "b",
+											StartPos: token.Position{Row: 1, Column: 17},
+											EndPos:   token.Position{Row: 1, Column: 17},
+										},
+									},
 								},
+								StartPos: token.Position{Row: 1, Column: 14},
+								EndPos:   token.Position{Row: 1, Column: 18},
 							},
 						},
 					},

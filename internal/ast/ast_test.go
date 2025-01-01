@@ -127,7 +127,7 @@ func TestStringer(t *testing.T) {
 
 func TestPosition(t *testing.T) {
 	tests := map[string]struct {
-		in        Positioner
+		in        Node
 		wantStart token.Position
 		wantEnd   token.Position
 	}{

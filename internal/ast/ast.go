@@ -13,6 +13,8 @@ type Graph struct {
 	Directed bool // Directed indicates that the graph is a directed graph.
 	ID       *ID  // ID is the optional identifier of a graph.
 	Stmts    []Stmt
+	StartPos token.Position // Position of the keyword 'strict' if Strict is true, otherwise its the position of the 'graph' or 'digraph' keyword.
+	EndPos   token.Position // Position of the closing '}'.
 }
 
 func (g Graph) String() string {
@@ -43,15 +45,19 @@ func (g Graph) String() string {
 	return out.String()
 }
 
+func (g Graph) Start() token.Position {
+	return g.StartPos
+}
+
+func (g Graph) End() token.Position {
+	return g.EndPos
+}
+
 // Node represents an AST node of a dot graph.
 type Node interface {
 	String() string
-}
-
-// TODO move these into Node interface once all nodes implement it
-type Positioner interface {
-	Start() token.Position
-	End() token.Position
+	Start() token.Position // Starting position returns the position of the first rune of the ast node.
+	End() token.Position   // Starting position returns the position of the last rune of the ast node.
 }
 
 // Statement nodes implement the Stmt interface.
@@ -322,8 +328,6 @@ func (er EdgeRHS) End() token.Position {
 // EdgeOperand is an operand in an edge statement that can either be a graph or a subgraph.
 type EdgeOperand interface {
 	Node
-	// TODO remove once its part of Node
-	Positioner
 	edgeOperand()
 }
 

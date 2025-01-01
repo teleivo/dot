@@ -75,6 +75,7 @@ func (p *Parser) Parse() (ast.Graph, error) {
 		return graph, err
 	}
 	graph.Stmts = stmts
+	graph.EndPos = p.curToken.End
 
 	return graph, err
 }
@@ -104,6 +105,8 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	if err != nil {
 		return graph, err
 	}
+
+	graph.StartPos = p.curToken.Start
 
 	if p.curTokenIs(token.Strict) {
 		graph.Strict = true

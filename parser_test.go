@@ -26,6 +26,8 @@ func TestParser(t *testing.T) {
 				in: "digraph {}",
 				want: ast.Graph{
 					Directed: true,
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 10},
 				},
 			},
 			// TODO how to deal with this? as the ast.Comment is not part of the ast.Graph.Stmts
@@ -36,14 +38,19 @@ func TestParser(t *testing.T) {
 			// 	want: ast.Graph{},
 			// },
 			"EmptyUndirectedGraph": {
-				in:   "graph {}",
-				want: ast.Graph{},
+				in: "graph {}",
+				want: ast.Graph{
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 8},
+				},
 			},
 			"StrictDirectedUnnamedGraph": {
-				in: `strict digraph {}`,
+				in: ` strict digraph {}`,
 				want: ast.Graph{
 					Strict:   true,
 					Directed: true,
+					StartPos: token.Position{Row: 1, Column: 2},
+					EndPos:   token.Position{Row: 1, Column: 18},
 				},
 			},
 			"StrictDirectedNamedGraph": {
@@ -56,6 +63,8 @@ func TestParser(t *testing.T) {
 						StartPos: token.Position{Row: 1, Column: 16},
 						EndPos:   token.Position{Row: 1, Column: 27},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 30},
 				},
 			},
 		}
@@ -117,14 +126,18 @@ func TestParser(t *testing.T) {
 				in: "graph { foo }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 13},
 				},
 			},
 			"OnlyNodes": {
@@ -133,35 +146,45 @@ func TestParser(t *testing.T) {
 				}`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
 							},
-						}},
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "bar",
-								StartPos: token.Position{Row: 1, Column: 15},
-								EndPos:   token.Position{Row: 1, Column: 17},
+						},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "bar",
+									StartPos: token.Position{Row: 1, Column: 15},
+									EndPos:   token.Position{Row: 1, Column: 17},
+								},
 							},
-						}},
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "baz",
-								StartPos: token.Position{Row: 1, Column: 19},
-								EndPos:   token.Position{Row: 1, Column: 21},
+						},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "baz",
+									StartPos: token.Position{Row: 1, Column: 19},
+									EndPos:   token.Position{Row: 1, Column: 21},
+								},
 							},
-						}},
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "trash",
-								StartPos: token.Position{Row: 2, Column: 6},
-								EndPos:   token.Position{Row: 2, Column: 10},
+						},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "trash",
+									StartPos: token.Position{Row: 2, Column: 6},
+									EndPos:   token.Position{Row: 2, Column: 10},
+								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 3, Column: 5},
 				},
 			},
 			"NodeWithPortName": {
@@ -185,301 +208,351 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 16},
 				},
 			},
 			"NodeWithPortNameAndCompassPointUnderscore": {
 				in: `graph { foo:"f0":_ }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  `"f0"`,
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 16},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointUnderscore,
-									StartPos: token.Position{Row: 1, Column: 18},
-									EndPos:   token.Position{Row: 1, Column: 18},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  `"f0"`,
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 16},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointUnderscore,
+										StartPos: token.Position{Row: 1, Column: 18},
+										EndPos:   token.Position{Row: 1, Column: 18},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithPortNameAndCompassPointNorth": {
 				in: `graph { foo:"f0":n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  `"f0"`,
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 16},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointNorth,
-									StartPos: token.Position{Row: 1, Column: 18},
-									EndPos:   token.Position{Row: 1, Column: 18},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  `"f0"`,
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 16},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointNorth,
+										StartPos: token.Position{Row: 1, Column: 18},
+										EndPos:   token.Position{Row: 1, Column: 18},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithPortNameAndCompassPointNorthEast": {
 				in: `graph { foo:f0:ne }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointNorthEast,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 17},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointNorthEast,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 17},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointEast": {
 				in: `graph { foo:f0:e }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointEast,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 16},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointEast,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 16},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithPortNameAndCompassPointSouthEast": {
 				in: `graph { foo:f0:se }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointSouthEast,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 17},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointSouthEast,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 17},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointSouth": {
 				in: `graph { foo:f0:s }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointSouth,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 16},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointSouth,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 16},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithPortNameAndCompassPointSouthWest": {
 				in: `graph { foo:f0:sw }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointSouthWest,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 17},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointSouthWest,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 17},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointWest": {
 				in: `graph { foo:f0:w }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointWest,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 16},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointWest,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 16},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithPortNameAndCompassPointNorthWest": {
 				in: `graph { foo:f0:nw }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointNorthWest,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 17},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointNorthWest,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 17},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointCenter": {
 				in: `graph { foo:f0:c }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "f0",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 14},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointCenter,
-									StartPos: token.Position{Row: 1, Column: 16},
-									EndPos:   token.Position{Row: 1, Column: 16},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "f0",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 14},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointCenter,
+										StartPos: token.Position{Row: 1, Column: 16},
+										EndPos:   token.Position{Row: 1, Column: 16},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithCompassPointNorth": {
 				in: `graph { foo:n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointNorth,
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 13},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointNorth,
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 13},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 15},
 				},
 			},
 			"NodeWithPortNameEqualToACompassPoint": { // https://graphviz.org/docs/attr-types/portPos
 				in: `graph { foo:n:n }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						&ast.NodeStmt{NodeID: ast.NodeID{
-							ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}, Port: &ast.Port{
-								Name: &ast.ID{
-									Literal:  "n",
-									StartPos: token.Position{Row: 1, Column: 13},
-									EndPos:   token.Position{Row: 1, Column: 13},
-								},
-								CompassPoint: &ast.CompassPoint{
-									Type:     ast.CompassPointNorth,
-									StartPos: token.Position{Row: 1, Column: 15},
-									EndPos:   token.Position{Row: 1, Column: 15},
+						&ast.NodeStmt{
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								}, Port: &ast.Port{
+									Name: &ast.ID{
+										Literal:  "n",
+										StartPos: token.Position{Row: 1, Column: 13},
+										EndPos:   token.Position{Row: 1, Column: 13},
+									},
+									CompassPoint: &ast.CompassPoint{
+										Type:     ast.CompassPointNorth,
+										StartPos: token.Position{Row: 1, Column: 15},
+										EndPos:   token.Position{Row: 1, Column: 15},
+									},
 								},
 							},
-						}},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 17},
 				},
 			},
 			"OnlyNodeWithEmptyAttributeList": {
@@ -500,6 +573,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 16},
 				},
 			},
 			"NodeWithSingleAttributeAndEmptyAttributeList": {
@@ -507,11 +582,13 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							AttrList: &ast.AttrList{
 								Next: &ast.AttrList{
 									AList: &ast.AList{
@@ -528,6 +605,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 22},
 				},
 			},
 			"NodeWithSingleAttribute": {
@@ -535,11 +614,13 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
@@ -560,6 +641,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithAttributesAndTrailingComma": {
@@ -567,11 +650,13 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							AttrList: &ast.AttrList{
 								AList:    &ast.AList{Attribute: ast.Attribute{Name: ast.ID{Literal: "a", StartPos: token.Position{Row: 1, Column: 14}, EndPos: token.Position{Row: 1, Column: 14}}, Value: ast.ID{Literal: "b", StartPos: token.Position{Row: 1, Column: 16}, EndPos: token.Position{Row: 1, Column: 16}}}},
 								StartPos: token.Position{Row: 1, Column: 13},
@@ -579,6 +664,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithAttributesAndTrailingSemicolon": {
@@ -586,11 +673,13 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
@@ -611,6 +700,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithAttributeOverriding": {
@@ -618,11 +709,13 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
@@ -657,11 +750,13 @@ func TestParser(t *testing.T) {
 							},
 						},
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 24},
-								EndPos:   token.Position{Row: 1, Column: 26},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 24},
+									EndPos:   token.Position{Row: 1, Column: 26},
+								},
+							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
@@ -682,6 +777,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 34},
 				},
 			},
 			"NodeWithMultipleAttributesInSingleBracketPair": {
@@ -689,42 +786,50 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
-									Attribute: ast.Attribute{Name: ast.ID{
-										Literal:  "a",
-										StartPos: token.Position{Row: 1, Column: 14},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									}, Value: ast.ID{
-										Literal:  "b",
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									}},
-									Next: &ast.AList{
-										Attribute: ast.Attribute{Name: ast.ID{
-											Literal:  "c",
-											StartPos: token.Position{Row: 1, Column: 18},
-											EndPos:   token.Position{Row: 1, Column: 18},
+									Attribute: ast.Attribute{
+										Name: ast.ID{
+											Literal:  "a",
+											StartPos: token.Position{Row: 1, Column: 14},
+											EndPos:   token.Position{Row: 1, Column: 14},
 										}, Value: ast.ID{
-											Literal:  "d",
-											StartPos: token.Position{Row: 1, Column: 20},
-											EndPos:   token.Position{Row: 1, Column: 20},
-										}},
-										Next: &ast.AList{
-											Attribute: ast.Attribute{Name: ast.ID{
-												Literal:  "e",
-												StartPos: token.Position{Row: 1, Column: 22},
-												EndPos:   token.Position{Row: 1, Column: 22},
+											Literal:  "b",
+											StartPos: token.Position{Row: 1, Column: 16},
+											EndPos:   token.Position{Row: 1, Column: 16},
+										},
+									},
+									Next: &ast.AList{
+										Attribute: ast.Attribute{
+											Name: ast.ID{
+												Literal:  "c",
+												StartPos: token.Position{Row: 1, Column: 18},
+												EndPos:   token.Position{Row: 1, Column: 18},
 											}, Value: ast.ID{
-												Literal:  "f",
-												StartPos: token.Position{Row: 1, Column: 24},
-												EndPos:   token.Position{Row: 1, Column: 24},
-											}},
+												Literal:  "d",
+												StartPos: token.Position{Row: 1, Column: 20},
+												EndPos:   token.Position{Row: 1, Column: 20},
+											},
+										},
+										Next: &ast.AList{
+											Attribute: ast.Attribute{
+												Name: ast.ID{
+													Literal:  "e",
+													StartPos: token.Position{Row: 1, Column: 22},
+													EndPos:   token.Position{Row: 1, Column: 22},
+												}, Value: ast.ID{
+													Literal:  "f",
+													StartPos: token.Position{Row: 1, Column: 24},
+													EndPos:   token.Position{Row: 1, Column: 24},
+												},
+											},
 											Next: &ast.AList{
 												Attribute: ast.Attribute{
 													Name: ast.ID{
@@ -747,6 +852,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 31},
 				},
 			},
 			"NodeWithMultipleAttributesInMultipleBracketPairs": {
@@ -754,11 +861,13 @@ func TestParser(t *testing.T) {
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
-							NodeID: ast.NodeID{ID: ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							NodeID: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "foo",
+									StartPos: token.Position{Row: 1, Column: 9},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							AttrList: &ast.AttrList{
 								AList: &ast.AList{
 									Attribute: ast.Attribute{
@@ -801,6 +910,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 32},
 				},
 			},
 		}
@@ -886,6 +997,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 16},
 				},
 			},
 			"SingleDirectedEdge": {
@@ -914,6 +1027,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 18},
 				},
 			},
 			"MultipleDirectedEdgesWithAttributeList": {
@@ -981,6 +1096,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 34},
 				},
 			},
 			"EdgeWithLHSShortSubgraph": {
@@ -1026,6 +1143,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 22},
 				},
 			},
 			"EdgeWithRHSShortSubgraph": {
@@ -1054,13 +1173,15 @@ func TestParser(t *testing.T) {
 												},
 											},
 										},
-										&ast.NodeStmt{NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "C",
-												StartPos: token.Position{Row: 1, Column: 19},
-												EndPos:   token.Position{Row: 1, Column: 19},
+										&ast.NodeStmt{
+											NodeID: ast.NodeID{
+												ID: ast.ID{
+													Literal:  "C",
+													StartPos: token.Position{Row: 1, Column: 19},
+													EndPos:   token.Position{Row: 1, Column: 19},
+												},
 											},
-										}},
+										},
 									},
 									StartPos: token.Position{Row: 1, Column: 16},
 									EndPos:   token.Position{Row: 1, Column: 20},
@@ -1069,6 +1190,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 22},
 				},
 			},
 			"EdgeWithNestedSubraphs": {
@@ -1147,6 +1270,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 31},
 				},
 			},
 			"EdgeWithRHSExplicitSubraph": {
@@ -1155,11 +1280,13 @@ func TestParser(t *testing.T) {
 					Directed: true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
-							Left: ast.NodeID{ID: ast.ID{
-								Literal:  "A",
-								StartPos: token.Position{Row: 1, Column: 11},
-								EndPos:   token.Position{Row: 1, Column: 11},
-							}},
+							Left: ast.NodeID{
+								ID: ast.ID{
+									Literal:  "A",
+									StartPos: token.Position{Row: 1, Column: 11},
+									EndPos:   token.Position{Row: 1, Column: 11},
+								},
+							},
 							Right: ast.EdgeRHS{
 								Directed: true,
 								Right: ast.Subgraph{
@@ -1170,13 +1297,15 @@ func TestParser(t *testing.T) {
 										EndPos:   token.Position{Row: 1, Column: 27},
 									},
 									Stmts: []ast.Stmt{
-										&ast.NodeStmt{NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "B",
-												StartPos: token.Position{Row: 1, Column: 30},
-												EndPos:   token.Position{Row: 1, Column: 30},
+										&ast.NodeStmt{
+											NodeID: ast.NodeID{
+												ID: ast.ID{
+													Literal:  "B",
+													StartPos: token.Position{Row: 1, Column: 30},
+													EndPos:   token.Position{Row: 1, Column: 30},
+												},
 											},
-										}},
+										},
 										&ast.NodeStmt{
 											NodeID: ast.NodeID{
 												ID: ast.ID{
@@ -1194,6 +1323,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 35},
 				},
 			},
 			"EdgeWithPorts": {
@@ -1243,6 +1374,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 3, Column: 1},
 				},
 			},
 		}
@@ -1316,6 +1449,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 18},
 				},
 			},
 			"OnlyNode": {
@@ -1334,6 +1469,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 17},
 				},
 			},
 			"OnlyEdge": {
@@ -1352,6 +1489,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 17},
 				},
 			},
 			"GraphWithAttribute": {
@@ -1383,6 +1522,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 21},
 				},
 			},
 			"NodeWithAttribute": {
@@ -1414,6 +1555,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 20},
 				},
 			},
 			"EdgeWithAttribute": {
@@ -1445,6 +1588,8 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 20},
 				},
 			},
 		}
@@ -1506,16 +1651,20 @@ func TestParser(t *testing.T) {
 				in: "graph { rank = same; }",
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Attribute{Name: ast.ID{
-							Literal:  "rank",
-							StartPos: token.Position{Row: 1, Column: 9},
-							EndPos:   token.Position{Row: 1, Column: 12},
-						}, Value: ast.ID{
-							Literal:  "same",
-							StartPos: token.Position{Row: 1, Column: 16},
-							EndPos:   token.Position{Row: 1, Column: 19},
-						}},
+						ast.Attribute{
+							Name: ast.ID{
+								Literal:  "rank",
+								StartPos: token.Position{Row: 1, Column: 9},
+								EndPos:   token.Position{Row: 1, Column: 12},
+							}, Value: ast.ID{
+								Literal:  "same",
+								StartPos: token.Position{Row: 1, Column: 16},
+								EndPos:   token.Position{Row: 1, Column: 19},
+							},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 22},
 				},
 			},
 			"QuotedAttributeValueSpanningMultipleLines": {
@@ -1524,17 +1673,21 @@ func TestParser(t *testing.T) {
 }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Attribute{Name: ast.ID{
-							Literal:  "label",
-							StartPos: token.Position{Row: 1, Column: 10},
-							EndPos:   token.Position{Row: 1, Column: 14},
-						}, Value: ast.ID{
-							Literal: `"Rainy days
+						ast.Attribute{
+							Name: ast.ID{
+								Literal:  "label",
+								StartPos: token.Position{Row: 1, Column: 10},
+								EndPos:   token.Position{Row: 1, Column: 14},
+							}, Value: ast.ID{
+								Literal: `"Rainy days
 				in summer"`,
-							StartPos: token.Position{Row: 1, Column: 16},
-							EndPos:   token.Position{Row: 2, Column: 14},
-						}},
+								StartPos: token.Position{Row: 1, Column: 16},
+								EndPos:   token.Position{Row: 2, Column: 14},
+							},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 3, Column: 1},
 				},
 			},
 			// https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
@@ -1544,17 +1697,21 @@ func TestParser(t *testing.T) {
 }`,
 				want: ast.Graph{
 					Stmts: []ast.Stmt{
-						ast.Attribute{Name: ast.ID{
-							Literal:  "label",
-							StartPos: token.Position{Row: 1, Column: 10},
-							EndPos:   token.Position{Row: 1, Column: 14},
-						}, Value: ast.ID{
-							Literal: `"Rainy days\
+						ast.Attribute{
+							Name: ast.ID{
+								Literal:  "label",
+								StartPos: token.Position{Row: 1, Column: 10},
+								EndPos:   token.Position{Row: 1, Column: 14},
+							}, Value: ast.ID{
+								Literal: `"Rainy days\
 				in summer"`,
-							StartPos: token.Position{Row: 1, Column: 16},
-							EndPos:   token.Position{Row: 2, Column: 14},
-						}},
+								StartPos: token.Position{Row: 1, Column: 16},
+								EndPos:   token.Position{Row: 2, Column: 14},
+							},
+						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 3, Column: 1},
 				},
 			},
 		}
@@ -1618,6 +1775,8 @@ func TestParser(t *testing.T) {
 							EndPos:     token.Position{Row: 1, Column: 19},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 21},
 				},
 			},
 			"EmptyWithoutKeyword": {
@@ -1629,6 +1788,8 @@ func TestParser(t *testing.T) {
 							EndPos:   token.Position{Row: 1, Column: 10},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 12},
 				},
 			},
 			"SubgraphWithID": {
@@ -1646,6 +1807,8 @@ func TestParser(t *testing.T) {
 							EndPos:   token.Position{Row: 1, Column: 23},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 1, Column: 25},
 				},
 			},
 			"SubgraphWithAttributesAndNodes": {
@@ -1693,6 +1856,8 @@ func TestParser(t *testing.T) {
 							EndPos:   token.Position{Row: 4, Column: 6},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 5, Column: 5},
 				},
 			},
 		}
@@ -1755,6 +1920,8 @@ func TestParser(t *testing.T) {
 							EndPos:   token.Position{Row: 1, Column: 13},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 2, Column: 5},
 				},
 			},
 			"Single": {
@@ -1769,6 +1936,8 @@ func TestParser(t *testing.T) {
 							EndPos:   token.Position{Row: 2, Column: 9},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 3, Column: 5},
 				},
 			},
 			"MultiLine": {
@@ -1784,6 +1953,8 @@ func TestParser(t *testing.T) {
 							EndPos:   token.Position{Row: 2, Column: 11},
 						},
 					},
+					StartPos: token.Position{Row: 1, Column: 1},
+					EndPos:   token.Position{Row: 3, Column: 5},
 				},
 			},
 		}

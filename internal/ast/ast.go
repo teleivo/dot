@@ -55,12 +55,12 @@ func (g Graph) End() token.Position {
 
 // Node represents an AST node of a dot graph.
 type Node interface {
-	String() string
-	Start() token.Position // Starting position returns the position of the first rune of the ast node.
-	End() token.Position   // Starting position returns the position of the last rune of the ast node.
+	String() string        // String returns a string representation of the AST node.
+	Start() token.Position // Starting position returns the position of the first rune of the AST node.
+	End() token.Position   // Starting position returns the position of the last rune of the AST node.
 }
 
-// Statement nodes implement the Stmt interface.
+// Stmt nodes implement the Stmt interface.
 type Stmt interface {
 	Node
 	stmtNode()

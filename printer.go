@@ -17,8 +17,8 @@ const maxColumn = 100
 type Printer struct {
 	r           io.Reader // r reader to parse dot code from
 	w           io.Writer // w writer to output formatted dot code to
-	row         int       // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. Zero means nothing has been printed.
-	column      int       // column is the current one-indexed column in terms of runes the printer is at. Zero means no rune has been printed on the current row.
+	row         int       // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed.
+	column      int       // column is the current one-indexed column in terms of runes the printer is at. 0 means no rune has been printed on the current row.
 	indentLevel int       // indentLevel is the current level of indentation to be applied when indenting
 }
 

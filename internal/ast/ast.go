@@ -263,13 +263,26 @@ func (ns *EdgeStmt) String() string {
 	return out.String()
 }
 
+func (ns *EdgeStmt) Start() token.Position {
+	return ns.Left.Start()
+}
+
+func (ns *EdgeStmt) End() token.Position {
+	if ns.AttrList != nil {
+		return ns.AttrList.End()
+	}
+
+	return ns.Right.End()
+}
+
 func (ns *EdgeStmt) stmtNode() {}
 
 // EdgeRHS is the right-hand side of an edge statement.
 type EdgeRHS struct {
-	Directed bool        // Directed indicates that this is a directed edge.
-	Right    EdgeOperand // Right is the right node identifier or subgraph of the edge right hand side.
-	Next     *EdgeRHS    // Next is an optional edge right hand side.
+	Directed bool           // Directed indicates that this is a directed edge.
+	Right    EdgeOperand    // Right is the right node identifier or subgraph of the edge right hand side.
+	Next     *EdgeRHS       // Next is an optional edge right hand side.
+	StartPos token.Position // StartPos is the starting position of the edge operator.
 }
 
 func (er EdgeRHS) String() string {
@@ -292,6 +305,18 @@ func (er EdgeRHS) String() string {
 	}
 
 	return out.String()
+}
+
+func (er EdgeRHS) Start() token.Position {
+	return er.StartPos
+}
+
+func (er EdgeRHS) End() token.Position {
+	var last EdgeOperand
+	for cur := &er; cur != nil; cur = er.Next {
+		last = cur.Right
+	}
+	return last.End()
 }
 
 // EdgeOperand is an operand in an edge statement that can either be a graph or a subgraph.

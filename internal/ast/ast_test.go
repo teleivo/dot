@@ -44,7 +44,10 @@ func TestStringer(t *testing.T) {
 		},
 		"NodeStmtWithPortWithName": {
 			in: &NodeStmt{
-				NodeID: NodeID{ID: ID{Literal: "foo"}, Port: &Port{Name: &ID{Literal: `"f0"`}}},
+				NodeID: NodeID{
+					ID:   ID{Literal: "foo"},
+					Port: &Port{Name: &ID{Literal: `"f0"`}},
+				},
 			},
 			want: `foo:"f0"`,
 		},
@@ -325,6 +328,96 @@ func TestPosition(t *testing.T) {
 			wantEnd: token.Position{
 				Row:    1,
 				Column: 8,
+			},
+		},
+		"EdgeStmt": {
+			in: &EdgeStmt{
+				Left: NodeID{
+					ID: ID{
+						Literal: `f1`,
+						StartPos: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 2,
+						},
+					},
+				},
+				Right: EdgeRHS{
+					Right: NodeID{
+						ID: ID{
+							Literal: `f2`,
+							StartPos: token.Position{
+								Row:    1,
+								Column: 7,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 8,
+							},
+						},
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 8,
+			},
+		},
+		"EdgeStmtWithAttrList": {
+			in: &EdgeStmt{
+				Left: NodeID{
+					ID: ID{
+						Literal: `f1`,
+						StartPos: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+						EndPos: token.Position{
+							Row:    1,
+							Column: 2,
+						},
+					},
+				},
+				Right: EdgeRHS{
+					Right: NodeID{
+						ID: ID{
+							Literal: `f2`,
+							StartPos: token.Position{
+								Row:    1,
+								Column: 7,
+							},
+							EndPos: token.Position{
+								Row:    1,
+								Column: 8,
+							},
+						},
+					},
+				},
+				AttrList: &AttrList{
+					StartPos: token.Position{
+						Row:    1,
+						Column: 10,
+					},
+					EndPos: token.Position{
+						Row:    1,
+						Column: 11,
+					},
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 11,
 			},
 		},
 		"AttrStmt": {

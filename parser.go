@@ -229,6 +229,7 @@ func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
 func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 	var first, cur *ast.EdgeRHS
 	for p.curTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
+		operatorStart := p.curToken.Start
 		var directed bool
 		if p.curTokenIs(token.DirectedEgde) {
 			directed = true
@@ -250,10 +251,18 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 			return ast.EdgeRHS{}, err
 		}
 		if first == nil {
-			first = &ast.EdgeRHS{Directed: directed, Right: right}
+			first = &ast.EdgeRHS{
+				Directed: directed,
+				Right:    right,
+				StartPos: operatorStart,
+			}
 			cur = first
 		} else {
-			cur.Next = &ast.EdgeRHS{Directed: directed, Right: right}
+			cur.Next = &ast.EdgeRHS{
+				Directed: directed,
+				Right:    right,
+				StartPos: operatorStart,
+			}
 			cur = cur.Next
 		}
 

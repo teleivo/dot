@@ -319,7 +319,7 @@ func (l *Lexer) tokenizeUnquotedString() (token.Token, error) {
 
 	literal := string(id)
 	tok = token.Token{
-		Type:    token.LookupKeyword(literal),
+		Type:    token.Lookup(literal),
 		Literal: literal,
 		Start:   start,
 		End:     end,

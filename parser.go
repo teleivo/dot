@@ -16,6 +16,7 @@ type Parser struct {
 	lexer     *dot.Lexer
 	curToken  token.Token
 	peekToken token.Token
+	comments  []ast.Comment
 }
 
 func NewParser(r io.Reader) (*Parser, error) {
@@ -37,12 +38,24 @@ func NewParser(r io.Reader) (*Parser, error) {
 	return &p, nil
 }
 
+// nextToken advances to the next non-comment token. Any comments that are encountered in the
+// process are collected.
 func (p *Parser) nextToken() error {
-	p.curToken = p.peekToken
-	tok, err := p.lexer.NextToken()
+	var tok token.Token
+	var err error
+	for tok, err = p.lexer.NextToken(); err == nil && tok.Type == token.Comment; tok, err = p.lexer.NextToken() {
+		comment := ast.Comment{
+			Text:     tok.Literal,
+			StartPos: tok.Start,
+			EndPos:   tok.End,
+		}
+		p.comments = append(p.comments, comment)
+	}
 	if err != nil {
 		return err
 	}
+
+	p.curToken = p.peekToken
 	p.peekToken = tok
 
 	return nil
@@ -76,6 +89,7 @@ func (p *Parser) Parse() (ast.Graph, error) {
 	}
 	graph.Stmts = stmts
 	graph.EndPos = p.curToken.End
+	graph.Comments = p.comments
 
 	return graph, err
 }
@@ -212,8 +226,6 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 		return es, nil
 	} else if p.curTokenIsOneOf(token.Graph, token.Node, token.Edge) {
 		return p.parseAttrStatement()
-	} else if p.curTokenIs(token.Comment) {
-		return p.parseComment()
 	} else if p.curTokenIs(token.Equal) {
 		return nil, errors.New(`expected an "identifier" before the '='`)
 	}
@@ -544,14 +556,6 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 	subraph.EndPos = p.curToken.End
 
 	return subraph, nil
-}
-
-func (p *Parser) parseComment() (ast.Comment, error) {
-	return ast.Comment{
-		Text:     string(p.curToken.Literal),
-		StartPos: p.curToken.Start,
-		EndPos:   p.curToken.End,
-	}, nil
 }
 
 func (p *Parser) isDone() bool {

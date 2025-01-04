@@ -30,13 +30,29 @@ func TestParser(t *testing.T) {
 					EndPos:   token.Position{Row: 1, Column: 10},
 				},
 			},
-			// TODO how to deal with this? as the ast.Comment is not part of the ast.Graph.Stmts
-			// do I actually need to return an ast.Node from Parse?
-			// fix this together with supporting parsing of ranges
-			// "GraphPrefixedWithComment": {
-			// 	in:   `/** this is typical */ graph {}`,
-			// 	want: ast.Graph{},
-			// },
+			"GraphWithComments": {
+				in: `/** header explaining
+				the graph */
+graph {
+} // trailing comment`,
+				want: ast.Graph{
+					StartPos: token.Position{Row: 3, Column: 1},
+					EndPos:   token.Position{Row: 4, Column: 1},
+					Comments: []ast.Comment{
+						{
+							Text: `/** header explaining
+				the graph */`,
+							StartPos: token.Position{Row: 1, Column: 1},
+							EndPos:   token.Position{Row: 2, Column: 16},
+						},
+						{
+							Text:     "// trailing comment",
+							StartPos: token.Position{Row: 4, Column: 3},
+							EndPos:   token.Position{Row: 4, Column: 21},
+						},
+					},
+				},
+			},
 			"EmptyUndirectedGraph": {
 				in: "graph {}",
 				want: ast.Graph{
@@ -1913,8 +1929,8 @@ func TestParser(t *testing.T) {
 				in: `graph {	 # ok
 				}`,
 				want: ast.Graph{
-					Stmts: []ast.Stmt{
-						ast.Comment{
+					Comments: []ast.Comment{
+						{
 							Text:     "# ok",
 							StartPos: token.Position{Row: 1, Column: 10},
 							EndPos:   token.Position{Row: 1, Column: 13},
@@ -1929,8 +1945,8 @@ func TestParser(t *testing.T) {
 				// ok
 				}`,
 				want: ast.Graph{
-					Stmts: []ast.Stmt{
-						ast.Comment{
+					Comments: []ast.Comment{
+						{
 							Text:     "// ok",
 							StartPos: token.Position{Row: 2, Column: 5},
 							EndPos:   token.Position{Row: 2, Column: 9},
@@ -1945,8 +1961,8 @@ func TestParser(t *testing.T) {
 				then */
 				}`,
 				want: ast.Graph{
-					Stmts: []ast.Stmt{
-						ast.Comment{
+					Comments: []ast.Comment{
+						{
 							Text: `/* ok
 				then */`,
 							StartPos: token.Position{Row: 1, Column: 9},

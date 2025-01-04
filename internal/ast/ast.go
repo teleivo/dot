@@ -14,7 +14,10 @@ type Graph struct {
 	ID       *ID  // ID is the optional identifier of a graph.
 	Stmts    []Stmt
 	StartPos token.Position // Position of the keyword 'strict' if Strict is true, otherwise its the position of the 'graph' or 'digraph' keyword.
+	// TODO what about trailing comments, should they set the EndPos? if not rename the field to make
+	// this clear.
 	EndPos   token.Position // Position of the closing '}'.
+	Comments []Comment      // List of all comments in the graph.
 }
 
 func (g Graph) String() string {
@@ -521,5 +524,3 @@ func (c Comment) Start() token.Position {
 func (c Comment) End() token.Position {
 	return c.EndPos
 }
-
-func (c Comment) stmtNode() {}

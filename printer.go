@@ -165,8 +165,6 @@ func (p *Printer) printStmt(stmt ast.Stmt) error {
 		p.printNewline()
 		p.printIndent()
 		err = p.printSubgraph(st)
-	case ast.Comment:
-		err = p.printComment(st)
 	}
 	return err
 }
@@ -384,6 +382,7 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			col := p.column + 1 + runeCount // 1 for the space separating words
 			// TODO isFirstWord assumes the first always goes onto a new line. This is where I need to
 			// know if the comment should fit on the same line or not
+			// I thus need to know if the original previous node and current node are on the same line
 			if col > maxColumn || isFirstWord {
 				p.printNewline()
 				p.printIndent()

@@ -98,10 +98,9 @@ func TestStringer(t *testing.T) {
 		},
 		"DigraphWithID": {
 			in: Graph{
-				// TODO
-				// StrictStart:   true,
-				Directed: true,
-				ID:       &ID{Literal: `"wonder"`},
+				StrictStart: &token.Position{Row: 1, Column: 1},
+				Directed:    true,
+				ID:          &ID{Literal: `"wonder"`},
 			},
 			want: `strict digraph "wonder" {}`,
 		},

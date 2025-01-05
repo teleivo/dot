@@ -57,14 +57,14 @@ func (p *Printer) printNode(node ast.Node) error {
 
 func (p *Printer) printGraph(graph ast.Graph) error {
 	if graph.IsStrict() {
-		p.printToken(token.Strict)
+		p.printTokenNew(token.Strict, *graph.StrictStart)
 		p.printSpace()
 	}
 
 	if graph.Directed {
-		p.printToken(token.Digraph)
+		p.printTokenNew(token.Digraph, graph.GraphStart)
 	} else {
-		p.printTokenNew(token.Graph, graph.LeftBrace)
+		p.printTokenNew(token.Graph, graph.GraphStart)
 	}
 
 	p.printSpace()
@@ -76,8 +76,6 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		p.printSpace()
 	}
 
-	// TODO I think I need to know the position of all of these tokens so I can relate the comment
-	// positions to them
 	p.printTokenNew(token.LeftBrace, graph.LeftBrace)
 	err := p.printStmts(graph.Stmts)
 	if err != nil {
@@ -337,6 +335,7 @@ func (p *Printer) printAttribute(attribute ast.Attribute) error {
 	if err != nil {
 		return err
 	}
+	// TODO need to know the position of equal to support a comment before it
 	p.printToken(token.Equal)
 	return p.printID(attribute.Value)
 }
@@ -477,17 +476,19 @@ func (p *Printer) printTokenNew(a token.TokenType, pos token.Position) {
 }
 
 func (p *Printer) printComments(pos token.Position) {
-	// TODO print all comments that come before this token
-	if p.commentIndex < len(p.comments) && p.comments[p.commentIndex].StartPos.Before(pos) {
-		err := p.printComment(p.comments[p.commentIndex])
-		// TODO not sure we always want the newline. Issue is my idea of printing all comments as //. I
-		// think I need to go back and also print as /* as if I wanted an "inline" comment, not sure how
-		// that looks with // as in `A /* foo */ [a=b]`
-		p.printNewline()
-		// TODO handle errors
-		_ = err
-		p.commentIndex++
+	// TODO replace all print with positional print funcs
+	// TODO bring back block comment to support a comment in between tokens
+	// TODO handle newlines/whitespace
+	// TODO shield against empty comments?
+	// TODO handle errors
+	var err error
+	for ; err == nil && p.commentIndex < len(p.comments) && p.comments[p.commentIndex].StartPos.Before(pos); p.commentIndex++ {
+		err = p.printComment(p.comments[p.commentIndex])
 	}
+	// TODO not sure we always want the newline. Issue is my idea of printing all comments as //. I
+	// think I need to go back and also print as /* as if I wanted an "inline" comment, not sure how
+	// that looks with // as in `A /* foo */ [a=b]`
+	p.printNewline()
 }
 
 func (p *Printer) printToken(a token.TokenType) {

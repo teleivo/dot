@@ -55,6 +55,10 @@ func (g Graph) String() string {
 	return out.String()
 }
 
+// Start returns the starting position of the first rune belonging to the graph. This can be the
+// first rune of 'strict', 'graph', 'digraph' or the opening '{'. Use	the corresponding fields on
+// the [Graph] if you need to access the individual starting positions. There might be leading
+// comments that you can access via [Graph.Comments].
 func (g Graph) Start() token.Position {
 	if g.StrictStart != nil {
 		return *g.StrictStart
@@ -62,6 +66,8 @@ func (g Graph) Start() token.Position {
 	return g.GraphStart
 }
 
+// End returns the position of the closing '}' of the graph. There might be trailing comments which
+// you can access via [Graph.Comments].
 func (g Graph) End() token.Position {
 	return g.RightBrace
 }

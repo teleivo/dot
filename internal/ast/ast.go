@@ -9,20 +9,27 @@ import (
 
 // Graph is a directed or undirected dot graph.
 type Graph struct {
-	Strict   bool
-	Directed bool // Directed indicates that the graph is a directed graph.
-	ID       *ID  // ID is the optional identifier of a graph.
-	Stmts    []Stmt
-	StartPos token.Position // Position of the keyword 'strict' if Strict is true, otherwise its the position of the 'graph' or 'digraph' keyword.
-	// TODO what about trailing comments, should they set the EndPos? if not rename the field to make
-	// this clear.
-	EndPos   token.Position // Position of the closing '}'.
-	Comments []Comment      // List of all comments in the graph.
+	StrictStart *token.Position // StrictStart is the starting position of the optional 'strict' keyword.
+	GraphStart  token.Position  // GraphStart is the starting position of the 'graph' or 'digraph' keyword.
+	Directed    bool            // Directed indicates that the graph is a directed graph.
+	ID          *ID             // ID is the optional identifier of a graph.
+	LeftBrace   token.Position  // Position of the opening '{'.
+	Stmts       []Stmt          // Stmts lists all the graphs statements.
+	RightBrace  token.Position  // Position of the closing '}'.
+	Comments    []Comment       // List of all comments in the graph.
+}
+
+// IsStrict indicates whether the graph is declared as strict. Refer to [Lexical and Semantic Notes]
+// for its meaning.
+//
+// [Lexical and Semantic Notes]: https://graphviz.org/doc/info/lang.html#lexical-and-semantic-notes
+func (g Graph) IsStrict() bool {
+	return g.StrictStart != nil
 }
 
 func (g Graph) String() string {
 	var out strings.Builder
-	if g.Strict {
+	if g.IsStrict() {
 		out.WriteString("strict ")
 	}
 	if g.Directed {
@@ -49,11 +56,14 @@ func (g Graph) String() string {
 }
 
 func (g Graph) Start() token.Position {
-	return g.StartPos
+	if g.StrictStart != nil {
+		return *g.StrictStart
+	}
+	return g.GraphStart
 }
 
 func (g Graph) End() token.Position {
-	return g.EndPos
+	return g.RightBrace
 }
 
 // Node represents an AST node of a dot graph.

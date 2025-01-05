@@ -77,6 +77,7 @@ func (p *Parser) Parse() (ast.Graph, error) {
 	if err != nil {
 		return graph, err
 	}
+	graph.LeftBrace = p.curToken.Start
 	// TODO improve/test what if brace is unbalanced/EOF
 	err = p.nextToken()
 	if err != nil {
@@ -88,7 +89,7 @@ func (p *Parser) Parse() (ast.Graph, error) {
 		return graph, err
 	}
 	graph.Stmts = stmts
-	graph.EndPos = p.curToken.End
+	graph.RightBrace = p.curToken.End
 	graph.Comments = p.comments
 
 	return graph, err
@@ -120,10 +121,11 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 		return graph, err
 	}
 
-	graph.StartPos = p.curToken.Start
-
 	if p.curTokenIs(token.Strict) {
-		graph.Strict = true
+		graph.StrictStart = &token.Position{
+			Row:    p.curToken.Start.Row,
+			Column: p.curToken.Start.Column,
+		}
 
 		err := p.expectPeekTokenIsOneOf(token.Graph, token.Digraph)
 		if err != nil {
@@ -131,6 +133,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 		}
 	}
 
+	graph.GraphStart = p.curToken.Start
 	if p.curTokenIs(token.Digraph) {
 		graph.Directed = true
 	}

@@ -15,11 +15,13 @@ const maxColumn = 100
 
 // Printer formats dot code.
 type Printer struct {
-	r           io.Reader // r reader to parse dot code from
-	w           io.Writer // w writer to output formatted dot code to
-	row         int       // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed.
-	column      int       // column is the current one-indexed column in terms of runes the printer is at. 0 means no rune has been printed on the current row.
-	indentLevel int       // indentLevel is the current level of indentation to be applied when indenting
+	r            io.Reader     // r reader to parse dot code from
+	w            io.Writer     // w writer to output formatted dot code to
+	row          int           // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
+	column       int           // column is the current one-indexed column in terms of runes the printer is at. 0 means no rune has been printed on the current row
+	indentLevel  int           // indentLevel is the current level of indentation to be applied when indenting
+	commentIndex int           // commentIndex points to the next comment to be printed
+	comments     []ast.Comment // comments lists all comments in the Graph to be printed
 }
 
 func NewPrinter(r io.Reader, w io.Writer) *Printer {
@@ -40,6 +42,7 @@ func (p *Printer) Print() error {
 	if err != nil {
 		return err
 	}
+	p.comments = g.Comments
 
 	return p.printNode(g)
 }
@@ -53,7 +56,7 @@ func (p *Printer) printNode(node ast.Node) error {
 }
 
 func (p *Printer) printGraph(graph ast.Graph) error {
-	if graph.Strict {
+	if graph.IsStrict() {
 		p.printToken(token.Strict)
 		p.printSpace()
 	}
@@ -61,7 +64,7 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 	if graph.Directed {
 		p.printToken(token.Digraph)
 	} else {
-		p.printToken(token.Graph)
+		p.printTokenNew(token.Graph, graph.LeftBrace)
 	}
 
 	p.printSpace()
@@ -73,12 +76,14 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		p.printSpace()
 	}
 
-	p.printToken(token.LeftBrace)
+	// TODO I think I need to know the position of all of these tokens so I can relate the comment
+	// positions to them
+	p.printTokenNew(token.LeftBrace, graph.LeftBrace)
 	err := p.printStmts(graph.Stmts)
 	if err != nil {
 		return err
 	}
-	p.printToken(token.RightBrace)
+	p.printTokenNew(token.RightBrace, graph.RightBrace)
 	return nil
 }
 
@@ -105,6 +110,8 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 }
 
 func (p *Printer) printID(id ast.ID) error {
+	p.printComments(id.StartPos)
+
 	runeCount := utf8.RuneCountInString(string(id.Literal))
 	if p.column+runeCount <= maxColumn {
 		p.print(id)
@@ -455,6 +462,32 @@ func (p *Printer) printRune(a rune) {
 		p.row = 1
 	}
 	p.column++
+}
+
+func (p *Printer) printTokenNew(a token.TokenType, pos token.Position) {
+	p.printComments(pos)
+
+	token := a.String()
+	fmt.Fprint(p.w, token)
+	if p.row == 0 {
+		p.row = 1
+	}
+	// tokens are single byte runes i.e. byte count = rune count
+	p.column += len(token)
+}
+
+func (p *Printer) printComments(pos token.Position) {
+	// TODO print all comments that come before this token
+	if p.commentIndex < len(p.comments) && p.comments[p.commentIndex].StartPos.Before(pos) {
+		err := p.printComment(p.comments[p.commentIndex])
+		// TODO not sure we always want the newline. Issue is my idea of printing all comments as //. I
+		// think I need to go back and also print as /* as if I wanted an "inline" comment, not sure how
+		// that looks with // as in `A /* foo */ [a=b]`
+		p.printNewline()
+		// TODO handle errors
+		_ = err
+		p.commentIndex++
+	}
 }
 
 func (p *Printer) printToken(a token.TokenType) {

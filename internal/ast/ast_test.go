@@ -98,7 +98,8 @@ func TestStringer(t *testing.T) {
 		},
 		"DigraphWithID": {
 			in: Graph{
-				Strict:   true,
+				// TODO
+				// StrictStart:   true,
 				Directed: true,
 				ID:       &ID{Literal: `"wonder"`},
 			},
@@ -131,6 +132,50 @@ func TestPosition(t *testing.T) {
 		wantStart token.Position
 		wantEnd   token.Position
 	}{
+		"Graph": {
+			in: Graph{
+				GraphStart: token.Position{
+					Row:    1,
+					Column: 1,
+				},
+				RightBrace: token.Position{
+					Row:    1,
+					Column: 8,
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 8,
+			},
+		},
+		"GraphWithStrict": {
+			in: Graph{
+				StrictStart: &token.Position{
+					Row:    1,
+					Column: 2,
+				},
+				GraphStart: token.Position{
+					Row:    1,
+					Column: 9,
+				},
+				RightBrace: token.Position{
+					Row:    2,
+					Column: 16,
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 2,
+			},
+			wantEnd: token.Position{
+				Row:    2,
+				Column: 16,
+			},
+		},
 		"NodeStmt": {
 			in: &NodeStmt{
 				NodeID: NodeID{

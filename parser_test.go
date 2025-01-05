@@ -11,6 +11,7 @@ import (
 	"github.com/teleivo/dot/internal/token"
 )
 
+// TODO add GraphStart to tests
 func TestParser(t *testing.T) {
 	t.Run("Header", func(t *testing.T) {
 		tests := map[string]struct {
@@ -25,9 +26,10 @@ func TestParser(t *testing.T) {
 			"EmptyDirectedGraph": {
 				in: "digraph {}",
 				want: ast.Graph{
-					Directed: true,
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 10},
+					GraphStart: token.Position{Row: 1, Column: 1},
+					Directed:   true,
+					LeftBrace:  token.Position{Row: 1, Column: 9},
+					RightBrace: token.Position{Row: 1, Column: 10},
 				},
 			},
 			"GraphWithComments": {
@@ -36,8 +38,9 @@ func TestParser(t *testing.T) {
 graph {
 } // trailing comment`,
 				want: ast.Graph{
-					StartPos: token.Position{Row: 3, Column: 1},
-					EndPos:   token.Position{Row: 4, Column: 1},
+					GraphStart: token.Position{Row: 3, Column: 1},
+					LeftBrace:  token.Position{Row: 3, Column: 7},
+					RightBrace: token.Position{Row: 4, Column: 1},
 					Comments: []ast.Comment{
 						{
 							Text: `/** header explaining
@@ -56,31 +59,34 @@ graph {
 			"EmptyUndirectedGraph": {
 				in: "graph {}",
 				want: ast.Graph{
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 8},
+					GraphStart: token.Position{Row: 1, Column: 1},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 8},
 				},
 			},
 			"StrictDirectedUnnamedGraph": {
 				in: ` strict digraph {}`,
 				want: ast.Graph{
-					Strict:   true,
-					Directed: true,
-					StartPos: token.Position{Row: 1, Column: 2},
-					EndPos:   token.Position{Row: 1, Column: 18},
+					StrictStart: &token.Position{Row: 1, Column: 2},
+					GraphStart:  token.Position{Row: 1, Column: 9},
+					Directed:    true,
+					LeftBrace:   token.Position{Row: 1, Column: 17},
+					RightBrace:  token.Position{Row: 1, Column: 18},
 				},
 			},
 			"StrictDirectedNamedGraph": {
 				in: `strict digraph dependencies {}`,
 				want: ast.Graph{
-					Strict:   true,
-					Directed: true,
+					StrictStart: &token.Position{Row: 1, Column: 1},
+					GraphStart:  token.Position{Row: 1, Column: 8},
+					Directed:    true,
 					ID: &ast.ID{
 						Literal:  "dependencies",
 						StartPos: token.Position{Row: 1, Column: 16},
 						EndPos:   token.Position{Row: 1, Column: 27},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 30},
+					LeftBrace:  token.Position{Row: 1, Column: 29},
+					RightBrace: token.Position{Row: 1, Column: 30},
 				},
 			},
 		}
@@ -141,6 +147,7 @@ graph {
 			"OnlyNode": {
 				in: "graph { foo }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -152,8 +159,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 13},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 13},
 				},
 			},
 			"OnlyNodes": {
@@ -161,6 +168,7 @@ graph {
 					trash
 				}`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -199,13 +207,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 3, Column: 5},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 3, Column: 5},
 				},
 			},
 			"NodeWithPortName": {
 				in: "graph { foo:f0 }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -224,13 +233,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 16},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 16},
 				},
 			},
 			"NodeWithPortNameAndCompassPointUnderscore": {
 				in: `graph { foo:"f0":_ }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -253,13 +263,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 20},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithPortNameAndCompassPointNorth": {
 				in: `graph { foo:"f0":n }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -282,13 +293,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 20},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithPortNameAndCompassPointNorthEast": {
 				in: `graph { foo:f0:ne }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -311,13 +323,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 19},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointEast": {
 				in: `graph { foo:f0:e }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -340,13 +353,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 18},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithPortNameAndCompassPointSouthEast": {
 				in: `graph { foo:f0:se }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -369,13 +383,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 19},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointSouth": {
 				in: `graph { foo:f0:s }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -398,13 +413,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 18},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithPortNameAndCompassPointSouthWest": {
 				in: `graph { foo:f0:sw }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -427,13 +443,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 19},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointWest": {
 				in: `graph { foo:f0:w }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -456,13 +473,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 18},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithPortNameAndCompassPointNorthWest": {
 				in: `graph { foo:f0:nw }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -485,13 +503,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 19},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithPortNameAndCompassPointCenter": {
 				in: `graph { foo:f0:c }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -514,13 +533,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 18},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 18},
 				},
 			},
 			"NodeWithCompassPointNorth": {
 				in: `graph { foo:n }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -538,13 +558,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 15},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 15},
 				},
 			},
 			"NodeWithPortNameEqualToACompassPoint": { // https://graphviz.org/docs/attr-types/portPos
 				in: `graph { foo:n:n }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -567,13 +588,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 17},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 17},
 				},
 			},
 			"OnlyNodeWithEmptyAttributeList": {
 				in: "graph { foo [] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -589,13 +611,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 16},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 16},
 				},
 			},
 			"NodeWithSingleAttributeAndEmptyAttributeList": {
 				in: "graph { foo [] [a=b] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -621,13 +644,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 22},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 22},
 				},
 			},
 			"NodeWithSingleAttribute": {
 				in: "graph { foo [a=b] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -657,13 +681,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 19},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 19},
 				},
 			},
 			"NodeWithAttributesAndTrailingComma": {
 				in: "graph { foo [a=b,] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -680,13 +705,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 20},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithAttributesAndTrailingSemicolon": {
 				in: "graph { foo [a=b;] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -716,13 +742,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 20},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 20},
 				},
 			},
 			"NodeWithAttributeOverriding": {
 				in: "graph { foo [a=b;c=d]; foo [a=e] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -793,13 +820,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 34},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 34},
 				},
 			},
 			"NodeWithMultipleAttributesInSingleBracketPair": {
 				in: "graph { foo [a=b c=d,e=f;g=h] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -868,13 +896,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 31},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 31},
 				},
 			},
 			"NodeWithMultipleAttributesInMultipleBracketPairs": {
 				in: "graph { foo [a=b c=d][e=f;g=h] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.NodeStmt{
 							NodeID: ast.NodeID{
@@ -926,8 +955,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 32},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 32},
 				},
 			},
 		}
@@ -992,6 +1021,7 @@ graph {
 			"SingleUndirectedEdge": {
 				in: "graph { 1 -- 2 }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.NodeID{
@@ -1013,14 +1043,15 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 16},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 16},
 				},
 			},
 			"SingleDirectedEdge": {
 				in: "digraph { 1 -> 2 }",
 				want: ast.Graph{
-					Directed: true,
+					GraphStart: token.Position{Row: 1, Column: 1},
+					Directed:   true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.NodeID{
@@ -1043,14 +1074,15 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 18},
+					LeftBrace:  token.Position{Row: 1, Column: 9},
+					RightBrace: token.Position{Row: 1, Column: 18},
 				},
 			},
 			"MultipleDirectedEdgesWithAttributeList": {
 				in: "digraph { 1 -> 2 -> 3 -> 4 [a=b] }",
 				want: ast.Graph{
-					Directed: true,
+					GraphStart: token.Position{Row: 1, Column: 1},
+					Directed:   true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.NodeID{
@@ -1112,14 +1144,15 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 34},
+					LeftBrace:  token.Position{Row: 1, Column: 9},
+					RightBrace: token.Position{Row: 1, Column: 34},
 				},
 			},
 			"EdgeWithLHSShortSubgraph": {
 				in: "digraph { {A B} -> C }",
 				want: ast.Graph{
-					Directed: true,
+					GraphStart: token.Position{Row: 1, Column: 1},
+					Directed:   true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.Subgraph{
@@ -1159,14 +1192,15 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 22},
+					LeftBrace:  token.Position{Row: 1, Column: 9},
+					RightBrace: token.Position{Row: 1, Column: 22},
 				},
 			},
 			"EdgeWithRHSShortSubgraph": {
 				in: "digraph { A -> {B C} }",
 				want: ast.Graph{
-					Directed: true,
+					GraphStart: token.Position{Row: 1, Column: 1},
+					Directed:   true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.NodeID{
@@ -1206,13 +1240,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 22},
+					LeftBrace:  token.Position{Row: 1, Column: 9},
+					RightBrace: token.Position{Row: 1, Column: 22},
 				},
 			},
 			"EdgeWithNestedSubraphs": {
 				in: "graph { {1 2} -- {3 -- {4 5}} }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.Subgraph{
@@ -1286,14 +1321,15 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 31},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 31},
 				},
 			},
 			"EdgeWithRHSExplicitSubraph": {
 				in: "digraph { A -> subgraph foo {B C} }",
 				want: ast.Graph{
-					Directed: true,
+					GraphStart: token.Position{Row: 1, Column: 1},
+					Directed:   true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.NodeID{
@@ -1339,8 +1375,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 35},
+					LeftBrace:  token.Position{Row: 1, Column: 9},
+					RightBrace: token.Position{Row: 1, Column: 35},
 				},
 			},
 			"EdgeWithPorts": {
@@ -1348,7 +1384,8 @@ graph {
 			"node4":f0:n -> node5:f1;
 }`,
 				want: ast.Graph{
-					Directed: true,
+					GraphStart: token.Position{Row: 1, Column: 1},
+					Directed:   true,
 					Stmts: []ast.Stmt{
 						&ast.EdgeStmt{
 							Left: ast.NodeID{
@@ -1390,8 +1427,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 3, Column: 1},
+					LeftBrace:  token.Position{Row: 1, Column: 9},
+					RightBrace: token.Position{Row: 3, Column: 1},
 				},
 			},
 		}
@@ -1452,6 +1489,7 @@ graph {
 			"OnlyGraph": {
 				in: "graph { graph [] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
 							ID: ast.ID{
@@ -1465,13 +1503,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 18},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 18},
 				},
 			},
 			"OnlyNode": {
 				in: "graph { node [] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
 							ID: ast.ID{
@@ -1485,13 +1524,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 17},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 17},
 				},
 			},
 			"OnlyEdge": {
 				in: "graph { edge [] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
 							ID: ast.ID{
@@ -1505,13 +1545,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 17},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 17},
 				},
 			},
 			"GraphWithAttribute": {
 				in: "graph { graph [a=b] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
 							ID: ast.ID{
@@ -1538,13 +1579,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 21},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 21},
 				},
 			},
 			"NodeWithAttribute": {
 				in: "graph { node [a=b] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
 							ID: ast.ID{
@@ -1571,13 +1613,14 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 20},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 20},
 				},
 			},
 			"EdgeWithAttribute": {
 				in: "graph { edge [a=b] }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						&ast.AttrStmt{
 							ID: ast.ID{
@@ -1604,8 +1647,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 20},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 20},
 				},
 			},
 		}
@@ -1666,6 +1709,7 @@ graph {
 			"Single": {
 				in: "graph { rank = same; }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						ast.Attribute{
 							Name: ast.ID{
@@ -1679,8 +1723,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 22},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 22},
 				},
 			},
 			"QuotedAttributeValueSpanningMultipleLines": {
@@ -1688,6 +1732,7 @@ graph {
 				in summer"
 }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						ast.Attribute{
 							Name: ast.ID{
@@ -1702,8 +1747,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 3, Column: 1},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 3, Column: 1},
 				},
 			},
 			// https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
@@ -1712,6 +1757,7 @@ graph {
 				in summer"
 }`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						ast.Attribute{
 							Name: ast.ID{
@@ -1726,8 +1772,8 @@ graph {
 							},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 3, Column: 1},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 3, Column: 1},
 				},
 			},
 		}
@@ -1784,6 +1830,7 @@ graph {
 			"EmptyWithKeyword": {
 				in: "graph { subgraph {} }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						ast.Subgraph{
 							HasKeyword: true,
@@ -1791,26 +1838,28 @@ graph {
 							EndPos:     token.Position{Row: 1, Column: 19},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 21},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 21},
 				},
 			},
 			"EmptyWithoutKeyword": {
 				in: "graph { {} }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						ast.Subgraph{
 							StartPos: token.Position{Row: 1, Column: 9},
 							EndPos:   token.Position{Row: 1, Column: 10},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 12},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 12},
 				},
 			},
 			"SubgraphWithID": {
 				in: "graph { subgraph foo {} }",
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						ast.Subgraph{
 							HasKeyword: true,
@@ -1823,8 +1872,8 @@ graph {
 							EndPos:   token.Position{Row: 1, Column: 23},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 1, Column: 25},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 1, Column: 25},
 				},
 			},
 			"SubgraphWithAttributesAndNodes": {
@@ -1834,6 +1883,7 @@ graph {
 					}
 				}`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Stmts: []ast.Stmt{
 						ast.Subgraph{
 							HasKeyword: true,
@@ -1872,8 +1922,8 @@ graph {
 							EndPos:   token.Position{Row: 4, Column: 6},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 5, Column: 5},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 5, Column: 5},
 				},
 			},
 		}
@@ -1929,6 +1979,7 @@ graph {
 				in: `graph {	 # ok
 				}`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Comments: []ast.Comment{
 						{
 							Text:     "# ok",
@@ -1936,8 +1987,8 @@ graph {
 							EndPos:   token.Position{Row: 1, Column: 13},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 2, Column: 5},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 2, Column: 5},
 				},
 			},
 			"Single": {
@@ -1945,6 +1996,7 @@ graph {
 				// ok
 				}`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Comments: []ast.Comment{
 						{
 							Text:     "// ok",
@@ -1952,8 +2004,8 @@ graph {
 							EndPos:   token.Position{Row: 2, Column: 9},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 3, Column: 5},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 3, Column: 5},
 				},
 			},
 			"MultiLine": {
@@ -1961,6 +2013,7 @@ graph {
 				then */
 				}`,
 				want: ast.Graph{
+					GraphStart: token.Position{Row: 1, Column: 1},
 					Comments: []ast.Comment{
 						{
 							Text: `/* ok
@@ -1969,8 +2022,8 @@ graph {
 							EndPos:   token.Position{Row: 2, Column: 11},
 						},
 					},
-					StartPos: token.Position{Row: 1, Column: 1},
-					EndPos:   token.Position{Row: 3, Column: 5},
+					LeftBrace:  token.Position{Row: 1, Column: 7},
+					RightBrace: token.Position{Row: 3, Column: 5},
 				},
 			},
 		}

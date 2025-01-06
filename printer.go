@@ -58,14 +58,14 @@ func (p *Printer) printNode(node ast.Node) error {
 
 func (p *Printer) printGraph(graph ast.Graph) error {
 	if graph.IsStrict() {
-		p.printTokenNew(token.Strict, *graph.StrictStart)
+		p.printToken(token.Strict, *graph.StrictStart)
 		p.printSpace()
 	}
 
 	if graph.Directed {
-		p.printTokenNew(token.Digraph, graph.GraphStart)
+		p.printToken(token.Digraph, graph.GraphStart)
 	} else {
-		p.printTokenNew(token.Graph, graph.GraphStart)
+		p.printToken(token.Graph, graph.GraphStart)
 	}
 	p.printSpace()
 
@@ -77,7 +77,7 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 		p.printSpace()
 	}
 
-	p.printTokenNew(token.LeftBrace, graph.LeftBrace)
+	p.printToken(token.LeftBrace, graph.LeftBrace)
 	p.increaseIndentation()
 
 	err := p.printStmts(graph.Stmts)
@@ -86,7 +86,7 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 	}
 
 	p.decreaseIndentation()
-	p.printTokenNew(token.RightBrace, graph.RightBrace)
+	p.printToken(token.RightBrace, graph.RightBrace)
 	return nil
 }
 
@@ -197,14 +197,14 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 	}
 
 	if nodeID.Port.Name != nil {
-		p.printTokenNew(token.Colon, withColumnOffset(nodeID.Port.Name.StartPos, -1))
+		p.printToken(token.Colon, withColumnOffset(nodeID.Port.Name.StartPos, -1))
 		err = p.printID(*nodeID.Port.Name)
 		if err != nil {
 			return err
 		}
 	}
 	if nodeID.Port.CompassPoint != nil && nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
-		p.printTokenNew(token.Colon, withColumnOffset(nodeID.Port.CompassPoint.StartPos, -1))
+		p.printToken(token.Colon, withColumnOffset(nodeID.Port.CompassPoint.StartPos, -1))
 		p.print(nodeID.Port.CompassPoint)
 	}
 
@@ -222,7 +222,7 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 	}
 
 	p.printSpace()
-	p.printTokenNew(token.LeftBracket, attrList.LeftBracket)
+	p.printToken(token.LeftBracket, attrList.LeftBracket)
 	p.increaseIndentation()
 
 	for cur := attrList; cur != nil; cur = cur.Next {
@@ -241,7 +241,7 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 	}
 	// TODO if I remember correctly I am merging A [color=blue] [style=filled] into A [color=blue,
 	// style=filled]. How does me taking out '[]' affect printing of comments? Add to the test case.
-	p.printTokenNew(token.RightBracket, attrList.End())
+	p.printToken(token.RightBracket, attrList.End())
 
 	return nil
 }
@@ -277,9 +277,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 
 	p.printSpace()
 	if edgeStmt.Right.Directed {
-		p.printTokenNew(token.DirectedEgde, edgeStmt.Right.StartPos)
+		p.printToken(token.DirectedEgde, edgeStmt.Right.StartPos)
 	} else {
-		p.printTokenNew(token.UndirectedEgde, edgeStmt.Right.StartPos)
+		p.printToken(token.UndirectedEgde, edgeStmt.Right.StartPos)
 	}
 
 	p.printSpace()
@@ -291,9 +291,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
 		p.printSpace()
 		if edgeStmt.Right.Directed {
-			p.printTokenNew(token.DirectedEgde, cur.StartPos)
+			p.printToken(token.DirectedEgde, cur.StartPos)
 		} else {
-			p.printTokenNew(token.UndirectedEgde, cur.StartPos)
+			p.printToken(token.UndirectedEgde, cur.StartPos)
 		}
 		p.printSpace()
 		err = p.printEdgeOperand(cur.Right)
@@ -341,13 +341,14 @@ func (p *Printer) printAttribute(attribute ast.Attribute) error {
 	if err != nil {
 		return err
 	}
-	// TODO need to know the position of equal to support a comment before it
-	p.printToken(token.Equal)
+	// TODO fix this using the correct position of the '=' which I need to know the position of equal
+	// to support a comment before it. Add the position info to the ast
+	p.printToken(token.Equal, attribute.Name.EndPos)
 	return p.printID(attribute.Value)
 }
 
 func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
-	p.printToken(token.Subgraph)
+	p.printToken(token.Subgraph, subraph.Start())
 	p.printSpace()
 	if subraph.ID != nil {
 		err := p.printID(*subraph.ID)
@@ -357,7 +358,7 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 		p.printSpace()
 	}
 
-	p.printToken(token.LeftBrace)
+	p.printToken(token.LeftBrace, subraph.LeftBrace)
 	p.increaseIndentation()
 
 	err := p.printStmts(subraph.Stmts)
@@ -366,7 +367,7 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 	}
 
 	p.decreaseIndentation()
-	p.printToken(token.RightBrace)
+	p.printToken(token.RightBrace, subraph.RightBrace)
 	return nil
 }
 
@@ -484,7 +485,7 @@ func (p *Printer) printRune(a rune) {
 	p.column++
 }
 
-func (p *Printer) printTokenNew(tokenType token.TokenType, pos token.Position) {
+func (p *Printer) printToken(tokenType token.TokenType, pos token.Position) {
 	// TODO adjust pending newlines in printComments
 	// TODO indent to the p.indentLevel
 	p.printComments(pos)
@@ -523,16 +524,6 @@ func (p *Printer) printComments(pos token.Position) {
 	if printed {
 		p.printNewline()
 	}
-}
-
-func (p *Printer) printToken(a token.TokenType) {
-	token := a.String()
-	fmt.Fprint(p.w, token)
-	if p.row == 0 {
-		p.row = 1
-	}
-	// tokens are single byte runes i.e. byte count = rune count
-	p.column += len(token)
 }
 
 func (p *Printer) printNewline() {

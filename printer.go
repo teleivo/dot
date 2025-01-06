@@ -153,6 +153,9 @@ func (p *Printer) printID(id ast.ID) error {
 		p.printRune('"')
 	}
 
+	p.prevToken = token.Identifier
+	p.prevPosition = id.EndPos
+
 	return nil
 }
 
@@ -491,12 +494,8 @@ func (p *Printer) printToken(tokenType token.TokenType, pos token.Position) {
 	p.printComments(pos)
 
 	tok := tokenType.String()
-	fmt.Fprint(p.w, tok)
-	if p.row == 0 {
-		p.row = 1
-	}
-	// tokens are single byte runes i.e. byte count = rune count
-	p.column += len(tok)
+	p.printString(tok)
+
 	p.prevToken = tokenType
 	p.prevPosition = withColumnOffset(pos, len(tok))
 }

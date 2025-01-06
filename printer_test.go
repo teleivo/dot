@@ -297,14 +297,22 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		// add a test for a multi-line comment like A -- B /* foo */; B -- C
 		// or choose an attribute statement?
 		// TODO cleanup implementation
-		// 		"CommentsNextToStmtsAreKeptOnTheSameLine": {
-		// 			in: `graph {
-		// 	A -- B  //   stays on the same line
+		// "CommentsNextToStmtsAreKeptOnTheSameLine": {
+		// 	in: `graph {
+		// 	A [
+		// 		style="filled"
+		// 		color="blue"
+		// 	] //  keep me
+		// 	A -- B 	 //   stays on the same line
 		// }`,
-		// 			want: `graph {
+		// 	want: `graph {
+		// 	A [
+		// 		style="filled"
+		// 		color="blue"
+		// 	] // keep me
 		// 	A -- B // stays on the same line
 		// }`,
-		// 		},
+		// },
 	}
 
 	for name, test := range tests {

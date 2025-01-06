@@ -13,6 +13,8 @@ the Attribute should go on a new line like above but it ends up looking like
 	]
 ```
 
+there is also a space missing before the `//`
+
 * fix this case
 
 ```dot
@@ -22,6 +24,31 @@ the Attribute should go on a new line like above but it ends up looking like
 the comment moves onto its own line
 
 * tackle newlines with respect to comments
+
+things like
+
+```dot
+	A [
+		color="blue" // stay with blue
+		style="filled"
+	]
+```
+
+turn to
+
+```dot
+	A [
+		color="blue"
+		// stay with blue
+		style="filled"
+	]
+```
+
+since `printAList` prints a newline for multiple attributes. `printAttribute` will then call
+`printComments` via `printID` which prints the comment on the new line.
+
+Buffer newlines and flush them after comments
+
 * merge adjacent comments?
 * bring back block comments
 

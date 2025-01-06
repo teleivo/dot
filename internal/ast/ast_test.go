@@ -216,11 +216,11 @@ func TestPosition(t *testing.T) {
 					},
 				},
 				AttrList: &AttrList{
-					StartPos: token.Position{
+					LeftBracket: token.Position{
 						Row:    1,
 						Column: 3,
 					},
-					EndPos: token.Position{
+					RightBracket: token.Position{
 						Row:    1,
 						Column: 5,
 					},
@@ -445,11 +445,11 @@ func TestPosition(t *testing.T) {
 					},
 				},
 				AttrList: &AttrList{
-					StartPos: token.Position{
+					LeftBracket: token.Position{
 						Row:    1,
 						Column: 10,
 					},
-					EndPos: token.Position{
+					RightBracket: token.Position{
 						Row:    1,
 						Column: 11,
 					},
@@ -478,11 +478,11 @@ func TestPosition(t *testing.T) {
 					},
 				},
 				AttrList: AttrList{
-					StartPos: token.Position{
+					LeftBracket: token.Position{
 						Row:    1,
 						Column: 3,
 					},
-					EndPos: token.Position{
+					RightBracket: token.Position{
 						Row:    1,
 						Column: 5,
 					},
@@ -499,11 +499,11 @@ func TestPosition(t *testing.T) {
 		},
 		"AttrListEmpty": {
 			in: &AttrList{
-				StartPos: token.Position{
+				LeftBracket: token.Position{
 					Row:    1,
 					Column: 1,
 				},
-				EndPos: token.Position{
+				RightBracket: token.Position{
 					Row:    1,
 					Column: 4,
 				},
@@ -519,11 +519,11 @@ func TestPosition(t *testing.T) {
 		},
 		"AttrListWithAList": {
 			in: &AttrList{
-				StartPos: token.Position{
+				LeftBracket: token.Position{
 					Row:    1,
 					Column: 1,
 				},
-				EndPos: token.Position{
+				RightBracket: token.Position{
 					Row:    1,
 					Column: 8,
 				},
@@ -565,11 +565,11 @@ func TestPosition(t *testing.T) {
 		},
 		"AttrListWithAListAndNextWithAList": {
 			in: &AttrList{
-				StartPos: token.Position{
+				LeftBracket: token.Position{
 					Row:    1,
 					Column: 1,
 				},
-				EndPos: token.Position{
+				RightBracket: token.Position{
 					Row:    1,
 					Column: 8,
 				},
@@ -600,11 +600,11 @@ func TestPosition(t *testing.T) {
 					},
 				},
 				Next: &AttrList{
-					StartPos: token.Position{
+					LeftBracket: token.Position{
 						Row:    1,
 						Column: 10,
 					},
-					EndPos: token.Position{
+					RightBracket: token.Position{
 						Row:    1,
 						Column: 15,
 					},
@@ -647,11 +647,11 @@ func TestPosition(t *testing.T) {
 		},
 		"AttrListWithAListAndNextWithEmptyAList": {
 			in: &AttrList{
-				StartPos: token.Position{
+				LeftBracket: token.Position{
 					Row:    1,
 					Column: 1,
 				},
-				EndPos: token.Position{
+				RightBracket: token.Position{
 					Row:    1,
 					Column: 8,
 				},
@@ -682,11 +682,11 @@ func TestPosition(t *testing.T) {
 					},
 				},
 				Next: &AttrList{
-					StartPos: token.Position{
+					LeftBracket: token.Position{
 						Row:    1,
 						Column: 10,
 					},
-					EndPos: token.Position{
+					RightBracket: token.Position{
 						Row:    1,
 						Column: 11,
 					},
@@ -703,20 +703,20 @@ func TestPosition(t *testing.T) {
 		},
 		"AttrListWithEmptyAListAndNextWithAList": {
 			in: &AttrList{
-				StartPos: token.Position{
+				LeftBracket: token.Position{
 					Row:    1,
 					Column: 1,
 				},
-				EndPos: token.Position{
+				RightBracket: token.Position{
 					Row:    1,
 					Column: 2,
 				},
 				Next: &AttrList{
-					StartPos: token.Position{
+					LeftBracket: token.Position{
 						Row:    1,
 						Column: 4,
 					},
-					EndPos: token.Position{
+					RightBracket: token.Position{
 						Row:    1,
 						Column: 15,
 					},
@@ -853,6 +853,50 @@ func TestPosition(t *testing.T) {
 			wantEnd: token.Position{
 				Row:    1,
 				Column: 13,
+			},
+		},
+		"Subgraph": {
+			in: Subgraph{
+				LeftBrace: token.Position{
+					Row:    1,
+					Column: 1,
+				},
+				RightBrace: token.Position{
+					Row:    1,
+					Column: 8,
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 8,
+			},
+		},
+		"SubgraphWithKeyword": {
+			in: Subgraph{
+				SubgraphStart: &token.Position{
+					Row:    1,
+					Column: 1,
+				},
+				LeftBrace: token.Position{
+					Row:    1,
+					Column: 6,
+				},
+				RightBrace: token.Position{
+					Row:    1,
+					Column: 8,
+				},
+			},
+			wantStart: token.Position{
+				Row:    1,
+				Column: 1,
+			},
+			wantEnd: token.Position{
+				Row:    1,
+				Column: 8,
 			},
 		},
 	}

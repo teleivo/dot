@@ -122,10 +122,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	}
 
 	if p.curTokenIs(token.Strict) {
-		graph.StrictStart = &token.Position{
-			Row:    p.curToken.Start.Row,
-			Column: p.curToken.Start.Column,
-		}
+		graph.StrictStart = p.curPos()
 
 		err := p.expectPeekTokenIsOneOf(token.Graph, token.Digraph)
 		if err != nil {
@@ -437,16 +434,16 @@ func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 
 		if first == nil {
 			first = &ast.AttrList{
-				AList:    alist,
-				StartPos: openingBracketStart,
-				EndPos:   p.curToken.End,
+				AList:        alist,
+				LeftBracket:  openingBracketStart,
+				RightBracket: p.curToken.End,
 			}
 			cur = first
 		} else {
 			cur.Next = &ast.AttrList{
-				AList:    alist,
-				StartPos: openingBracketStart,
-				EndPos:   p.curToken.End,
+				AList:        alist,
+				LeftBracket:  openingBracketStart,
+				RightBracket: p.curToken.End,
 			}
 			cur = cur.Next
 		}
@@ -520,21 +517,19 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 }
 
 func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
-	subraph := ast.Subgraph{
-		StartPos: p.curToken.Start,
-	}
+	var subgraph ast.Subgraph
 
 	if p.curTokenIs(token.Subgraph) {
-		subraph.HasKeyword = true
+		subgraph.SubgraphStart = p.curPos()
 
 		// subgraph ID is optional
 		hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
 		if err != nil {
-			return subraph, err
+			return subgraph, err
 		}
 
 		if hasID {
-			subraph.ID = &ast.ID{
+			subgraph.ID = &ast.ID{
 				Literal:  p.curToken.Literal,
 				StartPos: p.curToken.Start,
 				EndPos:   p.curToken.End,
@@ -543,22 +538,24 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 
 		err = p.expectPeekTokenIsOneOf(token.LeftBrace)
 		if err != nil {
-			return subraph, err
+			return subgraph, err
 		}
 	}
+	subgraph.LeftBrace = p.curToken.Start
 	err := p.nextToken()
 	if err != nil {
-		return subraph, err
+		return subgraph, err
 	}
 
 	stmts, err := p.parseStatementList(graph)
 	if err != nil {
-		return subraph, nil
+		return subgraph, nil
 	}
-	subraph.Stmts = stmts
-	subraph.EndPos = p.curToken.End
+	subgraph.Stmts = stmts
 
-	return subraph, nil
+	subgraph.RightBrace = p.curToken.End
+
+	return subgraph, nil
 }
 
 func (p *Parser) isDone() bool {
@@ -614,4 +611,11 @@ func (p *Parser) advanceIfPeekTokenIsOneOf(tokens ...token.TokenType) (bool, err
 	}
 
 	return true, nil
+}
+
+func (p *Parser) curPos() *token.Position {
+	return &token.Position{
+		Row:    p.curToken.Start.Row,
+		Column: p.curToken.Start.Column,
+	}
 }

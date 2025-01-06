@@ -304,10 +304,10 @@ func (ns *EdgeStmt) stmtNode() {}
 
 // EdgeRHS is the right-hand side of an edge statement.
 type EdgeRHS struct {
+	StartPos token.Position // StartPos is the starting position of the edge operator '--' or '->' as specified by [EdgeRHS.Directed].
 	Directed bool           // Directed indicates that this is a directed edge.
 	Right    EdgeOperand    // Right is the right node identifier or subgraph of the edge right hand side.
 	Next     *EdgeRHS       // Next is an optional edge right hand side.
-	StartPos token.Position // StartPos is the starting position of the edge operator.
 }
 
 func (er EdgeRHS) String() string {
@@ -385,13 +385,16 @@ func (ns AttrStmt) End() token.Position {
 
 func (ns AttrStmt) stmtNode() {}
 
-// AttrList is a list of attributes as defined by https://graphviz.org/doc/info/attrs.html.
+// AttrList is a list of attributes as defined by [Attributes].
+//
+// [Attributes]: https://graphviz.org/doc/info/attrs.html
 type AttrList struct {
-	AList    *AList         // AList is an optional list of attributes.
-	Next     *AttrList      // Next optionally points to the attribute list following this one.
-	StartPos token.Position // Position of the opening '['.
-	EndPos   token.Position // Position of the first closing ']'. Note this might not be last ']' if
-	// there are Next AttrList which themselves have '[]'.
+	LeftBracket  token.Position // Position of the opening '['.
+	AList        *AList         // AList is an optional list of attributes.
+	RightBracket token.Position // Position of the first closing ']'. Note this might not be last ']' if
+	// there are Next AttrList which themselves have '[]'. Use [AttrList.End] to get the position of
+	// the last closing ']'.
+	Next *AttrList // Next optionally points to the attribute list following this one.
 }
 
 func (atl *AttrList) String() string {
@@ -410,13 +413,13 @@ func (atl *AttrList) String() string {
 }
 
 func (atl *AttrList) Start() token.Position {
-	return atl.StartPos
+	return atl.LeftBracket
 }
 
 func (atl *AttrList) End() token.Position {
 	var end token.Position
 	for cur := atl; cur != nil; cur = cur.Next {
-		end = cur.EndPos
+		end = cur.RightBracket
 	}
 	return end
 }
@@ -482,12 +485,11 @@ func (a Attribute) stmtNode() {}
 
 // Subgraph is a dot subgraph.
 type Subgraph struct {
-	HasKeyword bool // HasKeyword indicates that the subgraph used the form of 'subgraph {}' when true
-	// and '{}' when false.
-	ID       *ID            // ID is the optional identifier.
-	Stmts    []Stmt         // Stmts contains all the subraphs statements.
-	StartPos token.Position // Position of the keyword 'subgraph' if HasKeyword is true, otherwise its the position of the opening '{'.
-	EndPos   token.Position // Position of the closing '}'.
+	SubgraphStart *token.Position // SubgraphStart is the starting position of the optional keyword 'subgraph'.
+	ID            *ID             // ID is the optional identifier.
+	LeftBrace     token.Position  // LeftBrace is the position of the opening '{'.
+	Stmts         []Stmt          // Stmts contains all the subraphs statements.
+	RightBrace    token.Position  // RightBrace is the position of the closing '}'.
 }
 
 func (s Subgraph) String() string {
@@ -510,12 +512,18 @@ func (s Subgraph) String() string {
 	return out.String()
 }
 
+// Start returns the position of the first token belonging to the subgraph. This is either the
+// 'subraph' keyword or the opening left brace.
 func (s Subgraph) Start() token.Position {
-	return s.StartPos
+	if s.SubgraphStart != nil {
+		return *s.SubgraphStart
+	}
+	return s.LeftBrace
 }
 
+// End returns the position of the last token belonging to the subgraph which is the closing brace.
 func (s Subgraph) End() token.Position {
-	return s.EndPos
+	return s.RightBrace
 }
 
 func (s Subgraph) stmtNode()    {}

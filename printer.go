@@ -15,20 +15,21 @@ const maxColumn = 100
 
 // Printer formats dot code.
 type Printer struct {
-	r            io.Reader     // r reader to parse dot code from
-	w            io.Writer     // w writer to output formatted dot code to
-	row          int           // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
-	column       int           // column is the current one-indexed column in terms of runes the printer is at. 0 means no rune has been printed on the current row
-	indentLevel  int           // indentLevel is the current level of indentation to be applied when indenting
-	commentIndex int           // commentIndex points to the next comment to be printed
-	comments     []ast.Comment // comments lists all comments in the Graph to be printed
+	r            io.Reader       // r reader to parse dot code from
+	w            io.Writer       // w writer to output formatted dot code to
+	row          int             // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
+	column       int             // column is the current one-indexed column in terms of runes the printer is at. 0 means no rune has been printed on the current row
+	indentLevel  int             // indentLevel is the current level of indentation to be applied when indenting
+	prevToken    token.TokenType // prevToken is the type of the last printed token
+	prevPosition token.Position  // prevPosition is the position of the last printed token
+	commentIndex int             // commentIndex points to the next comment to be printed
+	comments     []ast.Comment   // comments lists all comments in the Graph to be printed
 }
 
 func NewPrinter(r io.Reader, w io.Writer) *Printer {
 	return &Printer{
-		r:           r,
-		w:           w,
-		indentLevel: 1,
+		r: r,
+		w: w,
 	}
 }
 
@@ -66,8 +67,8 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 	} else {
 		p.printTokenNew(token.Graph, graph.GraphStart)
 	}
-
 	p.printSpace()
+
 	if graph.ID != nil {
 		err := p.printID(*graph.ID)
 		if err != nil {
@@ -77,10 +78,14 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 	}
 
 	p.printTokenNew(token.LeftBrace, graph.LeftBrace)
+	p.increaseIndentation()
+
 	err := p.printStmts(graph.Stmts)
 	if err != nil {
 		return err
 	}
+
+	p.decreaseIndentation()
 	p.printTokenNew(token.RightBrace, graph.RightBrace)
 	return nil
 }
@@ -157,26 +162,23 @@ func (p *Printer) printStmt(stmt ast.Stmt) error {
 	case *ast.NodeStmt:
 		err = p.printNodeStmt(st)
 	case *ast.EdgeStmt:
-		p.printNewline()
-		p.printIndent()
 		err = p.printEdgeStmt(st)
 	case *ast.AttrStmt:
 		err = p.printAttrStmt(st)
 	case ast.Attribute:
 		p.printNewline()
-		p.printIndent()
 		err = p.printAttribute(st)
 	case ast.Subgraph:
 		p.printNewline()
-		p.printIndent()
 		err = p.printSubgraph(st)
 	}
 	return err
 }
 
 func (p *Printer) printNodeStmt(nodeStmt *ast.NodeStmt) error {
+	// TODO do I need to buffer the newlines like gofumpt? this here is creating the extra newline
+	// above the comment above the nodeStmt
 	p.printNewline()
-	p.printIndent()
 	err := p.printNodeID(nodeStmt.NodeID)
 	if err != nil {
 		return err
@@ -195,14 +197,14 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 	}
 
 	if nodeID.Port.Name != nil {
-		p.printToken(token.Colon)
+		p.printTokenNew(token.Colon, withColumnOffset(nodeID.Port.Name.StartPos, -1))
 		err = p.printID(*nodeID.Port.Name)
 		if err != nil {
 			return err
 		}
 	}
 	if nodeID.Port.CompassPoint != nil && nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
-		p.printToken(token.Colon)
+		p.printTokenNew(token.Colon, withColumnOffset(nodeID.Port.CompassPoint.StartPos, -1))
 		p.print(nodeID.Port.CompassPoint)
 	}
 
@@ -220,8 +222,9 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 	}
 
 	p.printSpace()
-	p.printToken(token.LeftBracket)
+	p.printTokenNew(token.LeftBracket, attrList.LeftBracket)
 	p.increaseIndentation()
+
 	for cur := attrList; cur != nil; cur = cur.Next {
 		split, err := p.printAList(cur.AList, hasMultipleAttrs)
 		if err != nil {
@@ -231,12 +234,15 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 			hasMultipleAttrs = true
 		}
 	}
+
 	p.decreaseIndentation()
 	if hasMultipleAttrs {
 		p.printNewline()
-		p.printIndent()
 	}
-	p.printToken(token.RightBracket)
+	// TODO if I remember correctly I am merging A [color=blue] [style=filled] into A [color=blue,
+	// style=filled]. How does me taking out '[]' affect printing of comments? Add to the test case.
+	p.printTokenNew(token.RightBracket, attrList.End())
+
 	return nil
 }
 
@@ -248,7 +254,6 @@ func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, err
 
 		if hasMultipleAttrs {
 			p.printNewline()
-			p.printIndent()
 		}
 		err := p.printAttribute(cur.Attribute)
 		if err != nil {
@@ -263,6 +268,8 @@ func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, err
 }
 
 func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
+	p.printNewline()
+
 	err := p.printEdgeOperand(edgeStmt.Left)
 	if err != nil {
 		return err
@@ -270,9 +277,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 
 	p.printSpace()
 	if edgeStmt.Right.Directed {
-		p.printToken(token.DirectedEgde)
+		p.printTokenNew(token.DirectedEgde, edgeStmt.Right.StartPos)
 	} else {
-		p.printToken(token.UndirectedEgde)
+		p.printTokenNew(token.UndirectedEgde, edgeStmt.Right.StartPos)
 	}
 
 	p.printSpace()
@@ -284,9 +291,9 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
 		p.printSpace()
 		if edgeStmt.Right.Directed {
-			p.printToken(token.DirectedEgde)
+			p.printTokenNew(token.DirectedEgde, cur.StartPos)
 		} else {
-			p.printToken(token.UndirectedEgde)
+			p.printTokenNew(token.UndirectedEgde, cur.StartPos)
 		}
 		p.printSpace()
 		err = p.printEdgeOperand(cur.Right)
@@ -315,7 +322,6 @@ func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
 	}
 
 	p.printNewline()
-	p.printIndent()
 	err := p.printID(attrStmt.ID)
 	if err != nil {
 		return err
@@ -353,17 +359,25 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 
 	p.printToken(token.LeftBrace)
 	p.increaseIndentation()
+
 	err := p.printStmts(subraph.Stmts)
 	if err != nil {
 		return err
 	}
+
 	p.decreaseIndentation()
-	p.printIndent()
 	p.printToken(token.RightBrace)
 	return nil
 }
 
 func (p *Printer) printComment(comment ast.Comment) error {
+	// TODO only print a newline if comment.StartPos is on a different line than the previous node. I
+	// need the pos of the previous ast node on the Printer as that gives an indication on the intent.
+	// If I use the p.row that would be wrong. Do I need StartPos and EndPos? or only one of them? i
+	// think EndPos as the comment comes after the previous EndPos
+	// TODO how to deal with space/indentation?
+	// TODO and the start of the graph
+
 	text := comment.Text
 	// discard markers
 	if text[0] == '#' {
@@ -375,6 +389,10 @@ func (p *Printer) printComment(comment ast.Comment) error {
 	}
 
 	isFirstWord := true
+	// TODO how can I use the knowledge of prevToken==token.Comment and prevPosition in order to merge
+	// comment groups while reducing multiple empty comment lines and respecting a single empty
+	// comment line as a visual separator
+	isNewline := p.prevPosition.Row > 0 && p.prevPosition.Row != comment.StartPos.Row
 	var inWord bool
 	var start, runeCount int
 	for i, r := range text {
@@ -389,9 +407,11 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			// TODO isFirstWord assumes the first always goes onto a new line. This is where I need to
 			// know if the comment should fit on the same line or not
 			// I thus need to know if the original previous node and current node are on the same line
+			// if col > maxColumn || isFirstWord {
 			if col > maxColumn || isFirstWord {
-				p.printNewline()
-				p.printIndent()
+				if isNewline {
+					p.printNewline()
+				}
 				p.printRune('/')
 				p.printRune('/')
 				isFirstWord = false
@@ -408,7 +428,6 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		col := p.column + 1 + runeCount // 1 for the space separating words
 		if col > maxColumn {
 			p.printNewline()
-			p.printIndent()
 			p.printRune('/')
 			p.printRune('/')
 		}
@@ -433,12 +452,6 @@ func (p *Printer) decreaseIndentation() {
 	p.indentLevel--
 }
 
-func (p *Printer) printIndent() {
-	for range p.indentLevel {
-		p.printRune('\t')
-	}
-}
-
 func (p *Printer) printString(a string) {
 	for _, r := range a {
 		p.printRune(r)
@@ -456,6 +469,14 @@ func (p *Printer) printSpace() {
 }
 
 func (p *Printer) printRune(a rune) {
+	// TODO if there is any pending newline fmt print it before the rune
+
+	// TODO indent to the p.indentLevel
+	for p.column < p.indentLevel {
+		fmt.Fprintf(p.w, "%c", '\t')
+		p.column++
+	}
+
 	fmt.Fprintf(p.w, "%c", a)
 	if p.row == 0 {
 		p.row = 1
@@ -463,16 +484,20 @@ func (p *Printer) printRune(a rune) {
 	p.column++
 }
 
-func (p *Printer) printTokenNew(a token.TokenType, pos token.Position) {
+func (p *Printer) printTokenNew(tokenType token.TokenType, pos token.Position) {
+	// TODO adjust pending newlines in printComments
+	// TODO indent to the p.indentLevel
 	p.printComments(pos)
 
-	token := a.String()
-	fmt.Fprint(p.w, token)
+	tok := tokenType.String()
+	fmt.Fprint(p.w, tok)
 	if p.row == 0 {
 		p.row = 1
 	}
 	// tokens are single byte runes i.e. byte count = rune count
-	p.column += len(token)
+	p.column += len(tok)
+	p.prevToken = tokenType
+	p.prevPosition = withColumnOffset(pos, len(tok))
 }
 
 func (p *Printer) printComments(pos token.Position) {
@@ -481,14 +506,23 @@ func (p *Printer) printComments(pos token.Position) {
 	// TODO handle newlines/whitespace
 	// TODO shield against empty comments?
 	// TODO handle errors
+	var printed bool
 	var err error
 	for ; err == nil && p.commentIndex < len(p.comments) && p.comments[p.commentIndex].StartPos.Before(pos); p.commentIndex++ {
-		err = p.printComment(p.comments[p.commentIndex])
+		comment := p.comments[p.commentIndex]
+		err = p.printComment(comment)
+		p.prevToken = token.Comment
+		p.prevPosition = comment.EndPos
+		printed = true
 	}
 	// TODO not sure we always want the newline. Issue is my idea of printing all comments as //. I
 	// think I need to go back and also print as /* as if I wanted an "inline" comment, not sure how
 	// that looks with // as in `A /* foo */ [a=b]`
-	p.printNewline()
+	// don't: when a line comment is
+	// don't: for block comments
+	if printed {
+		p.printNewline()
+	}
 }
 
 func (p *Printer) printToken(a token.TokenType) {
@@ -505,4 +539,12 @@ func (p *Printer) printNewline() {
 	fmt.Fprintln(p.w)
 	p.column = 0
 	p.row++
+}
+
+// withColumnOffset returns a new position with the added offset to the given positions column.
+func withColumnOffset(pos token.Position, columnOffset int) token.Position {
+	return token.Position{
+		Row:    pos.Row,
+		Column: pos.Column + columnOffset,
+	}
 }

@@ -1,20 +1,56 @@
-# Position
+* fix this case
 
-* add positions to ast.Node
+```dot
+	B [
+		style="filled" //  this should stay with style="filled"
+	]
+```
 
-That is the Go ast.Node interface. I could add Start(), End() which return a token.Position. I would
-not want to hold on/expose all tokens in the ast. The positions should be enough
+the Attribute should go on a new line like above but it ends up looking like
 
-```go
-// All node types implement the Node interface.
-type Node interface {
-	Pos() token.Pos // position of first character belonging to the node
-	End() token.Pos // position of first character immediately after the node
+```dot
+	B [style="filled"// this should stay with style="filled"
+	]
+```
+
+* fix this case
+
+```dot
+  A -- B 	 //   this should stay with A -- B
+```
+
+the comment moves onto its own line
+
+* tackle newlines with respect to comments
+* merge adjacent comments?
+* bring back block comments
+
+# Comments
+
+dotfmt printer
+* when printing I need to check if there is a comment before the token to be printed, if so print
+that comment. gofumpt buffers whitespace so whitespace is printed together with the comment. I
+assume this is necessary to make the output look nicer in some cases. Keep it in mind and add tests
+to see how this looks.
+
+* add test in dotfmt for
+
+the AttrList can have an empty AList followed by a non-empty one (I have one in the parser_test.go)
+
+```dot
+graph {
+    node [] [color=blue]; A
 }
 ```
 
-* implement isValid and Stringer on token.Position like Go does? the EOF token for example does not
-  have a valid token.Position
+this is also legal but the key/value pair is then an Attribute
+
+```dot
+graph {
+    node [] color=blue; A
+}
+
+am I parsing this correctly?
 
 * write cmd/dotfmt
     * allow multiple nodes on the same line. how to break them up when > maxCol
@@ -46,6 +82,7 @@ type Node interface {
         # is too long
     ```
 
+* rename lexer to scanner
 * properly godoc all the things
 
 * still needed? Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
@@ -341,6 +378,8 @@ parser as a test via testdata
 
 ## Parser
 
+* implement parser.Trace like the Go parser
+
 * ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates
 unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit
 https://graphviz.org/doc/info/lang.html#ids
@@ -372,6 +411,7 @@ sets the attributes on given nodes in the `{}` but will it affect nodes outside?
 
 ### API
 
+* review all receivers decide on pointer or not
 * should I add the token to the AttrStmt? so it is easier to check if its a graph/node/edge?
 * is it nicer to work with slices then my choice of linked lists with *Next whenever there was a
 recursive definition?
@@ -429,6 +469,13 @@ echo 'graph{ 100 200 }' | dot -Tsvg -O
 Warning: syntax ambiguity - badly delimited number '100' in line 1 of <stdin> splits into two tokens
 
 ## dotfmt
+
+* do I need to shield against ASTs generated from code?
+* implement isValid and Stringer on token.Position like Go does? the EOF token for example does not
+  have a valid token.Position. For example when I don't have a closing '}' for a graph it does not
+have a valid EndPos
+  see Go ast.BlockStmt docs which mention exactly that
+  could help with Nodes like `AttrList` which might be empty
 
 * support parsing/formatting ranges
     * parser should be ok with comments before a graph. how to support that in terms of the parser
@@ -550,3 +597,8 @@ attributes apply to the current "scope" in order.
 Questions
 * how to deal represent an `ast.ID`? If I just use a `string` in `dot.Graph.ID` it would lead to an
   invalid ID in the ast. Validate that before? Or deal with such errors later? Or sanitize myself?
+
+## Ideas
+
+* how could I make something like :InspectTree in neovim for my parser?
+

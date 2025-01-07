@@ -329,6 +329,7 @@ func (p *Printer) printAttribute(attribute ast.Attribute) error {
 }
 
 func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
+	// TODO reconsider always printing subraph as I now know whether the user wanted it
 	p.printToken(token.Subgraph, subraph.Start())
 	p.printSpace()
 	if subraph.ID != nil {
@@ -354,13 +355,6 @@ func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
 }
 
 func (p *Printer) printComment(comment ast.Comment) error {
-	// TODO only print a newline if comment.StartPos is on a different line than the previous node. I
-	// need the pos of the previous ast node on the Printer as that gives an indication on the intent.
-	// If I use the p.row that would be wrong. Do I need StartPos and EndPos? or only one of them? i
-	// think EndPos as the comment comes after the previous EndPos
-	// TODO how to deal with space/indentation?
-	// TODO and the start of the graph
-
 	text := comment.Text
 	// discard markers
 	if text[0] == '#' {
@@ -387,10 +381,6 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			runeCount++
 		} else if inWord && isWhitespace(r) { // word boundary
 			col := p.column + 1 + runeCount // 1 for the space separating words
-			// TODO isFirstWord assumes the first always goes onto a new line. This is where I need to
-			// know if the comment should fit on the same line or not
-			// I thus need to know if the original previous node and current node are on the same line
-			// if col > maxColumn || isFirstWord {
 			if col > maxColumn || isFirstWord {
 				if needsNewline {
 					p.forceNewline() // immediately print newline to split comment

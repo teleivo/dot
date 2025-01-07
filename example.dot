@@ -1,10 +1,27 @@
-graph {
-	// this is valid toooo
+// does this work?
+// and this
+graph { // this is valid toooo
 	// this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or
 	// not!a
 	// this uses a single-line marker but is too long for a single line fits nice well done this one is
 	// a
 	// https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
-	// nice one
-	// this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
+	// nice one this is a comment! that has exactly 100 runes, which is the max column of dotfmt like
+	// it or not!
+	A [
+		style="filled"
+		color="blue" // stay with blue
+	] // should be ok
+	// why is it that the comment next to an Attribute fixes what I want to implement? style="filled"
+	// why does this one stay here? style="filled" color="blue"
+	B [style="filled" // this should stay with style="filled"
+	]
+	C [color="red"] // ok no?
+	// this should stay above A -- B
+	A -- B // this should stay with A -- B
+	C -- subgraph { ok
+		D
+		// D is cool
+		E
+	} // comment the subgraph
 }

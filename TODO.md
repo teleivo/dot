@@ -1,3 +1,46 @@
+* put these issues into tests once fixed!
+* why is the
+
+```dot
+	C -- subgraph {
+		D // D is cool
+		E
+	} // comment the subgraph
+```
+
+turn into
+
+```dot
+	C -- subgraph {
+		D
+        // D is cool
+		E
+	} // comment the subgraph
+```
+
+* fix
+
+```dot
+	C -- subgraph {// ok
+		D // D is cool
+		E
+	} // comment the subgraph
+```
+
+turns to
+
+```dot
+	C -- subgraph { ok
+		D
+		// D is cool
+		E
+	} // comment the subgraph
+```
+
+* fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
+  every type of comment
+* comments are not indented in an empty graph, why is that?
+
 * fix this case
 
 ```dot
@@ -9,45 +52,9 @@
 the Attribute should go on a new line like above but it ends up looking like
 
 ```dot
-	B [style="filled"// this should stay with style="filled"
+	B [style="filled" // this should stay with style="filled"
 	]
 ```
-
-there is also a space missing before the `//`
-
-* fix this case
-
-```dot
-  A -- B 	 //   this should stay with A -- B
-```
-
-the comment moves onto its own line
-
-* tackle newlines with respect to comments
-
-things like
-
-```dot
-	A [
-		color="blue" // stay with blue
-		style="filled"
-	]
-```
-
-turn to
-
-```dot
-	A [
-		color="blue"
-		// stay with blue
-		style="filled"
-	]
-```
-
-since `printAList` prints a newline for multiple attributes. `printAttribute` will then call
-`printComments` via `printID` which prints the comment on the new line.
-
-Buffer newlines and flush them after comments
 
 * merge adjacent comments?
 * bring back block comments

@@ -399,30 +399,36 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			}
 			// separate word from marker and separate words
 			p.printSpace()
-			isFirstWord = false
+
 			for _, c := range text[start:i] {
 				p.printRune(c)
 			}
+
+			isFirstWord = false
 			inWord = false
 		}
 	}
 
 	if inWord {
 		col := p.column + 1 + runeCount // 1 for the space separating words
-		if col > maxColumn {
-			p.forceNewline() // immediately print newline to split comment
-			p.printRune('/')
-			p.printRune('/')
-		} else if isFirstWord {
-			if putOnNewLine {
-				p.forceNewline() // immediately print newline to split comment
-			} else if p.row > 0 { // don't adjust a comment before a graph
-				p.printSpace()
-			}
+
+		// breakup long comment or start new one with the intent to be on a new line
+		if col > maxColumn || (isFirstWord && putOnNewLine) {
+			p.forceNewline()
+		}
+		// separate comment from previous token on the same line except for comments at the start of a
+		// file
+		if isFirstWord && !putOnNewLine && p.row > 0 {
+			p.printSpace()
+		}
+		// start comment
+		if col > maxColumn || isFirstWord {
 			p.printRune('/')
 			p.printRune('/')
 		}
+		// separate word from marker and separate words
 		p.printSpace()
+
 		for _, c := range text[start:] {
 			p.printRune(c)
 		}

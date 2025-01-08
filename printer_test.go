@@ -236,7 +236,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 
 			*/
 }`,
-			want: `graph {}`,
+			want: `graph {
+}`,
 		},
 		"CommentsSingleLineAreChangedToCppMarker": {
 			in: `graph {

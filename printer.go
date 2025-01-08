@@ -367,11 +367,10 @@ func (p *Printer) printComment(comment ast.Comment) error {
 		text = text[2 : len(text)-2]
 	}
 
+	// put a comment only on a new line if that was the intent! a comment starting on the same
+	// line as the previous token is seen as the intent of keeping them together
+	putOnNewLine := p.prevPosition.Row > 0 && p.prevPosition.Row != comment.StartPos.Row
 	isFirstWord := true
-	// TODO how can I use the knowledge of prevToken==token.Comment and prevPosition in order to merge
-	// comment groups while reducing multiple empty comment lines and respecting a single empty
-	// comment line as a visual separator
-	needsNewline := p.prevPosition.Row > 0 && p.prevPosition.Row != comment.StartPos.Row
 	var inWord bool
 	var start, runeCount int
 	for i, r := range text {
@@ -383,16 +382,20 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			runeCount++
 		} else if inWord && isWhitespace(r) { // word boundary
 			col := p.column + 1 + runeCount // 1 for the space separating words
-			if col > maxColumn || isFirstWord {
-				if needsNewline {
+			if col > maxColumn {
+				p.forceNewline() // immediately print newline to split comment
+				p.printRune('/')
+				p.printRune('/')
+			} else if isFirstWord {
+				if putOnNewLine {
 					p.forceNewline() // immediately print newline to split comment
 				} else if p.row > 0 { // don't adjust a comment before a graph
 					p.printSpace()
 				}
 				p.printRune('/')
 				p.printRune('/')
-				isFirstWord = false
 			}
+			isFirstWord = false
 			p.printSpace()
 			for _, c := range text[start:i] {
 				p.printRune(c)
@@ -403,8 +406,12 @@ func (p *Printer) printComment(comment ast.Comment) error {
 
 	if inWord {
 		col := p.column + 1 + runeCount // 1 for the space separating words
-		if col > maxColumn || isFirstWord {
-			if needsNewline {
+		if col > maxColumn {
+			p.forceNewline() // immediately print newline to split comment
+			p.printRune('/')
+			p.printRune('/')
+		} else if isFirstWord {
+			if putOnNewLine {
 				p.forceNewline() // immediately print newline to split comment
 			} else if p.row > 0 { // don't adjust a comment before a graph
 				p.printSpace()

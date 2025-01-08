@@ -8,6 +8,12 @@ graph {
 
 comment is not indented
 
+* fix remaining printer_test.go
+* fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
+  every type of comment
+* merge to master
+* rename to scanner on master
+
 * fixed: put into test = case is that the ID is < maxColumn
 
 ```dot
@@ -44,14 +50,6 @@ turns to
 		E
 	}
 ```
-
-* fix remaining printer_test.go
-* merge to master
-* rename to scanner on master
-
-* fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
-  every type of comment
-* comments are not indented in an empty graph, why is that?
 
 * fix this case
 

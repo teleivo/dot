@@ -111,15 +111,21 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 func (p *Printer) printID(id ast.ID) error {
 	p.printComments(id.StartPos)
 
-	runeCount := utf8.RuneCountInString(string(id.Literal))
-	if p.column+runeCount <= maxColumn {
+	// TODO account for the added quote
+	// see TestPrint/NodeWithUnquotedIDPastMaxColumn
+	var isUnquoted bool
+	if id.Literal[0] != '"' {
+		isUnquoted = true
+	}
+
+	runeCount := utf8.RuneCountInString(id.Literal)
+	if p.column+p.indentLevel+runeCount <= maxColumn {
 		p.print(id)
 		p.prevToken = token.Identifier
 		p.prevPosition = id.EndPos
 		return nil
 	}
 
-	var isUnquoted bool
 	runeIndex := p.column
 	breakPointCol := maxColumn - 2 // 2 = "\\n"
 	if id.Literal[0] != '"' {

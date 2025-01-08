@@ -41,11 +41,11 @@ func TestPrint(t *testing.T) {
 		},
 		"NodeWithQuotedIDPastMaxColumn": {
 			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
 }`,
 			want: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-aa"
+	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+	b"
 }`,
 		},
 		"NodeWithUnquotedIDOfMaxColumn": {
@@ -62,7 +62,7 @@ aa"
 }`,
 			want: `graph {
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-aab"
+	ab"
 }`,
 		},
 		"NodeStatementsWithPorts": {
@@ -174,7 +174,7 @@ graph     [ 	label="blue",]
 }`,
 			want: `graph {
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max co\
-l."]
+		l."]
 }`,
 		},
 		"AttributeStmtWithSingleAttribute": {
@@ -270,7 +270,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			comment that fits onto a single line                            */
 }`,
 			want: `graph {
-	// this is a multi-line marker comment that fits onto a single line
+// this is a multi-line marker comment that fits onto a single line
 }`,
 		},
 		"CommentsMultiLineAreAreChangedToCppMarkerRespectingWordBoundaries": {

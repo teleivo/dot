@@ -1,4 +1,4 @@
-* fix
+* change tests so this is the expected behavior
 
 ```dot
 graph {
@@ -9,6 +9,9 @@ graph {
 comment is not indented
 
 * fix remaining printer_test.go
+* how to align comments when I do break them up? right now they are not indented at all. indent to
+the level of the previous comment?
+
 * add test for trailing comments after a graph
 * fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
   every type of comment
@@ -66,6 +69,9 @@ the Attribute should go on a new line like above but it ends up looking like
 	B [style="filled" // this should stay with style="filled"
 	]
 ```
+
+* can I classify the print functions into AST, "middle", primitive ones that actually call fmt? and
+  limit where I call which? or reduce the number of the different p.print(), p.printString() ones?
 
 * merge adjacent comments?
 * bring back block comments

@@ -1,5 +1,14 @@
-* put these issues into tests once fixed!
-* why is the
+* fix
+
+```dot
+graph {
+// here
+}
+```
+
+comment is not indented
+
+* fixed: put into test = case is that the ID is < maxColumn
 
 ```dot
 	C -- subgraph {
@@ -18,13 +27,13 @@ turn into
 	} // comment the subgraph
 ```
 
-* fix
+* fixed: put into test = case is that the comment only contains a single word
 
 ```dot
 	C -- subgraph {// ok
-		D // D is cool
+		D
 		E
-	} // comment the subgraph
+	}
 ```
 
 turns to
@@ -32,10 +41,13 @@ turns to
 ```dot
 	C -- subgraph { ok
 		D
-		// D is cool
 		E
-	} // comment the subgraph
+	}
 ```
+
+* fix remaining printer_test.go
+* merge to master
+* rename to scanner on master
 
 * fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
   every type of comment

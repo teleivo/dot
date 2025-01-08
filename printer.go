@@ -108,6 +108,8 @@ func (p *Printer) printID(id ast.ID) error {
 	runeCount := utf8.RuneCountInString(string(id.Literal))
 	if p.column+runeCount <= maxColumn {
 		p.print(id)
+		p.prevToken = token.Identifier
+		p.prevPosition = id.EndPos
 		return nil
 	}
 
@@ -401,8 +403,12 @@ func (p *Printer) printComment(comment ast.Comment) error {
 
 	if inWord {
 		col := p.column + 1 + runeCount // 1 for the space separating words
-		if col > maxColumn {
-			p.forceNewline() // immediately print newline to split comment
+		if col > maxColumn || isFirstWord {
+			if needsNewline {
+				p.forceNewline() // immediately print newline to split comment
+			} else if p.row > 0 { // don't adjust a comment before a graph
+				p.printSpace()
+			}
 			p.printRune('/')
 			p.printRune('/')
 		}
@@ -411,6 +417,9 @@ func (p *Printer) printComment(comment ast.Comment) error {
 			p.printRune(c)
 		}
 	}
+
+	p.prevToken = token.Comment
+	p.prevPosition = comment.EndPos
 
 	return nil
 }
@@ -444,9 +453,6 @@ func (p *Printer) printSpace() {
 }
 
 func (p *Printer) printRune(a rune) {
-	// TODO if there is any pending newline fmt print it before the rune
-
-	// TODO indent to the p.indentLevel
 	for p.column < p.indentLevel {
 		fmt.Fprintf(p.w, "%c", '\t')
 		p.column++
@@ -480,8 +486,6 @@ func (p *Printer) printComments(pos token.Position) {
 	for ; err == nil && p.commentIndex < len(p.comments) && p.comments[p.commentIndex].StartPos.Before(pos); p.commentIndex++ {
 		comment := p.comments[p.commentIndex]
 		err = p.printComment(comment)
-		p.prevToken = token.Comment
-		p.prevPosition = comment.EndPos
 		printed = true
 	}
 
@@ -494,10 +498,13 @@ func (p *Printer) printComments(pos token.Position) {
 	}
 }
 
+// printNewline queues a newline to be printed. Printing an ID or a token can trigger the newline to
+// be written if appropriate. Use forceNewline to immediately write a newline.
 func (p *Printer) printNewline() {
 	p.newline = true
 }
 
+// flushNewline writes a newline if it has previously been queued by [Printer.printNewline].
 func (p *Printer) flushNewline() bool {
 	if !p.newline {
 		return false
@@ -507,6 +514,8 @@ func (p *Printer) flushNewline() bool {
 	return true
 }
 
+// forceNewline immediately writes a newline to [Printer.w] and clears a newline queued by
+// [Printer.printNewline].
 func (p *Printer) forceNewline() {
 	fmt.Fprintln(p.w)
 	p.column = 0

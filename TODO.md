@@ -9,6 +9,7 @@ graph {
 comment is not indented
 
 * fix remaining printer_test.go
+* add test for trailing comments after a graph
 * fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
   every type of comment
 * merge to master

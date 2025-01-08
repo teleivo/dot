@@ -46,7 +46,13 @@ func (p *Printer) Print() error {
 	}
 	p.comments = g.Comments
 
-	return p.printNode(g)
+	err = p.printNode(g)
+	if err != nil {
+		return err
+	}
+	p.printRemainingComments()
+
+	return nil
 }
 
 func (p *Printer) printNode(node ast.Node) error {
@@ -491,15 +497,14 @@ func (p *Printer) printToken(tokenType token.TokenType, pos token.Position) {
 	p.prevPosition = withColumnOffset(pos, len(tok))
 }
 
-func (p *Printer) printComments(pos token.Position) {
+// printComments print all comments preceding the next token to be printed.
+func (p *Printer) printComments(nextTokenPos token.Position) {
 	// TODO replace all print with positional print funcs
 	// TODO bring back block comment to support a comment in between tokens
-	// TODO handle newlines/whitespace
-	// TODO shield against empty comments?
 	// TODO handle errors
 	var printed bool
 	var err error
-	for ; err == nil && p.commentIndex < len(p.comments) && p.comments[p.commentIndex].StartPos.Before(pos); p.commentIndex++ {
+	for ; err == nil && p.commentIndex < len(p.comments) && p.comments[p.commentIndex].StartPos.Before(nextTokenPos); p.commentIndex++ {
 		comment := p.comments[p.commentIndex]
 		err = p.printComment(comment)
 		printed = true
@@ -511,6 +516,15 @@ func (p *Printer) printComments(pos token.Position) {
 		p.flushNewline()
 	} else {
 		p.newline = false
+	}
+}
+
+func (p *Printer) printRemainingComments() {
+	// TODO handle errors
+	var err error
+	for ; err == nil && p.commentIndex < len(p.comments); p.commentIndex++ {
+		comment := p.comments[p.commentIndex]
+		err = p.printComment(comment)
 	}
 }
 

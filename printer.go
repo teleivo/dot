@@ -111,13 +111,6 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 func (p *Printer) printID(id ast.ID) error {
 	p.printComments(id.StartPos)
 
-	// TODO account for the added quote
-	// see TestPrint/NodeWithUnquotedIDPastMaxColumn
-	var isUnquoted bool
-	if id.Literal[0] != '"' {
-		isUnquoted = true
-	}
-
 	runeCount := utf8.RuneCountInString(id.Literal)
 	if p.column+p.indentLevel+runeCount <= maxColumn {
 		p.print(id)
@@ -126,13 +119,13 @@ func (p *Printer) printID(id ast.ID) error {
 		return nil
 	}
 
+	var isUnquoted bool
 	runeIndex := p.column
-	breakPointCol := maxColumn - 2 // 2 = "\\n"
+	breakPointCol := maxColumn - p.indentLevel - 1 // -1 for the continuation \
 	if id.Literal[0] != '"' {
 		isUnquoted = true
-		// accounting for the added quote
+		// for the added opening quote
 		runeIndex++
-		breakPointCol++
 	}
 
 	// find the starting byte of the rune that will end up on the next line
@@ -148,11 +141,13 @@ func (p *Printer) printID(id ast.ID) error {
 	if isUnquoted { // opening quote
 		p.printRune('"')
 	}
+
 	p.printString(id.Literal[:breakPointBytes])
 	// standard C convention of a backslash immediately preceding a newline character
 	p.printRune('\\')
 	p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
 	p.printString(id.Literal[breakPointBytes:])
+
 	if isUnquoted { // closing quote
 		p.printRune('"')
 	}
@@ -474,6 +469,10 @@ func (p *Printer) print(a fmt.Stringer) {
 	for _, r := range a.String() {
 		p.printRune(r)
 	}
+}
+
+func (p *Printer) printTab() {
+	p.printRune('\t')
 }
 
 func (p *Printer) printSpace() {

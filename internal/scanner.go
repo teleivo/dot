@@ -328,7 +328,10 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 
 // isUnquotedStringSeparator determines if the rune separates tokens.
 func isUnquotedStringSeparator(r rune) bool {
-	return isTerminal(r) || isWhitespace(r) || r == '-' // potential edge operator
+	// - potential edge operator
+	// / potential line comment
+	// # potential line comment
+	return isTerminal(r) || isWhitespace(r) || r == '-' || r == '/' || r == '#'
 }
 
 // isTerminal determines if the rune is considered a terminal token in the dot language. This does

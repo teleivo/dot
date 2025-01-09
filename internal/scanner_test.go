@@ -152,6 +152,40 @@ func TestScanner(t *testing.T) {
 				{Type: token.EOF},
 			},
 		},
+		// TODO add tests for quoted id as well
+		// what if there is only one / ? add test case for this in invalid id test cases
+		// should I peek at the next char?
+		"CommentsCanHugIdentifiers": {
+			in: `A//commenting on A
+			B#commenting on B`,
+			want: []token.Token{
+				{
+					Type:    token.Identifier,
+					Literal: "A",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 1},
+				},
+				{
+					Type:    token.Comment,
+					Literal: `//commenting on A`,
+					Start:   token.Position{Row: 1, Column: 2},
+					End:     token.Position{Row: 1, Column: 18},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "B",
+					Start:   token.Position{Row: 2, Column: 4},
+					End:     token.Position{Row: 2, Column: 4},
+				},
+				{
+					Type:    token.Comment,
+					Literal: `#commenting on B`,
+					Start:   token.Position{Row: 2, Column: 5},
+					End:     token.Position{Row: 2, Column: 20},
+				},
+				{Type: token.EOF},
+			},
+		},
 		"AttributeList": {
 			in: `	graph [
 				labelloc = t

@@ -10,7 +10,7 @@ import (
 	"github.com/teleivo/dot/internal/token"
 )
 
-func TestLexer(t *testing.T) {
+func TestScanner(t *testing.T) {
 	tests := map[string]struct {
 		in   string
 		want []token.Token
@@ -548,11 +548,11 @@ func TestLexer(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			lexer, err := NewLexer(strings.NewReader(test.in))
+			scanner, err := NewScanner(strings.NewReader(test.in))
 
-			require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+			require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-			assertTokens(t, lexer, test.want)
+			assertTokens(t, scanner, test.want)
 		})
 	}
 
@@ -603,11 +603,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertTokens(t, lexer, []token.Token{test.want})
+					assertTokens(t, scanner, []token.Token{test.want})
 				})
 			}
 		})
@@ -615,11 +615,11 @@ func TestLexer(t *testing.T) {
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
 				in   string
-				want LexError
+				want Error
 			}{
 				{
 					in: "  ", // \177
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 3,
 						Character:   '',
@@ -628,7 +628,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: "  _zabx", // \177
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 7,
 						Character:   '',
@@ -637,7 +637,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: `Ā`, // Unicode character U+0100 = \400 which cannot be written as rune(\400) as its outside of Gos valid octal range
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 1,
 						Character:   'Ā',
@@ -646,7 +646,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: `_Ā`, // Unicode character U+0100 = \400 which cannot be written as rune(\400) as its outside of Gos valid octal range
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 2,
 						Character:   'Ā',
@@ -655,7 +655,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: "A\000B", // null byte
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 2,
 						Character:   '\000',
@@ -666,11 +666,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertLexError(t, lexer, test.want)
+					assertError(t, scanner, test.want)
 				})
 			}
 		})
@@ -776,11 +776,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertTokens(t, lexer, []token.Token{test.want})
+					assertTokens(t, scanner, []token.Token{test.want})
 				})
 			}
 		})
@@ -788,11 +788,11 @@ func TestLexer(t *testing.T) {
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
 				in   string
-				want LexError
+				want Error
 			}{
 				{
 					in: "-.1A",
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 4,
 						Character:   'A',
@@ -801,7 +801,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: "1-20",
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 2,
 						Character:   '-',
@@ -810,7 +810,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: ".13.4",
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 4,
 						Character:   '.',
@@ -819,7 +819,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: "-.",
-					want: LexError{ // TODO I point the error past the EOF
+					want: Error{ // TODO I point the error past the EOF
 						LineNr:      1,
 						CharacterNr: 3,
 						// Character:   '.',
@@ -828,7 +828,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: "\n. 0",
-					want: LexError{
+					want: Error{
 						LineNr:      2,
 						CharacterNr: 2,
 						Character:   ' ',
@@ -837,7 +837,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: `100 200 `, // non-breakig space \240 between 100 and 200
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 4,
 						Character:   ' ',
@@ -846,7 +846,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: "\n\n\n\t  - F",
-					want: LexError{
+					want: Error{
 						LineNr:      4,
 						CharacterNr: 5,
 						Character:   ' ',
@@ -857,11 +857,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertLexError(t, lexer, test.want)
+					assertError(t, scanner, test.want)
 				})
 			}
 		})
@@ -985,11 +985,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertTokens(t, lexer, []token.Token{test.want})
+					assertTokens(t, scanner, []token.Token{test.want})
 				})
 			}
 		})
@@ -997,11 +997,11 @@ func TestLexer(t *testing.T) {
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
 				in   string
-				want LexError
+				want Error
 			}{
 				{
 					in: `"asdf`,
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 6,
 						Character:   0,
@@ -1011,7 +1011,7 @@ func TestLexer(t *testing.T) {
 				{
 					in: `"asdf	
 		}`,
-					want: LexError{
+					want: Error{
 						LineNr:      2,
 						CharacterNr: 4,
 						Character:   0,
@@ -1020,7 +1020,7 @@ func TestLexer(t *testing.T) {
 				},
 				{
 					in: `"` + strings.Repeat("a", 16348),
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 16349,
 						Character:   'a',
@@ -1031,11 +1031,11 @@ func TestLexer(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertLexError(t, lexer, test.want)
+					assertError(t, scanner, test.want)
 				})
 			}
 		})
@@ -1094,22 +1094,22 @@ spacious
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertTokens(t, lexer, []token.Token{test.want})
+					assertTokens(t, scanner, []token.Token{test.want})
 				})
 			}
 		})
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
 				in   string
-				want LexError
+				want Error
 			}{
 				{
 					in: "/ is not a valid comment",
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 1,
 						Character:   '/',
@@ -1118,7 +1118,7 @@ spacious
 				},
 				{
 					in: "/# is not a valid comment",
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 1,
 						Character:   '/',
@@ -1127,7 +1127,7 @@ spacious
 				},
 				{
 					in: "/* is not a valid comment",
-					want: LexError{
+					want: Error{
 						LineNr:      1,
 						CharacterNr: 26,
 						Character:   0,
@@ -1138,55 +1138,55 @@ spacious
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					lexer, err := NewLexer(strings.NewReader(test.in))
+					scanner, err := NewScanner(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "NewLexer(%q)", test.in)
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertLexError(t, lexer, test.want)
+					assertError(t, scanner, test.want)
 				})
 			}
 		})
 	})
 }
 
-func assertTokens(t *testing.T, lexer *Lexer, want []token.Token) {
+func assertTokens(t *testing.T, scanner *Scanner, want []token.Token) {
 	t.Helper()
 
 	for i, wantTok := range want {
-		tok, err := lexer.NextToken()
+		tok, err := scanner.Next()
 
 		require.NoErrorf(t, err, "NextToken() at i=%d", i)
 		require.EqualValuesf(t, tok, wantTok, "NextToken() at i=%d", i)
 	}
-	assertEOF(t, lexer)
+	assertEOF(t, scanner)
 }
 
-func assertEOF(t *testing.T, lexer *Lexer) {
+func assertEOF(t *testing.T, scanner *Scanner) {
 	t.Helper()
 
-	tok, err := lexer.NextToken()
+	tok, err := scanner.Next()
 
 	assert.NoErrorf(t, err, "NextToken()")
 	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "NextToken()")
 }
 
-func assertLexError(t *testing.T, lexer *Lexer, want LexError) {
+func assertError(t *testing.T, scanner *Scanner, want Error) {
 	t.Helper()
 
-	tok, err := lexer.NextToken()
+	tok, err := scanner.Next()
 
 	var wantTok token.Token
 	assert.EqualValuesf(t, tok, wantTok, "NextToken()")
-	got, ok := err.(LexError)
-	assert.Truef(t, ok, "NextToken() wanted LexError, instead got %v", err)
+	got, ok := err.(Error)
+	assert.Truef(t, ok, "NextToken() wanted scannerror, instead got %v", err)
 	if ok {
 		assert.EqualValuesf(t, got, want, "NextToken()")
 	}
 
 	// TODO is this so that subsequent calls will always get the same error?
-	_, err = lexer.NextToken()
-	got, ok = err.(LexError)
-	assert.Truef(t, ok, "NextToken() wanted LexError, instead got %v", err)
+	_, err = scanner.Next()
+	got, ok = err.(Error)
+	assert.Truef(t, ok, "NextToken() wanted scannerror, instead got %v", err)
 	if ok {
 		assert.EqualValuesf(t, got, want, "NextToken()")
 	}

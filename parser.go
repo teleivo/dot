@@ -13,20 +13,20 @@ import (
 )
 
 type Parser struct {
-	lexer     *dot.Lexer
+	scanner   *dot.Scanner
 	curToken  token.Token
 	peekToken token.Token
 	comments  []ast.Comment
 }
 
 func NewParser(r io.Reader) (*Parser, error) {
-	lexer, err := dot.NewLexer(r)
+	scanner, err := dot.NewScanner(r)
 	if err != nil {
 		return nil, err
 	}
 
 	p := Parser{
-		lexer: lexer,
+		scanner: scanner,
 	}
 
 	// initialize peek token
@@ -43,7 +43,7 @@ func NewParser(r io.Reader) (*Parser, error) {
 func (p *Parser) nextToken() error {
 	var tok token.Token
 	var err error
-	for tok, err = p.lexer.NextToken(); err == nil && tok.Type == token.Comment; tok, err = p.lexer.NextToken() {
+	for tok, err = p.scanner.Next(); err == nil && tok.Type == token.Comment; tok, err = p.scanner.Next() {
 		comment := ast.Comment{
 			Text:     tok.Literal,
 			StartPos: tok.Start,

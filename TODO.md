@@ -1,4 +1,3 @@
-* rename to scanner on master
 * add test for trailing comments after a graph
 * fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
   every type of comment
@@ -528,7 +527,7 @@ have a valid EndPos
     // range
 ```
 
-* test parser/lexer with invalid ID as ID for port. check the places were convert literals to
+* test parser with invalid ID as ID for port. check the places were convert literals to
 ast.ID without parsing the identifier, should I not parse it first?
 
 * try formatting invalid dot and improve error handling

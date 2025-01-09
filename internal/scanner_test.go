@@ -152,12 +152,14 @@ func TestScanner(t *testing.T) {
 				{Type: token.EOF},
 			},
 		},
-		// TODO add tests for quoted id as well
-		// what if there is only one / ? add test case for this in invalid id test cases
+		// TODO what if there is only one / ? add test case for this in invalid id test cases
 		// should I peek at the next char?
 		"CommentsCanHugIdentifiers": {
 			in: `A//commenting on A
-			B#commenting on B`,
+			B#commenting on B
+"C"//commenting on C
+"D"#commenting on D
+`,
 			want: []token.Token{
 				{
 					Type:    token.Identifier,
@@ -182,6 +184,30 @@ func TestScanner(t *testing.T) {
 					Literal: `#commenting on B`,
 					Start:   token.Position{Row: 2, Column: 5},
 					End:     token.Position{Row: 2, Column: 20},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: `"C"`,
+					Start:   token.Position{Row: 3, Column: 1},
+					End:     token.Position{Row: 3, Column: 3},
+				},
+				{
+					Type:    token.Comment,
+					Literal: `//commenting on C`,
+					Start:   token.Position{Row: 3, Column: 4},
+					End:     token.Position{Row: 3, Column: 20},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: `"D"`,
+					Start:   token.Position{Row: 4, Column: 1},
+					End:     token.Position{Row: 4, Column: 3},
+				},
+				{
+					Type:    token.Comment,
+					Literal: `#commenting on D`,
+					Start:   token.Position{Row: 4, Column: 4},
+					End:     token.Position{Row: 4, Column: 19},
 				},
 				{Type: token.EOF},
 			},

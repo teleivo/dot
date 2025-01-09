@@ -297,27 +297,70 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 // https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
 }`,
 		},
-		// TODO test comments on the same line as other statements
-		// add a test for breaking up the comment
-		// add a test for a multi-line comment like A -- B /* foo */; B -- C
-		// or choose an attribute statement?
-		// TODO cleanup implementation
-		// "CommentsNextToStmtsAreKeptOnTheSameLine": {
-		// 	in: `graph {
-		// 	A [
-		// 		style="filled"
-		// 		color="blue"
-		// 	] //  keep me
-		// 	A -- B 	 //   stays on the same line
-		// }`,
-		// 	want: `graph {
-		// 	A [
-		// 		style="filled"
-		// 		color="blue"
-		// 	] // keep me
-		// 	A -- B // stays on the same line
-		// }`,
-		// },
+		"CommentsWithSingleWord": {
+			in: `graph {//graph
+	C -- subgraph {//subgraph
+	}
+}`,
+			want: `graph { // graph
+	C -- subgraph { // subgraph
+	}
+}`,
+		},
+		"CommentsOnSubgraphStickToPreviousTokens": {
+			in: `graph {
+	C -- subgraph {
+		D   //D is cool
+// stay with E
+		E
+	} // comment the subgraph
+
+		}`,
+			want: `graph {
+	C -- subgraph {
+		D // D is cool
+		// stay with E
+		E
+	} // comment the subgraph
+}`,
+		},
+		"CommentsStickToAttributes": {
+			in: `graph {
+	A [
+		style="filled" // always
+		color="pink" // what else!
+	] //  keep me
+}`,
+			want: `graph {
+	A [
+		style="filled" // always
+		color="pink" // what else!
+	] // keep me
+}`,
+		},
+		"CommentsBeforeGraph": {
+			in: `
+			// this is my graph
+							// and I do what I want to!
+
+			graph {
+		}
+		
+`,
+			want: `// this is my graph
+// and I do what I want to!
+graph {
+}`,
+		},
+		"CommentsAfterGraph": {
+			in: `graph {
+		}//this is kept here
+
+			//	 oh wait !`,
+			want: `graph {
+} // this is kept here
+// oh wait !`,
+		},
 	}
 
 	for name, test := range tests {

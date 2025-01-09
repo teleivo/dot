@@ -1,44 +1,5 @@
-* add test for trailing comments after a graph
 * fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
   every type of comment
-* add below tests
-* fixed: put into test = case is that the ID is < maxColumn
-
-```dot
-	C -- subgraph {
-		D // D is cool
-		E
-	} // comment the subgraph
-```
-
-turn into
-
-```dot
-	C -- subgraph {
-		D
-        // D is cool
-		E
-	} // comment the subgraph
-```
-
-* fixed: put into test = case is that the comment only contains a single word
-
-```dot
-	C -- subgraph {// ok
-		D
-		E
-	}
-```
-
-turns to
-
-```dot
-	C -- subgraph { ok
-		D
-		E
-	}
-```
-
 * fix breaking up ID
     * if its already broken up I currently break it up again. naive rune counting does not take into
       account that the ID is already broken up
@@ -66,6 +27,7 @@ the Attribute should go on a new line like above but it ends up looking like
 
 * merge adjacent comments?
 * bring back block comments
+    * add a test for a multi-line comment like A -- B /* foo */; B -- C
 
 * add test in dotfmt for
 

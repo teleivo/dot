@@ -1,5 +1,14 @@
-* fix bug in scanner of identifiers. it should cope with `B//this is a comment` this should work for
-  every type of comment
+* fix
+
+```dot
+graph {  B
+A/
+}
+```
+
+for some reason if there is a B the `A/` is not parsed and the A is dropped. `A//` behaves correctly
+as well as `A/` without a `B`.
+
 * fix breaking up ID
     * if its already broken up I currently break it up again. naive rune counting does not take into
       account that the ID is already broken up
@@ -411,7 +420,6 @@ sets the attributes on given nodes in the `{}` but will it affect nodes outside?
 ### API
 
 * review all receivers decide on pointer or not
-* should I add the token to the AttrStmt? so it is easier to check if its a graph/node/edge?
 * is it nicer to work with slices then my choice of linked lists with *Next whenever there was a
 recursive definition?
 * should I remove the Directed field from EdgeRHS as that is clear from graph.Directed?
@@ -566,8 +574,7 @@ graph/subraph as well
 * keep the indentation when splitting IDs to multiple lines?
   * the parser would need to support + so I can concatenat IDs
 
-* maybe: support subraph shorthand using `{}` and don't always print `subgraph` by looking at the
-literal? might need to add that to the ast as
+* maybe: support subraph shorthand using `{}` and don't always print `subgraph`
 
 * join adjacent comments? unless there is an empty newline in between them
 

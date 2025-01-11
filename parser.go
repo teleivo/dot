@@ -7,20 +7,19 @@ import (
 	"io"
 	"slices"
 
-	dot "github.com/teleivo/dot/internal"
-	"github.com/teleivo/dot/internal/ast"
-	"github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot/ast"
+	"github.com/teleivo/dot/token"
 )
 
 type Parser struct {
-	scanner   *dot.Scanner
+	scanner   *Scanner
 	curToken  token.Token
 	peekToken token.Token
 	comments  []ast.Comment
 }
 
 func NewParser(r io.Reader) (*Parser, error) {
-	scanner, err := dot.NewScanner(r)
+	scanner, err := NewScanner(r)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 	"io"
 	"unicode"
 
-	"github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot/token"
 )
 
 type Scanner struct {
@@ -329,13 +329,13 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 // isUnquotedStringSeparator determines if the rune separates tokens.
 func isUnquotedStringSeparator(r rune) bool {
 	// - potential edge operator
-	// / potential line comment
+	// / potential single- or multi-line comment
 	// # potential line comment
 	return isTerminal(r) || isWhitespace(r) || r == '-' || r == '/' || r == '#'
 }
 
 // isTerminal determines if the rune is considered a terminal token in the dot language. This does
-// not contain edge operators
+// only checks for single rune terminals. Edge operators are thus not considered.
 func isTerminal(r rune) bool {
 	tok, ok := token.Type(string(r))
 	if !ok {

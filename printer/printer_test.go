@@ -1,4 +1,4 @@
-package dot_test
+package printer_test
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
-	"github.com/teleivo/dot"
+	"github.com/teleivo/dot/printer"
 )
 
 func TestPrint(t *testing.T) {
@@ -366,7 +366,7 @@ graph {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			var got bytes.Buffer
-			p := dot.NewPrinter(strings.NewReader(test.in), &got)
+			p := printer.NewPrinter(strings.NewReader(test.in), &got)
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 

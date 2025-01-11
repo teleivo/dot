@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/teleivo/assertive/assert"
-	"github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot/token"
 )
 
 func TestStringer(t *testing.T) {

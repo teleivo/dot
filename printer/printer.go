@@ -1,12 +1,14 @@
-package dot
+// Package printer prints dot ASTs formatted in the spirit of https://github.com/mvdan/gofumpt.
+package printer
 
 import (
 	"fmt"
 	"io"
 	"unicode/utf8"
 
-	"github.com/teleivo/dot/internal/ast"
-	"github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot"
+	"github.com/teleivo/dot/ast"
+	"github.com/teleivo/dot/token"
 )
 
 // maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
@@ -35,7 +37,7 @@ func NewPrinter(r io.Reader, w io.Writer) *Printer {
 }
 
 func (p *Printer) Print() error {
-	ps, err := NewParser(p.r)
+	ps, err := dot.NewParser(p.r)
 	if err != nil {
 		return err
 	}

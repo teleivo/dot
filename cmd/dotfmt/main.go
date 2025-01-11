@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/teleivo/dot"
+	"github.com/teleivo/dot/printer"
 )
 
 func main() {
@@ -16,6 +16,6 @@ func main() {
 }
 
 func run(r io.Reader, w io.Writer) error {
-	p := dot.NewPrinter(r, w)
+	p := printer.NewPrinter(r, w)
 	return p.Print()
 }

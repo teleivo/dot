@@ -7,8 +7,8 @@ import (
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/dot"
-	"github.com/teleivo/dot/internal/ast"
-	"github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot/ast"
+	"github.com/teleivo/dot/token"
 )
 
 // TODO add GraphStart to tests

@@ -4,7 +4,7 @@ package ast
 import (
 	"strings"
 
-	"github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot/token"
 )
 
 // Graph is a directed or undirected dot graph.

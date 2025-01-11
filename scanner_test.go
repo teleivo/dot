@@ -7,7 +7,7 @@ import (
 
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
-	"github.com/teleivo/dot/internal/token"
+	"github.com/teleivo/dot/token"
 )
 
 func TestScanner(t *testing.T) {

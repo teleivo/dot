@@ -93,7 +93,7 @@ func (sc *Scanner) Next() (token.Token, error) {
 			}
 			return tok, err
 		} else {
-			err = sc.scanError(unquotedStringErr)
+			err = sc.error(unquotedStringErr)
 		}
 	}
 
@@ -180,7 +180,7 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	var hasClosingMarker bool
 
 	if sc.cur == '/' && sc.hasNext() && sc.next != '/' && sc.next != '*' {
-		return token.Token{}, sc.scanError("missing '/' for single-line or a '*' for a multi-line comment")
+		return token.Token{}, sc.error("missing '/' for single-line or a '*' for a multi-line comment")
 	}
 
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
@@ -200,7 +200,7 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	}
 
 	if isMultiLine && !hasClosingMarker {
-		err = sc.scanError("missing closing marker '*/' for multi-line comment")
+		err = sc.error("missing closing marker '*/' for multi-line comment")
 	}
 	if err != nil {
 		return tok, err
@@ -281,10 +281,10 @@ func (sc *Scanner) tokenizeIdentifier() (token.Token, error) {
 	}
 
 	var tok token.Token
-	return tok, sc.scanError("invalid token")
+	return tok, sc.error("invalid token")
 }
 
-func (sc *Scanner) scanError(reason string) Error {
+func (sc *Scanner) error(reason string) Error {
 	return Error{
 		LineNr:      sc.curRow,
 		CharacterNr: sc.curColumn,
@@ -305,7 +305,7 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 	for ; sc.hasNext() && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.readRune() {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if !isLegalInUnquotedString(sc.cur) {
-			return tok, sc.scanError(unquotedStringErr)
+			return tok, sc.error(unquotedStringErr)
 		}
 
 		id = append(id, sc.cur)
@@ -364,15 +364,15 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	for pos, hasDot := 0, false; sc.hasNext() && err == nil && !sc.isNumeralSeparator(); err, pos = sc.readRune(), pos+1 {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if sc.cur == '-' && pos != 0 {
-			return tok, sc.scanError("a numeral can only be prefixed with a `-`")
+			return tok, sc.error("a numeral can only be prefixed with a `-`")
 		}
 
 		if sc.cur == '.' && hasDot {
-			return tok, sc.scanError("a numeral can only have one `.` that is at least preceded or followed by digits")
+			return tok, sc.error("a numeral can only have one `.` that is at least preceded or followed by digits")
 		}
 
 		if sc.cur != '-' && sc.cur != '.' && !unicode.IsDigit(sc.cur) { // otherwise only digits are allowed
-			return tok, sc.scanError("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
+			return tok, sc.error("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
 		}
 
 		if sc.cur == '.' {
@@ -385,7 +385,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	}
 
 	if !hasDigit {
-		err = sc.scanError("a numeral must have at least one digit")
+		err = sc.error("a numeral must have at least one digit")
 	}
 	if err != nil {
 		return tok, err
@@ -421,13 +421,13 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 			break
 		}
 		if pos > maxUnquotedStringLen {
-			return tok, sc.scanError(fmt.Sprintf("potentially missing closing quote, found none after max %d characters", maxUnquotedStringLen+1))
+			return tok, sc.error(fmt.Sprintf("potentially missing closing quote, found none after max %d characters", maxUnquotedStringLen+1))
 		}
 		prev = sc.cur
 	}
 
 	if !hasClosingQuote {
-		err = sc.scanError("missing closing quote")
+		err = sc.error("missing closing quote")
 	}
 	if err != nil {
 		return tok, err

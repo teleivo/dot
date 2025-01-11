@@ -152,8 +152,6 @@ func TestScanner(t *testing.T) {
 				{Type: token.EOF},
 			},
 		},
-		// TODO what if there is only one / ? add test case for this in invalid id test cases
-		// should I peek at the next char?
 		"CommentsCanHugIdentifiers": {
 			in: `A//commenting on A
 			B#commenting on B
@@ -1164,12 +1162,13 @@ spacious
 		})
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in   string
-				want Error
+				in        string
+				want      *token.Token
+				wantError Error
 			}{
 				{
 					in: "/ is not a valid comment",
-					want: Error{
+					wantError: Error{
 						LineNr:      1,
 						CharacterNr: 1,
 						Character:   '/',
@@ -1177,8 +1176,29 @@ spacious
 					},
 				},
 				{
+					in: "A/",
+					want: &token.Token{
+						Type:    token.Identifier,
+						Literal: "A",
+						Start: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+						End: token.Position{
+							Row:    1,
+							Column: 1,
+						},
+					},
+					wantError: Error{
+						LineNr:      1,
+						CharacterNr: 2,
+						Character:   '/',
+						Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+					},
+				},
+				{
 					in: "/# is not a valid comment",
-					want: Error{
+					wantError: Error{
 						LineNr:      1,
 						CharacterNr: 1,
 						Character:   '/',
@@ -1187,7 +1207,7 @@ spacious
 				},
 				{
 					in: "/* is not a valid comment",
-					want: Error{
+					wantError: Error{
 						LineNr:      1,
 						CharacterNr: 26,
 						Character:   0,
@@ -1202,7 +1222,11 @@ spacious
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.want)
+					if test.want != nil {
+						assertNextToken(t, scanner, *test.want)
+					}
+
+					assertError(t, scanner, test.wantError)
 				})
 			}
 		})
@@ -1212,13 +1236,25 @@ spacious
 func assertTokens(t *testing.T, scanner *Scanner, want []token.Token) {
 	t.Helper()
 
-	for i, wantTok := range want {
-		tok, err := scanner.Next()
-
-		require.NoErrorf(t, err, "NextToken() at i=%d", i)
-		require.EqualValuesf(t, tok, wantTok, "NextToken() at i=%d", i)
+	for i, wantToken := range want {
+		assertNextTokenf(t, scanner, wantToken, "Next() at i=%d", i)
 	}
 	assertEOF(t, scanner)
+}
+
+func assertNextToken(t *testing.T, scanner *Scanner, wantToken token.Token) {
+	t.Helper()
+
+	assertNextTokenf(t, scanner, wantToken, "Next()")
+}
+
+func assertNextTokenf(t *testing.T, scanner *Scanner, wantToken token.Token, format string, args ...any) {
+	t.Helper()
+
+	tok, err := scanner.Next()
+
+	require.NoErrorf(t, err, format, args...)
+	require.EqualValuesf(t, tok, wantToken, format, args)
 }
 
 func assertEOF(t *testing.T, scanner *Scanner) {
@@ -1226,8 +1262,8 @@ func assertEOF(t *testing.T, scanner *Scanner) {
 
 	tok, err := scanner.Next()
 
-	assert.NoErrorf(t, err, "NextToken()")
-	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "NextToken()")
+	assert.NoErrorf(t, err, "Next()")
+	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "Next()")
 }
 
 func assertError(t *testing.T, scanner *Scanner, want Error) {
@@ -1236,18 +1272,18 @@ func assertError(t *testing.T, scanner *Scanner, want Error) {
 	tok, err := scanner.Next()
 
 	var wantTok token.Token
-	assert.EqualValuesf(t, tok, wantTok, "NextToken()")
+	assert.EqualValuesf(t, tok, wantTok, "Next()")
 	got, ok := err.(Error)
-	assert.Truef(t, ok, "NextToken() wanted scannerror, instead got %v", err)
+	assert.Truef(t, ok, "Next() wanted scanner.Error, instead got %v", err)
 	if ok {
-		assert.EqualValuesf(t, got, want, "NextToken()")
+		assert.EqualValuesf(t, got, want, "Next()")
 	}
 
 	// TODO is this so that subsequent calls will always get the same error?
 	_, err = scanner.Next()
 	got, ok = err.(Error)
-	assert.Truef(t, ok, "NextToken() wanted scannerror, instead got %v", err)
+	assert.Truef(t, ok, "Next() wanted scanner.Error, instead got %v", err)
 	if ok {
-		assert.EqualValuesf(t, got, want, "NextToken()")
+		assert.EqualValuesf(t, got, want, "Next()")
 	}
 }

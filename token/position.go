@@ -1,9 +1,18 @@
 package token
 
+import (
+	"strconv"
+)
+
 // Position describes a position in dot source code.
 type Position struct {
 	Row    int // Row is the line number starting at 1. A row of zero is not valid.
 	Column int // Column is the horizontal position of in terms of runes starting at 1. A column of zero is not valid.
+}
+
+// String returns the position in line:column format.
+func (p Position) String() string {
+	return strconv.Itoa(p.Row) + ":" + strconv.Itoa(p.Column)
 }
 
 // Before reports whether the position p is before o.

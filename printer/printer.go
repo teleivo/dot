@@ -36,8 +36,8 @@ func NewPrinter(r io.Reader, w io.Writer) *Printer {
 	}
 }
 
-func (p *Printer) Print() error {
-	ps, err := dot.NewParser(p.r)
+func (pr *Printer) Print() error {
+	ps, err := dot.NewParser(pr.r)
 	if err != nil {
 		return err
 	}
@@ -46,13 +46,13 @@ func (p *Printer) Print() error {
 	if err != nil {
 		return err
 	}
-	p.comments = g.Comments
+	pr.comments = g.Comments
 
-	err = p.printNode(g)
+	err = pr.printNode(g)
 	if err != nil {
 		return err
 	}
-	p.printRemainingComments()
+	pr.printRemainingComments()
 
 	return nil
 }

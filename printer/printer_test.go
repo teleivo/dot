@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/dot/printer"
 )
@@ -28,6 +27,16 @@ func TestPrint(t *testing.T) {
 			in: `strict graph 
 					"galaxy"     {}`,
 			want: `strict graph "galaxy" {
+}`,
+		},
+		"NodeWithUnquotedIDPastMaxColumn": {
+			in: `graph {
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+1.11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+}`,
+			want: `graph {
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+	1.11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
 }`,
 		},
 		// World in Chinese each rune is 3 bytes long 世界
@@ -370,7 +379,9 @@ graph {
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
-			assert.EqualValuesf(t, got.String(), test.want, "Print(%q)", test.in)
+			if got.String() != test.want {
+				t.Errorf("\n\ngot:\n%s\n\n\nwant:\n%s\n", got.String(), test.want)
+			}
 		})
 	}
 }

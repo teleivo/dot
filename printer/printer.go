@@ -113,6 +113,13 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 func (p *Printer) printID(id ast.ID) error {
 	p.printComments(id.StartPos)
 
+	if id.Literal[0] != '"' { // print unquoted identifiers as is
+		p.print(id)
+		p.prevToken = token.Identifier
+		p.prevPosition = id.EndPos
+		return nil
+	}
+
 	runeCount := utf8.RuneCountInString(id.Literal)
 	if p.column+p.indentLevel+runeCount <= maxColumn {
 		p.print(id)

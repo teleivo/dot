@@ -1,14 +1,3 @@
-* fix with the help of cmd/tokens
-
-```dot
-graph {  B
-A/
-}
-```
-
-for some reason if there is a B the `A/` is not parsed and the A is dropped. `A//` behaves correctly
-as well as `A/` without a `B`.
-
 * fix breaking up ID
     * if its already broken up I currently break it up again. naive rune counting does not take into
       account that the ID is already broken up
@@ -17,26 +6,8 @@ as well as `A/` without a `B`.
     * should I break up IDs multiple times like comments? I currently only break them up once. IDs that
     are 1000 chars seem ridicolous but who knows :joy:
 
-* fix this case
-
-```dot
-	B [
-		style="filled" //  this should stay with style="filled"
-	]
-```
-
-the Attribute should go on a new line like above but it ends up looking like
-
-```dot
-	B [style="filled" // this should stay with style="filled"
-	]
-```
 * can I classify the print functions into AST, "middle", primitive ones that actually call fmt? and
   limit where I call which? or reduce the number of the different p.print(), p.printString() ones?
-
-* merge adjacent comments?
-* bring back block comments
-    * add a test for a multi-line comment like A -- B /* foo */; B -- C
 
 * add test in dotfmt for
 
@@ -58,20 +29,15 @@ graph {
 
 am I parsing this correctly?
 
+* improve error handling see [Parser](#parser)
+
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
 How to debug/trace then? see Gos trace in the parser
 
-* write cmd/dotfmt
-    * allow multiple nodes on the same line. how to break them up when > maxCol
+* Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
+  be used. Its a mere demo/debugging utility
 
-    * how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
-    Allow users to do that. No more than one empty line though. And will that line be completely
-    empty or be indented as the surrounding code?
-    I need proper token/ast position. for this row and column
-
-    * update README with docs on `dotfmt` and then merge the branch
-
-* add section in readme or add own readme in ./cmd/dotfmt/?
+* update README with docs on `dotfmt`
   * indentation: tabs
   * alignment: spaces
     * every comment starts with one space only, extra whitespace is removed
@@ -93,291 +59,6 @@ How to debug/trace then? see Gos trace in the parser
 
 * properly godoc all the things
 
-* still needed? Reuse some of the tests later when I use the parser to evaluate the AST to the simpler Graph types
-
-```go
-type Graph struct {
-	ID       string
-	Strict   bool
-	Directed bool
-	Nodes    map[string]*Node
-}
-
-type Node struct {
-	ID         string
-	Attributes map[string]Attribute
-}
-
-type Attribute struct {
-	Name, Value string
-}
-
-func TestParser(t *testing.T) {
-	t.Run("Header", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want dot.Graph
-			err  error
-		}{
-			"Empty": {
-				in: "",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{},
-				},
-			},
-			"EmptyDirectedGraph": {
-				in: "digraph {}",
-				want: dot.Graph{
-					Directed: true,
-					Nodes:    map[string]*dot.Node{},
-				},
-			},
-			"EmptyUndirectedGraph": {
-				in: "graph {}",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{},
-				},
-			},
-			"StrictDirectedUnnamedGraph": {
-				in: `strict digraph {}`,
-				want: dot.Graph{
-					Strict:   true,
-					Directed: true,
-					Nodes:    map[string]*dot.Node{},
-				},
-			},
-			"StrictDirectedNamedGraph": {
-				in: `strict digraph dependencies {}`,
-				want: dot.Graph{
-					Strict:   true,
-					Directed: true,
-					ID:       "dependencies",
-					Nodes:    map[string]*dot.Node{},
-				},
-			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, &test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"StrictMustBeFirstKeyword": {
-					in:     "digraph strict {}",
-					errMsg: `got "strict" instead`,
-				},
-				"GraphIDMustComeAfterGraphKeywords": {
-					in:     "dependencies {}",
-					errMsg: `got "dependencies" instead`,
-				},
-				"LeftBraceMustFollow": {
-					in:     "graph dependencies [",
-					errMsg: `got "[" instead`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
-
-	t.Run("NodeStatement", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want dot.Graph
-			err  error
-		}{
-			"OnlyNode": {
-				in: "graph { foo }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {ID: "foo", Attributes: map[string]dot.Attribute{}},
-					},
-				},
-			},
-			"OnlyNodes": {
-				in: "graph { foo ; bar baz }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {ID: "foo", Attributes: map[string]dot.Attribute{}},
-						"bar": {ID: "bar", Attributes: map[string]dot.Attribute{}},
-						"baz": {ID: "baz", Attributes: map[string]dot.Attribute{}},
-					},
-				},
-			},
-			"OnlyNodeWithEmptyAttributeList": {
-				in: "graph { foo [] }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {ID: "foo", Attributes: map[string]dot.Attribute{}},
-					},
-				},
-			},
-			"NodeWithSingleAttribute": {
-				in: "graph { foo [a=b] }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {
-							ID: "foo",
-							Attributes: map[string]dot.Attribute{
-								"a": {Name: "a", Value: "b"},
-							},
-						},
-					},
-				},
-			},
-			"NodeWithAttributesAndTrailingComma": {
-				in: "graph { foo [a=b,] }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {
-							ID: "foo",
-							Attributes: map[string]dot.Attribute{
-								"a": {Name: "a", Value: "b"},
-							},
-						},
-					},
-				},
-			},
-			"NodeWithAttributesAndTrailingSemicolon": {
-				in: "graph { foo [a=b;] }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {
-							ID: "foo",
-							Attributes: map[string]dot.Attribute{
-								"a": {Name: "a", Value: "b"},
-							},
-						},
-					},
-				},
-			},
-			"NodeWithAttributeOverriding": {
-				in: "graph { foo [a=b;c=d]; foo [a=e] }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {
-							ID: "foo",
-							Attributes: map[string]dot.Attribute{
-								"a": {Name: "a", Value: "e"},
-								"c": {Name: "c", Value: "d"},
-							},
-						},
-					},
-				},
-			},
-			"NodeWithMultipleAttributesInSingleBracketPair": {
-				in: "graph { foo [a=b c=d,e=f;g=h] }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {
-							ID: "foo",
-							Attributes: map[string]dot.Attribute{
-								"a": {Name: "a", Value: "b"},
-								"c": {Name: "c", Value: "d"},
-								"e": {Name: "e", Value: "f"},
-								"g": {Name: "g", Value: "h"},
-							},
-						},
-					},
-				},
-			},
-			"NodeWithMultipleAttributesInMultipleBracketPairs": {
-				in: "graph { foo [a=b c=d][e=f;g=h] }",
-				want: dot.Graph{
-					Nodes: map[string]*dot.Node{
-						"foo": {
-							ID: "foo",
-							Attributes: map[string]dot.Attribute{
-								"a": {Name: "a", Value: "b"},
-								"c": {Name: "c", Value: "d"},
-								"e": {Name: "e", Value: "f"},
-								"g": {Name: "g", Value: "h"},
-							},
-						},
-					},
-				},
-			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.New(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, &test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"AttributeListWithoutClosingBracket": {
-					in:     "graph { foo [ }",
-					errMsg: `expected next token to be one of ["]" "identifier"]`,
-				},
-				"AttributeWithoutName": {
-					in:     "graph { foo [ = b ] }",
-					errMsg: `expected next token to be one of ["]" "identifier"]`,
-				},
-				"AttributeWithoutValue": {
-					in:     "graph { foo [ a = ] }",
-					errMsg: `expected next token to be "identifier"`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.New(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
-}
-
-func assertContains(t *testing.T, got, want string) {
-	if !strings.Contains(got, want) {
-		t.Errorf("got %q which does not contain %q", got, want)
-	}
-}
-```
-
 * write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
 * write cmd/validate
 * profile any of the above on a large file, generate a pprof dot file and feed that back into the
@@ -385,6 +66,22 @@ parser as a test via testdata
 
 
 ## Parser
+
+* how to continue generating tokens when finding invalid ones? user the illegal token? how
+  does treesitter do it? they have a missing node and an illegal one? Go has ast.BadExpr for
+  example. Refresh mind on crafting interpreters panic mode. The parser can skip tokens until it finds
+  a safe point. I think sync is used as the word. I think I also saw it in the Go parser or gofumpt.
+
+For example
+
+```dot
+graph {  B
+A/
+}
+```
+
+The scanner can now emit A and then errors on `/`. dotfmt should be able to format this and return
+the error(s) that `/` might miss another `/` or `*`.
 
 * implement parser.Trace like the Go parser
 
@@ -399,11 +96,9 @@ also works so is that language reference outdated?
 * Lexical and Semantic Notes https://graphviz.org/doc/info/lang.html
   * should some of these influence the parser/should it err
   * how does strict affect a graph? no cycles? is that something my parser should validate?
-* how to continue generating tokens when finding invalid ones? create an invalid/illegal token? how
-  does treesitter do it? they have a missing node and an illegal one?
-* Add position start, end to tokens as in Gos' token package. Add them to ast/Node as well like Go
-does? Their columns are bytes not runes, should I use bytes as well?
+
 * Where are commas legal?
+
 * Are `{}` creating a lexical scope? This
 
 ```
@@ -476,6 +171,33 @@ echo 'graph{ 100 200 }' | dot -Tsvg -O
 Warning: syntax ambiguity - badly delimited number '100' in line 1 of <stdin> splits into two tokens
 
 ## dotfmt
+
+* allow multiple nodes on the same line. how to break them up when > maxCol
+
+* how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
+Allow users to do that. No more than one empty line though. And will that line be completely
+empty or be indented as the surrounding code?
+I need proper token/ast position. for this row and column
+
+* make this prettier
+
+```dot
+	B [
+		style="filled" //  this should stay with style="filled"
+	]
+```
+
+the Attribute should go on a new line like above but it ends up looking like
+
+```dot
+	B [style="filled" // this should stay with style="filled"
+	]
+```
+
+comments
+    * bring back block comments
+        * add a test for a multi-line comment like A -- B /* foo */; B -- C
+    * merge adjacent comments?
 
 * do I need to shield against ASTs generated from code?
 * implement isValid and Stringer on token.Position like Go does? the EOF token for example does not

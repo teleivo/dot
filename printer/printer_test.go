@@ -54,11 +54,13 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 		},
 		"NodeStmtWithAttributeIDPastMaxColumn": {
 			in: `graph {
-			"Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries"]
+			"Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
 }`,
 			want: `graph {
 	"Node1234" [label="This is a test of a long attribute value that is past the max column which\
- should be split on word boundaries"]
+ should be split on word boundaries several times of course as long as this is necessary it should\
+ also respect giant URLs\
+ https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
 }`,
 		},
 		// TODO add test with already split quoted ID as input and output to prove it is left unchanged

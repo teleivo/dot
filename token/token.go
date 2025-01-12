@@ -15,6 +15,9 @@ const (
 	// language token should follow the EOF token.
 	EOF
 
+	Identifier // like _A 12 "234"
+	Comment    // like C pre-processor ones '# 34'
+
 	LeftBrace      // {
 	RightBrace     // }
 	LeftBracket    // [
@@ -25,8 +28,6 @@ const (
 	Comma          // ,
 	DirectedEgde   // ->
 	UndirectedEgde // --
-	Identifier     // like _A 12 "234"
-	Comment        // like C pre-processor ones '# 34'
 
 	// Keywords
 	Digraph  // digraph
@@ -41,6 +42,9 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	ILLEGAL: "ILLEGAL",
 	EOF:     "EOF",
 
+	Identifier: "IDENTIFIER",
+	Comment:    "COMMENT",
+
 	LeftBrace:      "{",
 	RightBrace:     "}",
 	LeftBracket:    "[",
@@ -51,8 +55,6 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	Comma:          ",",
 	DirectedEgde:   "->",
 	UndirectedEgde: "--",
-	Identifier:     "identifier",
-	Comment:        "comment",
 
 	// Keywords
 	Digraph:  "digraph",

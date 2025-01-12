@@ -1,15 +1,17 @@
+// Package token defines constants representing the lexical tokens of the DOT language together with
+// operations like printing, detecting Keywords or identifiers.
 package token
 
 import (
 	"strings"
 )
 
-// TokenType represents the types of tokens of the dot language.
+// TokenType represents the types of lexical tokens of the DOT language.
 type TokenType int
 
 const (
 	ILLEGAL TokenType = iota
-	// EOF is not part of the dot language and is used to indicate the end of the file or stream. No
+	// EOF is not part of the DOT language and is used to indicate the end of the file or stream. No
 	// language token should follow the EOF token.
 	EOF
 
@@ -52,7 +54,7 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	Identifier:     "identifier",
 	Comment:        "comment",
 
-	// Keywords,
+	// Keywords
 	Digraph:  "digraph",
 	Edge:     "edge",
 	Graph:    "graph",
@@ -91,7 +93,7 @@ func Type(in string) (TokenType, bool) {
 	return v, ok
 }
 
-// Token represents a token of the dot language.
+// Token represents a token of the DOT language.
 type Token struct {
 	Type       TokenType
 	Literal    string
@@ -106,7 +108,7 @@ func (t Token) String() string {
 	return t.Type.String()
 }
 
-// maxKeywordLen is the length of the longest dot keyword which is "subgraph".
+// maxKeywordLen is the length of the longest DOT keyword which is "subgraph".
 const maxKeywordLen = 8
 
 var keywords = map[string]TokenType{
@@ -118,9 +120,11 @@ var keywords = map[string]TokenType{
 	"subgraph": Subgraph,
 }
 
-// Lookup returns the token type associated with given identifier which is either a dot keyword or a
-// dot id. Dot keywords are case-insensitive. This function expects that the input is a valid dot id
-// as specified in https://graphviz.org/doc/info/lang.html#ids.
+// Lookup returns the token type associated with given identifier which is either a DOT keyword or a
+// DOT ID. DOT keywords are case-insensitive. This function expects that the input is a valid DOT ID
+// as specified in [IDs].
+//
+// [IDs]: https://graphviz.org/doc/info/lang.html#ids
 func Lookup(identifier string) TokenType {
 	if len(identifier) > maxKeywordLen {
 		return Identifier

@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if err := run(os.Stdin, os.Stdout); err != nil {
-		fmt.Fprintf(os.Stderr, "%v", err)
+		fmt.Fprintf(os.Stderr, "stopped scanning due to err: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -26,6 +26,9 @@ func run(r io.Reader, w io.Writer) error {
 
 	for tok, err := sc.Next(); tok.Type != token.EOF; tok, err = sc.Next() {
 		fmt.Fprintf(w, "%s, err: %v\n", tok, err)
+		if err != nil { // adapt once I collect errors
+			return err
+		}
 	}
 
 	return nil

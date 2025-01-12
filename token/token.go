@@ -8,7 +8,10 @@ import (
 type TokenType int
 
 const (
-	Illegal TokenType = iota
+	ILLEGAL TokenType = iota
+	// EOF is not part of the dot language and is used to indicate the end of the file or stream. No
+	// language token should follow the EOF token.
+	EOF
 
 	LeftBrace      // {
 	RightBrace     // }
@@ -30,16 +33,12 @@ const (
 	Node     // node
 	Strict   // strict
 	Subgraph // subgraph
-
-	// TODO move this up under special tokens as Go does. This then leads to a problem as the zero
-	// value for the current token in the parser is EOF.
-	// EOF is not part of the dot language and is used to indicate the end of the file or stream. No
-	// language token should follow the EOF token.
-	EOF
 )
 
 var typeStrings map[TokenType]string = map[TokenType]string{
-	Illegal:        "ILLEGAL",
+	ILLEGAL: "ILLEGAL",
+	EOF:     "EOF",
+
 	LeftBrace:      "{",
 	RightBrace:     "}",
 	LeftBracket:    "[",
@@ -52,6 +51,7 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	UndirectedEgde: "--",
 	Identifier:     "identifier",
 	Comment:        "comment",
+
 	// Keywords,
 	Digraph:  "digraph",
 	Edge:     "edge",
@@ -59,23 +59,20 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	Node:     "node",
 	Strict:   "strict",
 	Subgraph: "subgraph",
-	EOF:      "EOF",
 }
 
 var types map[string]TokenType = map[string]TokenType{
-	"ILLEGAL":    Illegal,
-	"{":          LeftBrace,
-	"}":          RightBrace,
-	"[":          LeftBracket,
-	"]":          RightBracket,
-	":":          Colon,
-	";":          Semicolon,
-	"=":          Equal,
-	",":          Comma,
-	"->":         DirectedEgde,
-	"--":         UndirectedEgde,
-	"identifier": Identifier,
-	"comment":    Comment,
+	"{":  LeftBrace,
+	"}":  RightBrace,
+	"[":  LeftBracket,
+	"]":  RightBracket,
+	":":  Colon,
+	";":  Semicolon,
+	"=":  Equal,
+	",":  Comma,
+	"->": DirectedEgde,
+	"--": UndirectedEgde,
+
 	// Keywords,
 	"digraph":  Digraph,
 	"edge":     Edge,

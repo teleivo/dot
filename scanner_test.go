@@ -1039,6 +1039,32 @@ func TestScanner(t *testing.T) {
 						End:     token.Position{Row: 1, Column: 11},
 					},
 				},
+				{
+					in: `"color\
+#00008844"`,
+					want: token.Token{
+						Type: token.Identifier,
+						Literal: `"color\
+#00008844"`,
+						Start: token.Position{Row: 1, Column: 1},
+						End:   token.Position{Row: 2, Column: 10},
+					},
+				},
+				// this is not legal according to https://graphviz.org/doc/info/lang.html#ids but actually
+				// supported by the dot tooling (this does not work in
+				// https://magjac.com/graphviz-visual-editor maybe it uses an older version of dot. It might
+				// also not an official site)
+				{
+					in: `"color
+#00008844"`,
+					want: token.Token{
+						Type: token.Identifier,
+						Literal: `"color
+#00008844"`,
+						Start: token.Position{Row: 1, Column: 1},
+						End:   token.Position{Row: 2, Column: 10},
+					},
+				},
 			}
 
 			for i, test := range tests {

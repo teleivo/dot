@@ -32,7 +32,9 @@ am I parsing this correctly?
 * improve error handling see [Parser](#parser)
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
-How to debug/trace then? see Gos trace in the parser
+How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
+want something similar for the parser. Is it best to integrate that into the scanner/parser or nicer
+to keep it externally like `cmd/tokens`?
 
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility
@@ -59,8 +61,6 @@ How to debug/trace then? see Gos trace in the parser
 
 * properly godoc all the things
 
-* write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
-* write cmd/validate
 * profile any of the above on a large file, generate a pprof dot file and feed that back into the
 parser as a test via testdata
 
@@ -329,4 +329,5 @@ Questions
 ## Ideas
 
 * how could I make something like :InspectTree in neovim for my parser?
-
+* write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
+* write cmd/validate

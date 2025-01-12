@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/token"
@@ -25,11 +26,28 @@ func run(r io.Reader, w io.Writer) error {
 	}
 
 	for tok, err := sc.Next(); tok.Type != token.EOF; tok, err = sc.Next() {
-		fmt.Fprintf(w, "%s, err: %v\n", tok, err)
+		fmt.Fprintf(w, "%s, err: %v\n", format(tok), err)
 		if err != nil { // adapt once I collect errors
 			return err
 		}
 	}
 
 	return nil
+}
+
+func format(t token.Token) string {
+	var sb strings.Builder
+
+	sb.WriteString(t.Start.String())
+	sb.WriteRune(' ')
+	sb.WriteString(t.End.String())
+	sb.WriteRune(' ')
+
+	if t.Type == token.Identifier {
+		sb.WriteString(t.Literal)
+	} else {
+		sb.WriteString(t.Type.String())
+	}
+
+	return sb.String()
 }

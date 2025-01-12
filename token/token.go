@@ -8,6 +8,8 @@ import (
 type TokenType int
 
 const (
+	// Illegal TokenType = iota
+
 	LeftBrace      TokenType = iota // {
 	RightBrace                      // }
 	LeftBracket                     // [
@@ -98,20 +100,11 @@ type Token struct {
 }
 
 func (t Token) String() string {
-	var sb strings.Builder
-
-	sb.WriteString(t.Start.String())
-	sb.WriteRune(' ')
-	sb.WriteString(t.End.String())
-	sb.WriteRune(' ')
-
 	if t.Type == Identifier {
-		sb.WriteString(t.Literal)
-	} else {
-		sb.WriteString(t.Type.String())
+		return t.Literal
 	}
 
-	return sb.String()
+	return t.Type.String()
 }
 
 // maxKeywordLen is the length of the longest dot keyword which is "subgraph".

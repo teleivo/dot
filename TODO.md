@@ -1,4 +1,4 @@
-* fix
+* fix with the help of cmd/tokens
 
 ```dot
 graph {  B

@@ -8,20 +8,20 @@ import (
 type TokenType int
 
 const (
-	// Illegal TokenType = iota
+	Illegal TokenType = iota
 
-	LeftBrace      TokenType = iota // {
-	RightBrace                      // }
-	LeftBracket                     // [
-	RightBracket                    // ]
-	Colon                           // :
-	Semicolon                       // ;
-	Equal                           // =
-	Comma                           // ,
-	DirectedEgde                    // ->
-	UndirectedEgde                  // --
-	Identifier                      // like _A 12 "234"
-	Comment                         // like C pre-processor ones '# 34'
+	LeftBrace      // {
+	RightBrace     // }
+	LeftBracket    // [
+	RightBracket   // ]
+	Colon          // :
+	Semicolon      // ;
+	Equal          // =
+	Comma          // ,
+	DirectedEgde   // ->
+	UndirectedEgde // --
+	Identifier     // like _A 12 "234"
+	Comment        // like C pre-processor ones '# 34'
 
 	// Keywords
 	Digraph  // digraph
@@ -39,6 +39,7 @@ const (
 )
 
 var typeStrings map[TokenType]string = map[TokenType]string{
+	Illegal:        "ILLEGAL",
 	LeftBrace:      "{",
 	RightBrace:     "}",
 	LeftBracket:    "[",
@@ -62,6 +63,7 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 }
 
 var types map[string]TokenType = map[string]TokenType{
+	"ILLEGAL":    Illegal,
 	"{":          LeftBrace,
 	"}":          RightBrace,
 	"[":          LeftBracket,

@@ -1,10 +1,10 @@
 * fix breaking up ID
     * if its already broken up I currently break it up again. naive rune counting does not take into
       account that the ID is already broken up
-    * how to align comments when I do break them up? right now they are not indented at all. indent to
-    the level of the previous comment?
     * should I break up IDs multiple times like comments? I currently only break them up once. IDs that
     are 1000 chars seem ridicolous but who knows :joy:
+    * how to align comments when I do break them up? right now they are not indented at all. indent to
+    the level of the previous comment?
 
 * can I classify the print functions into AST, "middle", primitive ones that actually call fmt? and
   limit where I call which? or reduce the number of the different p.print(), p.printString() ones?

@@ -11,7 +11,6 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
-// TODO add GraphStart to tests
 func TestParser(t *testing.T) {
 	t.Run("Header", func(t *testing.T) {
 		tests := map[string]struct {
@@ -981,15 +980,15 @@ graph {
 			}{
 				"AttributeListWithoutClosingBracket": {
 					in:     "graph { foo [ }",
-					errMsg: `expected next token to be one of ["]" "identifier"]`,
+					errMsg: `expected next token to be one of ["]" "IDENTIFIER"]`,
 				},
 				"NodeWithPortWithoutName": {
 					in:     "graph { foo: }",
-					errMsg: `expected next token to be "identifier"`,
+					errMsg: `expected next token to be "IDENTIFIER"`,
 				},
 				"NodeWithPortWithoutCompassPoint": {
 					in:     "graph { foo:f: }",
-					errMsg: `expected next token to be "identifier"`,
+					errMsg: `expected next token to be "IDENTIFIER"`,
 				},
 				"NodeWithPortWithInvalidCompassPoint": {
 					in:     "graph { foo:n:bottom }",
@@ -1461,7 +1460,7 @@ graph {
 				},
 				"MissingRHSOperand": {
 					in:     "graph { 1 -- [style=filled] }",
-					errMsg: `expected next token to be one of ["identifier" "subgraph" "{"]`,
+					errMsg: `expected next token to be one of ["IDENTIFIER" "subgraph" "{"]`,
 				},
 			}
 
@@ -1798,11 +1797,11 @@ graph {
 			}{
 				"MissingName": {
 					in:     "graph { = b }",
-					errMsg: `expected an "identifier" before the '='`,
+					errMsg: `expected an "IDENTIFIER" before the '='`,
 				},
 				"MissingValue": {
 					in:     "graph { a = }",
-					errMsg: `expected next token to be "identifier"`,
+					errMsg: `expected next token to be "IDENTIFIER"`,
 				},
 			}
 
@@ -1950,7 +1949,7 @@ graph {
 			}{
 				"MissingClosingBrace": {
 					in:     "graph { { }",
-					errMsg: `expected next token to be one of ["}" "identifier"]`,
+					errMsg: `expected next token to be one of ["}" "IDENTIFIER"]`,
 				},
 			}
 
@@ -2050,7 +2049,7 @@ graph {
 			}{
 				"CPreprocessorStyleEatsClosingBrace": {
 					in:     "graph { # ok }",
-					errMsg: `expected next token to be one of ["}" "identifier"]`,
+					errMsg: `expected next token to be one of ["}" "IDENTIFIER"]`,
 				},
 			}
 

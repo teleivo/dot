@@ -109,7 +109,7 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 		}
 	}
 
-	return stmts, nil
+	return stmts, err
 }
 
 func (p *Parser) parseHeader() (ast.Graph, error) {
@@ -226,7 +226,7 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 	} else if p.curTokenIsOneOf(token.Graph, token.Node, token.Edge) {
 		return p.parseAttrStatement()
 	} else if p.curTokenIs(token.Equal) {
-		return nil, errors.New(`expected an "identifier" before the '='`)
+		return nil, errors.New(`expected an "IDENTIFIER" before the '='`)
 	}
 
 	return nil, nil

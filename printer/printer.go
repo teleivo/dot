@@ -4,7 +4,6 @@ package printer
 import (
 	"fmt"
 	"io"
-	"unicode/utf8"
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/ast"
@@ -113,56 +112,51 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 func (p *Printer) printID(id ast.ID) error {
 	p.printComments(id.StartPos)
 
-	if id.Literal[0] != '"' { // print unquoted identifiers as is
-		p.print(id)
-		p.prevToken = token.Identifier
-		p.prevPosition = id.EndPos
-		return nil
-	}
-
-	runeCount := utf8.RuneCountInString(id.Literal)
-	if p.column+p.indentLevel+runeCount <= maxColumn {
-		p.print(id)
-		p.prevToken = token.Identifier
-		p.prevPosition = id.EndPos
-		return nil
-	}
-
-	var isUnquoted bool
-	runeIndex := p.column
-	breakPointCol := maxColumn - p.indentLevel - 1 // -1 for the continuation \
-	if id.Literal[0] != '"' {
-		isUnquoted = true
-		// for the added opening quote
-		runeIndex++
-	}
-
-	// find the starting byte of the rune that will end up on the next line
-	var breakPointBytes int
-	for i := range id.Literal {
-		runeIndex++
-		if runeIndex > breakPointCol {
-			breakPointBytes = i
-			break
-		}
-	}
-
-	if isUnquoted { // opening quote
-		p.printRune('"')
-	}
-
-	p.printString(id.Literal[:breakPointBytes])
-	// standard C convention of a backslash immediately preceding a newline character
-	p.printRune('\\')
-	p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
-	p.printString(id.Literal[breakPointBytes:])
-
-	if isUnquoted { // closing quote
-		p.printRune('"')
-	}
-
 	p.prevToken = token.Identifier
 	p.prevPosition = id.EndPos
+
+	if id.Literal[0] != '"' { // print unquoted identifiers as is
+		p.print(id)
+		return nil
+	}
+
+	// print opening " using the correct indentation
+	p.printRune('"')
+
+	const offset = 1 // as opening " was printed
+	start, end := offset, offset
+	runeCount := 0
+	for curRuneIdx, curRune := range id.Literal[offset:] {
+		if curRune == '\n' {
+			// TODO why do I need the +1, the newline should be printed by forceNewline
+			p.printStringWithoutIndent(id.Literal[start : curRuneIdx+1])
+			p.forceNewline()
+			start = curRuneIdx + offset + 1
+			end = start
+			runeCount = 0
+		} else if isWhitespace(curRune) {
+			if p.column+runeCount > maxColumn {
+				// standard C convention of a backslash immediately preceding a newline character
+				p.printRuneWithoutIndent('\\')
+				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
+			}
+			p.printStringWithoutIndent(id.Literal[start : curRuneIdx+1])
+			start = curRuneIdx + offset
+			end = start
+			runeCount = 0
+		}
+		runeCount++
+	}
+
+	// TODO scrutinize this, not sure if there is a flaw in here
+	if end < len(id.Literal) {
+		if p.column+runeCount > maxColumn {
+			// standard C convention of a backslash immediately preceding a newline character
+			p.printRuneWithoutIndent('\\')
+			p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
+		}
+		p.printStringWithoutIndent(id.Literal[start:])
+	}
 
 	return nil
 }
@@ -474,6 +468,12 @@ func (p *Printer) printString(a string) {
 	}
 }
 
+func (p *Printer) printStringWithoutIndent(a string) {
+	for _, r := range a {
+		p.printRuneWithoutIndent(r)
+	}
+}
+
 func (p *Printer) print(a fmt.Stringer) {
 	for _, r := range a.String() {
 		p.printRune(r)
@@ -488,12 +488,17 @@ func (p *Printer) printSpace() {
 	p.printRune(' ')
 }
 
-func (p *Printer) printRune(a rune) {
+// TODO should this be aware of r being a newline?
+func (p *Printer) printRune(r rune) {
 	for p.column < p.indentLevel {
 		fmt.Fprintf(p.w, "%c", '\t')
 		p.column++
 	}
 
+	p.printRuneWithoutIndent(r)
+}
+
+func (p *Printer) printRuneWithoutIndent(a rune) {
 	fmt.Fprintf(p.w, "%c", a)
 	if p.row == 0 {
 		p.row = 1

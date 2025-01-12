@@ -31,12 +31,16 @@ func TestPrint(t *testing.T) {
 		},
 		"NodeWithUnquotedIDPastMaxColumn": {
 			in: `graph {
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 1.11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+1.111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111112
 }`,
 			want: `graph {
-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+	bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 	1.11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+	1.111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111112
 }`,
 		},
 		// World in Chinese each rune is 3 bytes long 世界
@@ -48,32 +52,36 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }`,
 		},
-		"NodeWithQuotedIDPastMaxColumn": {
+		"NodeStmtWithAttributeIDPastMaxColumn": {
 			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+			"Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries"]
 }`,
 			want: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-	b"
+	"Node1234" [label="This is a test of a long attribute value that is past the max column which\
+ should be split on word boundaries"]
 }`,
 		},
-		"NodeWithUnquotedIDOfMaxColumn": {
-			in: `graph {
-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
-}`,
-			want: `graph {
-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
-}`,
-		},
-		"NodeWithUnquotedIDPastMaxColumn": {
-			in: `graph {
-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
-}`,
-			want: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-	aab"
-}`,
-		},
+		// TODO add test with already split quoted ID as input and output to prove it is left unchanged
+		// TODO add test with split quoted ID that is split in the wrong place
+		// TODO add test with quoted ID containing newlines. Newlines in the ID should restart the counter towards maxcolumn
+		// TODO add test with \" right at the maxcolumn to show it will be moved together
+		// 		"NodeStmtWithIDOfMaxColumn": {
+		// 			in: `graph {
+		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
+		// }`,
+		// 			want: `graph {
+		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
+		// }`,
+		// 		},
+		// 		"NodeStmtWithIDPastMaxColumn": {
+		// 			in: `graph {
+		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col."]
+		// }`,
+		// 			want: `graph {
+		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max co\
+		// 		l."]
+		// }`,
+		// 		},
 		"NodeStatementsWithPorts": {
 			in: `graph {
 		
@@ -169,24 +177,6 @@ graph     [ 	label="blue",]
 	graph [label="blue"]
 }`,
 		},
-		// TODO think about this again. Newlines in the ID should restart the counter towards maxcolumn
-		// 		"AttrStmtWithIDOfMaxColumn": {
-		// 			in: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
-		// }`,
-		// 			want: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
-		// }`,
-		// 		},
-		// 		"AttrStmtWithIDPastMaxColumn": {
-		// 			in: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col."]
-		// }`,
-		// 			want: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max co\
-		// 		l."]
-		// }`,
-		// 		},
 		"AttributeStmtWithSingleAttribute": {
 			in: `graph {
 label="blue", minlen=2;
@@ -380,7 +370,7 @@ graph {
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
 			if got.String() != test.want {
-				t.Errorf("\n\ngot:\n%s\n\n\nwant:\n%s\n", got.String(), test.want)
+				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", test.in, got.String(), test.want)
 			}
 		})
 	}

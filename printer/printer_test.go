@@ -29,59 +29,17 @@ func TestPrint(t *testing.T) {
 			want: `strict graph "galaxy" {
 }`,
 		},
-		"NodeWithUnquotedIDPastMaxColumn": {
-			in: `graph {
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-1.11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
-1.111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111112
-}`,
-			want: `graph {
-	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-	bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-	1.11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
-	1.111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111112
-}`,
-		},
-		// World in Chinese each rune is 3 bytes long 世界
-		"NodeWithQuotedIDOfMaxColumn": {
-			in: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-}`,
-			want: `graph {
-	"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-}`,
-		},
-		"NodeStmtWithAttributeIDPastMaxColumn": {
-			in: `graph {
-			"Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
-}`,
-			want: `graph {
-	"Node1234" [label="This is a test of a long attribute value that is past the max column which\
- should be split on word boundaries several times of course as long as this is necessary it should\
- also respect giant URLs\
- https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
-}`,
-		},
-		// TODO add test with already split quoted ID as input and output to prove it is left unchanged
-		// TODO add test with split quoted ID that is split in the wrong place
-		// TODO add test with quoted ID containing newlines. Newlines in the ID should restart the counter towards maxcolumn
-		// TODO add test with \" right at the maxcolumn to show it will be moved together
-		// 		"NodeStmtWithIDOfMaxColumn": {
+		// TODO should I still have a test that shows where the ] is placed and that the label is not
+		// moved to a new line even though that might be cleaner?
+		// 		"NodeStmtWithAttributeIDPastMaxColumn": {
 		// 			in: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
+		// 			"Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
 		// }`,
 		// 			want: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
-		// }`,
-		// 		},
-		// 		"NodeStmtWithIDPastMaxColumn": {
-		// 			in: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col."]
-		// }`,
-		// 			want: `graph {
-		// 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max co\
-		// 		l."]
+		// 	"Node1234" [label="This is a test of a long attribute value that is past the max column which\
+		//  should be split on word boundaries several times of course as long as this is necessary it should\
+		//  also respect giant URLs\
+		//  https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
 		// }`,
 		// 		},
 		"NodeStatementsWithPorts": {

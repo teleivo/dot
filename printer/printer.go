@@ -120,42 +120,39 @@ func (p *Printer) printID(id ast.ID) error {
 		return nil
 	}
 
-	// print opening " using the correct indentation
+	// print opening " to start the ID with the correct indentation
 	p.printRune('"')
 
 	const offset = 1 // as opening " was printed
-	start, end := offset, offset
-	runeCount := 0
+	runeCount := 1
+	start := offset
+	var prevRune rune
 	for curRuneIdx, curRune := range id.Literal[offset:] {
-		if curRune == '\n' {
-			// TODO why do I need the +1, the newline should be printed by forceNewline
-			p.printStringWithoutIndent(id.Literal[start : curRuneIdx+1])
+		curRuneIdx += offset // adjust for the opening "
+
+		// newlines without preceding '\' are not mentioned as legal in
+		// https://graphviz.org/doc/info/lang.html#ids but are supported by the dot tooling. Support
+		// such newlines and write them where the user intended them to be
+		if prevRune != '\\' && curRune == '\n' {
+			p.printStringWithoutIndent(id.Literal[start:curRuneIdx]) // print everything up to the newline
 			p.forceNewline()
-			start = curRuneIdx + offset + 1
-			end = start
+			start = curRuneIdx + 1 // start again after the newline
 			runeCount = 0
-		} else if isWhitespace(curRune) {
+			// TODO this is where I need to add some logic to skip any existing ID continuation
+			// } else if prevRune == '\\' && curRune == '\n' {
+		} else if isWhitespace(curRune) || /* closing quote */ (curRune == '"' && curRuneIdx+1 == len(id.Literal)) {
 			if p.column+runeCount > maxColumn {
 				// standard C convention of a backslash immediately preceding a newline character
 				p.printRuneWithoutIndent('\\')
 				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
 			}
+			// print everything up to and including the whitespace or closing quote
 			p.printStringWithoutIndent(id.Literal[start : curRuneIdx+1])
-			start = curRuneIdx + offset
-			end = start
+			start = curRuneIdx + 1 // start again after the whitespace
 			runeCount = 0
 		}
+		prevRune = curRune
 		runeCount++
-	}
-
-	// TODO scrutinize this, not sure if there is a flaw in here
-	if end < len(id.Literal) {
-		if p.column+runeCount > maxColumn {
-			// standard C convention of a backslash immediately preceding a newline character
-			p.printRuneWithoutIndent('\\')
-			p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
-		}
-		p.printStringWithoutIndent(id.Literal[start:])
 	}
 
 	return nil

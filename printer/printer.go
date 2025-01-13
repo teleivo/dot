@@ -132,7 +132,7 @@ func (p *Printer) printID(id ast.ID) error {
 
 		// newlines without preceding '\' are not mentioned as legal in
 		// https://graphviz.org/doc/info/lang.html#ids but are supported by the dot tooling. Support
-		// such newlines and write them where the user intended them to be
+		// such newlines and write them where the user intended them to be.
 		if prevRune != '\\' && curRune == '\n' {
 			p.printStringWithoutIndent(id.Literal[start:curRuneIdx]) // print everything up to the newline
 			p.forceNewline()
@@ -140,16 +140,26 @@ func (p *Printer) printID(id ast.ID) error {
 			runeCount = 0
 			// TODO this is where I need to add some logic to skip any existing ID continuation
 			// } else if prevRune == '\\' && curRune == '\n' {
-		} else if isWhitespace(curRune) || /* closing quote */ (curRune == '"' && curRuneIdx+1 == len(id.Literal)) {
-			if p.column+runeCount > maxColumn {
+		} else if isWhitespace(curRune) {
+			column := p.column + runeCount + 1 // + 1 is for the \ which should end up at <= maxColumn
+			if column > maxColumn {
 				// standard C convention of a backslash immediately preceding a newline character
 				p.printRuneWithoutIndent('\\')
 				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
 			}
-			// print everything up to and including the whitespace or closing quote
-			p.printStringWithoutIndent(id.Literal[start : curRuneIdx+1])
-			start = curRuneIdx + 1 // start again after the whitespace
+			// print everything up to the whitespace (which gets printed as part of the next word)
+			p.printStringWithoutIndent(id.Literal[start:curRuneIdx])
+			start = curRuneIdx // start again at the whitespace
 			runeCount = 0
+		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
+			column := p.column + runeCount + 1 // + 1 is for the \ which should end up at <= maxColumn
+			if column > maxColumn {
+				// standard C convention of a backslash immediately preceding a newline character
+				p.printRuneWithoutIndent('\\')
+				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
+			}
+			// print everything up to and including the closing quote
+			p.printStringWithoutIndent(id.Literal[start : curRuneIdx+1])
 		}
 		prevRune = curRune
 		runeCount++

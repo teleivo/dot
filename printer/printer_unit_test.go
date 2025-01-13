@@ -26,14 +26,15 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 		},
 		// World in Chinese each rune is 3 bytes long 世界
 		"QuotedIDOfMaxColumnIsNotBrokenUp": {
-			in:   `"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
-			want: `"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
+			in:   `"aaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
+			want: `"aaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
 		},
+		// TODO URLs\ could actually be URLs \ and land right on the 100. How would I achieve that?
 		"QuotedIDPastMaxColumnIsBrokenUp": {
 			in: `"This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
-			want: `"This is a test of a long attribute value that is past the max column which should be split on word \
-boundaries several times of course as long as this is necessary it should also respect giant URLs \
-https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
+			want: `"This is a test of a long attribute value that is past the max column which should be split on word\
+ boundaries several times of course as long as this is necessary it should also respect giant URLs\
+ https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
 		// 	// takes the output from QuotedIDPastMaxColumnIsBrokenUp as input and output
 		// 	"BreakingUpQuotedIDIsIdempotent": {

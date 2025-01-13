@@ -324,13 +324,24 @@ graph {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			var got bytes.Buffer
-			p := printer.NewPrinter(strings.NewReader(test.in), &got)
+			var gotFirst bytes.Buffer
+			p := printer.NewPrinter(strings.NewReader(test.in), &gotFirst)
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
-			if got.String() != test.want {
-				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", test.in, got.String(), test.want)
+			if gotFirst.String() != test.want {
+				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", test.in, gotFirst.String(), test.want)
+			}
+
+			t.Logf("print again with the previous output as the input to ensure printing is idempotent")
+
+			var gotSecond bytes.Buffer
+			p = printer.NewPrinter(strings.NewReader(gotFirst.String()), &gotSecond)
+			err = p.Print()
+			require.NoErrorf(t, err, "Print(%q)", gotFirst.String())
+
+			if gotSecond.String() != gotFirst.String() {
+				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", gotFirst.String(), gotSecond.String(), gotFirst.String())
 			}
 		})
 	}

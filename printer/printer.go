@@ -142,11 +142,10 @@ func (p *Printer) printID(id ast.ID) error {
 			// } else if prevRune == '\\' && curRune == '\n' {
 		} else if isWhitespace(curRune) {
 			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
-				// standard C convention of a backslash immediately preceding a newline character
-				p.printRuneWithoutIndent('\\')
-				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
+				p.printLineContinuation()
 			}
 
+			// TODO improve this scandalous indexing :joy:
 			end := curRuneIdx
 			if p.column+runeCount+1 < maxColumn { // the word and whitespace fit on the current line
 				end++
@@ -160,12 +159,9 @@ func (p *Printer) printID(id ast.ID) error {
 			start = end
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
 			if p.column+runeCount+1 > maxColumn { // the word and " do not fit on the current line
-				// standard C convention of a backslash immediately preceding a newline character
-				p.printRuneWithoutIndent('\\')
-				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
+				p.printLineContinuation()
 			}
-			// print everything up to and including the closing quote
-			p.printStringWithoutIndent(id.Literal[start : curRuneIdx+1])
+			p.printStringWithoutIndent(id.Literal[start:])
 		}
 		prevRune = curRune
 		runeCount++
@@ -583,6 +579,13 @@ func (p *Printer) forceNewline() {
 	p.column = 0
 	p.row++
 	p.newline = false
+}
+
+// printLineContinuation prints the standard C convention of a backslash immediately preceding a
+// newline character.
+func (p *Printer) printLineContinuation() {
+	p.printRuneWithoutIndent('\\')
+	p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
 }
 
 // withColumnOffset returns a new position with the added offset to the given positions column.

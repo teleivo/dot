@@ -142,17 +142,25 @@ func (p *Printer) printID(id ast.ID) error {
 			// } else if prevRune == '\\' && curRune == '\n' {
 		} else if isWhitespace(curRune) {
 			column := p.column + runeCount + 1 // + 1 is for the \ which should end up at <= maxColumn
-			if column > maxColumn {
+			if column > maxColumn {            // the word and '\' fit on the line
 				// standard C convention of a backslash immediately preceding a newline character
 				p.printRuneWithoutIndent('\\')
 				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
 			}
-			// print everything up to the whitespace (which gets printed as part of the next word)
-			p.printStringWithoutIndent(id.Literal[start:curRuneIdx])
-			start = curRuneIdx // start again at the whitespace
-			runeCount = 0
+
+			end := curRuneIdx
+			if p.column+runeCount+1 < maxColumn { // the word and whitespace fit on the current line
+				end++
+				runeCount = -1
+			} else {
+				runeCount = 0 // for the whitespace that was not printed
+			}
+
+			// print word (and whitespace if it fits as well)
+			p.printStringWithoutIndent(id.Literal[start:end])
+			start = end
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
-			column := p.column + runeCount + 1 // + 1 is for the \ which should end up at <= maxColumn
+			column := p.column + runeCount + 1 // + 1 is for the " which should end up at <= maxColumn
 			if column > maxColumn {
 				// standard C convention of a backslash immediately preceding a newline character
 				p.printRuneWithoutIndent('\\')

@@ -33,8 +33,8 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 		"QuotedIDPastMaxColumnIsBrokenUp": {
 			in: `"This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 			want: `"This is a test of a long attribute value that is past the max column which should be split on word\
- boundaries several times of course as long as this is necessary it should also respect giant URLs\
- https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
+ boundaries several times of course as long as this is necessary it should also respect giant URLs \
+https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
 		// 	// takes the output from QuotedIDPastMaxColumnIsBrokenUp as input and output
 		// 	"BreakingUpQuotedIDIsIdempotent": {

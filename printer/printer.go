@@ -141,8 +141,7 @@ func (p *Printer) printID(id ast.ID) error {
 			// TODO this is where I need to add some logic to skip any existing ID continuation
 			// } else if prevRune == '\\' && curRune == '\n' {
 		} else if isWhitespace(curRune) {
-			column := p.column + runeCount + 1 // + 1 is for the \ which should end up at <= maxColumn
-			if column > maxColumn {            // the word and '\' fit on the line
+			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
 				// standard C convention of a backslash immediately preceding a newline character
 				p.printRuneWithoutIndent('\\')
 				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment
@@ -160,8 +159,7 @@ func (p *Printer) printID(id ast.ID) error {
 			p.printStringWithoutIndent(id.Literal[start:end])
 			start = end
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
-			column := p.column + runeCount + 1 // + 1 is for the " which should end up at <= maxColumn
-			if column > maxColumn {
+			if p.column+runeCount+1 > maxColumn { // the word and " do not fit on the current line
 				// standard C convention of a backslash immediately preceding a newline character
 				p.printRuneWithoutIndent('\\')
 				p.forceNewline() // immediately print the newline as there cannot be any interspersed comment

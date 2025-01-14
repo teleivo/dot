@@ -26,8 +26,8 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 		},
 		// World in Chinese each rune is 3 bytes long 世界
 		"QuotedIDOfMaxColumnIsNotBrokenUp": {
-			in:   `"aaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
-			want: `"aaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
+			in:   `"aaaaaaaaaaaaa aaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\""`,
+			want: `"aaaaaaaaaaaaa aaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\""`,
 		},
 		// TODO URLs\ could actually be URLs \ and land right on the 100. How would I achieve that?
 		"QuotedIDPastMaxColumnIsBrokenUp": {
@@ -52,7 +52,6 @@ https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68f
 		// should be stripped and \\n be placed as if the ID never had any.
 		// TODO how does my current approach deal with special characters? as whitespace is used as a
 		// word boundary
-		// TODO test with escaped " that my closing quote logic is sound
 	}
 
 	for name, test := range tests {

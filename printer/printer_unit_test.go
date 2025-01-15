@@ -41,11 +41,8 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
  boundaries several times of course as long as this is necessary it should also respect giant URLs \
 https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
-		// TODO fix this! the space after the URLs is misplaced onto the next line. The rest is
-		// working. how could the space be slurped onto the previous line?
-		// TODO split the failing case into its own test? so URLs\ into one test and URLs \	into
-		// another?
-		// TODO are there some more interesting places I can misplace line continuations
+		// input uses the same text as in QuotedIDPastMaxColumnIsBrokenUp with line continuations in
+		// places they should not be i.e. too early and too late
 		"QuotedIDWithOutOfPlaceLineContinuations": {
 			in: `"This is a test of a long attribute \
 value that is past the max column which\
@@ -60,9 +57,6 @@ https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68f
 "`,
 			want: `"This is an ID that does not need a split"`,
 		},
-		// TODO how does my current approach deal with special characters? as whitespace is used as a
-		// word boundary
-		// TODO add idempotency test to main printer test as well
 	}
 
 	for name, test := range tests {
@@ -75,7 +69,7 @@ https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68f
 
 			require.EqualValuesf(t, gotFirst.String(), test.want, "printID")
 
-			t.Logf("printID should be idempotent")
+			t.Logf("print again with the previous output as the input to ensure printing is idempotent")
 
 			var gotSecond bytes.Buffer
 			p = Printer{w: &gotSecond}

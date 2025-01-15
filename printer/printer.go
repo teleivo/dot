@@ -123,6 +123,7 @@ func (p *Printer) printID(id ast.ID) error {
 	// print opening " to start the ID with the correct indentation
 	p.printRune('"')
 
+	// TODO make this mess acceptable!
 	const offset = 1 // as opening " was printed
 	runeCount := 1
 	start := offset

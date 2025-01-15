@@ -42,7 +42,10 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
 		// TODO fix this! the space after the URLs is misplaced onto the next line. The rest is
-		// working
+		// working. how could the space be slurped onto the previous line?
+		// TODO split the failing case into its own test? so URLs\ into one test and URLs \	into
+		// another?
+		// TODO are there some more interesting places I can misplace line continuations
 		"QuotedIDWithOutOfPlaceLineContinuations": {
 			in: `"This is a test of a long attribute \
 value that is past the max column which\

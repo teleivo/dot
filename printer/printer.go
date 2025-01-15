@@ -155,12 +155,18 @@ func (p *Printer) printID(id ast.ID) error {
 			runeCount = 0
 			start = end + 2 // skip the line continuation in id.Literal
 		} else if isWhitespace(curRune) {
+			// TODO improve this scandalous indexing :joy:
+			end := curRuneIdx
+			if runeCount == 1 {
+				// end++
+				p.printStringWithoutIndent(id.Literal[start:end])
+				runeCount = 0
+				start = end
+			}
 			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
 				p.printLineContinuation()
 			}
 
-			// TODO improve this scandalous indexing :joy:
-			end := curRuneIdx
 			if p.column+runeCount+1 < maxColumn { // the word and whitespace fit on the current line
 				end++
 				runeCount = -1

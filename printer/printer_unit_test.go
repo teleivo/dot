@@ -41,21 +41,21 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
  boundaries several times of course as long as this is necessary it should also respect giant URLs \
 https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
-		"QuotedIDWithUnnecessaryLineContinuationBeforeClosingQuote": {
-			in: `"This is an ID that does not need a split\
-"`,
-			want: `"This is an ID that does not need a split"`,
-		},
-		// TODO add test with split quoted ID that is split in a different place than I would, these
-		// should be stripped and \\n be placed as if the ID never had any.
+		// TODO fix this! the space after the URLs is misplaced onto the next line. The rest is
+		// working
 		"QuotedIDWithOutOfPlaceLineContinuations": {
 			in: `"This is a test of a long attribute \
 value that is past the max column which\
-should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs\
+ should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs\
  https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 			want: `"This is a test of a long attribute value that is past the max column which should be split on word\
  boundaries several times of course as long as this is necessary it should also respect giant URLs \
 https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
+		},
+		"QuotedIDWithUnnecessaryLineContinuationBeforeClosingQuote": {
+			in: `"This is an ID that does not need a split\
+"`,
+			want: `"This is an ID that does not need a split"`,
 		},
 		// TODO how does my current approach deal with special characters? as whitespace is used as a
 		// word boundary

@@ -139,7 +139,21 @@ func (p *Printer) printID(id ast.ID) error {
 			start = curRuneIdx + 1 // start again after the newline
 			runeCount = 0
 			// TODO this is where I need to add some logic to skip any existing ID continuation
-			// } else if prevRune == '\\' && curRune == '\n' {
+		} else if prevRune == '\\' && curRune == '\n' {
+			// does all up to \ fit?
+			runeCount -= 2
+			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
+				p.printLineContinuation()
+			}
+
+			// print everything up to the line continuation in the id.Literal
+			end := curRuneIdx - 1
+
+			// print word (and whitespace if it fits as well)
+			p.printStringWithoutIndent(id.Literal[start:end])
+
+			runeCount = 0
+			start = end + 2 // skip the line continuation in id.Literal
 		} else if isWhitespace(curRune) {
 			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
 				p.printLineContinuation()

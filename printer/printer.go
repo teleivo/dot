@@ -138,7 +138,7 @@ func (p *Printer) printID(id ast.ID) error {
 			// TODO does it make the code clearer if the runeCount already contains the curRune?
 			// right now endIdx is exclusive curRune as well as runeCount
 
-			// does the word without a separator fit onto this line?
+			// does the word without a separator fit onto the current line
 			endIdx := curRuneIdx
 			endColumn := p.column + runeCount
 			if prevRune == '\\' && curRune == '\n' {
@@ -160,7 +160,8 @@ func (p *Printer) printID(id ast.ID) error {
 			}
 			runeCount = 0
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
-			if p.column+runeCount+1 > maxColumn { // the word and " do not fit on the current line
+			// does the word and " fit onto the current line
+			if p.column+runeCount+1 > maxColumn {
 				p.printLineContinuation()
 			}
 			p.printStringWithoutIndent(id.Literal[start:])

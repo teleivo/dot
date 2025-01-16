@@ -135,11 +135,10 @@ func (p *Printer) printID(id ast.ID) error {
 		// https://graphviz.org/doc/info/lang.html#ids but are supported by the dot tooling. Support
 		// such newlines and write them where the user intended them to be.
 		if prevRune != '\\' && curRune == '\n' {
-			p.printStringWithoutIndent(id.Literal[start:curRuneIdx]) // print everything up to the newline
-			p.forceNewline()
-			start = curRuneIdx + 1 // start again after the newline
+			end := curRuneIdx + 1
+			p.printStringWithoutIndent(id.Literal[start:end]) // print everything up to the newline
+			start = end                                       // start again after the newline
 			runeCount = 0
-			// TODO this is where I need to add some logic to skip any existing ID continuation
 		} else if prevRune == '\\' && curRune == '\n' {
 			// does all up to \ fit?
 			runeCount -= 2
@@ -510,16 +509,18 @@ func (p *Printer) print(a fmt.Stringer) {
 	}
 }
 
-func (p *Printer) printTab() {
-	p.printRune('\t')
-}
-
 func (p *Printer) printSpace() {
 	p.printRune(' ')
 }
 
-// TODO should this be aware of r being a newline?
+// printRune prints the rune at the current indentation level. Use [Printer.printRuneWithoutIndent]
+// to print the rune without indentation.
 func (p *Printer) printRune(r rune) {
+	if r == '\n' {
+		p.forceNewline()
+		return
+	}
+
 	for p.column < p.indentLevel {
 		fmt.Fprintf(p.w, "%c", '\t')
 		p.column++
@@ -528,8 +529,13 @@ func (p *Printer) printRune(r rune) {
 	p.printRuneWithoutIndent(r)
 }
 
-func (p *Printer) printRuneWithoutIndent(a rune) {
-	fmt.Fprintf(p.w, "%c", a)
+func (p *Printer) printRuneWithoutIndent(r rune) {
+	if r == '\n' {
+		p.forceNewline()
+		return
+	}
+
+	fmt.Fprintf(p.w, "%c", r)
 	if p.row == 0 {
 		p.row = 1
 	}
@@ -602,7 +608,7 @@ func (p *Printer) forceNewline() {
 	p.newline = false
 }
 
-// printLineContinuation prints the standard C convention of a backslash immediately preceding a
+// printLineContinuation prints the standard C convention of a backslash immediately followed by a
 // newline character.
 func (p *Printer) printLineContinuation() {
 	p.printRuneWithoutIndent('\\')

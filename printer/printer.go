@@ -134,11 +134,13 @@ func (p *Printer) printID(id ast.ID) error {
 		// https://graphviz.org/doc/info/lang.html#ids but are supported by the dot tooling. Support
 		// such newlines and write them where the user intended them to be.
 
-		// TODO does it make the code clearer if the runeCount already contains the curRune?
 		if isWhitespace(curRune) || curRune == '\n' {
+			// TODO does it make the code clearer if the runeCount already contains the curRune?
+			// right now endIdx is exclusive curRune as well as runeCount
+
 			// does the word without a separator fit onto this line?
 			endIdx := curRuneIdx
-			endColumn := p.column + runeCount + 1 // +1 stands for \ which counts towards the maxColumn
+			endColumn := p.column + runeCount // + 1 // +1 stands for \ which counts towards the maxColumn
 			if prevRune == '\\' && curRune == '\n' {
 				endIdx--
 				endColumn -= 2
@@ -150,11 +152,11 @@ func (p *Printer) printID(id ast.ID) error {
 			p.printStringWithoutIndent(id.Literal[start:endIdx])
 
 			start = endIdx
-			if prevRune == '\\' && curRune == '\n' { // skip the line continuation runes
+			if prevRune == '\\' && curRune == '\n' { // line continuation has been dealt with so skip these
 				start += 2
-				// } else if p.column+1 < maxColumn { // print the whitespace if it fits
-				// 	p.printRuneWithoutIndent(curRune)
-				// 	start++
+			} else if isWhitespace(curRune) && p.column+1 < maxColumn { // print the whitespace if it fits
+				p.printRuneWithoutIndent(curRune)
+				start++
 				// } else if curRune == '\n' {
 				// 	p.printRuneWithoutIndent(curRune)
 				// 	start++

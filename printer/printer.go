@@ -133,52 +133,33 @@ func (p *Printer) printID(id ast.ID) error {
 		// newlines without preceding '\' are not mentioned as legal in
 		// https://graphviz.org/doc/info/lang.html#ids but are supported by the dot tooling. Support
 		// such newlines and write them where the user intended them to be.
-		if prevRune != '\\' && curRune == '\n' { // print pending runes including the newline
-			end := curRuneIdx + 1
-			p.printStringWithoutIndent(id.Literal[start:end])
 
-			runeCount = 0
-			start = end
-		} else if prevRune == '\\' && curRune == '\n' { // normalize line continuation position
-			// if the line continuation is too early => ignore
-			// if the line continuation is in the right spot => print it
-			// if the line continuation is too late => print one before (then potentially ignore the later one)
-
-			// does word up to \ fit?
-			runeCount -= 2
-			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
+		// TODO does it make the code clearer if the runeCount already contains the curRune?
+		if isWhitespace(curRune) || curRune == '\n' {
+			// does the word without a separator fit onto this line?
+			endIdx := curRuneIdx
+			endColumn := p.column + runeCount + 1 // +1 stands for \ which counts towards the maxColumn
+			if prevRune == '\\' && curRune == '\n' {
+				endIdx--
+				endColumn -= 2
+			}
+			if endColumn > maxColumn { // the word and \ do not fit on the current line
 				p.printLineContinuation()
 			}
 
-			// print everything up to the line continuation runes
-			end := curRuneIdx - 1
-			p.printStringWithoutIndent(id.Literal[start:end])
+			p.printStringWithoutIndent(id.Literal[start:endIdx])
 
+			start = endIdx
+			if prevRune == '\\' && curRune == '\n' { // skip the line continuation runes
+				start += 2
+				// } else if p.column+1 < maxColumn { // print the whitespace if it fits
+				// 	p.printRuneWithoutIndent(curRune)
+				// 	start++
+				// } else if curRune == '\n' {
+				// 	p.printRuneWithoutIndent(curRune)
+				// 	start++
+			}
 			runeCount = 0
-			start = end + 2 // skip the line continuation runes
-		} else if isWhitespace(curRune) {
-			end := curRuneIdx
-			if runeCount == 1 {
-				// end++
-				p.printStringWithoutIndent(id.Literal[start:end])
-				runeCount = 0
-				start = end
-			}
-			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
-				p.printLineContinuation()
-			}
-
-			if p.column+runeCount+1 < maxColumn { // the word and whitespace fit on the current line
-				end++
-				runeCount = -1
-			} else {
-				runeCount = 0 // for the whitespace that was not printed
-			}
-
-			// print word (and whitespace if it fits as well)
-			p.printStringWithoutIndent(id.Literal[start:end])
-
-			start = end
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
 			if p.column+runeCount+1 > maxColumn { // the word and " do not fit on the current line
 				p.printLineContinuation()

@@ -139,6 +139,10 @@ func (p *Printer) printID(id ast.ID) error {
 			runeCount = 0
 			start = end
 		} else if prevRune == '\\' && curRune == '\n' { // normalize line continuation position
+			// if the line continuation is too early => ignore
+			// if the line continuation is in the right spot => print it
+			// if the line continuation is too late => print one before (then potentially ignore the later one)
+
 			// does all up to \ fit?
 			runeCount -= 2
 			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line

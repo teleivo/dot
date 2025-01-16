@@ -136,6 +136,7 @@ func (p *Printer) printID(id ast.ID) error {
 		if prevRune != '\\' && curRune == '\n' { // print pending runes including the newline
 			end := curRuneIdx + 1
 			p.printStringWithoutIndent(id.Literal[start:end])
+
 			runeCount = 0
 			start = end
 		} else if prevRune == '\\' && curRune == '\n' { // normalize line continuation position
@@ -143,20 +144,18 @@ func (p *Printer) printID(id ast.ID) error {
 			// if the line continuation is in the right spot => print it
 			// if the line continuation is too late => print one before (then potentially ignore the later one)
 
-			// does all up to \ fit?
+			// does word up to \ fit?
 			runeCount -= 2
 			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
 				p.printLineContinuation()
 			}
 
-			// print everything up to the line continuation in the id.Literal
+			// print everything up to the line continuation runes
 			end := curRuneIdx - 1
-
-			// print word (and whitespace if it fits as well)
 			p.printStringWithoutIndent(id.Literal[start:end])
 
 			runeCount = 0
-			start = end + 2 // skip the line continuation in id.Literal
+			start = end + 2 // skip the line continuation runes
 		} else if isWhitespace(curRune) {
 			end := curRuneIdx
 			if runeCount == 1 {
@@ -178,6 +177,7 @@ func (p *Printer) printID(id ast.ID) error {
 
 			// print word (and whitespace if it fits as well)
 			p.printStringWithoutIndent(id.Literal[start:end])
+
 			start = end
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
 			if p.column+runeCount+1 > maxColumn { // the word and " do not fit on the current line

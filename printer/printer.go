@@ -109,6 +109,10 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 	return nil
 }
 
+// printID prints a DOT [identifier]. newlines without preceding '\' are not mentioned as legal but
+// are supported by the DOT tooling. Such newlines are normalized to line continuations.
+//
+// [identifier:] https://graphviz.org/doc/info/lang.html#ids
 func (p *Printer) printID(id ast.ID) error {
 	p.printComments(id.StartPos)
 
@@ -130,20 +134,16 @@ func (p *Printer) printID(id ast.ID) error {
 	for curRuneIdx, curRune := range id.Literal[offset:] {
 		curRuneIdx += offset // adjust for the opening "
 
-		// newlines without preceding '\' are not mentioned as legal in
-		// https://graphviz.org/doc/info/lang.html#ids but are supported by the dot tooling. Support
-		// such newlines and write them where the user intended them to be.
-
 		if isWhitespace(curRune) || curRune == '\n' {
-			// TODO does it make the code clearer if the runeCount already contains the curRune?
-			// right now endIdx is exclusive curRune as well as runeCount
-
 			// does the word without a separator fit onto the current line
 			endIdx := curRuneIdx
 			endColumn := p.column + runeCount
-			if prevRune == '\\' && curRune == '\n' {
+			if prevRune == '\\' && curRune == '\n' { // line continuation
 				endIdx--
-				endColumn -= 2
+				endColumn -= 1
+			} else if curRune != '\n' && runeCount == 1 { // single whitespace
+				endIdx++
+				endColumn++
 			}
 			if endColumn > maxColumn { // the word and \ do not fit on the current line
 				p.printLineContinuation()
@@ -154,7 +154,7 @@ func (p *Printer) printID(id ast.ID) error {
 			start = endIdx
 			if prevRune == '\\' && curRune == '\n' { // line continuation has been dealt with so skip these
 				start += 2
-			} else if isWhitespace(curRune) && p.column+1 < maxColumn { // print the whitespace if it fits
+			} else if curRune != '\n' && runeCount != 1 && p.column+1 < maxColumn { // print the whitespace if it fits
 				p.printRuneWithoutIndent(curRune)
 				start++
 			}

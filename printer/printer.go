@@ -140,7 +140,7 @@ func (p *Printer) printID(id ast.ID) error {
 
 			// does the word without a separator fit onto this line?
 			endIdx := curRuneIdx
-			endColumn := p.column + runeCount // + 1 // +1 stands for \ which counts towards the maxColumn
+			endColumn := p.column + runeCount
 			if prevRune == '\\' && curRune == '\n' {
 				endIdx--
 				endColumn -= 2
@@ -157,9 +157,6 @@ func (p *Printer) printID(id ast.ID) error {
 			} else if isWhitespace(curRune) && p.column+1 < maxColumn { // print the whitespace if it fits
 				p.printRuneWithoutIndent(curRune)
 				start++
-				// } else if curRune == '\n' {
-				// 	p.printRuneWithoutIndent(curRune)
-				// 	start++
 			}
 			runeCount = 0
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {

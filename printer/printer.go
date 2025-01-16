@@ -122,9 +122,8 @@ func (p *Printer) printID(id ast.ID) error {
 
 	// print opening " to start the ID with the correct indentation
 	p.printRune('"')
-
-	// TODO make this mess acceptable!
-	const offset = 1 // as opening " was printed
+	// adjust indices for the opening " which was already printed
+	const offset = 1
 	runeCount := 1
 	start := offset
 	var prevRune rune
@@ -134,12 +133,12 @@ func (p *Printer) printID(id ast.ID) error {
 		// newlines without preceding '\' are not mentioned as legal in
 		// https://graphviz.org/doc/info/lang.html#ids but are supported by the dot tooling. Support
 		// such newlines and write them where the user intended them to be.
-		if prevRune != '\\' && curRune == '\n' {
+		if prevRune != '\\' && curRune == '\n' { // print pending runes including the newline
 			end := curRuneIdx + 1
-			p.printStringWithoutIndent(id.Literal[start:end]) // print everything up to the newline
-			start = end                                       // start again after the newline
+			p.printStringWithoutIndent(id.Literal[start:end])
 			runeCount = 0
-		} else if prevRune == '\\' && curRune == '\n' {
+			start = end
+		} else if prevRune == '\\' && curRune == '\n' { // normalize line continuation position
 			// does all up to \ fit?
 			runeCount -= 2
 			if p.column+runeCount+1 > maxColumn { // the word and '\' do not fit on the current line
@@ -155,7 +154,6 @@ func (p *Printer) printID(id ast.ID) error {
 			runeCount = 0
 			start = end + 2 // skip the line continuation in id.Literal
 		} else if isWhitespace(curRune) {
-			// TODO improve this scandalous indexing :joy:
 			end := curRuneIdx
 			if runeCount == 1 {
 				// end++
@@ -183,6 +181,7 @@ func (p *Printer) printID(id ast.ID) error {
 			}
 			p.printStringWithoutIndent(id.Literal[start:])
 		}
+
 		prevRune = curRune
 		runeCount++
 	}

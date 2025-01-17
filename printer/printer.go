@@ -134,17 +134,32 @@ func (p *Printer) printID(id ast.ID) error {
 	for curRuneIdx, curRune := range id.Literal[offset:] {
 		curRuneIdx += offset // adjust for the opening "
 
-		if isWhitespace(curRune) {
+		if prevRune != '\\' && curRune == '\n' {
+			endColumn := p.column + runeCount - 1
+			if endColumn > maxColumn { // the word without '\n' does not fit onto the current line
+				p.printLineContinuation()
+			}
+
+			endIdx := curRuneIdx + 1
+			p.printStringWithoutIndent(id.Literal[start:endIdx])
+
+			start = endIdx
+			runeCount = 0
+		} else if isWhitespace(curRune) {
 			// print word without separator
 			endIdx := curRuneIdx
 			endColumn := p.column + runeCount
 			if prevRune == '\\' && curRune == '\n' { // excluding line continuation
 				endIdx--
 				endColumn--
+			} else if curRune == '\n' {
+				endColumn--
 			} else if curRune != '\n' && runeCount == 1 { // word is only whitespace
 				endIdx++
 				endColumn++
 			}
+			// TODO why is this working with > even if I did not add the +1 for the potential \? does
+			// runeCount Incl the separator after all?
 			if endColumn > maxColumn { // the word and \ do not fit on the current line
 				p.printLineContinuation()
 			}

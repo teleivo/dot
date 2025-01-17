@@ -14,6 +14,14 @@ func TestPrintID(t *testing.T) {
 		in   string
 		want string
 	}{
+		"UnquotedIDEmpty": {
+			in:   `""`,
+			want: `""`,
+		},
+		"UnquotedIDOnlyWhitespace": {
+			in:   `"  	  "`,
+			want: `"  	  "`,
+		},
 		"UnquotedIDPastMaxColumnIsNotBrokenUp": {
 			in: `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -41,16 +49,22 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
  boundaries several times of course as long as this is necessary it should also respect giant URLs \
 https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
-		// TODO fix idempotency error
 		"QuotedIDPastMaxColumnWithMultipleWhitespaces": {
-			in: `"This is a test of a long attribute value that is past the max column which should be split on word  boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
+			in: `"This is a test of a long attribute value that is past the max column which should be split on word  boundaries several times of course as long as this is necessary it should also respect giant URLs 	https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 			want: `"This is a test of a long attribute value that is past the max column which should be split on word\
   boundaries several times of course as long as this is necessary it should also respect giant URLs\
- https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
+ 	\
+https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
-		// TODO how hard / complex would it make my code to support newlines without line continuation?
+		"QuotedIDWithNewlinesWithoutLineContinuations": {
+			in: `"This does not need to be split but
+	wants to!"`,
+			want: `"This does not need to be split but
+	wants to!"`,
+		},
 		// TODO add test with pure newlines in the correct spot	where a line continuation should go
 		// these should be normalized
+
 		// input uses the same text as in QuotedIDPastMaxColumnIsBrokenUp with line continuations in
 		// places they should not be i.e. too early and too late
 		"QuotedIDWithOutOfPlaceLineContinuations": {

@@ -128,20 +128,20 @@ func (p *Printer) printID(id ast.ID) error {
 	p.printRune('"')
 	// adjust indices for the opening " which was already printed
 	const offset = 1
-	runeCount := 1
+	runeCount := 0
 	start := offset
 	var prevRune rune
 	for curRuneIdx, curRune := range id.Literal[offset:] {
 		curRuneIdx += offset // adjust for the opening "
 
-		if isWhitespace(curRune) || curRune == '\n' {
-			// does the word without a separator fit onto the current line
+		if isWhitespace(curRune) {
+			// print word without separator
 			endIdx := curRuneIdx
 			endColumn := p.column + runeCount
-			if prevRune == '\\' && curRune == '\n' { // line continuation
+			if prevRune == '\\' && curRune == '\n' { // excluding line continuation
 				endIdx--
-				endColumn -= 1
-			} else if curRune != '\n' && runeCount == 1 { // single whitespace
+				endColumn--
+			} else if curRune != '\n' && runeCount == 1 { // word is only whitespace
 				endIdx++
 				endColumn++
 			}
@@ -152,11 +152,18 @@ func (p *Printer) printID(id ast.ID) error {
 			p.printStringWithoutIndent(id.Literal[start:endIdx])
 
 			start = endIdx
-			if prevRune == '\\' && curRune == '\n' { // line continuation has been dealt with so skip these
-				start += 2
-			} else if curRune != '\n' && runeCount != 1 && p.column+1 < maxColumn { // print the whitespace if it fits
+
+			// print the remaining whitespace after a word
+			if curRune != '\n' && runeCount != 1 {
+				if p.column+2 > maxColumn {
+					p.printLineContinuation()
+				}
 				p.printRuneWithoutIndent(curRune)
 				start++
+			}
+
+			if prevRune == '\\' && curRune == '\n' { // skip line continuation as it has been dealt with
+				start += 2
 			}
 			runeCount = 0
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {

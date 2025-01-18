@@ -1,7 +1,3 @@
-* fix last todo on printID which is make it readable!
-    * fix remaining test related to IDs in the main printer test
-    * then merge into master
-
 * can I classify the print functions into AST, "middle", primitive ones that actually call fmt? and
   limit where I call which? or reduce the number of the different p.print(), p.printString() ones?
 
@@ -168,13 +164,40 @@ Warning: syntax ambiguity - badly delimited number '100' in line 1 of <stdin> sp
 
 ## dotfmt
 
-* allow multiple nodes on the same line. how to break them up when > maxCol
+* bring back block comments
+    * add a test for a multi-line comment like A -- B /* foo */; B -- C
 
+* there should be an off by one error in my mind when it comes to printID as runeCount does not
+include the separator \n and I decrement the endColumn to account for prevRune '\'. It does look
+like its working though. editors do show different counts for columns :joy: which confuse me. I
+guess column count can differ in terms of what they mean.
+
+```go
+if endColumn > maxColumn { // the word and \ do not fit on the current line
+```
+
+Alignment
+* use https://nick-gravgaard.com/elastic-tabstops/
+    * via https://pkg.go.dev/text/tabwriter
+    * https://github.com/mvdan/gofumpt/issues/2
 * how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
 Allow users to do that. No more than one empty line though. And will that line be completely
 empty or be indented as the surrounding code?
 I need proper token/ast position. for this row and column
+* improve breaking up long lines
+  * Only the ID individually is considered right now. In this example `]` exceeds the maxCol
 
+```dot
+	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
+```
+
+* align multiple attribute values (and `=`)
+	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
+		color = "blue"
+		len   = 2.6
+	]`
+ should that then apply to the entire file :joy:? as global attributes can be set on the
+graph/subraph as well
 * make this prettier
 
 ```dot
@@ -190,9 +213,9 @@ the Attribute should go on a new line like above but it ends up looking like
 	]
 ```
 
+* allow multiple nodes on the same line? how to break them up when > maxCol
+
 comments
-    * bring back block comments
-        * add a test for a multi-line comment like A -- B /* foo */; B -- C
     * merge adjacent comments?
     * how to align comments when I do break them up? right now they are not indented at all. indent to
     the level of the previous comment?
@@ -271,30 +294,13 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
-* improve breaking up long lines
-  * Only the ID individually is considered right now. In this example `]` exceeds the maxCol
+* support subraph shorthand using `{}` and don't always print `subgraph`
 
-```dot
-	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
-```
-  * Reuse what I did for comments: Only break on word boundaries? So `col` does not turn into `co\l`
-
-* align multiple attribute values (and `=`)
-	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
-		color = "blue"
-		len   = 2.6
-	]`
- should that then apply to the entire file :joy:? as global attributes can be set on the
-graph/subraph as well
+* support + on IDs
 
 * strip unnecessary quotes
   * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
   * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
-
-* keep the indentation when splitting IDs to multiple lines?
-  * the parser would need to support + so I can concatenat IDs
-
-* maybe: support subraph shorthand using `{}` and don't always print `subgraph`
 
 * join adjacent comments? unless there is an empty newline in between them
 
@@ -328,4 +334,3 @@ Questions
 
 * how could I make something like :InspectTree in neovim for my parser?
 * write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
-* write cmd/validate

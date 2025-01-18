@@ -37,11 +37,11 @@ bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 			in:   `"aaaaaaaaaaaaa aaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\""`,
 			want: `"aaaaaaaaaaaaa aaaaaaaaa\"aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\""`,
 		},
-		"QuotedIDOfWithNonLineContinuationNewlines": {
+		"QuotedIDWithNewlinesWithoutLineContinuations": {
 			in: `"aaaaaaaaaaaaa aaaaaaaaa
-			aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" bbbbb cccccc ddddd"`,
+	aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" bbbbb cccccc ddddd"`,
 			want: `"aaaaaaaaaaaaa aaaaaaaaa
-			aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" bbbbb cccccc ddddd"`,
+	aaaaaaaaaaaaaaaaaaaaaaaa世界aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" bbbbb cccccc ddddd"`,
 		},
 		"QuotedIDPastMaxColumnIsBrokenUp": {
 			in: `"This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
@@ -56,18 +56,12 @@ https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68f
  	\
 https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},
-		"QuotedIDWithNewlinesWithoutLineContinuations": {
-			in: `"This does not need to be split but
-	wants to!"`,
-			want: `"This does not need to be split but
-	wants to!"`,
-		},
 		"QuotedIDWithNewlinesWithoutLineContinuationsAtMaxColumn": {
 			in: `"This is a test of a long attribute value that is past the max column which should be split on word
-		boundaries several times of course as long as this is necessary it should also respect giant URLs
+   boundaries several times of course as long as this is necessary it should also respect giant URLs
 		https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 			want: `"This is a test of a long attribute value that is past the max column which should be split on word
-		boundaries several times of course as long as this is necessary it should also respect giant URLs
+   boundaries several times of course as long as this is necessary it should also respect giant URLs
 		\
 https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"`,
 		},

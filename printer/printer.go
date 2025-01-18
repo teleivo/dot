@@ -10,22 +10,27 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
-// maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
-// every dot construct can be broken up though.
-const maxColumn = 100
+const (
+	// maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
+	// every dot construct can be broken up though.
+	maxColumn = 100
+	// tabWidth represents the number of columns a tab takes up
+	tabWidth = 4
+)
 
 // Printer formats dot code.
 type Printer struct {
-	r            io.Reader       // r reader to parse dot code from
-	w            io.Writer       // w writer to output formatted dot code to
-	row          int             // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
-	column       int             // column is the current one-indexed column in terms of runes the printer is at. 0 means no rune has been printed on the current row
-	indentLevel  int             // indentLevel is the current level of indentation to be applied when indenting
-	prevToken    token.TokenType // prevToken is the type of the last printed token
-	prevPosition token.Position  // prevPosition is the position of the last printed token
-	newline      bool            // newline indicates a buffered newline that should be printed
-	commentIndex int             // commentIndex points to the next comment to be printed
-	comments     []ast.Comment   // comments lists all comments in the Graph to be printed
+	r             io.Reader       // r reader to parse dot code from
+	w             io.Writer       // w writer to output formatted dot code to
+	row           int             // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
+	column        int             // column is the current one-indexed column in terms of runes the printer is at. A tab counts as [tabWidth] columns. 0 means no rune has been printed on the current row
+	currentIndent int             // currentIndent keeps track of the number of leading tabs
+	indentLevel   int             // indentLevel is the current level of indentation to be applied when indenting a new line
+	prevToken     token.TokenType // prevToken is the type of the last printed token
+	prevPosition  token.Position  // prevPosition is the position of the last printed token
+	newline       bool            // newline indicates a buffered newline that should be printed
+	commentIndex  int             // commentIndex points to the next comment to be printed
+	comments      []ast.Comment   // comments lists all comments in the Graph to be printed
 }
 
 func NewPrinter(r io.Reader, w io.Writer) *Printer {
@@ -134,12 +139,15 @@ func (p *Printer) printID(id ast.ID) error {
 	for curRuneIdx, curRune := range id.Literal[offset:] {
 		curRuneIdx += offset // adjust for the opening "
 
+		// newlines without a line continuation are not mentioned in the DOT grammar but are
+		// supported by the dot tooling.
 		if prevRune != '\\' && curRune == '\n' {
 			endColumn := p.column + runeCount - 1
 			if endColumn > maxColumn { // the word without '\n' does not fit onto the current line
 				p.printLineContinuation()
 			}
 
+			// print word including the newline
 			endIdx := curRuneIdx + 1
 			p.printStringWithoutIndent(id.Literal[start:endIdx])
 
@@ -149,17 +157,16 @@ func (p *Printer) printID(id ast.ID) error {
 			// print word without separator
 			endIdx := curRuneIdx
 			endColumn := p.column + runeCount
-			if prevRune == '\\' && curRune == '\n' { // excluding line continuation
+			if prevRune == '\\' && curRune == '\n' { // exclude the line continuation
 				endIdx--
 				endColumn--
-			} else if curRune == '\n' {
-				endColumn--
-			} else if curRune != '\n' && runeCount == 1 { // word is only whitespace
+			} else if curRune == '\t' && runeCount == 1 { // word is only whitespace
+				endIdx++
+				endColumn += tabWidth
+			} else if curRune == ' ' && runeCount == 1 { // word is only whitespace
 				endIdx++
 				endColumn++
 			}
-			// TODO why is this working with > even if I did not add the +1 for the potential \? does
-			// runeCount Incl the separator after all?
 			if endColumn > maxColumn { // the word and \ do not fit on the current line
 				p.printLineContinuation()
 			}
@@ -182,7 +189,7 @@ func (p *Printer) printID(id ast.ID) error {
 			}
 			runeCount = 0
 		} else if /* closing quote */ curRune == '"' && curRuneIdx+1 == len(id.Literal) {
-			// does the word and " fit onto the current line
+			// does the word including " fit onto the current line
 			if p.column+runeCount+1 > maxColumn {
 				p.printLineContinuation()
 			}
@@ -527,9 +534,12 @@ func (p *Printer) printRune(r rune) {
 		return
 	}
 
-	for p.column < p.indentLevel {
-		fmt.Fprintf(p.w, "%c", '\t')
-		p.column++
+	if p.column == 0 {
+		for p.currentIndent < p.indentLevel {
+			fmt.Fprintf(p.w, "%c", '\t')
+			p.currentIndent++
+			p.column += tabWidth
+		}
 	}
 
 	p.printRuneWithoutIndent(r)
@@ -545,7 +555,11 @@ func (p *Printer) printRuneWithoutIndent(r rune) {
 	if p.row == 0 {
 		p.row = 1
 	}
-	p.column++
+	if r == '\t' {
+		p.column += tabWidth
+	} else {
+		p.column++
+	}
 }
 
 func (p *Printer) printToken(tokenType token.TokenType, pos token.Position) {
@@ -610,6 +624,7 @@ func (p *Printer) flushNewline() bool {
 func (p *Printer) forceNewline() {
 	fmt.Fprintln(p.w)
 	p.column = 0
+	p.currentIndent = 0
 	p.row++
 	p.newline = false
 }

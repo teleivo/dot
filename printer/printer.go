@@ -261,28 +261,21 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 		return nil
 	}
 
-	// TODO that is not 100% true as an attrList can solely be a chain of []
-	var hasMultipleAttrs bool
-	if attrList.Next != nil {
-		hasMultipleAttrs = true
-	}
+	_, split := hasMultipleAttributes(attrList)
 
 	p.printSpace()
 	p.printToken(token.LeftBracket, attrList.LeftBracket)
 	p.increaseIndentation()
 
 	for cur := attrList; cur != nil; cur = cur.Next {
-		split, err := p.printAList(cur.AList, hasMultipleAttrs)
+		err := p.printAList(cur.AList, split)
 		if err != nil {
 			return err
-		}
-		if split {
-			hasMultipleAttrs = true
 		}
 	}
 
 	p.decreaseIndentation()
-	if hasMultipleAttrs {
+	if split {
 		p.printNewline()
 	}
 	// TODO if I remember correctly I am merging A [color=blue] [style=filled] into A [color=blue,
@@ -292,25 +285,41 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 	return nil
 }
 
-func (p *Printer) printAList(aList *ast.AList, hasMultipleAttrs bool) (bool, error) {
+func (p *Printer) printAList(aList *ast.AList, split bool) error {
 	for cur := aList; cur != nil; cur = cur.Next {
-		if aList.Next != nil {
-			hasMultipleAttrs = true
-		}
-
-		if hasMultipleAttrs {
+		if split {
 			p.printNewline()
 		}
 		err := p.printAttribute(cur.Attribute)
 		if err != nil {
-			return hasMultipleAttrs, err
+			return err
 		}
-		if !hasMultipleAttrs && cur.Next != nil {
+		if !split && cur.Next != nil {
 			p.printSpace()
 		}
 	}
 
-	return hasMultipleAttrs, nil
+	return nil
+}
+
+// hasMultipleAttributes traverses the AttrLists and ALists counting up to two ALists. This can be
+// used to omit empty brackets or split attributes onto multiple lines.
+func hasMultipleAttributes(attrList *ast.AttrList) (int, bool) {
+	if attrList == nil {
+		return 0, false
+	}
+
+	var cnt int
+	for cur := attrList; cur != nil; cur = cur.Next {
+		for curAList := cur.AList; curAList != nil; curAList = curAList.Next {
+			cnt++
+			if cnt > 1 {
+				return cnt, true
+			}
+		}
+	}
+
+	return cnt, false
 }
 
 func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
@@ -363,6 +372,11 @@ func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {
 }
 
 func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
+	cnt, _ := hasMultipleAttributes(&attrStmt.AttrList)
+	if cnt == 0 {
+		return nil
+	}
+
 	p.printNewline()
 	err := p.printID(attrStmt.ID)
 	if err != nil {

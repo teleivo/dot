@@ -29,19 +29,17 @@ func TestPrint(t *testing.T) {
 			want: `strict graph "galaxy" {
 }`,
 		},
-		// TODO should I still have a test that shows where the ] is placed and that the label is not
-		// moved to a new line even though that might be cleaner?
-		// 		"NodeStmtWithAttributeIDPastMaxColumn": {
-		// 			in: `graph {
-		// 			"Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
-		// }`,
-		// 			want: `graph {
-		// 	"Node1234" [label="This is a test of a long attribute value that is past the max column which\
-		//  should be split on word boundaries several times of course as long as this is necessary it should\
-		//  also respect giant URLs\
-		//  https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
-		// }`,
-		// 		},
+		"NodeStmtWithAttributeIDPastMaxColumn": {
+			in: `graph {
+"Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
+		}`,
+			want: `graph {
+	"Node1234" [label="This is a test of a long attribute value that is past the max column which \
+should be split on word boundaries several times of course as long as this is necessary it should \
+also respect giant URLs \
+https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
+}`,
+		},
 		"NodeStatementsWithPorts": {
 			in: `graph {
 		
@@ -124,14 +122,14 @@ graph {
 	}
 }`,
 		},
-		// TODO fix this as outlined in the codes todo
-		// "AttrStmtsEmpty": {
-		// 	in:   `graph { node []; edge[]; graph[];}`,
-		// 	want: `graph {}`,
-		// },
+		"AttrStmtsEmpty": {
+			in: `graph { node []; edge[]; graph[];}`,
+			want: `graph {
+}`,
+		},
 		"AttrStmtWithSingleAttribute": {
 			in: `graph {
-graph     [ 	label="blue",]
+graph    [] [ 	label="blue",]
 			}`,
 			want: `graph {
 	graph [label="blue"]

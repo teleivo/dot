@@ -1,26 +1,3 @@
-* can I classify the print functions into AST, "middle", primitive ones that actually call fmt? and
-  limit where I call which? or reduce the number of the different p.print(), p.printString() ones?
-
-* add test in dotfmt for
-
-the AttrList can have an empty AList followed by a non-empty one (I have one in the parser_test.go)
-
-```dot
-graph {
-    node [] [color=blue]; A
-}
-```
-
-this is also legal but the key/value pair is then an Attribute
-
-```dot
-graph {
-    node [] color=blue; A
-}
-```
-
-am I parsing this correctly?
-
 * improve error handling see [Parser](#parser)
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.

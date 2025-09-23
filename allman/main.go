@@ -57,21 +57,21 @@ func main() {
 }
 
 type Doc struct {
-	tags []TagInfo
+	tags []*TagInfo
 }
 
 func New() *Doc {
 	return &Doc{}
 }
 
-type TagIterator func(yield func(TagInfo, TagIterator) bool)
+type TagIterator func(yield func(*TagInfo, TagIterator) bool)
 
 func (d *Doc) All() TagIterator {
 	return d.newTagIterator(0, uint(len(d.tags)))
 }
 
 func (d *Doc) newTagIterator(i, j uint) TagIterator {
-	return func(yield func(TagInfo, TagIterator) bool) {
+	return func(yield func(*TagInfo, TagIterator) bool) {
 		for i < j {
 			if d.tags[i].len == 0 {
 				if !yield(d.tags[i], d.newTagIterator(i, i)) {
@@ -102,7 +102,7 @@ func (d *Doc) TagWith(t Tag, body func(*Doc)) *Doc {
 
 func (d *Doc) tagIfWith(t Tag, cond condition, body func(*Doc)) *Doc {
 	i := uint(len(d.tags))
-	d.tags = append(d.tags, TagInfo{tag: t, len: 0, cond: cond})
+	d.tags = append(d.tags, &TagInfo{tag: t, len: 0, cond: cond, measure: &Measure{}})
 	body(d)
 	if j := uint(len(d.tags)); j != i {
 		d.tags[i].len = j - i - 1
@@ -111,27 +111,63 @@ func (d *Doc) tagIfWith(t Tag, cond condition, body func(*Doc)) *Doc {
 }
 
 func (d *Doc) Render(w io.Writer) {
+	for t, children := range d.All() {
+		measure(t, children)
+	}
+	// TODO layout
+
 	renderIter(w, d.All())
 }
 
 func renderIter(w io.Writer, iter TagIterator) {
+	// TODO print
 	for t, children := range iter {
 		switch tag := t.tag.(type) {
 		case *Group:
-			fmt.Fprintf(w, "<group>")
+			fmt.Fprintf(w, "<group width=%s>", t.measure)
 			renderIter(w, children)
 			fmt.Fprintf(w, "</group>")
 		case *text:
-			fmt.Fprintf(w, "<text content=%q/>", tag.content)
+			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)
 		case space:
 			fmt.Fprintf(w, "<space/>")
 		case newlines:
 			fmt.Fprintf(w, "<break count=%d/>", tag.count)
 		}
 	}
-	// TODO measure
-	// TODO layout
-	// TODO print
+}
+
+func measure(parent *TagInfo, children TagIterator) {
+	tagWidth(parent)
+	for t, children := range children {
+		measure(t, children)
+	}
+	// TODO sum up and propagate broken to parents
+	for t, children := range children {
+		parent.measure.Add(sumWidths(t, children))
+	}
+}
+
+func tagWidth(t *TagInfo) {
+	if t.cond == Broken { // only measure flat width
+		return
+	}
+
+	switch tag := t.tag.(type) {
+	case *text:
+		t.measure.width = uint(len(tag.content))
+	case space:
+		t.measure.width = 1
+	case newlines:
+		t.measure.broken = true
+	}
+}
+
+func sumWidths(parent *TagInfo, children TagIterator) Measure {
+	for t, children := range children {
+		parent.measure.Add(sumWidths(t, children))
+	}
+	return *parent.measure
 }
 
 type condition int
@@ -146,10 +182,34 @@ const (
 // measurement and len? can I achieve that without yet another type
 
 type TagInfo struct {
-	tag  Tag
-	len  uint
-	cond condition
-	// measure
+	tag     Tag
+	len     uint
+	cond    condition
+	measure *Measure
+}
+
+type Measure struct {
+	width  uint
+	broken bool
+}
+
+func (m *Measure) Add(b Measure) {
+	if b.broken {
+		m.broken = true
+	} else {
+		m.width += b.width
+	}
+}
+
+func (m *Measure) IsBroken() bool {
+	return m.broken
+}
+
+func (m *Measure) String() string {
+	if m.broken {
+		return "broken"
+	}
+	return fmt.Sprint(m.width)
 }
 
 type Tag interface {

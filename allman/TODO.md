@@ -1,4 +1,3 @@
-* fix measure sum
 * try smallest allman style layouting
 * uint vs int
 * what API do I expose? what would I like to use when mapping from dot nodes to this

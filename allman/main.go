@@ -114,6 +114,10 @@ func (d *Doc) Render(w io.Writer) {
 	for t, children := range d.All() {
 		measure(t, children)
 	}
+	// TODO sum up and propagate broken to parents; iterators can only be consumed once
+	for t, children := range d.All() {
+		sumWidths(t, children)
+	}
 	// TODO layout
 
 	renderIter(w, d.All())
@@ -142,10 +146,6 @@ func measure(parent *TagInfo, children TagIterator) {
 	for t, children := range children {
 		measure(t, children)
 	}
-	// TODO sum up and propagate broken to parents
-	for t, children := range children {
-		parent.measure.Add(sumWidths(t, children))
-	}
 }
 
 func tagWidth(t *TagInfo) {
@@ -164,6 +164,7 @@ func tagWidth(t *TagInfo) {
 }
 
 func sumWidths(parent *TagInfo, children TagIterator) Measure {
+	fmt.Printf("%+v\n", parent)
 	for t, children := range children {
 		parent.measure.Add(sumWidths(t, children))
 	}
@@ -178,6 +179,19 @@ const (
 	Broken
 )
 
+func (c condition) String() string {
+	switch c {
+	case Always:
+		return "Always"
+	case Flat:
+		return "Flat"
+	case Broken:
+		return "Broken"
+	default:
+		panic("condition string not implemented")
+	}
+}
+
 // TODO what is the benefit of wrapping Tag? is it so a Tag is the API and users cannot mess with
 // measurement and len? can I achieve that without yet another type
 
@@ -188,13 +202,17 @@ type TagInfo struct {
 	measure *Measure
 }
 
+func (t *TagInfo) String() string {
+	return fmt.Sprintf("TagInfo{tag=%s, len=%d, cond=%s, measure=%s}", t.tag, t.len, t.cond, t.measure)
+}
+
 type Measure struct {
 	width  uint
 	broken bool
 }
 
 func (m *Measure) Add(b Measure) {
-	if b.broken {
+	if m.broken || b.broken {
 		m.broken = true
 	} else {
 		m.width += b.width
@@ -219,6 +237,9 @@ type Tag interface {
 type Group struct{}
 
 func (g *Group) tag() {}
+func (g *Group) String() string {
+	return "Group"
+}
 
 type text struct {
 	content string
@@ -229,12 +250,19 @@ func Text(content string) *text {
 }
 
 func (t *text) tag() {}
+func (t *text) String() string {
+	return fmt.Sprintf("Text(%q)", t.content)
+}
 
 var Space = space{}
 
 type space struct{}
 
 func (s space) tag() {}
+
+func (s space) String() string {
+	return "Space"
+}
 
 type newlines struct {
 	count uint
@@ -245,3 +273,7 @@ func Break(count uint) newlines {
 }
 
 func (n newlines) tag() {}
+
+func (n newlines) String() string {
+	return fmt.Sprintf("Break(%d)", n.count)
+}

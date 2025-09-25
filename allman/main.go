@@ -4,35 +4,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
-// ! // flat: fn foo() { ... }
-// ! //
-// ! // broken:
-// ! // fn foo()
-// ! // {
-// ! //   // ...
-// ! // }
-// ! Doc::new()
-// !   .tag("fn")
-// !   .tag(Tag::Space)
-// !   .tag("foo")
-// !   .tag("(").tag(")")
-// !   .tag_with(Tag::Group(40), |doc| {
-// !     doc
-// !       .tag_if(Tag::Space, If::Flat)
-// !       .tag_if(Tag::Break(1), If::Broken)
-// !       .tag("{")
-// !       .tag_if(Tag::Space, If::Flat)
-// !       .tag_if(Tag::Break(1), If::Broken)
-// !       .tag_with(Tag::Indent(2), |doc| {
-// !         // Brace contents here...
-// !       })
-// !       .tag_if(Tag::Space, If::Flat)
-// !       .tag_if(Tag::Break(1), If::Broken)
-// !       .tag("}");
-// !   });
-// ! ```
 func main() {
 	d := New().
 		Tag(Text("package main")).
@@ -111,33 +85,19 @@ func (d *Doc) tagIfWith(t Tag, cond condition, body func(*Doc)) *Doc {
 }
 
 func (d *Doc) Render(w io.Writer) {
+	d.measure()
+	// TODO layout
+	// TODO implement actual rendering
+	fmt.Println(d.DebugString())
+	// renderIter(w, d.All())
+}
+
+func (d *Doc) measure() {
 	for t, children := range d.All() {
 		measure(t, children)
 	}
-	// TODO sum up and propagate broken to parents; iterators can only be consumed once
 	for t, children := range d.All() {
 		sumWidths(t, children)
-	}
-	// TODO layout
-
-	renderIter(w, d.All())
-}
-
-func renderIter(w io.Writer, iter TagIterator) {
-	// TODO print
-	for t, children := range iter {
-		switch tag := t.tag.(type) {
-		case *Group:
-			fmt.Fprintf(w, "<group width=%s>", t.measure)
-			renderIter(w, children)
-			fmt.Fprintf(w, "</group>")
-		case *text:
-			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)
-		case space:
-			fmt.Fprintf(w, "<space/>")
-		case newlines:
-			fmt.Fprintf(w, "<break count=%d/>", tag.count)
-		}
 	}
 }
 
@@ -164,11 +124,51 @@ func tagWidth(t *TagInfo) {
 }
 
 func sumWidths(parent *TagInfo, children TagIterator) Measure {
-	fmt.Printf("%+v\n", parent)
 	for t, children := range children {
 		parent.measure.Add(sumWidths(t, children))
 	}
 	return *parent.measure
+}
+
+func renderIter(w io.Writer, iter TagIterator) {
+	for t, children := range iter {
+		switch tag := t.tag.(type) {
+		case *Group:
+			fmt.Fprintf(w, "<group width=%s>", t.measure)
+			renderIter(w, children)
+			fmt.Fprintf(w, "</group>")
+		case *text:
+			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)
+		case space:
+			fmt.Fprintf(w, "<space/>")
+		case newlines:
+			fmt.Fprintf(w, "<break count=%d/>", tag.count)
+		}
+	}
+}
+
+func (d *Doc) DebugString() string {
+	var sb strings.Builder
+	debugString(&sb, d.All())
+	return sb.String()
+}
+
+func debugString(w io.Writer, iter TagIterator) {
+	// TODO when to print newlines even in this debug string?
+	for t, children := range iter {
+		switch tag := t.tag.(type) {
+		case *Group:
+			fmt.Fprintf(w, "<group width=%s>", t.measure)
+			renderIter(w, children)
+			fmt.Fprintf(w, "</group>")
+		case *text:
+			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)
+		case space:
+			fmt.Fprintf(w, "<space/>")
+		case newlines:
+			fmt.Fprintf(w, "<break count=%d/>", tag.count)
+		}
+	}
 }
 
 type condition int
@@ -237,6 +237,7 @@ type Tag interface {
 type Group struct{}
 
 func (g *Group) tag() {}
+
 func (g *Group) String() string {
 	return "Group"
 }
@@ -246,10 +247,11 @@ type text struct {
 }
 
 func Text(content string) *text {
-	return &text{content}
+	return &text{content: content}
 }
 
 func (t *text) tag() {}
+
 func (t *text) String() string {
 	return fmt.Sprintf("Text(%q)", t.content)
 }
@@ -269,7 +271,7 @@ type newlines struct {
 }
 
 func Break(count uint) newlines {
-	return newlines{count}
+	return newlines{count: count}
 }
 
 func (n newlines) tag() {}

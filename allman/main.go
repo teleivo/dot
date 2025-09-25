@@ -10,7 +10,7 @@ import (
 func main() {
 	d := New().
 		Tag(Text("package main")).
-		Tag(Break(1)).
+		Tag(Break(2)).
 		Tag(Text("func")).
 		Tag(Space).
 		Tag(Text("main")).
@@ -88,8 +88,8 @@ func (d *Doc) Render(w io.Writer) {
 	d.measure()
 	// TODO layout
 	// TODO implement actual rendering
-	fmt.Println(d.DebugString())
-	// renderIter(w, d.All())
+	// fmt.Println(d.DebugString())
+	renderIter(w, d.All(), true)
 }
 
 func (d *Doc) measure() {
@@ -130,22 +130,30 @@ func sumWidths(parent *TagInfo, children TagIterator) Measure {
 	return *parent.measure
 }
 
-func renderIter(w io.Writer, iter TagIterator) {
+func renderIter(w io.Writer, iter TagIterator, isParentBroken bool) {
 	for t, children := range iter {
+		if t.cond == Flat && isParentBroken || t.cond == Broken && !isParentBroken {
+			continue
+		}
+
 		switch tag := t.tag.(type) {
 		case *Group:
-			fmt.Fprintf(w, "<group width=%s>", t.measure)
-			renderIter(w, children)
-			fmt.Fprintf(w, "</group>")
+			renderIter(w, children, t.measure.broken)
 		case *text:
-			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)
+			fmt.Fprintf(w, "%s", tag.content)
 		case space:
-			fmt.Fprintf(w, "<space/>")
+			fmt.Fprintf(w, " ")
 		case newlines:
-			fmt.Fprintf(w, "<break count=%d/>", tag.count)
+			// TODO is batching prints more efficient? like having a slice of 10 newlines and
+			// printing at least up to 10 at a time?
+			for i := tag.count; i > 0; i-- {
+				fmt.Fprintf(w, "\n")
+			}
 		}
 	}
 }
+
+// TODO make this the normal String()?
 
 func (d *Doc) DebugString() string {
 	var sb strings.Builder
@@ -159,7 +167,7 @@ func debugString(w io.Writer, iter TagIterator) {
 		switch tag := t.tag.(type) {
 		case *Group:
 			fmt.Fprintf(w, "<group width=%s>", t.measure)
-			renderIter(w, children)
+			debugString(w, children)
 			fmt.Fprintf(w, "</group>")
 		case *text:
 			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)

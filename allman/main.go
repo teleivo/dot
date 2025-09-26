@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const maxColumn = 15
+
 func main() {
 	d := New().
 		Tag(Text("package main")).
@@ -86,10 +88,8 @@ func (d *Doc) tagIfWith(t Tag, cond condition, body func(*Doc)) *Doc {
 
 func (d *Doc) Render(w io.Writer) {
 	d.measure()
-	// TODO layout
-	// TODO implement actual rendering
-	// fmt.Println(d.DebugString())
-	renderIter(w, d.All(), true)
+	layout(d.All(), 0)
+	render(w, d.All(), true)
 }
 
 func (d *Doc) measure() {
@@ -130,7 +130,26 @@ func sumWidths(parent *TagInfo, children TagIterator) Measure {
 	return *parent.measure
 }
 
-func renderIter(w io.Writer, iter TagIterator, isParentBroken bool) {
+func layout(iter TagIterator, column int) {
+	for t, children := range iter {
+		switch tag := t.tag.(type) {
+		case *Group:
+			if t.measure.width > maxColumn {
+				t.measure.broken = true
+			}
+			layout(children, column)
+		case *text:
+			column += len(tag.content)
+		case space:
+			column++
+		case newlines:
+			// TODO reset width except 0 newlines?
+			column = 0
+		}
+	}
+}
+
+func render(w io.Writer, iter TagIterator, isParentBroken bool) {
 	for t, children := range iter {
 		if t.cond == Flat && isParentBroken || t.cond == Broken && !isParentBroken {
 			continue
@@ -138,7 +157,7 @@ func renderIter(w io.Writer, iter TagIterator, isParentBroken bool) {
 
 		switch tag := t.tag.(type) {
 		case *Group:
-			renderIter(w, children, t.measure.broken)
+			render(w, children, t.measure.broken)
 		case *text:
 			fmt.Fprintf(w, "%s", tag.content)
 		case space:
@@ -153,21 +172,19 @@ func renderIter(w io.Writer, iter TagIterator, isParentBroken bool) {
 	}
 }
 
-// TODO make this the normal String()?
-
-func (d *Doc) DebugString() string {
+func (d *Doc) String() string {
 	var sb strings.Builder
-	debugString(&sb, d.All())
+	stringIter(&sb, d.All())
 	return sb.String()
 }
 
-func debugString(w io.Writer, iter TagIterator) {
+func stringIter(w io.Writer, iter TagIterator) {
 	// TODO when to print newlines even in this debug string?
 	for t, children := range iter {
 		switch tag := t.tag.(type) {
 		case *Group:
 			fmt.Fprintf(w, "<group width=%s>", t.measure)
-			debugString(w, children)
+			stringIter(w, children)
 			fmt.Fprintf(w, "</group>")
 		case *text:
 			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)

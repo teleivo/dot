@@ -43,10 +43,10 @@ func New() *Doc {
 type TagIterator func(yield func(*TagInfo, TagIterator) bool)
 
 func (d *Doc) All() TagIterator {
-	return d.newTagIterator(0, uint(len(d.tags)))
+	return d.newTagIterator(0, len(d.tags))
 }
 
-func (d *Doc) newTagIterator(i, j uint) TagIterator {
+func (d *Doc) newTagIterator(i, j int) TagIterator {
 	return func(yield func(*TagInfo, TagIterator) bool) {
 		for i < j {
 			if d.tags[i].len == 0 {
@@ -77,10 +77,10 @@ func (d *Doc) TagWith(t Tag, body func(*Doc)) *Doc {
 }
 
 func (d *Doc) tagIfWith(t Tag, cond condition, body func(*Doc)) *Doc {
-	i := uint(len(d.tags))
+	i := len(d.tags)
 	d.tags = append(d.tags, &TagInfo{tag: t, len: 0, cond: cond, measure: &Measure{}})
 	body(d)
-	if j := uint(len(d.tags)); j != i {
+	if j := len(d.tags); j != i {
 		d.tags[i].len = j - i - 1
 	}
 	return d
@@ -115,7 +115,7 @@ func tagWidth(t *TagInfo) {
 
 	switch tag := t.tag.(type) {
 	case *text:
-		t.measure.width = uint(len(tag.content))
+		t.measure.width = len(tag.content)
 	case space:
 		t.measure.width = 1
 	case newlines:
@@ -222,7 +222,7 @@ func (c condition) String() string {
 
 type TagInfo struct {
 	tag     Tag
-	len     uint
+	len     int
 	cond    condition
 	measure *Measure
 }
@@ -232,7 +232,7 @@ func (t *TagInfo) String() string {
 }
 
 type Measure struct {
-	width  uint
+	width  int
 	broken bool
 }
 
@@ -292,10 +292,10 @@ func (s space) String() string {
 }
 
 type newlines struct {
-	count uint
+	count int
 }
 
-func Break(count uint) newlines {
+func Break(count int) newlines {
 	return newlines{count: count}
 }
 

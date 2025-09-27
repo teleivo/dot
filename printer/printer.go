@@ -6,20 +6,22 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/ast"
+	"github.com/teleivo/dot/layout"
+	"github.com/teleivo/dot/token"
 )
 
 const (
 	// maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
 	// every dot construct can be broken up though.
-	maxColumn = 100
+	maxColumn = 80
 	// tabWidth represents the number of columns a tab takes up
-	tabWidth = 4
+	tabWidth = 2
 )
 
-// Printer formats dot code.
+// Printer formats DOT code.
 type Printer struct {
 	r       io.Reader // r reader to parse dot code from
-	w       io.Writer // w writer to output formatted dot code to
+	w       io.Writer // w writer to output formatted DOT code to
 	row     int       // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
 	column  int       // column is the current one-indexed column in terms of runes the printer is at. A tab counts as [tabWidth] columns. 0 means no rune has been printed on the current row
 	newline bool      // newline indicates a buffered newline that should be printed
@@ -32,8 +34,8 @@ func NewPrinter(r io.Reader, w io.Writer) *Printer {
 	}
 }
 
-func (pr *Printer) Print() error {
-	ps, err := dot.NewParser(pr.r)
+func (p *Printer) Print() error {
+	ps, err := dot.NewParser(p.r)
 	if err != nil {
 		return err
 	}
@@ -43,44 +45,49 @@ func (pr *Printer) Print() error {
 		return err
 	}
 
-	err = pr.printNode(g)
+	doc := layout.NewDoc(maxColumn)
+	err = p.layoutNode(doc, g)
 	if err != nil {
 		return err
 	}
+	// TODO add error handling in case fmt.Print fails?
+	doc.Render(p.w)
 
 	return nil
 }
 
-func (p *Printer) printNode(node ast.Node) error {
+func (p *Printer) layoutNode(doc *layout.Doc, node ast.Node) error {
 	switch n := node.(type) {
 	case ast.Graph:
-		return p.printGraph(n)
+		return p.layoutGraph(doc, n)
 	}
 	return nil
 }
 
-func (p *Printer) printGraph(graph ast.Graph) error {
+func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
+	// TODO create all in a group?
 	if graph.IsStrict() {
-		// p.printToken(token.Strict, *graph.StrictStart)
-		// p.printSpace()
+		doc.Tag(layout.Text(token.Strict.String()))
+		doc.Tag(layout.Space)
 	}
 
 	if graph.Directed {
-		// p.printToken(token.Digraph, graph.GraphStart)
+		doc.Tag(layout.Text(token.Digraph.String()))
 	} else {
-		// p.printToken(token.Graph, graph.GraphStart)
+		doc.Tag(layout.Text(token.Graph.String()))
 	}
-	// p.printSpace()
+	doc.Tag(layout.Space)
 
 	if graph.ID != nil {
 		err := p.printID(*graph.ID)
 		if err != nil {
 			return err
 		}
-		// p.printSpace()
+		doc.Tag(layout.Space)
 	}
 
-	// p.printToken(token.LeftBrace, graph.LeftBrace)
+	doc.Tag(layout.Text(token.LeftBrace.String()))
+	// TODO print the next in a group so we get graph {} but a newline if broken before the right }
 	// p.increaseIndentation()
 
 	err := p.printStmts(graph.Stmts)
@@ -90,7 +97,7 @@ func (p *Printer) printGraph(graph ast.Graph) error {
 
 	// p.decreaseIndentation()
 	// p.printNewline()
-	// p.printToken(token.RightBrace, graph.RightBrace)
+	doc.Tag(layout.Text(token.RightBrace.String()))
 	return nil
 }
 

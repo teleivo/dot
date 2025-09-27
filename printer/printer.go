@@ -13,7 +13,7 @@ import (
 const (
 	// maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
 	// every dot construct can be broken up though.
-	maxColumn = 80
+	maxColumn = 20
 	// tabWidth represents the number of columns a tab takes up
 	tabWidth = 2
 )
@@ -126,11 +126,11 @@ func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
 	var err error
 	switch st := stmt.(type) {
 	case *ast.NodeStmt:
-		err = p.layoutNodeStmt(doc, st)
+		p.layoutNodeStmt(doc, st)
 	case *ast.EdgeStmt:
-		err = p.layoutEdgeStmt(doc, st)
+		p.layoutEdgeStmt(doc, st)
 	case *ast.AttrStmt:
-		err = p.layoutAttrStmt(doc, st)
+		p.layoutAttrStmt(doc, st)
 	case ast.Attribute:
 		// p.printNewline()
 		p.layoutAttribute(doc, st)
@@ -141,20 +141,20 @@ func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
 	return err
 }
 
-func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt *ast.NodeStmt) error {
-	// p.printNewline()
-	err := p.printNodeID(doc, nodeStmt.NodeID)
-	if err != nil {
-		return err
-	}
-	return p.printAttrList(doc, nodeStmt.AttrList)
+func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt *ast.NodeStmt) {
+	// TODO why does this not create a newline?
+	doc.Tag(layout.Break(1))
+	doc.TagWith(layout.Group(), func(d *layout.Doc) {
+		p.printNodeID(doc, nodeStmt.NodeID)
+		p.layoutAttrList(doc, nodeStmt.AttrList)
+	})
 }
 
-func (p *Printer) printNodeID(doc *layout.Doc, nodeID ast.NodeID) error {
+func (p *Printer) printNodeID(doc *layout.Doc, nodeID ast.NodeID) {
 	p.layoutID(doc, nodeID.ID)
 
 	if nodeID.Port == nil {
-		return nil
+		return
 	}
 
 	if nodeID.Port.Name != nil {
@@ -165,45 +165,36 @@ func (p *Printer) printNodeID(doc *layout.Doc, nodeID ast.NodeID) error {
 		// p.printToken(token.Colon, withColumnOffset(nodeID.Port.CompassPoint.StartPos, -1))
 		// p.print(nodeID.Port.CompassPoint)
 	}
-
-	return nil
 }
 
-func (p *Printer) printAttrList(doc *layout.Doc, attrList *ast.AttrList) error {
+func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 	if attrList == nil {
-		return nil
+		return
 	}
 
-	_, split := hasMultipleAttributes(attrList)
-
-	// p.printSpace()
-	// p.printToken(token.LeftBracket, attrList.LeftBracket)
+	doc.Tag(layout.Text(token.LeftBracket.String()))
+	doc.Tag(layout.Space)
+	// TODO indent block
 	// p.increaseIndentation()
 
 	for cur := attrList; cur != nil; cur = cur.Next {
-		p.printAList(doc, cur.AList, split)
+		p.layoutAList(doc, cur.AList)
 	}
 
 	// p.decreaseIndentation()
-	if split {
-		// p.printNewline()
-	}
+	doc.TagIf(layout.Break(1), layout.Broken)
+
 	// TODO if I remember correctly I am merging A [color=blue] [style=filled] into A [color=blue,
 	// style=filled]. How does me taking out '[]' affect printing of comments? Add to the test case.
-	// p.printToken(token.RightBracket, attrList.End())
-
-	return nil
+	doc.Tag(layout.Text(token.RightBracket.String()))
 }
 
-func (p *Printer) printAList(doc *layout.Doc, aList *ast.AList, split bool) {
+func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
 	for cur := aList; cur != nil; cur = cur.Next {
-		if split {
-			// p.printNewline()
-		}
+		doc.TagIf(layout.Break(1), layout.Broken)
 		p.layoutAttribute(doc, cur.Attribute)
-		if !split && cur.Next != nil {
-			// p.printSpace()
-		}
+		// TODO implement delayed printing in Render to prevent trailing whitespace
+		doc.TagIf(layout.Space, layout.Flat)
 	}
 }
 
@@ -227,12 +218,12 @@ func hasMultipleAttributes(attrList *ast.AttrList) (int, bool) {
 	return cnt, false
 }
 
-func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) error {
+func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) {
 	// // p.printNewline()
 
 	err := p.printEdgeOperand(doc, edgeStmt.Left)
 	if err != nil {
-		return err
+		return
 	}
 
 	// // p.printSpace()
@@ -245,7 +236,7 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) error 
 	// // p.printSpace()
 	err = p.printEdgeOperand(doc, edgeStmt.Right.Right)
 	if err != nil {
-		return err
+		return
 	}
 
 	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
@@ -256,35 +247,32 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) error 
 			// // p.printToken(token.UndirectedEgde, cur.StartPos)
 		}
 		// // p.printSpace()
-		err = p.printEdgeOperand(doc, cur.Right)
-		if err != nil {
-			return err
-		}
+		p.printEdgeOperand(doc, cur.Right)
 	}
 
-	return p.printAttrList(doc, edgeStmt.AttrList)
+	p.layoutAttrList(doc, edgeStmt.AttrList)
 }
 
 func (p *Printer) printEdgeOperand(doc *layout.Doc, edgeOperand ast.EdgeOperand) error {
 	var err error
 	switch op := edgeOperand.(type) {
 	case ast.NodeID:
-		err = p.printNodeID(doc, op)
+		p.printNodeID(doc, op)
 	case ast.Subgraph:
 		err = p.layoutSubgraph(doc, op)
 	}
 	return err
 }
 
-func (p *Printer) layoutAttrStmt(doc *layout.Doc, attrStmt *ast.AttrStmt) error {
+func (p *Printer) layoutAttrStmt(doc *layout.Doc, attrStmt *ast.AttrStmt) {
 	cnt, _ := hasMultipleAttributes(&attrStmt.AttrList)
 	if cnt == 0 {
-		return nil
+		return
 	}
 
 	// // p.printNewline()
 	p.layoutID(doc, attrStmt.ID)
-	return p.printAttrList(doc, &attrStmt.AttrList)
+	p.layoutAttrList(doc, &attrStmt.AttrList)
 }
 
 func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
@@ -292,6 +280,7 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 	// TODO fix this using the correct position of the '=' which I need to know the position of equal
 	// to support a comment before it. Add the position info to the ast
 	// // p.printToken(token.Equal, attribute.Name.EndPos)
+	doc.Tag(layout.Text(token.Equal.String()))
 	p.layoutID(doc, attribute.Value)
 }
 

@@ -48,6 +48,11 @@ func (d *Doc) TagIf(t tag, cond condition) *Doc {
 	return d.tagIfWith(t, cond, func(d *Doc) {})
 }
 
+// TODO what about doc.Group(body) instead of doc.TagWith(Group(), body)?
+// and doc.Indent(body) instead of doc.TagWith(Indent(), body)?
+// doc.Text(), doc.Space(), doc.Break()
+// doc.SpaceIf(Flat), doc.BreakIf(Broken) and so on
+
 func (d *Doc) TagWith(t tag, body func(*Doc)) *Doc {
 	return d.tagIfWith(t, Always, body)
 }
@@ -237,6 +242,8 @@ type tag interface {
 
 type group struct{}
 
+// Group a sequence of tags to be rendered as one line or multiple lines if they exceed the maximum
+// column.
 func Group() *group {
 	return &group{}
 }

@@ -65,7 +65,8 @@ func (p *Printer) layoutNode(doc *layout.Doc, node ast.Node) error {
 }
 
 func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
-	// TODO create all in a group?
+	// TODO create strict graph id in a group? so ideally on one line but if not break each onto
+	// their own line? or at least the id?
 	if graph.IsStrict() {
 		doc.Tag(layout.Text(token.Strict.String()))
 		doc.Tag(layout.Space)
@@ -79,31 +80,33 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
 	doc.Tag(layout.Space)
 
 	if graph.ID != nil {
-		err := p.printID(*graph.ID)
-		if err != nil {
-			return err
-		}
+		p.layoutID(doc, *graph.ID)
 		doc.Tag(layout.Space)
 	}
 
 	doc.Tag(layout.Text(token.LeftBrace.String()))
-	// TODO print the next in a group so we get graph {} but a newline if broken before the right }
-	// p.increaseIndentation()
+	var err error
+	doc.TagWith(layout.Group(), func(f *layout.Doc) {
+		// TODO wrap in indent block
 
-	err := p.printStmts(graph.Stmts)
-	if err != nil {
-		return err
-	}
+		err = p.layoutStmts(doc, graph.Stmts)
+		if err != nil {
+			return
+		}
 
-	// p.decreaseIndentation()
-	// p.printNewline()
-	doc.Tag(layout.Text(token.RightBrace.String()))
-	return nil
+		if len(graph.Stmts) > 0 {
+			doc.TagIf(layout.Space, layout.Flat)
+			doc.TagIf(layout.Break(1), layout.Broken)
+		}
+		doc.Tag(layout.Text(token.RightBrace.String()))
+	})
+
+	return err
 }
 
-func (p *Printer) printStmts(stmts []ast.Stmt) error {
+func (p *Printer) layoutStmts(doc *layout.Doc, stmts []ast.Stmt) error {
 	for _, stmt := range stmts {
-		err := p.printStmt(stmt)
+		err := p.layoutStmt(doc, stmt)
 		if err != nil {
 			return err
 		}
@@ -111,32 +114,44 @@ func (p *Printer) printStmts(stmts []ast.Stmt) error {
 	return nil
 }
 
-// printID prints a DOT [identifier]. newlines without preceding '\' are not mentioned as legal but
+// layoutID prints a DOT [identifier]. newlines without preceding '\' are not mentioned as legal but
 // are supported by the DOT tooling. Such newlines are normalized to line continuations.
 //
 // [identifier:] https://graphviz.org/doc/info/lang.html#ids
-func (p *Printer) printID(id ast.ID) error {
-	return nil
+func (p *Printer) layoutID(doc *layout.Doc, id ast.ID) {
+	doc.Tag(layout.Text(id.Literal))
 }
 
-func (p *Printer) printStmt(stmt ast.Stmt) error {
-	return nil
+func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
+	var err error
+	switch st := stmt.(type) {
+	case *ast.NodeStmt:
+		err = p.layoutNodeStmt(doc, st)
+	case *ast.EdgeStmt:
+		err = p.layoutEdgeStmt(doc, st)
+	case *ast.AttrStmt:
+		err = p.layoutAttrStmt(doc, st)
+	case ast.Attribute:
+		// p.printNewline()
+		p.layoutAttribute(doc, st)
+	case ast.Subgraph:
+		// p.printNewline()
+		err = p.layoutSubgraph(doc, st)
+	}
+	return err
 }
 
-func (p *Printer) printNodeStmt(nodeStmt *ast.NodeStmt) error {
+func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt *ast.NodeStmt) error {
 	// p.printNewline()
-	err := p.printNodeID(nodeStmt.NodeID)
+	err := p.printNodeID(doc, nodeStmt.NodeID)
 	if err != nil {
 		return err
 	}
-	return p.printAttrList(nodeStmt.AttrList)
+	return p.printAttrList(doc, nodeStmt.AttrList)
 }
 
-func (p *Printer) printNodeID(nodeID ast.NodeID) error {
-	err := p.printID(nodeID.ID)
-	if err != nil {
-		return err
-	}
+func (p *Printer) printNodeID(doc *layout.Doc, nodeID ast.NodeID) error {
+	p.layoutID(doc, nodeID.ID)
 
 	if nodeID.Port == nil {
 		return nil
@@ -144,10 +159,7 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 
 	if nodeID.Port.Name != nil {
 		// p.printToken(token.Colon, withColumnOffset(nodeID.Port.Name.StartPos, -1))
-		err = p.printID(*nodeID.Port.Name)
-		if err != nil {
-			return err
-		}
+		p.layoutID(doc, *nodeID.Port.Name)
 	}
 	if nodeID.Port.CompassPoint != nil && nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
 		// p.printToken(token.Colon, withColumnOffset(nodeID.Port.CompassPoint.StartPos, -1))
@@ -157,7 +169,7 @@ func (p *Printer) printNodeID(nodeID ast.NodeID) error {
 	return nil
 }
 
-func (p *Printer) printAttrList(attrList *ast.AttrList) error {
+func (p *Printer) printAttrList(doc *layout.Doc, attrList *ast.AttrList) error {
 	if attrList == nil {
 		return nil
 	}
@@ -169,10 +181,7 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 	// p.increaseIndentation()
 
 	for cur := attrList; cur != nil; cur = cur.Next {
-		err := p.printAList(cur.AList, split)
-		if err != nil {
-			return err
-		}
+		p.printAList(doc, cur.AList, split)
 	}
 
 	// p.decreaseIndentation()
@@ -186,21 +195,16 @@ func (p *Printer) printAttrList(attrList *ast.AttrList) error {
 	return nil
 }
 
-func (p *Printer) printAList(aList *ast.AList, split bool) error {
+func (p *Printer) printAList(doc *layout.Doc, aList *ast.AList, split bool) {
 	for cur := aList; cur != nil; cur = cur.Next {
 		if split {
 			// p.printNewline()
 		}
-		err := p.printAttribute(cur.Attribute)
-		if err != nil {
-			return err
-		}
+		p.layoutAttribute(doc, cur.Attribute)
 		if !split && cur.Next != nil {
 			// p.printSpace()
 		}
 	}
-
-	return nil
 }
 
 // hasMultipleAttributes traverses the AttrLists and ALists counting up to two ALists. This can be
@@ -223,10 +227,10 @@ func hasMultipleAttributes(attrList *ast.AttrList) (int, bool) {
 	return cnt, false
 }
 
-func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
+func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) error {
 	// // p.printNewline()
 
-	err := p.printEdgeOperand(edgeStmt.Left)
+	err := p.printEdgeOperand(doc, edgeStmt.Left)
 	if err != nil {
 		return err
 	}
@@ -239,7 +243,7 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 	}
 
 	// // p.printSpace()
-	err = p.printEdgeOperand(edgeStmt.Right.Right)
+	err = p.printEdgeOperand(doc, edgeStmt.Right.Right)
 	if err != nil {
 		return err
 	}
@@ -252,65 +256,56 @@ func (p *Printer) printEdgeStmt(edgeStmt *ast.EdgeStmt) error {
 			// // p.printToken(token.UndirectedEgde, cur.StartPos)
 		}
 		// // p.printSpace()
-		err = p.printEdgeOperand(cur.Right)
+		err = p.printEdgeOperand(doc, cur.Right)
 		if err != nil {
 			return err
 		}
 	}
 
-	return p.printAttrList(edgeStmt.AttrList)
+	return p.printAttrList(doc, edgeStmt.AttrList)
 }
 
-func (p *Printer) printEdgeOperand(edgeOperand ast.EdgeOperand) error {
+func (p *Printer) printEdgeOperand(doc *layout.Doc, edgeOperand ast.EdgeOperand) error {
 	var err error
 	switch op := edgeOperand.(type) {
 	case ast.NodeID:
-		err = p.printNodeID(op)
+		err = p.printNodeID(doc, op)
 	case ast.Subgraph:
-		err = p.printSubgraph(op)
+		err = p.layoutSubgraph(doc, op)
 	}
 	return err
 }
 
-func (p *Printer) printAttrStmt(attrStmt *ast.AttrStmt) error {
+func (p *Printer) layoutAttrStmt(doc *layout.Doc, attrStmt *ast.AttrStmt) error {
 	cnt, _ := hasMultipleAttributes(&attrStmt.AttrList)
 	if cnt == 0 {
 		return nil
 	}
 
 	// // p.printNewline()
-	err := p.printID(attrStmt.ID)
-	if err != nil {
-		return err
-	}
-	return p.printAttrList(&attrStmt.AttrList)
+	p.layoutID(doc, attrStmt.ID)
+	return p.printAttrList(doc, &attrStmt.AttrList)
 }
 
-func (p *Printer) printAttribute(attribute ast.Attribute) error {
-	err := p.printID(attribute.Name)
-	if err != nil {
-		return err
-	}
+func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
+	p.layoutID(doc, attribute.Name)
 	// TODO fix this using the correct position of the '=' which I need to know the position of equal
 	// to support a comment before it. Add the position info to the ast
 	// // p.printToken(token.Equal, attribute.Name.EndPos)
-	return p.printID(attribute.Value)
+	p.layoutID(doc, attribute.Value)
 }
 
-func (p *Printer) printSubgraph(subraph ast.Subgraph) error {
+func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) error {
 	// // p.printToken(token.Subgraph, subraph.Start())
 	// // p.printSpace()
 	if subraph.ID != nil {
-		err := p.printID(*subraph.ID)
-		if err != nil {
-			return err
-		}
+		p.layoutID(doc, *subraph.ID)
 		// // p.printSpace()
 	}
 
 	// // p.printToken(token.LeftBrace, subraph.LeftBrace)
 
-	err := p.printStmts(subraph.Stmts)
+	err := p.layoutStmts(doc, subraph.Stmts)
 	if err != nil {
 		return err
 	}

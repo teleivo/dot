@@ -82,8 +82,9 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) {
 
 	doc.Text(token.LeftBrace.String())
 	doc.Group(func(f *layout.Doc) {
-		// TODO wrap in indent block
-		p.layoutStmts(doc, graph.Stmts)
+		doc.Indent(2, func(d *layout.Doc) {
+			p.layoutStmts(doc, graph.Stmts)
+		})
 
 		if len(graph.Stmts) > 0 {
 			doc.SpaceIf(layout.Flat).
@@ -108,7 +109,6 @@ func (p *Printer) layoutID(doc *layout.Doc, id ast.ID) {
 }
 
 func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) {
-	// TODO indent here I think
 	switch st := stmt.(type) {
 	case *ast.NodeStmt:
 		p.layoutNodeStmt(doc, st)
@@ -163,13 +163,12 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 
 	doc.Group(func(d *layout.Doc) {
 		doc.Text(token.LeftBracket.String()).
-			BreakIf(1, layout.Broken)
-		// TODO indent block
-		// p.increaseIndentation()
-		for cur := attrList; cur != nil; cur = cur.Next {
-			p.layoutAList(doc, cur.AList)
-		}
-		// p.decreaseIndentation()
+			BreakIf(1, layout.Broken).
+			IndentIf(tabWidth, layout.Broken, func(d *layout.Doc) {
+				for cur := attrList; cur != nil; cur = cur.Next {
+					p.layoutAList(doc, cur.AList)
+				}
+			})
 		doc.BreakIf(1, layout.Broken).
 			Text(token.RightBracket.String())
 	})

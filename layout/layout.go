@@ -1,4 +1,4 @@
-// Package layout TODO
+// Package layout TODO add godoc on all exported things
 package layout
 
 import (
@@ -70,6 +70,16 @@ func (d *Doc) Group(body func(*Doc)) *Doc {
 	return d.tagWith(&group{}, body)
 }
 
+// Indent a sequence of tags by given number of columns.
+func (d *Doc) Indent(columns int, body func(*Doc)) *Doc {
+	return d.IndentIf(columns, Always, body)
+}
+
+// IndentIf a sequence of tags by given number of columns if condition is met.
+func (d *Doc) IndentIf(columns int, cond condition, body func(*Doc)) *Doc {
+	return d.tagIfWith(&indentation{columns: columns}, cond, body)
+}
+
 func (d *Doc) tag(t tag) *Doc {
 	return d.tagIfWith(t, Always, func(d *Doc) {})
 }
@@ -94,7 +104,8 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 
 func (d *Doc) Render(w io.Writer) {
 	d.measure()
-	d.layout(d.All(), 0)
+	d.layout(d.All(), 0, 0)
+	// TODO create an internal printer to keep track of column, indent, pending newline(s)?
 	render(w, d.All(), true)
 }
 
@@ -136,21 +147,26 @@ func sumWidths(parent *tagInfo, children tagIterator) measure {
 	return *parent.measure
 }
 
-func (d *Doc) layout(iter tagIterator, column int) {
+func (d *Doc) layout(iter tagIterator, indent, column int) {
 	for t, children := range iter {
 		switch tag := t.tag.(type) {
 		case *group:
 			if t.measure.width > d.maxColumn {
 				t.measure.broken = true
 			}
-			d.layout(children, column)
+			d.layout(children, indent, column)
+		case *indentation:
+			if t.cond != Flat {
+				// TODO implement safety on under/overflow
+				d.layout(children, indent+column, column)
+			}
 		case *text:
 			column += len(tag.content)
 		case space:
 			column++
 		case newlines:
-			// TODO reset width except 0 newlines?
-			column = 0
+			// TODO reset width except 0 newlines? what does Break(0) mean?
+			column = indent
 		}
 	}
 }
@@ -163,6 +179,9 @@ func render(w io.Writer, iter tagIterator, isParentBroken bool) {
 
 		switch tag := t.tag.(type) {
 		case *group:
+			render(w, children, t.measure.broken)
+		case *indentation:
+			// TODO implement indentation, only indent if we have pending newline(s)
 			render(w, children, t.measure.broken)
 		case *text:
 			fmt.Fprintf(w, "%s", tag.content)
@@ -270,6 +289,17 @@ func (g *group) tag() {}
 func (g *group) String() string {
 	// TODO implement
 	return "Group"
+}
+
+type indentation struct {
+	columns int
+}
+
+func (i *indentation) tag() {}
+
+func (i *indentation) String() string {
+	// TODO implement
+	return "Indent"
 }
 
 type text struct {

@@ -142,12 +142,16 @@ func (p *Printer) layoutNodeID(doc *layout.Doc, nodeID ast.NodeID) {
 	}
 
 	if nodeID.Port.Name != nil {
+		// TODO what was the column offset about?
 		// p.printToken(token.Colon, withColumnOffset(nodeID.Port.Name.StartPos, -1))
+		doc.Text(token.Colon.String())
 		p.layoutID(doc, *nodeID.Port.Name)
 	}
 	if nodeID.Port.CompassPoint != nil && nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
+		// TODO what was the column offset about?
 		// p.printToken(token.Colon, withColumnOffset(nodeID.Port.CompassPoint.StartPos, -1))
-		// p.print(nodeID.Port.CompassPoint)
+		doc.Text(token.Colon.String())
+		doc.Text(nodeID.Port.CompassPoint.String())
 	}
 }
 
@@ -174,6 +178,7 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
 	for cur := aList; cur != nil; cur = cur.Next {
 		p.layoutAttribute(doc, cur.Attribute)
+		// TODO do I want commas?
 		// TODO implement delayed printing in Render to prevent trailing whitespace
 		if cur.Next != nil {
 			doc.SpaceIf(layout.Flat)

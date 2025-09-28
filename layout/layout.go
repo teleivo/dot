@@ -41,29 +41,31 @@ func (d *Doc) newTagIterator(i, j int) tagIterator {
 }
 
 func (d *Doc) Text(content string) *Doc {
-	return d.tag(Text(content))
+	return d.tag(&text{content: content})
 }
 
 func (d *Doc) TextIf(content string, cond condition) *Doc {
-	return d.tagIf(Text(content), cond)
+	return d.tagIf(&text{content: content}, cond)
 }
 
 func (d *Doc) Space() *Doc {
-	return d.tag(Space)
+	return d.tag(singleSpace)
 }
 
 func (d *Doc) SpaceIf(cond condition) *Doc {
-	return d.tagIf(Space, cond)
+	return d.tagIf(singleSpace, cond)
 }
 
 func (d *Doc) Break(count int) *Doc {
-	return d.tag(Break(count))
+	return d.tag(newlines{count: count})
 }
 
 func (d *Doc) BreakIf(count int, cond condition) *Doc {
-	return d.tagIf(Break(count), cond)
+	return d.tagIf(newlines{count: count}, cond)
 }
 
+// Group a sequence of tags to be rendered as one line or multiple lines if they exceed the maximum
+// column.
 func (d *Doc) Group(body func(*Doc)) *Doc {
 	return d.tagWith(&group{}, body)
 }
@@ -129,7 +131,7 @@ func tagWidth(t *tagInfo) {
 
 func sumWidths(parent *tagInfo, children tagIterator) measure {
 	for t, children := range children {
-		parent.measure.Add(sumWidths(t, children))
+		parent.measure.add(sumWidths(t, children))
 	}
 	return *parent.measure
 }
@@ -240,16 +242,12 @@ type measure struct {
 	broken bool
 }
 
-func (m *measure) Add(b measure) {
+func (m *measure) add(b measure) {
 	if m.broken || b.broken {
 		m.broken = true
 	} else {
 		m.width += b.width
 	}
-}
-
-func (m *measure) IsBroken() bool {
-	return m.broken
 }
 
 func (m *measure) String() string {
@@ -263,13 +261,9 @@ type tag interface {
 	tag()
 }
 
-type group struct{}
-
 // Group a sequence of tags to be rendered as one line or multiple lines if they exceed the maximum
 // column.
-func Group() *group {
-	return &group{}
-}
+type group struct{}
 
 func (g *group) tag() {}
 
@@ -282,17 +276,13 @@ type text struct {
 	content string
 }
 
-func Text(content string) *text {
-	return &text{content: content}
-}
-
 func (t *text) tag() {}
 
 func (t *text) String() string {
 	return fmt.Sprintf("Text(%q)", t.content)
 }
 
-var Space = space{}
+var singleSpace = space{}
 
 type space struct{}
 
@@ -304,10 +294,6 @@ func (s space) String() string {
 
 type newlines struct {
 	count int
-}
-
-func Break(count int) newlines {
-	return newlines{count: count}
 }
 
 func (n newlines) tag() {}

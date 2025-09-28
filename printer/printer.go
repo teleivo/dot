@@ -68,8 +68,8 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
 	// TODO create strict graph id in a group? so ideally on one line but if not break each onto
 	// their own line? or at least the id?
 	if graph.IsStrict() {
-		doc.Text(token.Strict.String())
-		doc.Space()
+		doc.Text(token.Strict.String()).
+			Space()
 	}
 
 	if graph.Directed {
@@ -95,8 +95,8 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
 		}
 
 		if len(graph.Stmts) > 0 {
-			doc.SpaceIf(layout.Flat)
-			doc.BreakIf(1, layout.Broken)
+			doc.SpaceIf(layout.Flat).
+				BreakIf(1, layout.Broken)
 		}
 		doc.Text(token.RightBrace.String())
 	})
@@ -123,6 +123,7 @@ func (p *Printer) layoutID(doc *layout.Doc, id ast.ID) {
 }
 
 func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
+	// TODO indent here I think
 	var err error
 	switch st := stmt.(type) {
 	case *ast.NodeStmt:
@@ -132,10 +133,10 @@ func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
 	case *ast.AttrStmt:
 		p.layoutAttrStmt(doc, st)
 	case ast.Attribute:
-		// p.printNewline()
+		doc.Break(1)
 		p.layoutAttribute(doc, st)
 	case ast.Subgraph:
-		// p.printNewline()
+		doc.Break(1)
 		err = p.layoutSubgraph(doc, st)
 	}
 	return err
@@ -168,33 +169,28 @@ func (p *Printer) printNodeID(doc *layout.Doc, nodeID ast.NodeID) {
 }
 
 func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
-	if attrList == nil {
-		return
-	}
-
-	doc.Text(token.LeftBracket.String())
-	doc.Space()
-	// TODO indent block
-	// p.increaseIndentation()
-
-	for cur := attrList; cur != nil; cur = cur.Next {
-		p.layoutAList(doc, cur.AList)
-	}
-
-	// p.decreaseIndentation()
-	doc.BreakIf(1, layout.Broken)
-
-	// TODO if I remember correctly I am merging A [color=blue] [style=filled] into A [color=blue,
-	// style=filled]. How does me taking out '[]' affect printing of comments? Add to the test case.
-	doc.Text(token.RightBracket.String())
+	doc.Group(func(d *layout.Doc) {
+		doc.Text(token.LeftBracket.String()).
+			BreakIf(1, layout.Broken)
+		// TODO indent block
+		// p.increaseIndentation()
+		for cur := attrList; cur != nil; cur = cur.Next {
+			p.layoutAList(doc, cur.AList)
+		}
+		// p.decreaseIndentation()
+		doc.BreakIf(1, layout.Broken).
+			Text(token.RightBracket.String())
+	})
 }
 
 func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
 	for cur := aList; cur != nil; cur = cur.Next {
-		doc.BreakIf(1, layout.Broken)
 		p.layoutAttribute(doc, cur.Attribute)
 		// TODO implement delayed printing in Render to prevent trailing whitespace
-		doc.SpaceIf(layout.Flat)
+		if cur.Next != nil {
+			doc.SpaceIf(layout.Flat)
+			doc.BreakIf(1, layout.Broken)
+		}
 	}
 }
 
@@ -265,21 +261,16 @@ func (p *Printer) printEdgeOperand(doc *layout.Doc, edgeOperand ast.EdgeOperand)
 }
 
 func (p *Printer) layoutAttrStmt(doc *layout.Doc, attrStmt *ast.AttrStmt) {
-	cnt, _ := hasMultipleAttributes(&attrStmt.AttrList)
-	if cnt == 0 {
-		return
-	}
-
-	// // p.printNewline()
-	p.layoutID(doc, attrStmt.ID)
-	p.layoutAttrList(doc, &attrStmt.AttrList)
+	doc.Break(1).
+		Group(func(d *layout.Doc) {
+			p.layoutID(doc, attrStmt.ID)
+			doc.Space()
+			p.layoutAttrList(doc, &attrStmt.AttrList)
+		})
 }
 
 func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 	p.layoutID(doc, attribute.Name)
-	// TODO fix this using the correct position of the '=' which I need to know the position of equal
-	// to support a comment before it. Add the position info to the ast
-	// // p.printToken(token.Equal, attribute.Name.EndPos)
 	doc.Text(token.Equal.String())
 	p.layoutID(doc, attribute.Value)
 }

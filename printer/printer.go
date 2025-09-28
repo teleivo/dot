@@ -46,25 +46,21 @@ func (p *Printer) Print() error {
 	}
 
 	doc := layout.NewDoc(maxColumn)
-	err = p.layoutNode(doc, g)
-	if err != nil {
-		return err
-	}
+	p.layoutNode(doc, g)
 	// TODO add error handling in case fmt.Print fails?
 	doc.Render(p.w)
 
 	return nil
 }
 
-func (p *Printer) layoutNode(doc *layout.Doc, node ast.Node) error {
+func (p *Printer) layoutNode(doc *layout.Doc, node ast.Node) {
 	switch n := node.(type) {
 	case ast.Graph:
-		return p.layoutGraph(doc, n)
+		p.layoutGraph(doc, n)
 	}
-	return nil
 }
 
-func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
+func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) {
 	// TODO create strict graph id in a group? so ideally on one line but if not break each onto
 	// their own line? or at least the id?
 	if graph.IsStrict() {
@@ -85,14 +81,9 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
 	}
 
 	doc.Text(token.LeftBrace.String())
-	var err error
 	doc.Group(func(f *layout.Doc) {
 		// TODO wrap in indent block
-
-		err = p.layoutStmts(doc, graph.Stmts)
-		if err != nil {
-			return
-		}
+		p.layoutStmts(doc, graph.Stmts)
 
 		if len(graph.Stmts) > 0 {
 			doc.SpaceIf(layout.Flat).
@@ -100,18 +91,12 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
 		}
 		doc.Text(token.RightBrace.String())
 	})
-
-	return err
 }
 
-func (p *Printer) layoutStmts(doc *layout.Doc, stmts []ast.Stmt) error {
+func (p *Printer) layoutStmts(doc *layout.Doc, stmts []ast.Stmt) {
 	for _, stmt := range stmts {
-		err := p.layoutStmt(doc, stmt)
-		if err != nil {
-			return err
-		}
+		p.layoutStmt(doc, stmt)
 	}
-	return nil
 }
 
 // layoutID prints a DOT [identifier]. newlines without preceding '\' are not mentioned as legal but
@@ -122,9 +107,8 @@ func (p *Printer) layoutID(doc *layout.Doc, id ast.ID) {
 	doc.Text(id.Literal)
 }
 
-func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
+func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) {
 	// TODO indent here I think
-	var err error
 	switch st := stmt.(type) {
 	case *ast.NodeStmt:
 		p.layoutNodeStmt(doc, st)
@@ -137,21 +121,20 @@ func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
 		p.layoutAttribute(doc, st)
 	case ast.Subgraph:
 		doc.Break(1)
-		err = p.layoutSubgraph(doc, st)
+		p.layoutSubgraph(doc, st)
 	}
-	return err
 }
 
 func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt *ast.NodeStmt) {
-	// TODO why does this not create a newline?
-	doc.Break(1)
-	doc.Group(func(d *layout.Doc) {
-		p.printNodeID(doc, nodeStmt.NodeID)
-		p.layoutAttrList(doc, nodeStmt.AttrList)
-	})
+	doc.Break(1).
+		Group(func(d *layout.Doc) {
+			p.layoutNodeID(doc, nodeStmt.NodeID)
+			doc.Space()
+			p.layoutAttrList(doc, nodeStmt.AttrList)
+		})
 }
 
-func (p *Printer) printNodeID(doc *layout.Doc, nodeID ast.NodeID) {
+func (p *Printer) layoutNodeID(doc *layout.Doc, nodeID ast.NodeID) {
 	p.layoutID(doc, nodeID.ID)
 
 	if nodeID.Port == nil {
@@ -169,6 +152,11 @@ func (p *Printer) printNodeID(doc *layout.Doc, nodeID ast.NodeID) {
 }
 
 func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
+	// don't print empty []
+	if attrList == nil {
+		return
+	}
+
 	doc.Group(func(d *layout.Doc) {
 		doc.Text(token.LeftBracket.String()).
 			BreakIf(1, layout.Broken)
@@ -215,49 +203,40 @@ func hasMultipleAttributes(attrList *ast.AttrList) (int, bool) {
 }
 
 func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) {
-	// // p.printNewline()
+	doc.Break(1)
+	p.layoutEdgeOperand(doc, edgeStmt.Left)
+	doc.Space()
 
-	err := p.printEdgeOperand(doc, edgeStmt.Left)
-	if err != nil {
-		return
-	}
-
-	// // p.printSpace()
 	if edgeStmt.Right.Directed {
-		// // p.printToken(token.DirectedEgde, edgeStmt.Right.StartPos)
+		doc.Text(token.DirectedEgde.String())
 	} else {
-		// // p.printToken(token.UndirectedEgde, edgeStmt.Right.StartPos)
+		doc.Text(token.UndirectedEgde.String())
 	}
+	doc.Space()
 
-	// // p.printSpace()
-	err = p.printEdgeOperand(doc, edgeStmt.Right.Right)
-	if err != nil {
-		return
-	}
+	p.layoutEdgeOperand(doc, edgeStmt.Right.Right)
 
 	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
-		// // p.printSpace()
+		doc.Space()
 		if edgeStmt.Right.Directed {
-			// // p.printToken(token.DirectedEgde, cur.StartPos)
+			doc.Text(token.DirectedEgde.String())
 		} else {
-			// // p.printToken(token.UndirectedEgde, cur.StartPos)
+			doc.Text(token.UndirectedEgde.String())
 		}
-		// // p.printSpace()
-		p.printEdgeOperand(doc, cur.Right)
+		doc.Space()
+		p.layoutEdgeOperand(doc, cur.Right)
 	}
 
 	p.layoutAttrList(doc, edgeStmt.AttrList)
 }
 
-func (p *Printer) printEdgeOperand(doc *layout.Doc, edgeOperand ast.EdgeOperand) error {
-	var err error
+func (p *Printer) layoutEdgeOperand(doc *layout.Doc, edgeOperand ast.EdgeOperand) {
 	switch op := edgeOperand.(type) {
 	case ast.NodeID:
-		p.printNodeID(doc, op)
+		p.layoutNodeID(doc, op)
 	case ast.Subgraph:
-		err = p.layoutSubgraph(doc, op)
+		p.layoutSubgraph(doc, op)
 	}
-	return err
 }
 
 func (p *Printer) layoutAttrStmt(doc *layout.Doc, attrStmt *ast.AttrStmt) {
@@ -275,20 +254,15 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 	p.layoutID(doc, attribute.Value)
 }
 
-func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) error {
-	// // p.printToken(token.Subgraph, subraph.Start())
-	// // p.printSpace()
+func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
+	doc.Text(token.Subgraph.String()).
+		Space()
 	if subraph.ID != nil {
 		p.layoutID(doc, *subraph.ID)
-		// // p.printSpace()
+		doc.Space()
 	}
 
-	// // p.printToken(token.LeftBrace, subraph.LeftBrace)
-
-	err := p.layoutStmts(doc, subraph.Stmts)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	doc.Text(token.LeftBrace.String())
+	p.layoutStmts(doc, subraph.Stmts)
+	// TODO who closes this brace?
 }

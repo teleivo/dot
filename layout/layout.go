@@ -40,20 +40,43 @@ func (d *Doc) newTagIterator(i, j int) tagIterator {
 	}
 }
 
-func (d *Doc) Tag(t tag) *Doc {
+func (d *Doc) Text(content string) *Doc {
+	return d.tag(Text(content))
+}
+
+func (d *Doc) TextIf(content string, cond condition) *Doc {
+	return d.tagIf(Text(content), cond)
+}
+
+func (d *Doc) Space() *Doc {
+	return d.tag(Space)
+}
+
+func (d *Doc) SpaceIf(cond condition) *Doc {
+	return d.tagIf(Space, cond)
+}
+
+func (d *Doc) Break(count int) *Doc {
+	return d.tag(Break(count))
+}
+
+func (d *Doc) BreakIf(count int, cond condition) *Doc {
+	return d.tagIf(Break(count), cond)
+}
+
+func (d *Doc) Group(body func(*Doc)) *Doc {
+	return d.tagWith(&group{}, body)
+}
+
+func (d *Doc) tag(t tag) *Doc {
 	return d.tagIfWith(t, Always, func(d *Doc) {})
 }
 
-func (d *Doc) TagIf(t tag, cond condition) *Doc {
+func (d *Doc) tagIf(t tag, cond condition) *Doc {
 	return d.tagIfWith(t, cond, func(d *Doc) {})
 }
 
-// TODO what about doc.Group(body) instead of doc.TagWith(Group(), body)?
-// and doc.Indent(body) instead of doc.TagWith(Indent(), body)?
-// doc.Text(), doc.Space(), doc.Break()
-// doc.SpaceIf(Flat), doc.BreakIf(Broken) and so on
-
-func (d *Doc) TagWith(t tag, body func(*Doc)) *Doc {
+func (d *Doc) tagWith(t tag, body func(*Doc)) *Doc {
 	return d.tagIfWith(t, Always, body)
 }
 

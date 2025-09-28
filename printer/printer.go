@@ -68,25 +68,25 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
 	// TODO create strict graph id in a group? so ideally on one line but if not break each onto
 	// their own line? or at least the id?
 	if graph.IsStrict() {
-		doc.Tag(layout.Text(token.Strict.String()))
-		doc.Tag(layout.Space)
+		doc.Text(token.Strict.String())
+		doc.Space()
 	}
 
 	if graph.Directed {
-		doc.Tag(layout.Text(token.Digraph.String()))
+		doc.Text(token.Digraph.String())
 	} else {
-		doc.Tag(layout.Text(token.Graph.String()))
+		doc.Text(token.Graph.String())
 	}
-	doc.Tag(layout.Space)
+	doc.Space()
 
 	if graph.ID != nil {
 		p.layoutID(doc, *graph.ID)
-		doc.Tag(layout.Space)
+		doc.Space()
 	}
 
-	doc.Tag(layout.Text(token.LeftBrace.String()))
+	doc.Text(token.LeftBrace.String())
 	var err error
-	doc.TagWith(layout.Group(), func(f *layout.Doc) {
+	doc.Group(func(f *layout.Doc) {
 		// TODO wrap in indent block
 
 		err = p.layoutStmts(doc, graph.Stmts)
@@ -95,10 +95,10 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) error {
 		}
 
 		if len(graph.Stmts) > 0 {
-			doc.TagIf(layout.Space, layout.Flat)
-			doc.TagIf(layout.Break(1), layout.Broken)
+			doc.SpaceIf(layout.Flat)
+			doc.BreakIf(1, layout.Broken)
 		}
-		doc.Tag(layout.Text(token.RightBrace.String()))
+		doc.Text(token.RightBrace.String())
 	})
 
 	return err
@@ -119,7 +119,7 @@ func (p *Printer) layoutStmts(doc *layout.Doc, stmts []ast.Stmt) error {
 //
 // [identifier:] https://graphviz.org/doc/info/lang.html#ids
 func (p *Printer) layoutID(doc *layout.Doc, id ast.ID) {
-	doc.Tag(layout.Text(id.Literal))
+	doc.Text(id.Literal)
 }
 
 func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
@@ -143,8 +143,8 @@ func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) error {
 
 func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt *ast.NodeStmt) {
 	// TODO why does this not create a newline?
-	doc.Tag(layout.Break(1))
-	doc.TagWith(layout.Group(), func(d *layout.Doc) {
+	doc.Break(1)
+	doc.Group(func(d *layout.Doc) {
 		p.printNodeID(doc, nodeStmt.NodeID)
 		p.layoutAttrList(doc, nodeStmt.AttrList)
 	})
@@ -172,8 +172,8 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 		return
 	}
 
-	doc.Tag(layout.Text(token.LeftBracket.String()))
-	doc.Tag(layout.Space)
+	doc.Text(token.LeftBracket.String())
+	doc.Space()
 	// TODO indent block
 	// p.increaseIndentation()
 
@@ -182,19 +182,19 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 	}
 
 	// p.decreaseIndentation()
-	doc.TagIf(layout.Break(1), layout.Broken)
+	doc.BreakIf(1, layout.Broken)
 
 	// TODO if I remember correctly I am merging A [color=blue] [style=filled] into A [color=blue,
 	// style=filled]. How does me taking out '[]' affect printing of comments? Add to the test case.
-	doc.Tag(layout.Text(token.RightBracket.String()))
+	doc.Text(token.RightBracket.String())
 }
 
 func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
 	for cur := aList; cur != nil; cur = cur.Next {
-		doc.TagIf(layout.Break(1), layout.Broken)
+		doc.BreakIf(1, layout.Broken)
 		p.layoutAttribute(doc, cur.Attribute)
 		// TODO implement delayed printing in Render to prevent trailing whitespace
-		doc.TagIf(layout.Space, layout.Flat)
+		doc.SpaceIf(layout.Flat)
 	}
 }
 
@@ -280,7 +280,7 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 	// TODO fix this using the correct position of the '=' which I need to know the position of equal
 	// to support a comment before it. Add the position info to the ast
 	// // p.printToken(token.Equal, attribute.Name.EndPos)
-	doc.Tag(layout.Text(token.Equal.String()))
+	doc.Text(token.Equal.String())
 	p.layoutID(doc, attribute.Value)
 }
 

@@ -158,7 +158,7 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 		case *indentation:
 			if t.cond != Flat {
 				// TODO implement safety on under/overflow
-				d.layout(children, indent+column, column)
+				d.layout(children, indent+tag.columns, column)
 			}
 		case *text:
 			column += len(tag.content)
@@ -182,7 +182,7 @@ func render(w io.Writer, iter tagIterator, isParentBroken bool) {
 			render(w, children, t.measure.broken)
 		case *indentation:
 			// TODO implement indentation, only indent if we have pending newline(s)
-			render(w, children, t.measure.broken)
+			render(w, children, isParentBroken)
 		case *text:
 			fmt.Fprintf(w, "%s", tag.content)
 		case space:

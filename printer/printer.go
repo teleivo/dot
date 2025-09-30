@@ -13,7 +13,7 @@ import (
 const (
 	// maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
 	// every dot construct can be broken up though.
-	maxColumn = 20
+	maxColumn = 80
 	// tabWidth represents the number of columns a tab takes up
 	tabWidth = 1
 )
@@ -126,7 +126,6 @@ func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt *ast.NodeStmt) {
 	doc.Break(1).
 		Group(func(d *layout.Doc) {
 			p.layoutNodeID(doc, nodeStmt.NodeID)
-			doc.Space()
 			p.layoutAttrList(doc, nodeStmt.AttrList)
 		})
 }
@@ -139,14 +138,10 @@ func (p *Printer) layoutNodeID(doc *layout.Doc, nodeID ast.NodeID) {
 	}
 
 	if nodeID.Port.Name != nil {
-		// TODO what was the column offset about?
-		// p.printToken(token.Colon, withColumnOffset(nodeID.Port.Name.StartPos, -1))
 		doc.Text(token.Colon.String())
 		p.layoutID(doc, *nodeID.Port.Name)
 	}
 	if nodeID.Port.CompassPoint != nil && nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
-		// TODO what was the column offset about?
-		// p.printToken(token.Colon, withColumnOffset(nodeID.Port.CompassPoint.StartPos, -1))
 		doc.Text(token.Colon.String())
 		doc.Text(nodeID.Port.CompassPoint.String())
 	}
@@ -158,6 +153,7 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 		return
 	}
 
+	doc.Space()
 	for cur := attrList; cur != nil; cur = cur.Next {
 		doc.Group(func(d *layout.Doc) {
 			doc.Text(token.LeftBracket.String()).

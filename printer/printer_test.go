@@ -69,11 +69,7 @@ A        	[ 	label="blue",]
 A     [ 	label="blue", color=grey; size=0.1,]
 			}`,
 			want: `graph {
-	A [
-		label="blue"
-		color=grey
-		size=0.1
-	]
+	A [label="blue",color=grey,size=0.1]
 }`,
 		},
 		"NodeStmtWithMultipleAttributeLists": {
@@ -81,7 +77,7 @@ A     [ 	label="blue", color=grey; size=0.1,]
 A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 			}`,
 			want: `graph {
-	A [label="blue",color=grey,size=0.1]
+	A [label="blue"] [color=grey,size=0.1] []
 }`,
 		},
 		"EdgeStmtDigraph": {
@@ -126,12 +122,12 @@ graph {
 	graph []
 }`,
 		},
-		"AttrStmtWithSingleAttribute": {
+		"AttrStmtWithEmptyAndSingleAttribute": {
 			in: `graph {
 graph    [] [ 	label="blue",]
 			}`,
 			want: `graph {
-	graph [label="blue"]
+	graph [] [label="blue"]
 }`,
 		},
 		"AttributeStmtWithSingleAttribute": {

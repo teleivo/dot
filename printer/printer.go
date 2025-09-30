@@ -161,8 +161,8 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 		return
 	}
 
-	doc.Group(func(d *layout.Doc) {
-		for cur := attrList; cur != nil; cur = cur.Next {
+	for cur := attrList; cur != nil; cur = cur.Next {
+		doc.Group(func(d *layout.Doc) {
 			doc.Text(token.LeftBracket.String()).
 				BreakIf(1, layout.Broken).
 				Indent(1, func(d *layout.Doc) {
@@ -173,8 +173,8 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 			if cur.Next != nil {
 				doc.Space()
 			}
-		}
-	})
+		})
+	}
 }
 
 func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {

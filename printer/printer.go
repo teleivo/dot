@@ -15,7 +15,7 @@ const (
 	// every dot construct can be broken up though.
 	maxColumn = 20
 	// tabWidth represents the number of columns a tab takes up
-	tabWidth = 2
+	tabWidth = 1
 )
 
 // Printer formats DOT code.
@@ -82,7 +82,7 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) {
 
 	doc.Text(token.LeftBrace.String())
 	doc.Group(func(f *layout.Doc) {
-		doc.Indent(2, func(d *layout.Doc) {
+		doc.IndentIf(1, layout.Broken, func(d *layout.Doc) {
 			p.layoutStmts(doc, graph.Stmts)
 		})
 
@@ -164,7 +164,7 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 	doc.Group(func(d *layout.Doc) {
 		doc.Text(token.LeftBracket.String()).
 			BreakIf(1, layout.Broken).
-			IndentIf(tabWidth, layout.Broken, func(d *layout.Doc) {
+			Indent(1, func(d *layout.Doc) {
 				for cur := attrList; cur != nil; cur = cur.Next {
 					p.layoutAList(doc, cur.AList)
 				}
@@ -177,10 +177,9 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
 	for cur := aList; cur != nil; cur = cur.Next {
 		p.layoutAttribute(doc, cur.Attribute)
-		// TODO do I want commas?
-		// TODO implement delayed printing in Render to prevent trailing whitespace
+		doc.TextIf(token.Comma.String(), layout.Broken)
 		if cur.Next != nil {
-			doc.SpaceIf(layout.Flat)
+			doc.TextIf(token.Comma.String(), layout.Flat)
 			doc.BreakIf(1, layout.Broken)
 		}
 	}

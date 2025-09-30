@@ -106,7 +106,15 @@ func (d *Doc) Render(w io.Writer) {
 	d.measure()
 	d.layout(d.All(), 0, 0)
 	// TODO create an internal printer to keep track of column, indent, pending newline(s)?
-	render(w, d.All(), true)
+	r := &renderer{w: w}
+	r.render(d.All(), true)
+}
+
+type renderer struct {
+	w        io.Writer // w writer to output formatted DOT code to
+	indent   int       // indent is the current level of indentation
+	space    bool      // space indicates a buffered space that should be rendered
+	newlines int       // newlines indicates the number of buffered newline that should be rendered
 }
 
 func (d *Doc) measure() {
@@ -171,7 +179,7 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 	}
 }
 
-func render(w io.Writer, iter tagIterator, isParentBroken bool) {
+func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 	for t, children := range iter {
 		if t.cond == Flat && isParentBroken || t.cond == Broken && !isParentBroken {
 			continue
@@ -179,20 +187,34 @@ func render(w io.Writer, iter tagIterator, isParentBroken bool) {
 
 		switch tag := t.tag.(type) {
 		case *group:
-			render(w, children, t.measure.broken)
+			r.render(children, t.measure.broken)
 		case *indentation:
-			// TODO implement indentation, only indent if we have pending newline(s)
-			render(w, children, isParentBroken)
+			// TODO implement indentation, only indent if we have pending newline(s)?
+			// TODO implement safety on under/overflow
+			r.indent += tag.columns
+			r.render(children, isParentBroken)
+			r.indent -= tag.columns
 		case *text:
-			fmt.Fprintf(w, "%s", tag.content)
-		case space:
-			fmt.Fprintf(w, " ")
-		case newlines:
+			if r.newlines == 0 && r.space { // prevents trailing whitespace
+				fmt.Fprintf(r.w, " ")
+				r.space = false
+			}
 			// TODO is batching prints more efficient? like having a slice of 10 newlines and
 			// printing at least up to 10 at a time?
-			for i := tag.count; i > 0; i-- {
-				fmt.Fprintf(w, "\n")
+			for i := r.newlines; i > 0; i-- {
+				fmt.Fprintf(r.w, "\n")
 			}
+			if r.newlines > 0 {
+				for i := r.indent; i > 0; i-- {
+					fmt.Fprintf(r.w, "\n")
+				}
+			}
+			r.newlines = 0
+			fmt.Fprintf(r.w, "%s", tag.content)
+		case space:
+			r.space = true
+		case newlines:
+			r.newlines += tag.count
 		}
 	}
 }

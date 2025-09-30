@@ -156,28 +156,30 @@ func (p *Printer) layoutNodeID(doc *layout.Doc, nodeID ast.NodeID) {
 }
 
 func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
-	// don't print empty []
+	// don't print empty [] in node_stmt or edge_stmt where attr_list is optional
 	if attrList == nil {
 		return
 	}
 
 	doc.Group(func(d *layout.Doc) {
-		doc.Text(token.LeftBracket.String()).
-			BreakIf(1, layout.Broken).
-			Indent(1, func(d *layout.Doc) {
-				for cur := attrList; cur != nil; cur = cur.Next {
+		for cur := attrList; cur != nil; cur = cur.Next {
+			doc.Text(token.LeftBracket.String()).
+				BreakIf(1, layout.Broken).
+				Indent(1, func(d *layout.Doc) {
 					p.layoutAList(doc, cur.AList)
-				}
-			})
-		doc.BreakIf(1, layout.Broken).
-			Text(token.RightBracket.String())
+				})
+			doc.BreakIf(1, layout.Broken).
+				Text(token.RightBracket.String())
+			if cur.Next != nil {
+				doc.Space()
+			}
+		}
 	})
 }
 
 func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
 	for cur := aList; cur != nil; cur = cur.Next {
 		p.layoutAttribute(doc, cur.Attribute)
-		doc.TextIf(token.Comma.String(), layout.Broken)
 		if cur.Next != nil {
 			doc.TextIf(token.Comma.String(), layout.Flat)
 			doc.BreakIf(1, layout.Broken)

@@ -206,7 +206,7 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 			}
 			if r.newlines > 0 {
 				for i := r.indent; i > 0; i-- {
-					fmt.Fprintf(r.w, "\n")
+					fmt.Fprintf(r.w, "\t")
 				}
 			}
 			r.newlines = 0

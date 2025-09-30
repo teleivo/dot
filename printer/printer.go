@@ -86,11 +86,8 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) {
 			p.layoutStmts(doc, graph.Stmts)
 		})
 
-		if len(graph.Stmts) > 0 {
-			doc.SpaceIf(layout.Flat).
-				BreakIf(1, layout.Broken)
-		}
-		doc.Text(token.RightBrace.String())
+		doc.Break(1).
+			Text(token.RightBrace.String())
 	})
 }
 

@@ -1,0 +1,3 @@
+strict graph "Moo" {
+	node [a=b,c=d,e=f] [font="fooo"] [color="woooooooooooooooo"]
+}

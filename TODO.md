@@ -1,3 +1,40 @@
+## Allman
+
+* fix test
+* go through old todos
+  * align multiple attribute values (and `=`)
+    `"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
+      color = "blue"
+      len   = 2.6
+    ]`
+   should that then apply to the entire file :joy:? as global attributes can be set on the
+  graph/subraph as well
+  * allow multiple nodes on the same line? how to break them up when > maxCol
+
+* support subraph shorthand using `{}` and don't always print `subgraph`
+
+* what does Break(0) mean? should I support this?
+* how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
+doc like NewDoc or so?
+* tests
+  * only test this as part of dotfmt or test it in isolation?
+  * no trailing spaces
+* implement merging multiple Break() using max(n, m)
+  * this was my old todo on that: how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
+    Allow users to do that. No more than one empty line though. And will that line be completely
+    empty or be indented as the surrounding code?
+    I need proper token/ast position. for this row and column
+* add godocs
+* merge changes to main
+* support comments
+* support word-wrapping
+* support splitting IDs using line-continuation
+* measure in original sets broken if text contains newline. this is not correct for raw strings
+right? `foo\nfaa` in Go or similar with escaped newlines or so in DOT should not cause a newline.
+add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
+
+## Next
+
 * improve error handling see [Parser](#parser)
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
@@ -32,7 +69,6 @@ to keep it externally like `cmd/tokens`?
 
 * profile any of the above on a large file, generate a pprof dot file and feed that back into the
 parser as a test via testdata
-
 
 ## Parser
 
@@ -153,14 +189,6 @@ guess column count can differ in terms of what they mean.
 if endColumn > maxColumn { // the word and \ do not fit on the current line
 ```
 
-Alignment
-* use https://nick-gravgaard.com/elastic-tabstops/
-    * via https://pkg.go.dev/text/tabwriter
-    * https://github.com/mvdan/gofumpt/issues/2
-* how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
-Allow users to do that. No more than one empty line though. And will that line be completely
-empty or be indented as the surrounding code?
-I need proper token/ast position. for this row and column
 * improve breaking up long lines
   * Only the ID individually is considered right now. In this example `]` exceeds the maxCol
 
@@ -168,13 +196,6 @@ I need proper token/ast position. for this row and column
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 ```
 
-* align multiple attribute values (and `=`)
-	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
-		color = "blue"
-		len   = 2.6
-	]`
- should that then apply to the entire file :joy:? as global attributes can be set on the
-graph/subraph as well
 * make this prettier
 
 ```dot
@@ -189,8 +210,6 @@ the Attribute should go on a new line like above but it ends up looking like
 	B [style="filled" // this should stay with style="filled"
 	]
 ```
-
-* allow multiple nodes on the same line? how to break them up when > maxCol
 
 comments
     * merge adjacent comments?
@@ -270,8 +289,6 @@ in a `graph { }` assuming that the src is a []Stmt. This might fail if src conta
 so I need to detect such errors and try with `digraph {}`.
 
 ### Features
-
-* support subraph shorthand using `{}` and don't always print `subgraph`
 
 * support + on IDs
 

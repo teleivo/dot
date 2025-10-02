@@ -14,8 +14,6 @@ const (
 	// maxColumn is the max number of runes after which lines are broken up into multiple lines. Not
 	// every dot construct can be broken up though.
 	maxColumn = 80
-	// tabWidth represents the number of columns a tab takes up
-	tabWidth = 1
 )
 
 // Printer formats DOT code.

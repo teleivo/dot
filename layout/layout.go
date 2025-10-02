@@ -105,7 +105,6 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 func (d *Doc) Render(w io.Writer) {
 	d.measure()
 	d.layout(d.All(), 0, 0)
-	// TODO create an internal printer to keep track of column, indent, pending newline(s)?
 	r := &renderer{w: w}
 	r.render(d.All(), true)
 }

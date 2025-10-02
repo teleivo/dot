@@ -1,0 +1,16 @@
+graph { // ok
+	A [
+		color=blue // foo who
+		color=blue // foo
+	// whooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+	// fix indentation here as well?
+	] // hee you
+	subgraph {
+		A
+		B
+	// fix indentation here as well?
+	}
+// fix indentation here or is that ok?
+} // there you go
+// whooo
+// whooohooo!

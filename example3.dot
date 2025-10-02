@@ -1,0 +1,6 @@
+graph {
+	"this is a node name is that is too long" [
+		style="filled"
+		color="blue"
+	]
+}

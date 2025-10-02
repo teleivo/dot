@@ -253,6 +253,7 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 }
 
 func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
+	// TODO reconsider always printing subraph as I now know whether the user wanted it
 	doc.Text(token.Subgraph.String()).
 		Space()
 	if subraph.ID != nil {
@@ -261,6 +262,12 @@ func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
 	}
 
 	doc.Text(token.LeftBrace.String())
-	p.layoutStmts(doc, subraph.Stmts)
-	// TODO who closes this brace?
+	doc.Group(func(f *layout.Doc) {
+		doc.IndentIf(1, layout.Broken, func(d *layout.Doc) {
+			p.layoutStmts(doc, subraph.Stmts)
+		})
+
+		doc.Break(1).
+			Text(token.RightBrace.String())
+	})
 }

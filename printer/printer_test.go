@@ -87,10 +87,7 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	]; rank=same;}
 `,
 			want: `digraph {
-	3 -> 2 -> 4 [
-		color="blue"
-		len=2.6
-	]
+	3 -> 2 -> 4 [color="blue",len=2.6]
 	rank=same
 }`,
 		},
@@ -105,10 +102,7 @@ graph {
 		1
 		2
 	} -- subgraph "numbers" {
-		node [
-			color=blue
-			style=filled
-		]
+		node [color=blue,style=filled]
 		3
 		4
 	}
@@ -323,7 +317,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
 			if gotFirst.String() != test.want {
-				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", test.in, gotFirst.String(), test.want)
+				t.Fatalf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", test.in, gotFirst.String(), test.want)
 			}
 
 			t.Logf("print again with the previous output as the input to ensure printing is idempotent")

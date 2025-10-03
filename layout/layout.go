@@ -102,11 +102,19 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 	return d
 }
 
-func (d *Doc) Render(w io.Writer) {
+func (d *Doc) Render(w io.Writer, debug bool) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
 	r := &renderer{w: w}
-	r.render(d.All(), true)
+
+	var err error
+	if debug {
+		_, err = fmt.Fprint(w, d)
+	} else {
+		r.render(d.All(), true)
+	}
+
+	return err
 }
 
 type renderer struct {
@@ -220,25 +228,41 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 
 func (d *Doc) String() string {
 	var sb strings.Builder
-	stringIter(&sb, d.All())
+	stringIter(&sb, d.All(), 0)
 	return sb.String()
 }
 
-func stringIter(w io.Writer, iter tagIterator) {
-	// TODO when to print newlines even in this debug string?
+func stringIter(w io.Writer, iter tagIterator, indent int) {
 	for t, children := range iter {
 		switch tag := t.tag.(type) {
 		case *group:
-			fmt.Fprintf(w, "<group width=%s>", t.measure)
-			stringIter(w, children)
-			fmt.Fprintf(w, "</group>")
+			writeIndent(w, indent)
+			fmt.Fprintf(w, "<group width=%s>\n", t.measure)
+			stringIter(w, children, indent+1)
+			writeIndent(w, indent)
+			fmt.Fprintf(w, "</group>\n")
+		case *indentation:
+			writeIndent(w, indent)
+			fmt.Fprintf(w, "<indent columns=%d>\n", tag.columns)
+			stringIter(w, children, indent+1)
+			writeIndent(w, indent)
+			fmt.Fprintf(w, "</indent>\n")
 		case *text:
-			fmt.Fprintf(w, "<text width=%s content=%q/>", t.measure, tag.content)
+			writeIndent(w, indent)
+			fmt.Fprintf(w, "<text width=%s content=%q/>\n", t.measure, tag.content)
 		case space:
-			fmt.Fprintf(w, "<space/>")
+			writeIndent(w, indent)
+			fmt.Fprintf(w, "<space/>\n")
 		case newlines:
-			fmt.Fprintf(w, "<break count=%d/>", tag.count)
+			writeIndent(w, indent)
+			fmt.Fprintf(w, "<break count=%d/>\n", tag.count)
 		}
+	}
+}
+
+func writeIndent(w io.Writer, columns int) {
+	for range columns {
+		fmt.Fprint(w, "\t")
 	}
 }
 
@@ -308,7 +332,6 @@ type group struct{}
 func (g *group) tag() {}
 
 func (g *group) String() string {
-	// TODO implement
 	return "Group"
 }
 
@@ -319,8 +342,7 @@ type indentation struct {
 func (i *indentation) tag() {}
 
 func (i *indentation) String() string {
-	// TODO implement
-	return "Indent"
+	return fmt.Sprintf("Indent(%d)", i.columns)
 }
 
 type text struct {

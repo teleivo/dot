@@ -1,6 +1,7 @@
 ## Allman
 
 * fix test
+* is GoStringer useful for layout so I can capture it into a test if something is odd?
 * go through old todos
   * align multiple attribute values (and `=`)
     `"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
@@ -263,6 +264,7 @@ or is that to simplistic as there are rules as to when you are allowed/have to c
     * all of this to find any lingering bugs I have
 
 * support formatting file/dirs in place
+  * allow passing in file via flag and out file via flag while still allowing stdin/stdout
   * goroutines could be fun once its working ;)
   * format all of https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
     * profile, anything obvious I could improve?

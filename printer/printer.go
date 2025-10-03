@@ -23,16 +23,19 @@ type Printer struct {
 	row     int       // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
 	column  int       // column is the current one-indexed column in terms of runes the printer is at. A tab counts as [tabWidth] columns. 0 means no rune has been printed on the current row
 	newline bool      // newline indicates a buffered newline that should be printed
+	debug   bool      // debug will print the intermediate layout instead of the formatted DOT code
 }
 
-func NewPrinter(r io.Reader, w io.Writer) *Printer {
+func NewPrinter(r io.Reader, w io.Writer, debug bool) *Printer {
 	return &Printer{
-		r: r,
-		w: w,
+		r:     r,
+		w:     w,
+		debug: debug,
 	}
 }
 
 func (p *Printer) Print() error {
+	// TODO wrap errors in here to give some context?
 	ps, err := dot.NewParser(p.r)
 	if err != nil {
 		return err
@@ -45,10 +48,9 @@ func (p *Printer) Print() error {
 
 	doc := layout.NewDoc(maxColumn)
 	p.layoutNode(doc, g)
-	// TODO add error handling in case fmt.Print fails?
-	doc.Render(p.w)
+	err = doc.Render(p.w, p.debug)
 
-	return nil
+	return err
 }
 
 func (p *Printer) layoutNode(doc *layout.Doc, node ast.Node) {

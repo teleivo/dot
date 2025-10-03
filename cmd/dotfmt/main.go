@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,9 @@ func main() {
 }
 
 func run(r io.Reader, w io.Writer) error {
-	p := printer.NewPrinter(r, w)
+	debug := flag.Bool("debug", false, "Print the intermediate representation used to layout the DOT code instead of the code itself")
+	flag.Parse()
+
+	p := printer.NewPrinter(r, w, *debug)
 	return p.Print()
 }

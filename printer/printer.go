@@ -153,21 +153,32 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 		return
 	}
 
+	// TODO add tests later for these layouts but why is the first attrlist not broken up as it does
+	// exceed the max column on that line
+	// 3 ->
+	// 2 ->
+	// 4 ->
+	// "five" ->
+	// "sixteen" [color="blue",len=2.6,font="Helvetica patched",background="transparent red"]
+	// [ arrowtail="halfopen"]
 	doc.Space()
-	for cur := attrList; cur != nil; cur = cur.Next {
-		doc.Group(func(d *layout.Doc) {
-			doc.Text(token.LeftBracket.String()).
-				BreakIf(1, layout.Broken).
-				Indent(1, func(d *layout.Doc) {
-					p.layoutAList(doc, cur.AList)
-				})
-			doc.BreakIf(1, layout.Broken).
-				Text(token.RightBracket.String())
-			if cur.Next != nil {
-				doc.Space()
-			}
-		})
-	}
+	doc.Group(func(d *layout.Doc) {
+		for cur := attrList; cur != nil; cur = cur.Next {
+			doc.Group(func(d *layout.Doc) {
+				doc.Text(token.LeftBracket.String()).
+					BreakIf(1, layout.Broken).
+					Indent(1, func(d *layout.Doc) {
+						p.layoutAList(doc, cur.AList)
+					})
+				doc.BreakIf(1, layout.Broken).
+					Text(token.RightBracket.String())
+				if cur.Next != nil {
+					doc.Space()
+				}
+			})
+			doc.BreakIf(1, layout.Broken)
+		}
+	})
 }
 
 func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
@@ -202,30 +213,36 @@ func hasMultipleAttributes(attrList *ast.AttrList) (int, bool) {
 
 func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) {
 	doc.Break(1)
-	p.layoutEdgeOperand(doc, edgeStmt.Left)
-	doc.Space()
 
-	if edgeStmt.Right.Directed {
-		doc.Text(token.DirectedEgde.String())
-	} else {
-		doc.Text(token.UndirectedEgde.String())
-	}
-	doc.Space()
-
-	p.layoutEdgeOperand(doc, edgeStmt.Right.Right)
-
-	for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
+	doc.Group(func(d *layout.Doc) {
+		p.layoutEdgeOperand(doc, edgeStmt.Left)
 		doc.Space()
+
 		if edgeStmt.Right.Directed {
 			doc.Text(token.DirectedEgde.String())
 		} else {
 			doc.Text(token.UndirectedEgde.String())
 		}
-		doc.Space()
-		p.layoutEdgeOperand(doc, cur.Right)
-	}
+		doc.SpaceIf(layout.Flat)
+		doc.BreakIf(1, layout.Broken)
 
-	p.layoutAttrList(doc, edgeStmt.AttrList)
+		p.layoutEdgeOperand(doc, edgeStmt.Right.Right)
+
+		for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
+			doc.Space()
+			if edgeStmt.Right.Directed {
+				doc.Text(token.DirectedEgde.String())
+			} else {
+				doc.Text(token.UndirectedEgde.String())
+			}
+			doc.SpaceIf(layout.Flat)
+			doc.BreakIf(1, layout.Broken)
+
+			p.layoutEdgeOperand(doc, cur.Right)
+		}
+
+		p.layoutAttrList(doc, edgeStmt.AttrList)
+	})
 }
 
 func (p *Printer) layoutEdgeOperand(doc *layout.Doc, edgeOperand ast.EdgeOperand) {

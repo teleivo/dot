@@ -18,19 +18,19 @@ const (
 
 // Printer formats DOT code.
 type Printer struct {
-	r       io.Reader    // r reader to parse dot code from
-	w       io.Writer    // w writer to output formatted DOT code to
-	row     int          // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
-	column  int          // column is the current one-indexed column in terms of runes the printer is at. A tab counts as [tabWidth] columns. 0 means no rune has been printed on the current row
-	newline bool         // newline indicates a buffered newline that should be printed
-	debug   layout.Debug // debug will print the intermediate layout instead of the formatted DOT code
+	r       io.Reader     // r reader to parse dot code from
+	w       io.Writer     // w writer to output formatted DOT code to
+	row     int           // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
+	column  int           // column is the current one-indexed column in terms of runes the printer is at. A tab counts as [tabWidth] columns. 0 means no rune has been printed on the current row
+	newline bool          // newline indicates a buffered newline that should be printed
+	format  layout.Format // format in which to print the DOT code
 }
 
-func NewPrinter(r io.Reader, w io.Writer, debug layout.Debug) *Printer {
+func NewPrinter(r io.Reader, w io.Writer, format layout.Format) *Printer {
 	return &Printer{
-		r:     r,
-		w:     w,
-		debug: debug,
+		r:      r,
+		w:      w,
+		format: format,
 	}
 }
 
@@ -48,7 +48,7 @@ func (p *Printer) Print() error {
 
 	doc := layout.NewDoc(maxColumn)
 	p.layoutNode(doc, g)
-	err = doc.Render(p.w, p.debug)
+	err = doc.Render(p.w, p.format)
 
 	return err
 }

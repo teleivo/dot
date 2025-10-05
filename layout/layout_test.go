@@ -56,7 +56,7 @@ func TestLayout(t *testing.T) {
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
 				var sb strings.Builder
-				tc.in.Render(&sb, false)
+				tc.in.Render(&sb, layout.Default)
 				want := sb.String()
 
 				// GoStringer should produce valid Go code
@@ -70,7 +70,7 @@ func TestLayout(t *testing.T) {
 
 		func main() {
 			d := %s
-			d.Render(os.Stdout, false)
+			d.Render(os.Stdout, layout.Default)
 		}`
 				var goStringer strings.Builder
 				fmt.Fprintf(&goStringer, "%#v", tc.in)

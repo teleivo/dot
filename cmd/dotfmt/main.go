@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -10,24 +11,27 @@ import (
 )
 
 func main() {
-	if err := run(os.Args, os.Stdin, os.Stdout); err != nil {
+	if err := run(os.Args, os.Stdin, os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string, r io.Reader, w io.Writer) error {
-	// flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	// debug := flags.String("debug", "ff", "Print the intermediate representation used to layout the DOT code using 'layout' or print it as a a main.go 'go'")
-	// err := flags.Parse(args[1:])
-	// if err != nil {
-	// 	return err
-	// }
+func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
+	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	flags.SetOutput(wErr)
+	format := flags.String("format", "default", "Print the formatted DOT code using 'default', the intermediate representation (IR) used to layout the DOT code using 'layout' or a runnable main.go of the IR using 'go'")
+	err := flags.Parse(args[1:])
+	if err != nil {
+		return err
+	}
+	ft, err := layout.NewFormat(*format)
+	if err != nil {
+		return fmt.Errorf("failed to convert -format=%q: %v", *format, err)
+	}
 
-	// TODO fix
 	// TODO create a main.go I could pipe to a file and run. extract logic from test?
 	// TODO can I improve the indentation of GoStringer?
-	// _ = debug
-	p := printer.NewPrinter(r, w, layout.DebugGo)
+	p := printer.NewPrinter(r, w, ft)
 	return p.Print()
 }

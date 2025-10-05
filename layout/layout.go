@@ -7,13 +7,30 @@ import (
 	"strings"
 )
 
-type Debug = int
+// Format is the representation with which to render the layout.
+type Format = int
 
-// TODO use 0 as not to debug?
 const (
-	DebugLayout Debug = iota
-	DebugGo
+	// Default renders the layout content
+	Default Format = iota
+	// Layout renders the layout using an HTML like syntax
+	Layout
+	// Go renders the layout as GoString
+	Go
 )
+
+var formats = map[string]Format{
+	"default": Default,
+	"layout":  Layout,
+	"go":      Go,
+}
+
+func NewFormat(format string) (Format, error) {
+	if f, ok := formats[format]; ok {
+		return f, nil
+	}
+	return Default, fmt.Errorf("invalid format string %q", format)
+}
 
 type Doc struct {
 	maxColumn int
@@ -110,19 +127,31 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 	return d
 }
 
-func (d *Doc) Render(w io.Writer, debug Debug) error {
+func (d *Doc) Render(w io.Writer, format Format) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
 	r := &renderer{w: w}
 
 	var err error
-	switch debug {
-	case DebugGo:
-		_, err = fmt.Fprintf(w, "%#v", d)
-	case DebugLayout:
-		_, err = fmt.Fprint(w, d)
-	default:
+	switch format {
+	case Default:
 		r.render(d.All(), true)
+	case Layout:
+		_, err = fmt.Fprint(w, d)
+	case Go:
+		goTemplate := `package main
+
+		import (
+			"os"
+
+			"github.com/teleivo/dot/layout"
+		)
+
+		func main() {
+			d := %#v
+			d.Render(os.Stdout, layout.Default)
+		}`
+		_, err = fmt.Fprintf(w, goTemplate, d)
 	}
 
 	return err

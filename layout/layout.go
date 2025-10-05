@@ -141,17 +141,18 @@ func (d *Doc) Render(w io.Writer, format Format) error {
 	case Go:
 		goTemplate := `package main
 
-		import (
-			"os"
+import (
+	"os"
 
-			"github.com/teleivo/dot/layout"
-		)
+	"github.com/teleivo/dot/layout"
+)
 
-		func main() {
-			d := %#v
-			d.Render(os.Stdout, layout.Default)
-		}`
-		_, err = fmt.Fprintf(w, goTemplate, d)
+func main() {
+	d := %s
+	d.Render(os.Stdout, layout.Default)
+}
+`
+		_, err = fmt.Fprintf(w, goTemplate, goString(d, 1))
 	}
 
 	return err
@@ -307,53 +308,60 @@ func writeIndent(w io.Writer, columns int) {
 }
 
 func (d *Doc) GoString() string {
+	return goString(d, 0)
+}
+
+func goString(d *Doc, indent int) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "layout.NewDoc(%d)\n", d.maxColumn)
-	goStringIter(&sb, d.All(), 0)
+	goStringIter(&sb, d.All(), indent)
 	return sb.String()
 }
 
+// TODO can I reduce fmt calls?
+// TODO make simple test for GoStringer/String on literal want structures
 func goStringIter(w io.Writer, iter tagIterator, indent int) {
 	first := true
 	for t, children := range iter {
+		if first {
+			writeIndent(w, indent)
+			fmt.Fprint(w, "d.\n")
+			indent++
+		} else {
+			fmt.Fprint(w, ".\n")
+		}
+		writeIndent(w, indent)
+
 		switch tag := t.tag.(type) {
 		case *group:
-			writeContinuation(w, first)
-			writeIndent(w, indent)
 			fmt.Fprint(w, "Group(func(d *layout.Doc) {\n")
 			goStringIter(w, children, indent+1)
+			fmt.Fprintln(w)
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "})")
 		case *indentation:
-			writeContinuation(w, first)
-			writeIndent(w, indent)
 			if t.cond == Always {
 				fmt.Fprintf(w, "Indent(%d, func(d *layout.Doc) {\n", tag.columns)
 			} else {
 				fmt.Fprintf(w, "IndentIf(%d, layout.%s, func(d *layout.Doc) {\n", tag.columns, t.cond)
 			}
 			goStringIter(w, children, indent+1)
+			fmt.Fprintln(w)
 			writeIndent(w, indent)
 			fmt.Fprint(w, "})")
 		case *text:
-			writeContinuation(w, first)
-			writeIndent(w, indent)
 			if t.cond == Always {
 				fmt.Fprintf(w, "Text(%q)", tag.content)
 			} else {
 				fmt.Fprintf(w, "TextIf(%q, layout.%s)", tag.content, t.cond)
 			}
 		case space:
-			writeContinuation(w, first)
-			writeIndent(w, indent)
 			if t.cond == Always {
 				fmt.Fprint(w, "Space()")
 			} else {
 				fmt.Fprintf(w, "SpaceIf(layout.%s)", t.cond)
 			}
 		case newlines:
-			writeContinuation(w, first)
-			writeIndent(w, indent)
 			if t.cond == Always {
 				fmt.Fprintf(w, "Break(%d)", tag.count)
 			} else {
@@ -361,14 +369,6 @@ func goStringIter(w io.Writer, iter tagIterator, indent int) {
 			}
 		}
 		first = false
-	}
-}
-
-func writeContinuation(w io.Writer, first bool) {
-	if first {
-		fmt.Fprint(w, "d.\n")
-	} else {
-		fmt.Fprint(w, ".\n")
 	}
 }
 

@@ -30,8 +30,6 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 		return fmt.Errorf("failed to convert -format=%q: %v", *format, err)
 	}
 
-	// TODO create a main.go I could pipe to a file and run. extract logic from test?
-	// TODO can I improve the indentation of GoStringer?
 	p := printer.NewPrinter(r, w, ft)
 	return p.Print()
 }

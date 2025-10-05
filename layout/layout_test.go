@@ -2,7 +2,6 @@ package layout_test
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -60,21 +59,6 @@ func TestLayout(t *testing.T) {
 				want := sb.String()
 
 				// GoStringer should produce valid Go code
-				goTemplate := `package main
-
-		import (
-			"os"
-
-			"github.com/teleivo/dot/layout"
-		)
-
-		func main() {
-			d := %s
-			d.Render(os.Stdout, layout.Default)
-		}`
-				var goStringer strings.Builder
-				fmt.Fprintf(&goStringer, "%#v", tc.in)
-
 				const dir = "testdata/gostringer"
 				err := os.Mkdir(dir, 0o700)
 				if !errors.Is(err, os.ErrExist) {
@@ -92,7 +76,8 @@ func TestLayout(t *testing.T) {
 
 				f, err := os.Create(dir + "/main.go")
 				require.NoError(t, err)
-				fmt.Fprintf(f, goTemplate, goStringer.String())
+				err = tc.in.Render(f, layout.Go)
+				require.NoErrorf(t, err, "failed to render Go format")
 				cmd := exec.CommandContext(t.Context(), "go", "run", f.Name())
 				got, err := cmd.Output()
 				require.NoErrorf(t, err, "failed to execute Go code using layout.Doc generated using GoStringer")

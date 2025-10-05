@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/teleivo/assertive/require"
+	"github.com/teleivo/dot/layout"
 	"github.com/teleivo/dot/printer"
 )
 
@@ -350,7 +351,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			var gotFirst bytes.Buffer
-			p := printer.NewPrinter(strings.NewReader(test.in), &gotFirst, false)
+			p := printer.NewPrinter(strings.NewReader(test.in), &gotFirst, layout.Default)
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
@@ -361,7 +362,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			t.Logf("print again with the previous output as the input to ensure printing is idempotent")
 
 			var gotSecond bytes.Buffer
-			p = printer.NewPrinter(strings.NewReader(gotFirst.String()), &gotSecond, false)
+			p = printer.NewPrinter(strings.NewReader(gotFirst.String()), &gotSecond, layout.Default)
 			err = p.Print()
 			require.NoErrorf(t, err, "Print(%q)", gotFirst.String())
 

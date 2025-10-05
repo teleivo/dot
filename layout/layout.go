@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+type Debug = int
+
+// TODO use 0 as not to debug?
+const (
+	DebugLayout Debug = iota
+	DebugGo
+)
+
 type Doc struct {
 	maxColumn int
 	tags      []*tagInfo
@@ -102,15 +110,18 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 	return d
 }
 
-func (d *Doc) Render(w io.Writer, debug bool) error {
+func (d *Doc) Render(w io.Writer, debug Debug) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
 	r := &renderer{w: w}
 
 	var err error
-	if debug {
+	switch debug {
+	case DebugGo:
+		_, err = fmt.Fprintf(w, "%#v", d)
+	case DebugLayout:
 		_, err = fmt.Fprint(w, d)
-	} else {
+	default:
 		r.render(d.All(), true)
 	}
 

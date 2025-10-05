@@ -350,7 +350,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			var gotFirst bytes.Buffer
-			p := printer.NewPrinter(strings.NewReader(test.in), &gotFirst)
+			p := printer.NewPrinter(strings.NewReader(test.in), &gotFirst, false)
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
@@ -361,7 +361,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			t.Logf("print again with the previous output as the input to ensure printing is idempotent")
 
 			var gotSecond bytes.Buffer
-			p = printer.NewPrinter(strings.NewReader(gotFirst.String()), &gotSecond)
+			p = printer.NewPrinter(strings.NewReader(gotFirst.String()), &gotSecond, false)
 			err = p.Print()
 			require.NoErrorf(t, err, "Print(%q)", gotFirst.String())
 

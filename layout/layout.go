@@ -41,6 +41,23 @@ func NewDoc(maxColumn int) *Doc {
 	return &Doc{maxColumn: maxColumn}
 }
 
+// Clone creates a deep copy of the Doc.
+func (d *Doc) Clone() *Doc {
+	clone := &Doc{
+		maxColumn: d.maxColumn,
+		tags:      make([]*tagInfo, len(d.tags)),
+	}
+	for i, t := range d.tags {
+		clone.tags[i] = &tagInfo{
+			tag:     t.tag,
+			len:     t.len,
+			cond:    t.cond,
+			measure: &measure{},
+		}
+	}
+	return clone
+}
+
 type tagIterator func(yield func(*tagInfo, tagIterator) bool)
 
 func (d *Doc) All() tagIterator {
@@ -127,6 +144,9 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 	return d
 }
 
+// Render the doc to the writer in the given format. Re-rendering the same doc will lead to
+// different results as the doc is mutated in the process. Use [Doc.Clone] to copy the doc if you
+// want to re-render it to a different sink or using a different format.
 func (d *Doc) Render(w io.Writer, format Format) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
@@ -318,8 +338,6 @@ func goString(d *Doc, indent int) string {
 	return sb.String()
 }
 
-// TODO can I reduce fmt calls?
-// TODO make simple test for GoStringer/String on literal want structures
 func goStringIter(w io.Writer, iter tagIterator, indent int) {
 	first := true
 	for t, children := range iter {

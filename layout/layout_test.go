@@ -14,6 +14,7 @@ import (
 
 func TestLayout(t *testing.T) {
 	t.Run("GoString", func(t *testing.T) {
+		// TODO make simple test for GoStringer/String on literal want structures
 		// TODO reuse also test String()? and add wantString into table
 		tests := map[string]struct {
 			in *layout.Doc
@@ -27,26 +28,55 @@ func TestLayout(t *testing.T) {
 			"EmptyIndent": {
 				in: layout.NewDoc(80).Indent(1, func(d *layout.Doc) {}),
 			},
-			// TODO add more nesting
-			// TODO also test Indent and IndentIf
-			"GoMain": {
+			"NestedDoc": {
 				in: layout.NewDoc(80).
-					Text("package main").
-					Break(1).
-					Text("func").
+					Text("digraph").
 					Space().
-					Text("main").
-					Text("(").Text(")").
+					Text("{").
 					Group(func(d *layout.Doc) {
 						d.
-							SpaceIf(layout.Flat).
-							BreakIf(1, layout.Broken).
-							Text("{").
-							SpaceIf(layout.Flat).
-							BreakIf(1, layout.Broken).
-							Text(`print("yes")`).
-							SpaceIf(layout.Flat).
-							BreakIf(1, layout.Broken).
+							IndentIf(1, layout.Broken, func(d *layout.Doc) {
+								d.
+									Break(1).
+									Group(func(d *layout.Doc) {
+										d.
+											Text("3").
+											Space().
+											Text("->").
+											SpaceIf(layout.Flat).
+											BreakIf(1, layout.Broken).
+											Text("2").
+											Space().
+											Group(func(d *layout.Doc) {
+												d.
+													Group(func(d *layout.Doc) {
+														d.
+															Text("[").
+															BreakIf(1, layout.Broken).
+															Indent(1, func(d *layout.Doc) {
+																d.
+																	Text("color").
+																	Text("=").
+																	Text("\"blue\"").
+																	TextIf(",", layout.Flat).
+																	BreakIf(1, layout.Broken).
+																	Text("background").
+																	Text("=").
+																	Text("\"transparent red\"")
+															}).
+															BreakIf(1, layout.Broken).
+															Text("]").
+															Space()
+													}).
+													BreakIf(1, layout.Broken)
+											})
+									}).
+									Break(1).
+									Text("rank").
+									Text("=").
+									Text("same")
+							}).
+							Break(1).
 							Text("}")
 					}),
 			},
@@ -54,10 +84,6 @@ func TestLayout(t *testing.T) {
 
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
-				var sb strings.Builder
-				tc.in.Render(&sb, layout.Default)
-				want := sb.String()
-
 				// GoStringer should produce valid Go code
 				const dir = "testdata/gostringer"
 				err := os.Mkdir(dir, 0o700)
@@ -66,7 +92,7 @@ func TestLayout(t *testing.T) {
 				}
 				t.Cleanup(func() {
 					if t.Failed() {
-						t.Logf("faulty Go code using layout.Doc generated using GoStringer is in: %s", dir)
+						t.Logf("faulty Go code generated using GoStringer is in: %s", dir)
 					} else {
 						if err := os.RemoveAll(dir); err != nil {
 							t.Logf("failed to cleanup temp dir %s due to: %v", dir, err)
@@ -80,9 +106,13 @@ func TestLayout(t *testing.T) {
 				require.NoErrorf(t, err, "failed to render Go format")
 				cmd := exec.CommandContext(t.Context(), "go", "run", f.Name())
 				got, err := cmd.Output()
-				require.NoErrorf(t, err, "failed to execute Go code using layout.Doc generated using GoStringer")
+				require.NoErrorf(t, err, "failed to execute Go code generated using GoStringer")
 
 				// GoStringer should render to the same layout as its source document
+				var sb strings.Builder
+				tc.in.Clone().Render(&sb, layout.Default)
+				want := sb.String()
+
 				assert.Equals(t, string(got), want)
 			})
 		}

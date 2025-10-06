@@ -21,15 +21,17 @@ const (
 
 var formats = map[string]Format{
 	"default": Default,
-	"layout":  Layout,
 	"go":      Go,
+	"layout":  Layout,
 }
+
+var validFormats = [3]string{"default", "go", "layout"}
 
 func NewFormat(format string) (Format, error) {
 	if f, ok := formats[format]; ok {
 		return f, nil
 	}
-	return Default, fmt.Errorf("invalid format string %q", format)
+	return Default, fmt.Errorf("invalid format string: %q, valid ones are: %q", format, validFormats)
 }
 
 type Doc struct {

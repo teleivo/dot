@@ -41,7 +41,7 @@ func NewDoc(maxColumn int) *Doc {
 	return &Doc{maxColumn: maxColumn}
 }
 
-// Clone creates a deep copy of the Doc.
+// Clone creates a deep copy of the Doc. Use this if you want to [Doc.Render] a Doc multiple times.
 func (d *Doc) Clone() *Doc {
 	clone := &Doc{
 		maxColumn: d.maxColumn,
@@ -227,10 +227,12 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 	for t, children := range iter {
 		switch tag := t.tag.(type) {
 		case *group:
-			if t.measure.width > d.maxColumn {
+			if t.measure.broken || column+t.measure.width > d.maxColumn {
 				t.measure.broken = true
+				d.layout(children, indent, column)
+			} else {
+				column += t.measure.width
 			}
-			d.layout(children, indent, column)
 		case *indentation:
 			if t.cond != Flat {
 				// TODO implement safety on under/overflow

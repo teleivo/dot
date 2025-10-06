@@ -153,14 +153,6 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 		return
 	}
 
-	// TODO add tests later for these layouts but why is the first attrlist not broken up as it does
-	// exceed the max column on that line
-	// 3 ->
-	// 2 ->
-	// 4 ->
-	// "five" ->
-	// "sixteen" [color="blue",len=2.6,font="Helvetica patched",background="transparent red"]
-	// [ arrowtail="halfopen"]
 	doc.Space()
 	doc.Group(func(d *layout.Doc) {
 		for cur := attrList; cur != nil; cur = cur.Next {
@@ -172,11 +164,10 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
 					})
 				doc.BreakIf(1, layout.Broken).
 					Text(token.RightBracket.String())
-				if cur.Next != nil {
-					doc.Space()
-				}
 			})
-			doc.BreakIf(1, layout.Broken)
+			if cur.Next != nil {
+				doc.Space()
+			}
 		}
 	})
 }
@@ -215,32 +206,31 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) {
 	doc.Break(1)
 
 	doc.Group(func(d *layout.Doc) {
-		p.layoutEdgeOperand(doc, edgeStmt.Left)
-		doc.Space()
-
-		if edgeStmt.Right.Directed {
-			doc.Text(token.DirectedEgde.String())
-		} else {
-			doc.Text(token.UndirectedEgde.String())
-		}
-		doc.SpaceIf(layout.Flat)
-		doc.BreakIf(1, layout.Broken)
-
-		p.layoutEdgeOperand(doc, edgeStmt.Right.Right)
-
-		for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
+		doc.Group(func(d *layout.Doc) {
+			p.layoutEdgeOperand(doc, edgeStmt.Left)
 			doc.Space()
+
 			if edgeStmt.Right.Directed {
 				doc.Text(token.DirectedEgde.String())
 			} else {
 				doc.Text(token.UndirectedEgde.String())
 			}
-			doc.SpaceIf(layout.Flat)
-			doc.BreakIf(1, layout.Broken)
+			doc.Space()
 
-			p.layoutEdgeOperand(doc, cur.Right)
-		}
+			p.layoutEdgeOperand(doc, edgeStmt.Right.Right)
 
+			for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
+				doc.Space()
+				if edgeStmt.Right.Directed {
+					doc.Text(token.DirectedEgde.String())
+				} else {
+					doc.Text(token.UndirectedEgde.String())
+				}
+				doc.Space()
+
+				p.layoutEdgeOperand(doc, cur.Right)
+			}
+		})
 		p.layoutAttrList(doc, edgeStmt.AttrList)
 	})
 }
@@ -271,20 +261,22 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 
 func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
 	// TODO reconsider always printing subraph as I now know whether the user wanted it
-	doc.Text(token.Subgraph.String()).
-		Space()
-	if subraph.ID != nil {
-		p.layoutID(doc, *subraph.ID)
-		doc.Space()
-	}
-
-	doc.Text(token.LeftBrace.String())
 	doc.Group(func(f *layout.Doc) {
-		doc.IndentIf(1, layout.Broken, func(d *layout.Doc) {
-			p.layoutStmts(doc, subraph.Stmts)
-		})
+		doc.Text(token.Subgraph.String()).
+			Space()
+		if subraph.ID != nil {
+			p.layoutID(doc, *subraph.ID)
+			doc.Space()
+		}
 
-		doc.Break(1).
-			Text(token.RightBrace.String())
+		doc.Text(token.LeftBrace.String())
+		doc.Group(func(f *layout.Doc) {
+			doc.IndentIf(1, layout.Broken, func(d *layout.Doc) {
+				p.layoutStmts(doc, subraph.Stmts)
+			})
+
+			doc.Break(1).
+				Text(token.RightBrace.String())
+		})
 	})
 }

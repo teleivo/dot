@@ -126,7 +126,12 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		color = "blue", len = 2.6 font	= "Helvetica patched" background = "transparent red" ] [arrowtail = "halfopen"]; rank=same;}
 `,
 			want: `digraph {
-	3 -> 2 -> 4 [color="blue",len=2.6]
+	3 -> 2 -> 4 -> "five" -> "sixteen" [
+		color="blue"
+		len=2.6
+		font="Helvetica patched"
+		background="transparent red"
+	] [arrowtail="halfopen"]
 	rank=same
 }`,
 		},

@@ -120,6 +120,19 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	rank=same
 }`,
 		},
+		"EdgeStmtWithFirstAttributeListFitting": {
+			in: `digraph {
+			3 	->     2->4 -> "five" -> "sixteen"  [
+		color = "blue", len = 2.6] [arrowtail = "halfopen",arrowhead=diamond]; rank=same;}
+`,
+			want: `digraph {
+	3 -> 2 -> 4 -> "five" -> "sixteen" [color="blue",len=2.6] [
+		arrowtail="halfopen"
+		arrowhead=diamond
+	]
+	rank=same
+}`,
+		},
 		"EdgeStmtWithMultipleAttributeListsPastMaxColumn": {
 			in: `digraph {
 			3 	->     2->4 -> "five" -> "sixteen"  [
@@ -143,13 +156,17 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		"EdgeStmtWithSubgraphs": {
 			in: `
 graph {
-{1;2} -- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}
+{1;2} -- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}-- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}
 }
 `,
 			want: `graph {
 	subgraph {
 		1
 		2
+	} -- subgraph "numbers" {
+		node [color=blue,style=filled]
+		3
+		4
 	} -- subgraph "numbers" {
 		node [color=blue,style=filled]
 		3

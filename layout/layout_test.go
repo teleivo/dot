@@ -13,75 +13,136 @@ import (
 )
 
 func TestLayout(t *testing.T) {
-	t.Run("GoString", func(t *testing.T) {
-		// TODO make simple test for GoStringer/String on literal want structures
-		// TODO reuse also test String()? and add wantString into table
-		tests := map[string]struct {
-			in *layout.Doc
-		}{
-			"EmptyDoc": {
-				in: layout.NewDoc(80),
-			},
-			"EmptyGroup": {
-				in: layout.NewDoc(80).Group(func(d *layout.Doc) {}),
-			},
-			"EmptyIndent": {
-				in: layout.NewDoc(80).Indent(1, func(d *layout.Doc) {}),
-			},
-			"NestedDoc": {
-				in: layout.NewDoc(80).
-					Text("digraph").
-					Space().
-					Text("{").
-					Group(func(d *layout.Doc) {
-						d.
-							IndentIf(1, layout.Broken, func(d *layout.Doc) {
-								d.
-									Break(1).
-									Group(func(d *layout.Doc) {
-										d.
-											Text("3").
-											Space().
-											Text("->").
-											SpaceIf(layout.Flat).
-											BreakIf(1, layout.Broken).
-											Text("2").
-											Space().
-											Group(func(d *layout.Doc) {
-												d.
-													Group(func(d *layout.Doc) {
-														d.
-															Text("[").
-															BreakIf(1, layout.Broken).
-															Indent(1, func(d *layout.Doc) {
-																d.
-																	Text("color").
-																	Text("=").
-																	Text("\"blue\"").
-																	TextIf(",", layout.Flat).
-																	BreakIf(1, layout.Broken).
-																	Text("background").
-																	Text("=").
-																	Text("\"transparent red\"")
-															}).
-															BreakIf(1, layout.Broken).
-															Text("]").
-															Space()
-													}).
-													BreakIf(1, layout.Broken)
-											})
-									}).
-									Break(1).
-									Text("rank").
-									Text("=").
-									Text("same")
-							}).
-							Break(1).
-							Text("}")
-					}),
-			},
-		}
+	tests := map[string]struct {
+		in         *layout.Doc
+		wantString string
+	}{
+		"EmptyDoc": {
+			in:         layout.NewDoc(80),
+			wantString: "",
+		},
+		"EmptyGroup": {
+			in: layout.NewDoc(80).Group(func(d *layout.Doc) {}),
+			wantString: `<group width=0>
+</group>
+`,
+		},
+		"EmptyIndent": {
+			in: layout.NewDoc(80).Indent(1, func(d *layout.Doc) {}),
+			wantString: `<indent columns=1>
+</indent>
+`,
+		},
+		"NestedDoc": {
+			in: layout.NewDoc(80).
+				Text("digraph").
+				Space().
+				Text("{").
+				Group(func(d *layout.Doc) {
+					d.
+						IndentIf(1, layout.Broken, func(d *layout.Doc) {
+							d.
+								Break(1).
+								Group(func(d *layout.Doc) {
+									d.
+										Text("3").
+										Space().
+										Text("->").
+										SpaceIf(layout.Flat).
+										BreakIf(1, layout.Broken).
+										Text("2").
+										Space().
+										Group(func(d *layout.Doc) {
+											d.
+												Group(func(d *layout.Doc) {
+													d.
+														Text("[").
+														BreakIf(1, layout.Broken).
+														Indent(1, func(d *layout.Doc) {
+															d.
+																Text("color").
+																Text("=").
+																Text("\"blue\"").
+																TextIf(",", layout.Flat).
+																BreakIf(1, layout.Broken).
+																Text("background").
+																Text("=").
+																Text("\"transparent red\"")
+														}).
+														BreakIf(1, layout.Broken).
+														Text("]").
+														Space()
+												}).
+												BreakIf(1, layout.Broken)
+										})
+								}).
+								Break(1).
+								Text("rank").
+								Text("=").
+								Text("same")
+						}).
+						Break(1).
+						Text("}")
+				}),
+			wantString: `<text width=7 content="digraph"/>
+<space/>
+<text width=1 content="{"/>
+<group width=broken>
+	<indent columns=1>
+		<break count=1/>
+		<group width=51>
+			<text width=1 content="3"/>
+			<space/>
+			<text width=2 content="->"/>
+			<space/>
+			<break count=1/>
+			<text width=1 content="2"/>
+			<space/>
+			<group width=44>
+				<group width=44>
+					<text width=1 content="["/>
+					<break count=1/>
+					<indent columns=1>
+						<text width=5 content="color"/>
+						<text width=1 content="="/>
+						<text width=6 content="\"blue\""/>
+						<text width=1 content=","/>
+						<break count=1/>
+						<text width=10 content="background"/>
+						<text width=1 content="="/>
+						<text width=17 content="\"transparent red\""/>
+					</indent>
+					<break count=1/>
+					<text width=1 content="]"/>
+					<space/>
+				</group>
+				<break count=1/>
+			</group>
+		</group>
+		<break count=1/>
+		<text width=4 content="rank"/>
+		<text width=1 content="="/>
+		<text width=4 content="same"/>
+	</indent>
+	<break count=1/>
+	<text width=1 content="}"/>
+</group>
+`,
+		},
+	}
 
+	t.Run("RenderLayout", func(t *testing.T) {
+		for name, tc := range tests {
+			t.Run(name, func(t *testing.T) {
+				var got strings.Builder
+				err := tc.in.Render(&got, layout.Layout)
+				require.NoErrorf(t, err, "failed to render layout format")
+
+				assert.Equals(t, got.String(), tc.wantString)
+			})
+		}
+	})
+	t.Run("RenderGo", func(t *testing.T) {
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
 				// GoStringer should produce valid Go code

@@ -1,30 +1,35 @@
 ## Allman
 
-* fix test
-* is GoStringer useful for layout so I can capture it into a test if something is odd?
 * go through old todos
-  * align multiple attribute values (and `=`)
-    `"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
-      color = "blue"
-      len   = 2.6
-    ]`
-   should that then apply to the entire file :joy:? as global attributes can be set on the
-  graph/subraph as well
   * allow multiple nodes on the same line? how to break them up when > maxCol
+  * allow multiple attributes on the same line?
+  ./samples-graphviz/705.dot
 
+```dot
+  "A";"B";"C"
+```
+```dot
+  rank=same;color=blue
+```
 * support subraph shorthand using `{}` and don't always print `subgraph`
-
+  * add test for nested subgraphs
 * what does Break(0) mean? should I support this?
+  * support stanzas ./samples-graphviz/241_0.dot
+    * implement merging multiple Break() using max(n, m)
+      * this was my old todo on that: how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
+        Allow users to do that. No more than one empty line though. And will that line be completely
+        empty or be indented as the surrounding code?
+        I need proper token/ast position. for this row and column
+
+* setup script to copy dot files from graphviz, run them through dotfmt and ensure the image
+produced from the original and the formatted is the same
+
 * how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
 doc like NewDoc or so?
+  * configure my vim tabwidth to be 2 for all or just dot?
 * tests
   * only test this as part of dotfmt or test it in isolation?
   * no trailing spaces
-* implement merging multiple Break() using max(n, m)
-  * this was my old todo on that: how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
-    Allow users to do that. No more than one empty line though. And will that line be completely
-    empty or be indented as the surrounding code?
-    I need proper token/ast position. for this row and column
 * add godocs
 * merge changes to main
 * support comments
@@ -139,7 +144,7 @@ identifiers? how much would that even matter at the expense of how much code :sw
 * support concatenating strings?
 https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 > In addition, double-quoted strings can be concatenated using a '+' operator.
-* lex html string
+* lex html string? or at least deal with it gracefully: see ./samples-graphviz/56.dot
 
 ### Compatibility & Fault Tolerance
 

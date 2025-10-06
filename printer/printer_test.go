@@ -104,7 +104,7 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	rank=same
 }`,
 		},
-		"EdgeStmtWithMultipleAttributesPastMaxColumn": {
+		"EdgeStmtWithAttributesPastMaxColumn": {
 			in: `digraph {
 			3 	->     2->4 -> "five" -> "sixteen"  [
 		color = "blue", len = 2.6 font	= "Helvetica patched" background = "transparent red" arrowtail = "halfopen"]; rank=same;}
@@ -120,10 +120,10 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 	rank=same
 }`,
 		},
-		"EdgeStmtWithMultipleAttributeLists": {
+		"EdgeStmtWithMultipleAttributeListsPastMaxColumn": {
 			in: `digraph {
 			3 	->     2->4 -> "five" -> "sixteen"  [
-		color = "blue", len = 2.6 font	= "Helvetica patched" background = "transparent red" ] [arrowtail = "halfopen"]; rank=same;}
+		color = "blue", len = 2.6 font	= "Helvetica patched" background = "transparent red" ] [arrowtail = "halfopen",arrowhead=diamond][ arrowtail="halfopen" arrowhead=diamond beautify=true taillabel="tail" ]; rank=same;}
 `,
 			want: `digraph {
 	3 -> 2 -> 4 -> "five" -> "sixteen" [
@@ -131,7 +131,12 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		len=2.6
 		font="Helvetica patched"
 		background="transparent red"
-	] [arrowtail="halfopen"]
+	] [arrowtail="halfopen",arrowhead=diamond] [
+		arrowtail="halfopen"
+		arrowhead=diamond
+		beautify=true
+		taillabel="tail"
+	]
 	rank=same
 }`,
 		},

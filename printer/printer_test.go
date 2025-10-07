@@ -160,7 +160,7 @@ graph {
 }
 `,
 			want: `graph {
-	subgraph {
+	{
 		1
 		2
 	} -- subgraph "numbers" {
@@ -235,7 +235,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			{A -- B; C--E}
 }`,
 			want: `graph {
-	subgraph {
+	{
 		A -- B
 		C -- E
 	}

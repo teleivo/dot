@@ -260,10 +260,11 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 }
 
 func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
-	// TODO reconsider always printing subraph as I now know whether the user wanted it
 	doc.Group(func(f *layout.Doc) {
-		doc.Text(token.Subgraph.String()).
-			Space()
+		if subraph.SubgraphStart != nil {
+			doc.Text(token.Subgraph.String()).
+				Space()
+		}
 		if subraph.ID != nil {
 			p.layoutID(doc, *subraph.ID)
 			doc.Space()

@@ -1,7 +1,6 @@
 ## Allman
 
-* support subraph shorthand using `{}` and don't always print `subgraph`
-  * add test for nested subgraphs
+* add test for nested subgraphs
 * what does Break(0) mean? should I support this?
   * support stanzas ./samples-graphviz/241_0.dot
     * implement merging multiple Break() using max(n, m)

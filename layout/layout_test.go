@@ -156,7 +156,7 @@ func TestLayout(t *testing.T) {
 						t.Logf("faulty Go code generated using GoStringer is in: %s", dir)
 					} else {
 						if err := os.RemoveAll(dir); err != nil {
-							t.Logf("failed to cleanup temp dir %s due to: %v", dir, err)
+							t.Logf("failed to cleanup test dir %s due to: %v", dir, err)
 						}
 					}
 				})
@@ -167,7 +167,12 @@ func TestLayout(t *testing.T) {
 				require.NoErrorf(t, err, "failed to render Go format")
 				cmd := exec.CommandContext(t.Context(), "go", "run", f.Name())
 				got, err := cmd.Output()
-				require.NoErrorf(t, err, "failed to execute Go code generated using GoStringer")
+				var exitErr *exec.ExitError
+				if errors.As(err, &exitErr) {
+					require.NoErrorf(t, err, "failed to execute Go code generated using GoStringer: %s", exitErr.Stderr)
+				} else {
+					require.NoErrorf(t, err, "failed to execute Go code generated using GoStringer")
+				}
 
 				// GoStringer should render to the same layout as its source document
 				var sb strings.Builder

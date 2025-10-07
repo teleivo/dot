@@ -1,16 +1,5 @@
 ## Allman
 
-* go through old todos
-  * allow multiple nodes on the same line? how to break them up when > maxCol
-  * allow multiple attributes on the same line?
-  ./samples-graphviz/705.dot
-
-```dot
-  "A";"B";"C"
-```
-```dot
-  rank=same;color=blue
-```
 * support subraph shorthand using `{}` and don't always print `subgraph`
   * add test for nested subgraphs
 * what does Break(0) mean? should I support this?

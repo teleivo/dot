@@ -1,6 +1,5 @@
 ## Allman
 
-* add test for nested subgraphs
 * what does Break(0) mean? should I support this?
   * support stanzas ./samples-graphviz/241_0.dot
     * implement merging multiple Break() using max(n, m)
@@ -30,6 +29,13 @@ add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 ## Next
 
 * improve error handling see [Parser](#parser)
+* I think this should lead to a parser error but does not
+
+```dot
+graph {
+{1;2;--{3;4}}
+}
+```
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
 How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I

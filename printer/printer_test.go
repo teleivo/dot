@@ -156,13 +156,16 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		"EdgeStmtWithSubgraphs": {
 			in: `
 graph {
-{1;2} -- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}-- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}
+{1;2--{3;4}} -- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}-- subgraph "numbers" {node [color=blue;style=filled]; 3; 4}
 }
 `,
 			want: `graph {
 	{
 		1
-		2
+		2 -- {
+			3
+			4
+		}
 	} -- subgraph "numbers" {
 		node [color=blue,style=filled]
 		3

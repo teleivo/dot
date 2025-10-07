@@ -7,6 +7,7 @@
         Allow users to do that. No more than one empty line though. And will that line be completely
         empty or be indented as the surrounding code?
         I need proper token/ast position. for this row and column
+* test/make Indent(-100) safe
 
 * setup script to copy dot files from graphviz, run them through dotfmt and ensure the image
 produced from the original and the formatted is the same
@@ -18,10 +19,14 @@ doc like NewDoc or so?
   * only test this as part of dotfmt or test it in isolation?
   * no trailing spaces
 * add godocs
+* make layout internal?
+* update README.md
 * merge changes to main
+
 * support comments
-* support word-wrapping
-* support splitting IDs using line-continuation
+  * line comment
+  * support word-wrapping
+* support splitting IDs using line-continuation?
 * measure in original sets broken if text contains newline. this is not correct for raw strings
 right? `foo\nfaa` in Go or similar with escaped newlines or so in DOT should not cause a newline.
 add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?

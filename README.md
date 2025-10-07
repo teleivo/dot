@@ -27,7 +27,8 @@ for my purposes
 operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
 * does not treat records in any special way. Labels will be parsed as strings.
 * attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
-adhere to some requirements which are not validated. The values are parsed as identifiers (unquoted, numeral, quoted) and ultimately stored as strings.
+* add test for nested subgraphs adhere to some requirements which are not validated. The values are
+parsed as identifiers (unquoted, numeral, quoted) and ultimately stored as strings.
 
 ## Disclaimer
 

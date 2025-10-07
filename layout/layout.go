@@ -101,10 +101,16 @@ func (d *Doc) SpaceIf(cond condition) *Doc {
 }
 
 func (d *Doc) Break(count int) *Doc {
+	if count <= 0 {
+		panic("Break: count must be positive")
+	}
 	return d.tag(newlines{count: count})
 }
 
 func (d *Doc) BreakIf(count int, cond condition) *Doc {
+	if count <= 0 {
+		panic("BreakIf: count must be positive")
+	}
 	return d.tagIf(newlines{count: count}, cond)
 }
 

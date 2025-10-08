@@ -13,24 +13,43 @@ import (
 )
 
 func TestLayout(t *testing.T) {
+	// TODO add test for trailing newline logic. is there any tag i need to reset the buffered
+	// space? how about consecutive spaces? they are merged right now
 	tests := map[string]struct {
-		in         *layout.Doc
-		wantString string
+		in          *layout.Doc
+		wantDefault string
+		wantLayout  string
 	}{
 		"EmptyDoc": {
-			in:         layout.NewDoc(80),
-			wantString: "",
+			in:          layout.NewDoc(80),
+			wantDefault: "",
+			wantLayout:  "",
 		},
 		"EmptyGroup": {
-			in: layout.NewDoc(80).Group(func(d *layout.Doc) {}),
-			wantString: `<group width=0>
+			in:          layout.NewDoc(80).Group(func(d *layout.Doc) {}),
+			wantDefault: "",
+			wantLayout: `<group width=0>
 </group>
 `,
 		},
 		"EmptyIndent": {
-			in: layout.NewDoc(80).Indent(1, func(d *layout.Doc) {}),
-			wantString: `<indent columns=1>
+			in:          layout.NewDoc(80).Indent(1, func(d *layout.Doc) {}),
+			wantDefault: "",
+			wantLayout: `<indent columns=1>
 </indent>
+`,
+		},
+		"MergeConsecutiveBreaks": {
+			in: layout.NewDoc(80).Break(3).Break(2).Text("in between").Break(1),
+			wantDefault: `
+
+
+in between
+`,
+			wantLayout: `<break count=3/>
+<break count=2/>
+<text width=10 content="in between"/>
+<break count=1/>
 `,
 		},
 		"NestedDoc": {
@@ -40,7 +59,7 @@ func TestLayout(t *testing.T) {
 				Text("{").
 				Group(func(d *layout.Doc) {
 					d.
-						IndentIf(1, layout.Broken, func(d *layout.Doc) {
+						Indent(1, func(d *layout.Doc) {
 							d.
 								Break(1).
 								Group(func(d *layout.Doc) {
@@ -84,7 +103,11 @@ func TestLayout(t *testing.T) {
 						Break(1).
 						Text("}")
 				}),
-			wantString: `<text width=7 content="digraph"/>
+			wantDefault: `digraph {
+	3 -> 2 [color="blue",background="transparent red"]
+	rank =same
+}`,
+			wantLayout: `<text width=7 content="digraph"/>
 <space/>
 <text width=1 content="{"/>
 <group width=broken>
@@ -131,6 +154,17 @@ func TestLayout(t *testing.T) {
 		},
 	}
 
+	t.Run("RenderDefault", func(t *testing.T) {
+		for name, tc := range tests {
+			t.Run(name, func(t *testing.T) {
+				var got strings.Builder
+				err := tc.in.Render(&got, layout.Default)
+				require.NoErrorf(t, err, "failed to render default format")
+
+				assert.Equals(t, got.String(), tc.wantDefault)
+			})
+		}
+	})
 	t.Run("RenderLayout", func(t *testing.T) {
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
@@ -138,7 +172,7 @@ func TestLayout(t *testing.T) {
 				err := tc.in.Render(&got, layout.Layout)
 				require.NoErrorf(t, err, "failed to render layout format")
 
-				assert.Equals(t, got.String(), tc.wantString)
+				assert.Equals(t, got.String(), tc.wantLayout)
 			})
 		}
 	})

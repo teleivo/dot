@@ -82,7 +82,7 @@ func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) {
 
 	doc.Text(token.LeftBrace.String())
 	doc.Group(func(f *layout.Doc) {
-		doc.IndentIf(1, layout.Broken, func(d *layout.Doc) {
+		doc.Indent(1, func(d *layout.Doc) {
 			p.layoutStmts(doc, graph.Stmts)
 		})
 
@@ -272,7 +272,7 @@ func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
 
 		doc.Text(token.LeftBrace.String())
 		doc.Group(func(f *layout.Doc) {
-			doc.IndentIf(1, layout.Broken, func(d *layout.Doc) {
+			doc.Indent(1, func(d *layout.Doc) {
 				p.layoutStmts(doc, subraph.Stmts)
 			})
 

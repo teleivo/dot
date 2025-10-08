@@ -1,16 +1,23 @@
 ## Allman
 
-* what does Break(0) mean? should I support this?
-  * support stanzas ./samples-graphviz/241_0.dot
-    * implement merging multiple Break() using max(n, m)
-      * this was my old todo on that: how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
-        Allow users to do that. No more than one empty line though. And will that line be completely
-        empty or be indented as the surrounding code?
-        I need proper token/ast position. for this row and column
+* remove IndentIf for now, document Indent as only indenting at the start of a line which means it
+might not render \t at all if all is flat
+
+* analyze my render, why do I buffer newlines?
+
+* support stanzas ./samples-graphviz/241_0.dot
+  * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
+  * implement merging multiple Break() using max(n, m)
+    * this was my old todo on that: how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
+      Allow users to do that. No more than one empty line though. And will that line be completely
+      empty or be indented as the surrounding code?
+      I need proper token/ast position. for this row and column
+
 * test/make Indent(-100) safe
 
 * setup script to copy dot files from graphviz, run them through dotfmt and ensure the image
 produced from the original and the formatted is the same
+* setup script to profile formatter and generate DOT graph that I can feed into dotfmt
 
 * how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
 doc like NewDoc or so?

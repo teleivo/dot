@@ -122,12 +122,7 @@ func (d *Doc) Group(body func(*Doc)) *Doc {
 
 // Indent a sequence of tags by given number of columns.
 func (d *Doc) Indent(columns int, body func(*Doc)) *Doc {
-	return d.IndentIf(columns, Always, body)
-}
-
-// IndentIf a sequence of tags by given number of columns if condition is met.
-func (d *Doc) IndentIf(columns int, cond condition, body func(*Doc)) *Doc {
-	return d.tagIfWith(&indentation{columns: columns}, cond, body)
+	return d.tagWith(&indentation{columns: columns}, body)
 }
 
 func (d *Doc) tag(t tag) *Doc {
@@ -277,22 +272,21 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 				fmt.Fprintf(r.w, " ")
 				r.space = false
 			}
-			// TODO is batching prints more efficient? like having a slice of 10 newlines and
-			// printing at least up to 10 at a time?
-			for i := r.newlines; i > 0; i-- {
-				fmt.Fprintf(r.w, "\n")
-			}
+			// only indent at the start of a line
 			if r.newlines > 0 {
 				for i := r.indent; i > 0; i-- {
 					fmt.Fprintf(r.w, "\t")
 				}
 			}
-			r.newlines = 0
 			fmt.Fprintf(r.w, "%s", tag.content)
+			r.newlines = 0
 		case space:
 			r.space = true
 		case newlines:
-			r.newlines += tag.count
+			// merge consecutive Break()s
+			for ; r.newlines < tag.count; r.newlines++ {
+				fmt.Fprintf(r.w, "\n")
+			}
 		}
 	}
 }
@@ -368,11 +362,7 @@ func goStringIter(w io.Writer, iter tagIterator, indent int) {
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "})")
 		case *indentation:
-			if t.cond == Always {
-				fmt.Fprintf(w, "Indent(%d, func(d *layout.Doc) {\n", tag.columns)
-			} else {
-				fmt.Fprintf(w, "IndentIf(%d, layout.%s, func(d *layout.Doc) {\n", tag.columns, t.cond)
-			}
+			fmt.Fprintf(w, "Indent(%d, func(d *layout.Doc) {\n", tag.columns)
 			goStringIter(w, children, indent+1)
 			fmt.Fprintln(w)
 			writeIndent(w, indent)

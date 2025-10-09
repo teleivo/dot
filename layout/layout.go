@@ -143,6 +143,14 @@ func (d *Doc) tagWith(t tag, body func(*Doc)) *Doc {
 
 func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 	i := len(d.tags)
+
+	// merge consecutive spaces of the same condition
+	if _, ok := t.(space); ok && i > 0 {
+		if _, ok := d.tags[i-1].tag.(space); ok && cond == d.tags[i-1].cond {
+			return d
+		}
+	}
+
 	d.tags = append(d.tags, &tagInfo{tag: t, len: 0, cond: cond, measure: &measure{}})
 	body(d)
 	if j := len(d.tags); j != i {
@@ -253,6 +261,7 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 	}
 }
 
+// TODO return errors on print
 func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 	for t, children := range iter {
 		if t.cond == Flat && isParentBroken || t.cond == Broken && !isParentBroken {
@@ -318,7 +327,11 @@ func stringIter(w io.Writer, iter tagIterator, indent int) {
 			fmt.Fprintf(w, "<text width=%s content=%q/>\n", t.measure, tag.content)
 		case space:
 			writeIndent(w, indent)
-			fmt.Fprintf(w, "<space/>\n")
+			if t.cond == Always {
+				fmt.Fprintf(w, "<space/>\n")
+			} else {
+				fmt.Fprintf(w, "<space cond=%q/>\n", t.cond)
+			}
 		case newlines:
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "<break count=%d/>\n", tag.count)

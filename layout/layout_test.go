@@ -13,8 +13,9 @@ import (
 )
 
 func TestLayout(t *testing.T) {
-	// TODO add more tests for newline handling?
-	// TODO test negative indentation
+	// TODO understand the bug with Space measurement and skip trailing Space during rendering
+	// TODO test negative indentation and implement safety on under/overflow
+	// TODO add simplest test on break logic
 	tests := map[string]struct {
 		in          *layout.Doc
 		wantDefault string
@@ -49,10 +50,24 @@ func TestLayout(t *testing.T) {
 <break count=1/>
 `,
 		},
-		"MergeConsecutiveSpaces": {
+		"MergeConsecutiveUnconditionalSpaces": {
 			in:          layout.NewDoc(80).Space().Space().Text("in between"),
 			wantDefault: ` in between`,
 			wantLayout: `<space/>
+<text width=10 content="in between"/>
+`,
+		},
+		"MergeConsecutiveConditionalSpaces": {
+			in:          layout.NewDoc(80).SpaceIf(layout.Broken).SpaceIf(layout.Broken).Text("in between"),
+			wantDefault: ` in between`,
+			wantLayout: `<space cond="Broken"/>
+<text width=10 content="in between"/>
+`,
+		},
+		"DontMergeConsecutiveSpacesWithDifferingCondition": {
+			in:          layout.NewDoc(80).SpaceIf(layout.Broken).Space().Text("in between"),
+			wantDefault: ` in between`,
+			wantLayout: `<space cond="Broken"/>
 <space/>
 <text width=10 content="in between"/>
 `,
@@ -135,7 +150,7 @@ in between
 			<text width=1 content="3"/>
 			<space/>
 			<text width=2 content="->"/>
-			<space/>
+			<space cond="Flat"/>
 			<break count=1/>
 			<text width=1 content="2"/>
 			<space/>

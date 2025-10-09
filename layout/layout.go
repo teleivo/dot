@@ -63,19 +63,18 @@ import (
 	"strings"
 )
 
-// Format is the representation with which to render the layout.
+// Format specifies the output representation for rendering a [Doc].
 type Format = int
 
 const (
-	// Default renders the layout content
+	// Default renders the formatted output as text.
 	Default Format = iota
-	// Layout renders the layout using an HTML like syntax. In contrast to [Default] and [Go] this
-	// will render tags that might not actually rendered in the end. This is useful to debug the
-	// measure and layout steps of [Doc.Render] to for example figure out why a group is considered
-	// broken.
+	// Layout renders the document structure using HTML-like syntax, showing all tags including
+	// those that may not appear in the final output. This is useful for debugging the measure
+	// and layout algorithm to understand why a group breaks.
 	Layout
-	// Go renders the layout as rendered by [Default] as a runnable Go program. This allows
-	// debugging and iterating on a layout.
+	// Go renders the document as a runnable Go program that reproduces the layout as rendered
+	// by [Default]. This enables debugging and iteration on layouts.
 	Go
 )
 
@@ -87,6 +86,8 @@ var formats = map[string]Format{
 
 var validFormats = [3]string{"default", "go", "layout"}
 
+// NewFormat converts a string to a [Format] constant. Valid values are "default", "layout", and
+// "go". Returns an error if the format string is invalid.
 func NewFormat(format string) (Format, error) {
 	if f, ok := formats[format]; ok {
 		return f, nil
@@ -94,11 +95,17 @@ func NewFormat(format string) (Format, error) {
 	return Default, fmt.Errorf("invalid format string: %q, valid ones are: %q", format, validFormats)
 }
 
+// Doc represents a document for layout formatting. Build it by chaining method calls like
+// [Doc.Text], [Doc.Space], [Doc.Break], [Doc.Group], and [Doc.Indent]. Render it using
+// [Doc.Render]. Note that rendering mutates the document, so use [Doc.Clone] to create a copy
+// if you need to render multiple times.
 type Doc struct {
 	maxColumn int
 	tags      []*node
 }
 
+// NewDoc creates a new document with the specified maximum column width. Text will be reflowed
+// to fit within this width where possible.
 func NewDoc(maxColumn int) *Doc {
 	return &Doc{maxColumn: maxColumn}
 }
@@ -144,22 +151,27 @@ func (d *Doc) newTagIterator(i, j int) tagIterator {
 	}
 }
 
+// Text adds literal text content to the document.
 func (d *Doc) Text(content string) *Doc {
 	return d.tag(&text{content: content})
 }
 
+// TextIf adds literal text content that only renders when the specified condition is met.
 func (d *Doc) TextIf(content string, cond condition) *Doc {
 	return d.tagIf(&text{content: content}, cond)
 }
 
+// Space adds a single space to the document.
 func (d *Doc) Space() *Doc {
 	return d.tag(singleSpace)
 }
 
+// SpaceIf adds a single space that only renders when the specified condition is met.
 func (d *Doc) SpaceIf(cond condition) *Doc {
 	return d.tagIf(singleSpace, cond)
 }
 
+// Break adds one or more newlines to the document. The count must be positive.
 func (d *Doc) Break(count int) *Doc {
 	if count <= 0 {
 		panic("Break: count must be positive")
@@ -167,6 +179,8 @@ func (d *Doc) Break(count int) *Doc {
 	return d.tag(newlines{count: count})
 }
 
+// BreakIf adds one or more newlines that only render when the specified condition is met.
+// The count must be positive.
 func (d *Doc) BreakIf(count int, cond condition) *Doc {
 	if count <= 0 {
 		panic("BreakIf: count must be positive")
@@ -174,13 +188,14 @@ func (d *Doc) BreakIf(count int, cond condition) *Doc {
 	return d.tagIf(newlines{count: count}, cond)
 }
 
-// Group a sequence of tags to be rendered as one line or multiple lines if they exceed the maximum
-// column.
+// Group marks a sequence of content that should be kept on one line if it fits within the
+// maximum column width, or broken across multiple lines if it doesn't.
 func (d *Doc) Group(body func(*Doc)) *Doc {
 	return d.tagWith(&group{}, body)
 }
 
-// Indent a sequence of tags by given number of columns.
+// Indent increases the indentation level by the specified number of columns for the content
+// added in body. The indentation is applied at the start of each line.
 func (d *Doc) Indent(columns int, body func(*Doc)) *Doc {
 	return d.tagWith(&indentation{columns: columns}, body)
 }
@@ -215,9 +230,9 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 	return d
 }
 
-// Render the doc to the writer in the given format. Re-rendering the same doc will lead to
-// different results as the doc is mutated in the process. Use [Doc.Clone] to copy the doc if you
-// want to re-render it to a different sink or using a different format.
+// Render writes the formatted document to the writer in the specified format. Note that rendering
+// mutates the document, so re-rendering the same document will produce incorrect results. Use
+// [Doc.Clone] to create a copy if you need to render multiple times or to different outputs.
 func (d *Doc) Render(w io.Writer, format Format) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
@@ -460,11 +475,17 @@ func goStringIter(w io.Writer, iter tagIterator, indent int) {
 	}
 }
 
+// A condition determines when content added with the *If methods should be rendered.
 type condition int
 
 const (
+	// Always renders the content unconditionally.
 	Always condition = iota
+
+	// Flat renders the content only when the containing group fits on a single line.
 	Flat
+
+	// Broken renders the content only when the containing group is broken across multiple lines.
 	Broken
 )
 

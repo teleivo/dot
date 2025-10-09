@@ -237,16 +237,13 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 				column += t.measure.width
 			}
 		case *indentation:
-			if t.cond != Flat {
-				// TODO implement safety on under/overflow
-				d.layout(children, indent+tag.columns, column)
-			}
+			// TODO implement safety on under/overflow
+			d.layout(children, indent+tag.columns, column)
 		case *text:
 			column += len(tag.content)
 		case space:
 			column++
 		case newlines:
-			// TODO reset width except 0 newlines? what does Break(0) mean?
 			column = indent
 		}
 	}
@@ -283,7 +280,7 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 		case space:
 			r.space = true
 		case newlines:
-			// merge consecutive Break()s
+			// merge consecutive Breaks
 			for ; r.newlines < tag.count; r.newlines++ {
 				fmt.Fprintf(r.w, "\n")
 			}

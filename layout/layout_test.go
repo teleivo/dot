@@ -13,8 +13,10 @@ import (
 )
 
 func TestLayout(t *testing.T) {
-	// TODO add test for trailing newline logic. is there any tag i need to reset the buffered
+	// TODO add test for trailing space logic. is there any tag i need to reset the buffered
 	// space? how about consecutive spaces? they are merged right now
+	// TODO add more tests for newline handling?
+	// TODO test negative indentation
 	tests := map[string]struct {
 		in          *layout.Doc
 		wantDefault string
@@ -113,7 +115,7 @@ in between
 <group width=broken>
 	<indent columns=1>
 		<break count=1/>
-		<group width=51>
+		<group width=broken>
 			<text width=1 content="3"/>
 			<space/>
 			<text width=2 content="->"/>
@@ -121,8 +123,8 @@ in between
 			<break count=1/>
 			<text width=1 content="2"/>
 			<space/>
-			<group width=44>
-				<group width=44>
+			<group width=broken>
+				<group width=broken>
 					<text width=1 content="["/>
 					<break count=1/>
 					<indent columns=1>

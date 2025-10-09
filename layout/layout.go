@@ -96,7 +96,7 @@ func NewFormat(format string) (Format, error) {
 
 type Doc struct {
 	maxColumn int
-	tags      []*tagInfo
+	tags      []*node
 }
 
 func NewDoc(maxColumn int) *Doc {
@@ -107,10 +107,10 @@ func NewDoc(maxColumn int) *Doc {
 func (d *Doc) Clone() *Doc {
 	clone := &Doc{
 		maxColumn: d.maxColumn,
-		tags:      make([]*tagInfo, len(d.tags)),
+		tags:      make([]*node, len(d.tags)),
 	}
 	for i, t := range d.tags {
-		clone.tags[i] = &tagInfo{
+		clone.tags[i] = &node{
 			tag:     t.tag,
 			len:     t.len,
 			cond:    t.cond,
@@ -120,14 +120,14 @@ func (d *Doc) Clone() *Doc {
 	return clone
 }
 
-type tagIterator func(yield func(*tagInfo, tagIterator) bool)
+type tagIterator func(yield func(*node, tagIterator) bool)
 
 func (d *Doc) All() tagIterator {
 	return d.newTagIterator(0, len(d.tags))
 }
 
 func (d *Doc) newTagIterator(i, j int) tagIterator {
-	return func(yield func(*tagInfo, tagIterator) bool) {
+	return func(yield func(*node, tagIterator) bool) {
 		for i < j {
 			if d.tags[i].len == 0 {
 				if !yield(d.tags[i], d.newTagIterator(i, i)) {
@@ -207,7 +207,7 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 		}
 	}
 
-	d.tags = append(d.tags, &tagInfo{tag: t, len: 0, cond: cond, measure: &measure{}})
+	d.tags = append(d.tags, &node{tag: t, len: 0, cond: cond, measure: &measure{}})
 	body(d)
 	if j := len(d.tags); j != i {
 		d.tags[i].len = j - i - 1
@@ -265,14 +265,14 @@ func (d *Doc) measure() {
 	}
 }
 
-func measureIter(parent *tagInfo, children tagIterator) {
+func measureIter(parent *node, children tagIterator) {
 	tagWidth(parent)
 	for t, children := range children {
 		measureIter(t, children)
 	}
 }
 
-func tagWidth(t *tagInfo) {
+func tagWidth(t *node) {
 	if t.cond == Broken { // only measure flat width
 		return
 	}
@@ -287,7 +287,7 @@ func tagWidth(t *tagInfo) {
 	}
 }
 
-func sumWidths(parent *tagInfo, children tagIterator) measure {
+func sumWidths(parent *node, children tagIterator) measure {
 	for t, children := range children {
 		parent.measure.add(sumWidths(t, children))
 	}
@@ -481,14 +481,14 @@ func (c condition) String() string {
 	}
 }
 
-type tagInfo struct {
+type node struct {
 	tag     tag
 	len     int
 	cond    condition
 	measure *measure
 }
 
-func (t *tagInfo) String() string {
+func (t *node) String() string {
 	return fmt.Sprintf("TagInfo{tag=%s, len=%d, cond=%s, measure=%s}", t.tag, t.len, t.cond, t.measure)
 }
 

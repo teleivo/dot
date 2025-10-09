@@ -13,9 +13,32 @@ go get -u github.com/teleivo/dot
 Format your DOT files with `dotfmt`. `dotfmt` is inspired by [gofmt](https://pkg.go.dev/cmd/gofmt).
 As such it is opinionated and has no options to change its format.
 
-TODO complete example
 ```sh
 go run ./cmd/dotfmt/main.go <<EOF
+digraph microservices {
+graph [rankdir=LR, bgcolor="#f0f0f0"]
+    node [shape=box, style="rounded,filled", fillcolor=lightblue]
+
+    subgraph cluster_frontend {
+        label="Frontend Layer"
+        style=filled
+
+        web [ label="Web UI",
+fillcolor="#8dd3c7"]
+        mobile [label="Mobile App", fillcolor="#8dd3c7"]
+    }
+
+    api [
+  label="API Gateway", shape=hexagon, fillcolor="#ffffb3"
+]
+    user [label="User Service", fillcolor="#fb8072"]
+    db [label="Database", shape=cylinder, fillcolor="#fdb462"]
+
+    web -> api [label="HTTPS", style=bold]
+    mobile -> api [label="HTTPS", style=bold]
+    api -> user [label="get profile"]
+    user -> db [label="read/write"]
+}
 EOF
 ```
 

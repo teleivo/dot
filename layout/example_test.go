@@ -11,7 +11,6 @@ func Example() {
 	d := layout.NewDoc(40)
 	d.Text("person := Person{")
 	d.Group(func(d *layout.Doc) {
-		d.SpaceIf(layout.Flat)
 		d.BreakIf(1, layout.Broken)
 		d.Indent(1, func(d *layout.Doc) {
 			d.Text("Name: \"Alice\",")
@@ -20,9 +19,10 @@ func Example() {
 			d.Text("Age: 30,")
 			d.SpaceIf(layout.Flat)
 			d.BreakIf(1, layout.Broken)
-			d.Text("Email: \"alice@example.com\",")
+			d.Text("Email: \"alice@example.com\"")
+			d.TextIf(",", layout.Broken)
 		})
-		d.SpaceIf(layout.Flat)
+		d.SpaceIf(layout.Broken)
 		d.BreakIf(1, layout.Broken)
 	})
 	d.Text("}")

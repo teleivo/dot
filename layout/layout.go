@@ -1,4 +1,60 @@
-// Package layout TODO add godoc on all exported things
+// Package layout provides a declarative toolkit for building pretty printers and code formatters.
+//
+// It implements a DOM-like structure that specifies how text should be laid out with respect to
+// line breaking, indentation, and reflowing. The core abstraction is [Doc], a tree of tags that
+// describe layout constraints rather than explicit formatting decisions.
+//
+// A [Doc] is built by chaining method calls that add tags:
+//   - [Doc.Text]: adds literal text content
+//   - [Doc.Space]: adds a single space
+//   - [Doc.Break]: adds one or more newlines
+//   - [Doc.Group]: marks a sequence of tags that should be kept on one line if possible
+//   - [Doc.Indent]: increases indentation level for a sequence of tags
+//
+// Tags can be conditional using the *If variants ([Doc.TextIf], [Doc.SpaceIf], [Doc.BreakIf]),
+// which only render when a containing group is either flat (fits on one line) or broken (spans
+// multiple lines).
+//
+// The layout engine uses a two-phase approach:
+//
+//  1. Measure: computes the width of each group assuming no internal line breaks
+//  2. Layout: determines which groups must break based on the maximum column width
+//
+// Groups are broken if either their measured width exceeds the remaining space on the current
+// line, or they contain inherent newlines (from [Doc.Break]). Breaking decisions propagate
+// outward: a broken inner group forces its parent to break as well.
+//
+// # Example
+//
+// Here's how to format a function signature that breaks if it's too long:
+//
+//	d := layout.NewDoc(80)
+//	d.Text("func").Space().Text("example").Text("(")
+//	d.Group(func(d *layout.Doc) {
+//	    d.Text("arg1").Space().Text("int").Text(",")
+//	    d.SpaceIf(layout.Flat)
+//	    d.BreakIf(1, layout.Broken)
+//	    d.Text("arg2").Space().Text("string")
+//	})
+//	d.Text(")").Space().Text("{").Break(1).Text("}")
+//	d.Render(os.Stdout, layout.Default)
+//
+// If the group fits within 80 columns, it renders as:
+//
+//	func example(arg1 int, arg2 string) {
+//	}
+//
+// Otherwise it breaks as:
+//
+//	func example(arg1 int,
+//	arg2 string) {
+//	}
+//
+// # Inspiration
+//
+// This package is based on allman (https://github.com/mcy/strings/tree/main/allman) by mcyoung,
+// which implements the layout algorithm described in "How to Build a Code Formatter"
+// (https://mcyoung.xyz/2025/03/11/formatters/).
 package layout
 
 import (
@@ -424,9 +480,6 @@ func (c condition) String() string {
 		panic("condition string not implemented")
 	}
 }
-
-// TODO what is the benefit of wrapping Tag? is it so a Tag is the API and users cannot mess with
-// measurement and len? can I achieve that without yet another type
 
 type tagInfo struct {
 	tag     tag

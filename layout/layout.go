@@ -13,9 +13,13 @@ type Format = int
 const (
 	// Default renders the layout content
 	Default Format = iota
-	// Layout renders the layout using an HTML like syntax
+	// Layout renders the layout using an HTML like syntax. In contrast to [Default] and [Go] this
+	// will render tags that might not actually rendered in the end. This is useful to debug the
+	// measure and layout steps of [Doc.Render] to for example figure out why a group is considered
+	// broken.
 	Layout
-	// Go renders the layout as GoString
+	// Go renders the layout as rendered by [Default] as a runnable Go program. This allows
+	// debugging and iterating on a layout.
 	Go
 )
 

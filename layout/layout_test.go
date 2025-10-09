@@ -13,8 +13,6 @@ import (
 )
 
 func TestLayout(t *testing.T) {
-	// TODO add test for trailing space logic. is there any tag i need to reset the buffered
-	// space? how about consecutive spaces? they are merged right now
 	// TODO add more tests for newline handling?
 	// TODO test negative indentation
 	tests := map[string]struct {
@@ -39,6 +37,24 @@ func TestLayout(t *testing.T) {
 			wantDefault: "",
 			wantLayout: `<indent columns=1>
 </indent>
+`,
+		},
+		"SkipTrailingSpaces": {
+			in: layout.NewDoc(80).Space().Text("in between").Space().Break(1),
+			wantDefault: ` in between
+`,
+			wantLayout: `<space/>
+<text width=10 content="in between"/>
+<space/>
+<break count=1/>
+`,
+		},
+		"MergeConsecutiveSpaces": {
+			in:          layout.NewDoc(80).Space().Space().Text("in between"),
+			wantDefault: ` in between`,
+			wantLayout: `<space/>
+<space/>
+<text width=10 content="in between"/>
 `,
 		},
 		"MergeConsecutiveBreaks": {
@@ -163,7 +179,7 @@ in between
 				err := tc.in.Render(&got, layout.Default)
 				require.NoErrorf(t, err, "failed to render default format")
 
-				assert.Equals(t, got.String(), tc.wantDefault)
+				assert.EqualValues(t, got.String(), tc.wantDefault)
 			})
 		}
 	})
@@ -174,7 +190,7 @@ in between
 				err := tc.in.Render(&got, layout.Layout)
 				require.NoErrorf(t, err, "failed to render layout format")
 
-				assert.Equals(t, got.String(), tc.wantLayout)
+				assert.EqualValues(t, got.String(), tc.wantLayout)
 			})
 		}
 	})
@@ -215,7 +231,7 @@ in between
 				tc.in.Clone().Render(&sb, layout.Default)
 				want := sb.String()
 
-				assert.Equals(t, string(got), want)
+				assert.EqualValues(t, string(got), want)
 			})
 		}
 	})

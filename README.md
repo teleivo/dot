@@ -15,30 +15,40 @@ As such it is opinionated and has no options to change its format.
 
 ```sh
 go run ./cmd/dotfmt/main.go <<EOF
-digraph microservices {
-graph [rankdir=LR, bgcolor="#f0f0f0"]
-    node [shape=box, style="rounded,filled", fillcolor=lightblue]
+digraph data_pipeline{graph[rankdir=TB,bgcolor="#fafafa",splines=curved]
+node[shape=box,style="rounded,filled",fontname="Arial",fontsize=11]
+edge[fontname="Arial",fontsize=9,arrowsize=0.8]
 
-    subgraph cluster_frontend {
-        label="Frontend Layer"
-        style=filled
+subgraph cluster_sources{label="Data Sources"
+style="filled,rounded"fillcolor="#e3f2fd"color="#1976d2"penwidth=2
+raw_logs[label="Raw Logs",shape=note,fillcolor="#bbdefb",color="#1565c0"]
+api_data[label="API Data"shape=note,fillcolor="#bbdefb",color="#1565c0"]}
 
-        web [ label="Web UI",
-fillcolor="#8dd3c7"]
-        mobile [label="Mobile App", fillcolor="#8dd3c7"]
-    }
+subgraph cluster_processing {label="Processing Layer"
+style="filled,rounded"
+fillcolor="#f3e5f5"color="#7b1fa2"
+penwidth=2
+parser [ label="Parser",shape=component,
+fillcolor="#ce93d8",color="#6a1b9a"]validate[label="Validator",shape=component,fillcolor="#ce93d8",color="#6a1b9a"]
+transform[label="Transformer",shape=component,fillcolor="#ce93d8",color="#6a1b9a"]}
 
-    api [
-  label="API Gateway", shape=hexagon, fillcolor="#ffffb3"
-]
-    user [label="User Service", fillcolor="#fb8072"]
-    db [label="Database", shape=cylinder, fillcolor="#fdb462"]
+subgraph cluster_storage{
+label="Storage"style="filled,rounded"fillcolor="#e8f5e9"
+color="#388e3c"penwidth=2
+cache[label="Cache",shape=cylinder,fillcolor="#a5d6a7",color="#2e7d32"]
+warehouse[label="Data Warehouse",shape=cylinder,fillcolor="#a5d6a7",color="#2e7d32"]}
 
-    web -> api [label="HTTPS", style=bold]
-    mobile -> api [label="HTTPS", style=bold]
-    api -> user [label="get profile"]
-    user -> db [label="read/write"]
-}
+analytics[label="Analytics\nDashboard",shape=tab,fillcolor="#fff9c4",color="#f57f17",style="filled,bold"]
+alerts[label="Alert System",shape=octagon,fillcolor="#ffccbc",color="#d84315",style="filled,bold"]
+
+raw_logs->parser[label="ingest",color="#1976d2",penwidth=1.5]
+api_data->parser[label="fetch",color="#1976d2",penwidth=1.5]
+parser->validate[label="parse",color="#7b1fa2",penwidth=2]validate->transform[label="clean",color="#7b1fa2",penwidth=2]
+transform->cache[label="store",color="#388e3c",style=dashed]
+transform->warehouse[label="batch write",color="#388e3c",penwidth=2]
+cache->analytics[label="query",color="#f57f17"]
+warehouse->analytics[label="aggregate",color="#f57f17",penwidth=1.5]
+warehouse->alerts[label="monitor",color="#d84315",style=dotted]}
 EOF
 ```
 

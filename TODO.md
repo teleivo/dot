@@ -1,9 +1,11 @@
 ## Allman
 
-* remove IndentIf for now, document Indent as only indenting at the start of a line which means it
-might not render \t at all if all is flat
+* fix todos in layout (and add test)
+  * test/make Indent(-100) safe
 
-* analyze my render, why do I buffer newlines?
+* how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
+doc like NewDoc or so?
+  * configure my vim tabwidth to be 2 for all or just dot?
 
 * support stanzas ./samples-graphviz/241_0.dot
   * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
@@ -13,21 +15,15 @@ might not render \t at all if all is flat
       empty or be indented as the surrounding code?
       I need proper token/ast position. for this row and column
 
-* test/make Indent(-100) safe
-
 * setup script to copy dot files from graphviz, run them through dotfmt and ensure the image
 produced from the original and the formatted is the same
 * setup script to profile formatter and generate DOT graph that I can feed into dotfmt
 
-* how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
-doc like NewDoc or so?
-  * configure my vim tabwidth to be 2 for all or just dot?
-* tests
-  * only test this as part of dotfmt or test it in isolation?
-  * no trailing spaces
-* add godocs
+* remove old printer
+* add godocs to rest of codebase
 * make layout internal?
 * update README.md
+* do thorough code review
 * merge changes to main
 
 * support comments

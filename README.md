@@ -19,6 +19,26 @@ go run ./cmd/dotfmt/main.go <<EOF
 EOF
 ```
 
+## Documentation
+
+View the package documentation locally with an interactive example playground:
+
+```sh
+# Install pkgsite (Go's documentation server)
+go install golang.org/x/pkgsite/cmd/pkgsite@latest
+
+# Run the documentation server
+cd layout
+pkgsite -open .
+```
+
+This opens a browser with pkg.go.dev-style documentation where you can:
+
+* Read the full package documentation
+* View and run the interactive example
+* Modify the example code (e.g., change `NewDoc(40)` to different column widths)
+* See how the output changes based on your modifications
+
 ## Limitations
 
 * does not support https://graphviz.org/doc/info/lang.html#html-strings as I have not needed them
@@ -29,6 +49,12 @@ operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatti
 * attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
 * add test for nested subgraphs adhere to some requirements which are not validated. The values are
 parsed as identifiers (unquoted, numeral, quoted) and ultimately stored as strings.
+
+## Acknowledgments
+
+The `layout` package is a Go port of [allman](https://github.com/mcy/strings/tree/main/allman) by
+mcyoung. The layout algorithm and design are based on the excellent article ["The Art of
+Formatting Code"](https://mcyoung.xyz/2025/03/11/formatters/).
 
 ## Disclaimer
 

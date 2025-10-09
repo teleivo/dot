@@ -24,37 +24,11 @@
 // line, or they contain inherent newlines (from [Doc.Break]). Breaking decisions propagate
 // outward: a broken inner group forces its parent to break as well.
 //
-// # Example
+// # Acknowledgments
 //
-// Here's how to format a function signature that breaks if it's too long:
-//
-//	d := layout.NewDoc(80)
-//	d.Text("func").Space().Text("example").Text("(")
-//	d.Group(func(d *layout.Doc) {
-//	    d.Text("arg1").Space().Text("int").Text(",")
-//	    d.SpaceIf(layout.Flat)
-//	    d.BreakIf(1, layout.Broken)
-//	    d.Text("arg2").Space().Text("string")
-//	})
-//	d.Text(")").Space().Text("{").Break(1).Text("}")
-//	d.Render(os.Stdout, layout.Default)
-//
-// If the group fits within 80 columns, it renders as:
-//
-//	func example(arg1 int, arg2 string) {
-//	}
-//
-// Otherwise it breaks as:
-//
-//	func example(arg1 int,
-//	arg2 string) {
-//	}
-//
-// # Inspiration
-//
-// This package is based on allman (https://github.com/mcy/strings/tree/main/allman) by mcyoung,
-// which implements the layout algorithm described in "How to Build a Code Formatter"
-// (https://mcyoung.xyz/2025/03/11/formatters/).
+// This package is a Go port of allman (https://github.com/mcy/strings/tree/main/allman) by
+// mcyoung. The layout algorithm and design are based on the excellent article "The Art of
+// Formatting Code" (https://mcyoung.xyz/2025/03/11/formatters/).
 package layout
 
 import (

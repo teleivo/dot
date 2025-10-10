@@ -40,6 +40,7 @@ func TestLayout(t *testing.T) {
 </indent>
 `,
 		},
+		// TODO is there another bug regarding
 		"SkipTrailingSpaces": {
 			in: layout.NewDoc(80).Space().Text("in between").Space().Break(1),
 			wantDefault: ` in between
@@ -48,6 +49,15 @@ func TestLayout(t *testing.T) {
 <text width=10 content="in between"/>
 <space/>
 <break count=1/>
+`,
+		},
+		"SkipTrailingSpacesShouldNotCauseLineToBreak": {
+			in:          layout.NewDoc(10).Text("01234").BreakIf(1, layout.Broken).Text("56789").Space(),
+			wantDefault: `0123456789`,
+			wantLayout: `<text width=5 content="01234"/>
+<break count=1/>
+<text width=5 content="56789"/>
+<space/>
 `,
 		},
 		"MergeConsecutiveUnconditionalSpaces": {

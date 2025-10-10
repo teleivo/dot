@@ -323,6 +323,9 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 			r.render(children, isParentBroken)
 			r.indent -= tag.columns
 		case *text:
+			// TODO how does order play a role? i cannot discern these two right? the first one is
+			// what I want to prevent and the second one is ok
+			// Space().Break(1).Text("foo") vs Break(1).Space().Text("foo")
 			if r.newlines == 0 && r.space { // prevents trailing whitespace
 				fmt.Fprintf(r.w, " ")
 				r.space = false
@@ -484,7 +487,7 @@ type node struct {
 }
 
 func (t *node) String() string {
-	return fmt.Sprintf("TagInfo{tag=%s, len=%d, cond=%s, measure=%s}", t.tag, t.len, t.cond, t.measure)
+	return fmt.Sprintf("Node{tag=%s, len=%d, cond=%s, measure=%s}", t.tag, t.len, t.cond, t.measure)
 }
 
 type measure struct {

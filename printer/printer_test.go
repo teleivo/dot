@@ -385,6 +385,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
+			// TODO why am I not using EqualValues assertion here?
 			if gotFirst.String() != test.want {
 				t.Fatalf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", test.in, gotFirst.String(), test.want)
 			}

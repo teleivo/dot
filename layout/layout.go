@@ -270,7 +270,9 @@ func tagWidth(t *node) {
 	case *text:
 		t.measure.width = len(tag.content)
 	case space:
-		t.measure.width = 1
+		// Spaces start as pending - they'll be included in width during sumWidths if
+		// followed by content
+		t.measure.pendingSpace = true
 	case newlines:
 		t.measure.broken = true
 	}
@@ -278,7 +280,8 @@ func tagWidth(t *node) {
 
 func sumWidths(parent *node, children tagIterator) measure {
 	for t, children := range children {
-		parent.measure.add(sumWidths(t, children))
+		child := sumWidths(t, children)
+		parent.measure.add(child)
 	}
 	return *parent.measure
 }
@@ -323,9 +326,6 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 			r.render(children, isParentBroken)
 			r.indent -= tag.columns
 		case *text:
-			// TODO how does order play a role? i cannot discern these two right? the first one is
-			// what I want to prevent and the second one is ok
-			// Space().Break(1).Text("foo") vs Break(1).Space().Text("foo")
 			if r.newlines == 0 && r.space { // prevents trailing whitespace
 				fmt.Fprintf(r.w, " ")
 				r.space = false
@@ -490,15 +490,34 @@ func (t *node) String() string {
 	return fmt.Sprintf("Node{tag=%s, len=%d, cond=%s, measure=%s}", t.tag, t.len, t.cond, t.measure)
 }
 
+// measure represents the calculated width of a tag sequence during the measurement phase.
+//
+// A space is "trailing" if there's no content after it before the end of a sequence (or a
+// break). The algorithm defers counting spaces until we know if they're trailing.
+//
+// Invariant: At any point, measure represents:
+//   - width: definite width of non-trailing content
+//   - pendingSpace: whether we have a space pending inclusion in width (if followed by content)
+//   - broken: whether this sequence contains unconditional breaks
 type measure struct {
-	width  int
-	broken bool
+	width        int
+	broken       bool
+	pendingSpace bool
 }
 
 func (m *measure) add(b measure) {
 	if m.broken || b.broken {
 		m.broken = true
+		m.pendingSpace = false
 	} else {
+		// If b has content (width > 0) or has a pending space,
+		// then our pending space gets included in width
+		if b.width > 0 || b.pendingSpace {
+			if m.pendingSpace {
+				m.width++ // include pending space in width
+			}
+			m.pendingSpace = b.pendingSpace
+		}
 		m.width += b.width
 	}
 }

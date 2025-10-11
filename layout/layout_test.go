@@ -13,7 +13,6 @@ import (
 )
 
 func TestLayout(t *testing.T) {
-	// TODO understand the bug with Space measurement and skip trailing Space during rendering
 	// TODO test negative indentation and implement safety on under/overflow
 	// TODO add simplest test on break logic
 	tests := map[string]struct {
@@ -40,24 +39,59 @@ func TestLayout(t *testing.T) {
 </indent>
 `,
 		},
-		// TODO is there another bug regarding
 		"SkipTrailingSpaces": {
-			in: layout.NewDoc(80).Space().Text("in between").Space().Break(1),
-			wantDefault: ` in between
-`,
+			in:          layout.NewDoc(10).Space().Text("012345678").Space().Break(1),
+			wantDefault: " 012345678\n",
 			wantLayout: `<space/>
-<text width=10 content="in between"/>
+<text width=9 content="012345678"/>
 <space/>
 <break count=1/>
 `,
 		},
-		"SkipTrailingSpacesShouldNotCauseLineToBreak": {
+		"TopLevelSkipTrailingSpacesButRenderConditionalBreak": {
 			in:          layout.NewDoc(10).Text("01234").BreakIf(1, layout.Broken).Text("56789").Space(),
-			wantDefault: `0123456789`,
+			wantDefault: "01234\n56789",
 			wantLayout: `<text width=5 content="01234"/>
 <break count=1/>
 <text width=5 content="56789"/>
 <space/>
+`,
+		},
+		"TrailingSpaceBeforeConditionalBreakShouldNotCauseGroupToBreak": {
+			in: layout.NewDoc(10).Group(func(d *layout.Doc) {
+				d.Text("0123456789").Space().BreakIf(1, layout.Broken)
+			}),
+			wantDefault: `0123456789`,
+			wantLayout: `<group width=broken>
+	<text width=10 content="0123456789"/>
+	<space/>
+	<break count=1/>
+</group>
+`,
+		},
+		"TrailingSpaceInInnerGroupShouldCauseGroupToBreak": {
+			in: layout.NewDoc(10).
+				Group(func(d *layout.Doc) {
+					d.Group(func(d *layout.Doc) {
+						d.Text("01234").Space()
+					}).
+						BreakIf(1, layout.Broken)
+					d.Group(func(d *layout.Doc) {
+						d.Text("56789").Space()
+					})
+				}),
+			wantDefault: "01234\n56789",
+			wantLayout: `<group width=broken>
+	<group width=broken>
+		<text width=5 content="01234"/>
+		<space/>
+	</group>
+	<break count=1/>
+	<group width=broken>
+		<text width=5 content="56789"/>
+		<space/>
+	</group>
+</group>
 `,
 		},
 		"MergeConsecutiveUnconditionalSpaces": {

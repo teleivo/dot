@@ -14,7 +14,6 @@ import (
 
 func TestLayout(t *testing.T) {
 	// TODO test negative indentation and implement safety on under/overflow
-	// TODO add simplest test on break logic
 	tests := map[string]struct {
 		in          *layout.Doc
 		wantDefault string
@@ -39,6 +38,59 @@ func TestLayout(t *testing.T) {
 </indent>
 `,
 		},
+		"RootDocIsConsideredBroken": {
+			in:          layout.NewDoc(10).TextIf("hello", layout.Broken),
+			wantDefault: "hello",
+			wantLayout: `<text cond="broken" content="hello"/>
+`,
+		},
+		"GroupDoesNotBreakIfOnDocLimit": {
+			in: layout.NewDoc(10).Group(func(d *layout.Doc) {
+				d.Text("01234").BreakIf(3, layout.Broken).Text("56789")
+			}),
+			wantDefault: "0123456789",
+			wantLayout: `<group width=10>
+	<text width=5 content="01234"/>
+	<break cond="broken" count=3/>
+	<text width=5 content="56789"/>
+</group>
+`,
+		},
+		"GroupBreaksIfExceedsDocLimit": {
+			in: layout.NewDoc(10).Group(func(d *layout.Doc) {
+				d.Text("01234").BreakIf(3, layout.Broken).Text("56789a")
+			}),
+			wantDefault: "01234\n\n\n56789a",
+			wantLayout: `<group width=broken>
+	<text width=5 content="01234"/>
+	<break cond="broken" count=3/>
+	<text width=6 content="56789a"/>
+</group>
+`,
+		},
+		"Indent": {
+			in: layout.NewDoc(10).Indent(2, func(d *layout.Doc) {
+				d.
+					Break(1).
+					Text("hello")
+			}),
+			wantDefault: "\n\t\thello",
+			wantLayout: `<indent columns=2>
+	<break count=1/>
+	<text width=5 content="hello"/>
+</indent>
+`,
+		},
+		"IndentNotDoneAtStartOfLine": {
+			in: layout.NewDoc(10).Indent(1, func(d *layout.Doc) {
+				d.Text("hello")
+			}),
+			wantDefault: "hello",
+			wantLayout: `<indent columns=1>
+	<text width=5 content="hello"/>
+</indent>
+`,
+		},
 		"SkipTrailingSpaces": {
 			in:          layout.NewDoc(10).Space().Text("012345678").Space().Break(1),
 			wantDefault: " 012345678\n",
@@ -52,7 +104,7 @@ func TestLayout(t *testing.T) {
 			in:          layout.NewDoc(10).Text("01234").BreakIf(1, layout.Broken).Text("56789").Space(),
 			wantDefault: "01234\n56789",
 			wantLayout: `<text width=5 content="01234"/>
-<break count=1/>
+<break cond="broken" count=1/>
 <text width=5 content="56789"/>
 <space/>
 `,
@@ -66,7 +118,7 @@ func TestLayout(t *testing.T) {
 			wantLayout: `<group width=10>
 	<text width=10 content="0123456789"/>
 	<space/>
-	<break count=1/>
+	<break cond="broken" count=1/>
 </group>
 `,
 		},
@@ -88,7 +140,7 @@ func TestLayout(t *testing.T) {
 		<text width=5 content="01234"/>
 		<space/>
 	</group>
-	<break count=1/>
+	<break cond="broken" count=1/>
 	<group width=5>
 		<text width=5 content="56789"/>
 		<space/>
@@ -106,14 +158,14 @@ func TestLayout(t *testing.T) {
 		"MergeConsecutiveConditionalSpaces": {
 			in:          layout.NewDoc(80).SpaceIf(layout.Broken).SpaceIf(layout.Broken).Text("in between"),
 			wantDefault: ` in between`,
-			wantLayout: `<space cond="Broken"/>
+			wantLayout: `<space cond="broken"/>
 <text width=10 content="in between"/>
 `,
 		},
 		"DontMergeConsecutiveSpacesWithDifferingCondition": {
 			in:          layout.NewDoc(80).SpaceIf(layout.Broken).Space().Text("in between"),
 			wantDefault: ` in between`,
-			wantLayout: `<space cond="Broken"/>
+			wantLayout: `<space cond="broken"/>
 <space/>
 <text width=10 content="in between"/>
 `,
@@ -127,7 +179,7 @@ func TestLayout(t *testing.T) {
 			wantLayout: `<group width=broken>
 	<text width=5 content="hello"/>
 	<space/>
-	<text width=5 content="world"/>
+	<text cond="flat" width=5 content="world"/>
 </group>
 `,
 		},
@@ -151,8 +203,8 @@ func TestLayout(t *testing.T) {
 			wantDefault: "hello",
 			wantLayout: `<group width=5>
 	<text width=5 content="hello"/>
-	<space cond="Flat"/>
-	<break count=1/>
+	<space cond="flat"/>
+	<break cond="broken" count=1/>
 </group>
 `,
 		},
@@ -196,7 +248,7 @@ func TestLayout(t *testing.T) {
 			wantLayout: `<group width=5>
 	<text width=5 content="hello"/>
 	<space/>
-	<space cond="Broken"/>
+	<space cond="broken"/>
 </group>
 `,
 		},
@@ -235,7 +287,7 @@ func TestLayout(t *testing.T) {
 			wantLayout: `<group width=11>
 	<text width=5 content="hello"/>
 	<space/>
-	<break count=1/>
+	<break cond="broken" count=1/>
 	<text width=5 content="world"/>
 </group>
 `,
@@ -318,29 +370,29 @@ in between
 			<text width=1 content="3"/>
 			<space/>
 			<text width=2 content="->"/>
-			<space cond="Flat"/>
-			<break count=1/>
+			<space cond="flat"/>
+			<break cond="broken" count=1/>
 			<text width=1 content="2"/>
 			<space/>
 			<group width=43>
 				<group width=43>
 					<text width=1 content="["/>
-					<break count=1/>
+					<break cond="broken" count=1/>
 					<indent columns=1>
 						<text width=5 content="color"/>
 						<text width=1 content="="/>
 						<text width=6 content="\"blue\""/>
-						<text width=1 content=","/>
-						<break count=1/>
+						<text cond="flat" width=1 content=","/>
+						<break cond="broken" count=1/>
 						<text width=10 content="background"/>
 						<text width=1 content="="/>
 						<text width=17 content="\"transparent red\""/>
 					</indent>
-					<break count=1/>
+					<break cond="broken" count=1/>
 					<text width=1 content="]"/>
 					<space/>
 				</group>
-				<break count=1/>
+				<break cond="broken" count=1/>
 			</group>
 		</group>
 		<break count=1/>

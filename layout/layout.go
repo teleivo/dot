@@ -239,10 +239,10 @@ func main() {
 }
 
 type renderer struct {
-	w        io.Writer // w writer to output formatted DOT code to
-	indent   int       // indent is the current level of indentation
-	space    bool      // space indicates a buffered space that should be rendered
-	newlines int       // newlines indicates the number of buffered newline that should be rendered
+	w               io.Writer // w writer to output formatted DOT code to
+	indent          int       // indent is the current level of indentation
+	pendingSpace    bool      // pendingSpace indicates a space that will only be rendered if its not trailing
+	writtenNewlines int       // writtenNewlines indicates the number of newlines that were written to merge consecutive newlines
 }
 
 func (d *Doc) measure() {
@@ -320,32 +320,28 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 		case *group:
 			r.render(children, t.measure.broken)
 		case *indentation:
-			// TODO implement indentation, only indent if we have pending newline(s)?
 			// TODO implement safety on under/overflow
 			r.indent += tag.columns
 			r.render(children, isParentBroken)
 			r.indent -= tag.columns
 		case *text:
-			// TODO is the r.newlines == 0 still needed? that was when I buffered them if not I
-			// don't need r.newlines anymore I think
-			if r.space { // prevents trailing whitespace
+			if r.pendingSpace { // space is not trailing so write it
 				fmt.Fprintf(r.w, " ")
-				r.space = false
+				r.pendingSpace = false
 			}
-			// only indent at the start of a line
-			if r.newlines > 0 {
+			if r.writtenNewlines > 0 {
 				for i := r.indent; i > 0; i-- {
 					fmt.Fprintf(r.w, "\t")
 				}
 			}
 			fmt.Fprintf(r.w, "%s", tag.content)
-			r.newlines = 0
+			r.writtenNewlines = 0 // reset newlines as text means we do not deal with consecutive newlines
 		case space:
-			r.space = true
+			r.pendingSpace = true // writing space is delayed as it might be trailing
 		case newlines:
-			r.space = false // discard pending space which would be trailing
+			r.pendingSpace = false // discard pending space which would be trailing
 			// merge consecutive Breaks
-			for ; r.newlines < tag.count; r.newlines++ {
+			for ; r.writtenNewlines < tag.count; r.writtenNewlines++ {
 				fmt.Fprintf(r.w, "\n")
 			}
 		}
@@ -375,7 +371,14 @@ func stringIter(w io.Writer, iter tagIterator, indent int) {
 			fmt.Fprintf(w, "</indent>\n")
 		case *text:
 			writeIndent(w, indent)
-			fmt.Fprintf(w, "<text width=%s content=%q/>\n", t.measure, tag.content)
+			switch t.cond { // width is not computed for text that only renders when layout is Broken
+			case Always:
+				fmt.Fprintf(w, "<text width=%s content=%q/>\n", t.measure, tag.content)
+			case Flat:
+				fmt.Fprintf(w, "<text cond=%q width=%s content=%q/>\n", t.cond, t.measure, tag.content)
+			default:
+				fmt.Fprintf(w, "<text cond=%q content=%q/>\n", t.cond, tag.content)
+			}
 		case space:
 			writeIndent(w, indent)
 			if t.cond == Always {
@@ -385,7 +388,11 @@ func stringIter(w io.Writer, iter tagIterator, indent int) {
 			}
 		case newlines:
 			writeIndent(w, indent)
-			fmt.Fprintf(w, "<break count=%d/>\n", tag.count)
+			if t.cond == Always {
+				fmt.Fprintf(w, "<break count=%d/>\n", tag.count)
+			} else {
+				fmt.Fprintf(w, "<break cond=%q count=%d/>\n", t.cond, tag.count)
+			}
 		}
 	}
 }
@@ -436,19 +443,19 @@ func goStringIter(w io.Writer, iter tagIterator, indent int) {
 			if t.cond == Always {
 				fmt.Fprintf(w, "Text(%q)", tag.content)
 			} else {
-				fmt.Fprintf(w, "TextIf(%q, layout.%s)", tag.content, t.cond)
+				fmt.Fprintf(w, "TextIf(%q, layout.%#v)", tag.content, t.cond)
 			}
 		case space:
 			if t.cond == Always {
 				fmt.Fprint(w, "Space()")
 			} else {
-				fmt.Fprintf(w, "SpaceIf(layout.%s)", t.cond)
+				fmt.Fprintf(w, "SpaceIf(layout.%#v)", t.cond)
 			}
 		case newlines:
 			if t.cond == Always {
 				fmt.Fprintf(w, "Break(%d)", tag.count)
 			} else {
-				fmt.Fprintf(w, "BreakIf(%d, layout.%s)", tag.count, t.cond)
+				fmt.Fprintf(w, "BreakIf(%d, layout.%#v)", tag.count, t.cond)
 			}
 		}
 		first = false
@@ -470,6 +477,19 @@ const (
 )
 
 func (c condition) String() string {
+	switch c {
+	case Always:
+		return "always"
+	case Flat:
+		return "flat"
+	case Broken:
+		return "broken"
+	default:
+		panic("condition string not implemented")
+	}
+}
+
+func (c condition) GoString() string {
 	switch c {
 	case Always:
 		return "Always"

@@ -58,11 +58,12 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"TrailingSpaceBeforeConditionalBreakShouldNotCauseGroupToBreak": {
+			// BUG: Trailing space before conditional break causes group to break unnecessarily
 			in: layout.NewDoc(10).Group(func(d *layout.Doc) {
 				d.Text("0123456789").Space().BreakIf(1, layout.Broken)
 			}),
 			wantDefault: `0123456789`,
-			wantLayout: `<group width=broken>
+			wantLayout: `<group width=10>
 	<text width=10 content="0123456789"/>
 	<space/>
 	<break count=1/>
@@ -70,6 +71,7 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"TrailingSpaceInInnerGroupShouldCauseGroupToBreak": {
+			// BUG: Inner groups with trailing spaces marked as broken even though they fit
 			in: layout.NewDoc(10).
 				Group(func(d *layout.Doc) {
 					d.Group(func(d *layout.Doc) {
@@ -82,12 +84,12 @@ func TestLayout(t *testing.T) {
 				}),
 			wantDefault: "01234\n56789",
 			wantLayout: `<group width=broken>
-	<group width=broken>
+	<group width=5>
 		<text width=5 content="01234"/>
 		<space/>
 	</group>
 	<break count=1/>
-	<group width=broken>
+	<group width=5>
 		<text width=5 content="56789"/>
 		<space/>
 	</group>
@@ -114,6 +116,128 @@ func TestLayout(t *testing.T) {
 			wantLayout: `<space cond="Broken"/>
 <space/>
 <text width=10 content="in between"/>
+`,
+		},
+		"SpaceFollowedByNonRenderingConditionalText": {
+			// When a group breaks, TextIf(Flat) doesn't render, so the space before it is trailing
+			in: layout.NewDoc(5).Group(func(d *layout.Doc) {
+				d.Text("hello").Space().TextIf("world", layout.Flat)
+			}),
+			wantDefault: "hello",
+			wantLayout: `<group width=broken>
+	<text width=5 content="hello"/>
+	<space/>
+	<text width=5 content="world"/>
+</group>
+`,
+		},
+		"MultipleConsecutiveTrailingSpaces": {
+			// BUG: Multiple trailing spaces should not contribute to width, but group marked as broken
+			in: layout.NewDoc(10).Group(func(d *layout.Doc) {
+				d.Text("hello").Space().Space()
+			}),
+			wantDefault: "hello",
+			wantLayout: `<group width=5>
+	<text width=5 content="hello"/>
+	<space/>
+</group>
+`,
+		},
+		"ConditionalSpaceAsTrailing": {
+			// BUG: SpaceIf(Flat) is trailing before conditional break, shouldn't cause breaking
+			in: layout.NewDoc(5).Group(func(d *layout.Doc) {
+				d.Text("hello").SpaceIf(layout.Flat).BreakIf(1, layout.Broken)
+			}),
+			wantDefault: "hello",
+			wantLayout: `<group width=5>
+	<text width=5 content="hello"/>
+	<space cond="Flat"/>
+	<break count=1/>
+</group>
+`,
+		},
+		"SpaceBetweenBreaks": {
+			// Space between breaks is trailing and doesn't render; breaks merge to single newline
+			in:          layout.NewDoc(80).Text("hello").Break(1).Space().Break(1).Text("world"),
+			wantDefault: "hello\nworld",
+			wantLayout: `<text width=5 content="hello"/>
+<break count=1/>
+<space/>
+<break count=1/>
+<text width=5 content="world"/>
+`,
+		},
+		"GroupWithOnlySpaces": {
+			// BUG: A group containing only spaces should have 0 width, but counts as 1
+			in: layout.NewDoc(80).Group(func(d *layout.Doc) {
+				d.Space().Space()
+			}),
+			wantDefault: "",
+			wantLayout: `<group width=0>
+	<space/>
+</group>
+`,
+		},
+		"LeadingSpacesBeforeBreak": {
+			// Spaces at the start before any content followed by break should not render
+			in:          layout.NewDoc(80).Space().Space().Break(1).Text("hello"),
+			wantDefault: "\nhello",
+			wantLayout: `<space/>
+<break count=1/>
+<text width=5 content="hello"/>
+`,
+		},
+		"TrailingSpacesWithMixedConditions": {
+			// BUG: Multiple trailing spaces with different conditions shouldn't count in width
+			in: layout.NewDoc(5).Group(func(d *layout.Doc) {
+				d.Text("hello").Space().SpaceIf(layout.Broken)
+			}),
+			wantDefault: "hello",
+			wantLayout: `<group width=5>
+	<text width=5 content="hello"/>
+	<space/>
+	<space cond="Broken"/>
+</group>
+`,
+		},
+		"SpaceAfterEmptyGroup": {
+			// Space after an empty group but before content should be counted
+			in:          layout.NewDoc(80).Group(func(d *layout.Doc) {}).Space().Text("hello"),
+			wantDefault: " hello",
+			wantLayout: `<group width=0>
+</group>
+<space/>
+<text width=5 content="hello"/>
+`,
+		},
+		"TrailingSpaceAfterIndent": {
+			// BUG: Space after indent body is trailing but causes incorrect width calculation
+			in: layout.NewDoc(80).Group(func(d *layout.Doc) {
+				d.Indent(1, func(d *layout.Doc) {
+					d.Text("hello")
+				}).Space()
+			}),
+			wantDefault: "hello",
+			wantLayout: `<group width=5>
+	<indent columns=1>
+		<text width=5 content="hello"/>
+	</indent>
+	<space/>
+</group>
+`,
+		},
+		"SpaceInGroupFollowedByConditionalBreakAndMoreText": {
+			// BUG: Space is followed by more text, should count and group should fit, but marked broken
+			in: layout.NewDoc(20).Group(func(d *layout.Doc) {
+				d.Text("hello").Space().BreakIf(1, layout.Broken).Text("world")
+			}),
+			wantDefault: "hello world",
+			wantLayout: `<group width=11>
+	<text width=5 content="hello"/>
+	<space/>
+	<break count=1/>
+	<text width=5 content="world"/>
+</group>
 `,
 		},
 		"MergeConsecutiveBreaks": {
@@ -182,7 +306,7 @@ in between
 				}),
 			wantDefault: `digraph {
 	3 -> 2 [color="blue",background="transparent red"]
-	rank =same
+	rank=same
 }`,
 			wantLayout: `<text width=7 content="digraph"/>
 <space/>
@@ -190,7 +314,7 @@ in between
 <group width=broken>
 	<indent columns=1>
 		<break count=1/>
-		<group width=broken>
+		<group width=50>
 			<text width=1 content="3"/>
 			<space/>
 			<text width=2 content="->"/>
@@ -198,8 +322,8 @@ in between
 			<break count=1/>
 			<text width=1 content="2"/>
 			<space/>
-			<group width=broken>
-				<group width=broken>
+			<group width=43>
+				<group width=43>
 					<text width=1 content="["/>
 					<break count=1/>
 					<indent columns=1>
@@ -235,7 +359,7 @@ in between
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
 				var got strings.Builder
-				err := tc.in.Render(&got, layout.Default)
+				err := tc.in.Clone().Render(&got, layout.Default)
 				require.NoErrorf(t, err, "failed to render default format")
 
 				assert.EqualValues(t, got.String(), tc.wantDefault)
@@ -246,7 +370,7 @@ in between
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
 				var got strings.Builder
-				err := tc.in.Render(&got, layout.Layout)
+				err := tc.in.Clone().Render(&got, layout.Layout)
 				require.NoErrorf(t, err, "failed to render layout format")
 
 				assert.EqualValues(t, got.String(), tc.wantLayout)
@@ -274,7 +398,7 @@ in between
 
 				f, err := os.Create(dir + "/main.go")
 				require.NoError(t, err)
-				err = tc.in.Render(f, layout.Go)
+				err = tc.in.Clone().Render(f, layout.Go)
 				require.NoErrorf(t, err, "failed to render Go format")
 				cmd := exec.CommandContext(t.Context(), "go", "run", f.Name())
 				got, err := cmd.Output()

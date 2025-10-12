@@ -326,7 +326,9 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 			r.render(children, isParentBroken)
 			r.indent -= tag.columns
 		case *text:
-			if r.newlines == 0 && r.space { // prevents trailing whitespace
+			// TODO is the r.newlines == 0 still needed? that was when I buffered them if not I
+			// don't need r.newlines anymore I think
+			if r.space { // prevents trailing whitespace
 				fmt.Fprintf(r.w, " ")
 				r.space = false
 			}
@@ -341,6 +343,7 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 		case space:
 			r.space = true
 		case newlines:
+			r.space = false // discard pending space which would be trailing
 			// merge consecutive Breaks
 			for ; r.newlines < tag.count; r.newlines++ {
 				fmt.Fprintf(r.w, "\n")

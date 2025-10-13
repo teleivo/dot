@@ -1,6 +1,5 @@
 ## Allman
 
-* fix tests for indent in layout
 * read ./layout/BUG_COMMENT_ANALYSIS.md and update tests
 * run visual test script againt ./samples-graphviz and collect any issues as todo
 * setup script to profile formatter and generate DOT graph that I can feed into dotfmt

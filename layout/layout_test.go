@@ -13,7 +13,6 @@ import (
 )
 
 func TestLayout(t *testing.T) {
-	// TODO test negative indentation and implement safety on under/overflow
 	tests := map[string]struct {
 		in          *layout.Doc
 		wantDefault string
@@ -68,16 +67,25 @@ func TestLayout(t *testing.T) {
 </group>
 `,
 		},
-		"Indent": {
+		"IndentAndDeIndent": {
 			in: layout.NewDoc(10).Indent(2, func(d *layout.Doc) {
 				d.
 					Break(1).
-					Text("hello")
+					Text("hello").
+					Indent(-1, func(d *layout.Doc) {
+						d.
+							Break(1).
+							Text("world")
+					})
 			}),
-			wantDefault: "\n\t\thello",
+			wantDefault: "\n\t\thello\n\tworld",
 			wantLayout: `<indent columns=2>
 	<break count=1/>
 	<text width=5 content="hello"/>
+	<indent columns=-1>
+		<break count=1/>
+		<text width=5 content="world"/>
+	</indent>
 </indent>
 `,
 		},

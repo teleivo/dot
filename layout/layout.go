@@ -216,7 +216,7 @@ func (d *Doc) Render(w io.Writer, format Format) error {
 	var err error
 	switch format {
 	case Default:
-		r.render(d.All(), true)
+		err = r.render(d.All(), true)
 	case Layout:
 		_, err = fmt.Fprint(w, d)
 	case Go:
@@ -244,6 +244,11 @@ type renderer struct {
 	indent          int       // indent is the current level of indentation
 	pendingSpace    bool      // pendingSpace indicates a space that will only be rendered if its not trailing
 	writtenNewlines int       // writtenNewlines indicates the number of newlines that were written to merge consecutive newlines
+}
+
+func (r *renderer) write(s string) error {
+	_, err := io.WriteString(r.w, s)
+	return err
 }
 
 func (d *Doc) measure() {
@@ -320,8 +325,7 @@ func safeAdd(a, b int) int {
 	return a + b
 }
 
-// TODO return errors on print
-func (r *renderer) render(iter tagIterator, isParentBroken bool) {
+func (r *renderer) render(iter tagIterator, isParentBroken bool) error {
 	for t, children := range iter {
 		if t.cond == Flat && isParentBroken || t.cond == Broken && !isParentBroken {
 			continue
@@ -329,22 +333,32 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 
 		switch tag := t.tag.(type) {
 		case *group:
-			r.render(children, t.measure.broken)
+			if err := r.render(children, t.measure.broken); err != nil {
+				return err
+			}
 		case *indentation:
 			r.indent = safeAdd(r.indent, tag.columns)
-			r.render(children, isParentBroken)
+			if err := r.render(children, isParentBroken); err != nil {
+				return err
+			}
 			r.indent -= tag.columns
 		case *text:
 			if r.pendingSpace { // space is not trailing so write it
-				fmt.Fprintf(r.w, " ")
+				if err := r.write(" "); err != nil {
+					return err
+				}
 				r.pendingSpace = false
 			}
 			if r.writtenNewlines > 0 {
 				for i := r.indent; i > 0; i-- {
-					fmt.Fprintf(r.w, "\t")
+					if err := r.write("\t"); err != nil {
+						return err
+					}
 				}
 			}
-			fmt.Fprintf(r.w, "%s", tag.content)
+			if err := r.write(tag.content); err != nil {
+				return err
+			}
 			r.writtenNewlines = 0 // reset newlines as text means we do not deal with consecutive newlines
 		case space:
 			r.pendingSpace = true // writing space is delayed as it might be trailing
@@ -352,10 +366,13 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 			r.pendingSpace = false // discard pending space which would be trailing
 			// merge consecutive Breaks
 			for ; r.writtenNewlines < tag.count; r.writtenNewlines++ {
-				fmt.Fprintf(r.w, "\n")
+				if err := r.write("\n"); err != nil {
+					return err
+				}
 			}
 		}
 	}
+	return nil
 }
 
 func (d *Doc) String() string {

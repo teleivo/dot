@@ -1,11 +1,11 @@
 ## Allman
 
-* fix todos in layout (and add test)
-  * [current] test/make Indent(-100) safe
+* fix tests for indent in layout
 * read ./layout/BUG_COMMENT_ANALYSIS.md and update tests
 * setup script to copy dot files from graphviz, run them through dotfmt and ensure the image
 produced from the original and the formatted is the same
 * setup script to profile formatter and generate DOT graph that I can feed into dotfmt
+  * place some into cmd/dotfmt/testdata/
 
 * fix my :Go to stdlib files
 

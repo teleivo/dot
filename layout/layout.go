@@ -34,6 +34,7 @@ package layout
 import (
 	"fmt"
 	"io"
+	"math"
 	"strings"
 )
 
@@ -297,8 +298,7 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 				column += t.measure.width
 			}
 		case *indentation:
-			// TODO implement safety on under/overflow
-			d.layout(children, indent+tag.columns, column)
+			d.layout(children, safeAdd(indent, tag.columns), column)
 		case *text:
 			column += len(tag.content)
 		case space:
@@ -307,6 +307,17 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 			column = indent
 		}
 	}
+}
+
+func safeAdd(a, b int) int {
+	if b > 0 && a > math.MaxInt-b {
+		panic(fmt.Errorf("overflow adding %d to %d", a, b))
+	}
+	if b < 0 && a < math.MinInt-b {
+		panic(fmt.Errorf("underflow adding %d to %d", a, b))
+	}
+
+	return a + b
 }
 
 // TODO return errors on print
@@ -320,8 +331,7 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) {
 		case *group:
 			r.render(children, t.measure.broken)
 		case *indentation:
-			// TODO implement safety on under/overflow
-			r.indent += tag.columns
+			r.indent = safeAdd(r.indent, tag.columns)
 			r.render(children, isParentBroken)
 			r.indent -= tag.columns
 		case *text:

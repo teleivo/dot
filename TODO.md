@@ -1,7 +1,13 @@
 ## Allman
 
 * fix todos in layout (and add test)
-  * test/make Indent(-100) safe
+  * [current] test/make Indent(-100) safe
+* read ./layout/BUG_COMMENT_ANALYSIS.md and update tests
+* setup script to copy dot files from graphviz, run them through dotfmt and ensure the image
+produced from the original and the formatted is the same
+* setup script to profile formatter and generate DOT graph that I can feed into dotfmt
+
+* fix my :Go to stdlib files
 
 * how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
 doc like NewDoc or so?
@@ -15,24 +21,11 @@ doc like NewDoc or so?
       empty or be indented as the surrounding code?
       I need proper token/ast position. for this row and column
 
-* setup script to copy dot files from graphviz, run them through dotfmt and ensure the image
-produced from the original and the formatted is the same
-* setup script to profile formatter and generate DOT graph that I can feed into dotfmt
-
-* remove old printer
 * add godocs to rest of codebase
 * make layout internal?
 * update README.md
 * do thorough code review
 * merge changes to main
-
-* support comments
-  * line comment
-  * support word-wrapping
-* support splitting IDs using line-continuation?
-* measure in original sets broken if text contains newline. this is not correct for raw strings
-right? `foo\nfaa` in Go or similar with escaped newlines or so in DOT should not cause a newline.
-add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 
 ## Next
 
@@ -75,8 +68,13 @@ to keep it externally like `cmd/tokens`?
 
 * properly godoc all the things
 
-* profile any of the above on a large file, generate a pprof dot file and feed that back into the
-parser as a test via testdata
+* support comments
+  * line comment
+  * support word-wrapping
+* support splitting IDs using line-continuation?
+* measure in original sets broken if text contains newline. this is not correct for raw strings
+right? `foo\nfaa` in Go or similar with escaped newlines or so in DOT should not cause a newline.
+add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 
 ## Parser
 

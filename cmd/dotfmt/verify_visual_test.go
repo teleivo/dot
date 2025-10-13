@@ -29,7 +29,6 @@ func TestVerifyVisualOutput(t *testing.T) {
 		t.Skipf("test directory %q does not exist, skipping visual verification test", testDir)
 	}
 
-	// Find all .dot files in the test directory
 	dotFiles, err := filepath.Glob(filepath.Join(testDir, "*.dot"))
 	if err != nil {
 		t.Fatalf("failed to find .dot files in %q: %v", testDir, err)

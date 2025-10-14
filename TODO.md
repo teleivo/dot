@@ -1,5 +1,3 @@
-* run visual test script againt ./samples-graphviz and collect any issues as todo
-
 * add profiling option to dotfmt and generate DOT graph that I can feed into dotfmt
   * place some into cmd/dotfmt/testdata/
 
@@ -24,7 +22,13 @@ doc like NewDoc or so?
 
 ## Next
 
+* visual tests
+  * collect all errors/issues in ./run_visual_tests.sh
+  * ./samples-graphviz/share/tests are causing trouble
+  * ./samples-graphviz/share/examples/ are causing trouble. These files are large. I assume its
+  dotfmt having issues not dot
 * improve error handling see [Parser](#parser)
+
 * I think this should lead to a parser error but does not
 
 ```dot

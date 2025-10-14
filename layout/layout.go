@@ -170,7 +170,7 @@ func (d *Doc) Group(body func(*Doc)) *Doc {
 }
 
 // Indent increases the indentation level by the specified number of columns for the content
-// added in body. The indentation is applied at the start of each line.
+// added in body. The indentation is applied at the start of each line. Indent uses tabs.
 func (d *Doc) Indent(columns int, body func(*Doc)) *Doc {
 	return d.tagWith(&indentation{columns: columns}, body)
 }

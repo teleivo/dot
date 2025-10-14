@@ -47,7 +47,6 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("failed to convert -format=%q: %v", *format, err)
 	}
-
 	p := printer.NewPrinter(r, w, ft)
 	if err := p.Print(); err != nil {
 		return err

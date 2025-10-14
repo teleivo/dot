@@ -1,9 +1,3 @@
-* add profiling option to dotfmt and generate DOT graph that I can feed into dotfmt
-  * place some into cmd/dotfmt/testdata/
-
-* how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
-doc like NewDoc or so?
-
 * personal dotfiles: configure my vim tabwidth to be 2 for all or just dot?
 
 * support stanzas ./samples-graphviz/241_0.dot

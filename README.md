@@ -52,6 +52,23 @@ warehouse->alerts[label="monitor",color="#d84315",style=dotted]}
 EOF
 ```
 
+## Testing
+
+The formatter uses two test strategies:
+
+* Idempotency tests verify formatting is stable
+* Visual tests ensure formatting preserves graph semantics by comparing SVG outputs
+
+Run visual tests on external graphs:
+
+```sh
+# Sync samples from graphviz repository
+./sync-graphviz-samples.sh
+
+cd cmd/dotfmt
+DOTFMT_TEST_DIR=../../samples-graphviz/tests go test -v -run TestVisualOutput
+```
+
 ## Documentation
 
 View the package documentation locally with an interactive example playground:

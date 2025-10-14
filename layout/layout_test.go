@@ -118,7 +118,6 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"TrailingSpaceBeforeConditionalBreakShouldNotCauseGroupToBreak": {
-			// BUG: Trailing space before conditional break causes group to break unnecessarily
 			in: layout.NewDoc(10).Group(func(d *layout.Doc) {
 				d.Text("0123456789").Space().BreakIf(1, layout.Broken)
 			}),
@@ -131,7 +130,6 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"TrailingSpaceInInnerGroupShouldCauseGroupToBreak": {
-			// BUG: Inner groups with trailing spaces marked as broken even though they fit
 			in: layout.NewDoc(10).
 				Group(func(d *layout.Doc) {
 					d.Group(func(d *layout.Doc) {
@@ -192,7 +190,6 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"MultipleConsecutiveTrailingSpaces": {
-			// BUG: Multiple trailing spaces should not contribute to width, but group marked as broken
 			in: layout.NewDoc(10).Group(func(d *layout.Doc) {
 				d.Text("hello").Space().Space()
 			}),
@@ -203,8 +200,7 @@ func TestLayout(t *testing.T) {
 </group>
 `,
 		},
-		"ConditionalSpaceAsTrailing": {
-			// BUG: SpaceIf(Flat) is trailing before conditional break, shouldn't cause breaking
+		"ConditionalTrailingSpace": {
 			in: layout.NewDoc(5).Group(func(d *layout.Doc) {
 				d.Text("hello").SpaceIf(layout.Flat).BreakIf(1, layout.Broken)
 			}),
@@ -228,7 +224,7 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"GroupWithOnlySpaces": {
-			// BUG: A group containing only spaces should have 0 width, but counts as 1
+			// consecutive spaces are merged and since the space trailing its not rendered
 			in: layout.NewDoc(80).Group(func(d *layout.Doc) {
 				d.Space().Space()
 			}),
@@ -248,7 +244,7 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"TrailingSpacesWithMixedConditions": {
-			// BUG: Multiple trailing spaces with different conditions shouldn't count in width
+			// consecutive spaces with different conditions are not merged
 			in: layout.NewDoc(5).Group(func(d *layout.Doc) {
 				d.Text("hello").Space().SpaceIf(layout.Broken)
 			}),
@@ -261,7 +257,7 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"SpaceAfterEmptyGroup": {
-			// Space after an empty group but before content should be counted
+			// space after an empty group but before content should be counted
 			in:          layout.NewDoc(80).Group(func(d *layout.Doc) {}).Space().Text("hello"),
 			wantDefault: " hello",
 			wantLayout: `<group width=0>
@@ -271,7 +267,6 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"TrailingSpaceAfterIndent": {
-			// BUG: Space after indent body is trailing but causes incorrect width calculation
 			in: layout.NewDoc(80).Group(func(d *layout.Doc) {
 				d.Indent(1, func(d *layout.Doc) {
 					d.Text("hello")
@@ -287,7 +282,6 @@ func TestLayout(t *testing.T) {
 `,
 		},
 		"SpaceInGroupFollowedByConditionalBreakAndMoreText": {
-			// BUG: Space is followed by more text, should count and group should fit, but marked broken
 			in: layout.NewDoc(20).Group(func(d *layout.Doc) {
 				d.Text("hello").Space().BreakIf(1, layout.Broken).Text("world")
 			}),

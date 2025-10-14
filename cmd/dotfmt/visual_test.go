@@ -10,14 +10,14 @@ import (
 	"testing"
 )
 
-// TestVerifyVisualOutput tests that dotfmt preserves visual output by comparing
+// TestVisualOutput tests that dotfmt preserves visual output by comparing
 // SVG renderings of original and formatted DOT files.
 //
 // By default, it tests files in testdata/. Set DOTFMT_TEST_DIR to test external files.
 // Temp files are preserved on failure for debugging, or always if DOTFMT_KEEP_TEMP=1.
-func TestVerifyVisualOutput(t *testing.T) {
+func TestVisualOutput(t *testing.T) {
 	if _, err := exec.LookPath("dot"); err != nil {
-		t.Skip("dot (Graphviz) not found in PATH, skipping visual verification test")
+		t.Skip("dot (Graphviz) not found in PATH, skipping visual test")
 	}
 
 	testDir := os.Getenv("DOTFMT_TEST_DIR")
@@ -26,7 +26,7 @@ func TestVerifyVisualOutput(t *testing.T) {
 	}
 
 	if _, err := os.Stat(testDir); os.IsNotExist(err) {
-		t.Skipf("test directory %q does not exist, skipping visual verification test", testDir)
+		t.Skipf("test directory %q does not exist, skipping visual test", testDir)
 	}
 
 	dotFiles, err := filepath.Glob(filepath.Join(testDir, "*.dot"))
@@ -34,8 +34,15 @@ func TestVerifyVisualOutput(t *testing.T) {
 		t.Fatalf("failed to find .dot files in %q: %v", testDir, err)
 	}
 
+	gvFiles, err := filepath.Glob(filepath.Join(testDir, "*.gv"))
+	if err != nil {
+		t.Fatalf("failed to find .gv files in %q: %v", testDir, err)
+	}
+
+	dotFiles = append(dotFiles, gvFiles...)
+
 	if len(dotFiles) == 0 {
-		t.Skipf("no .dot files found in %q, skipping visual verification test", testDir)
+		t.Skipf("no .dot or .gv files found in %q, skipping visual test", testDir)
 	}
 
 	keepTemp := os.Getenv("DOTFMT_KEEP_TEMP") == "1"
@@ -43,7 +50,6 @@ func TestVerifyVisualOutput(t *testing.T) {
 		t.Run(filepath.Base(dotFile), func(t *testing.T) {
 			t.Parallel()
 
-			// Create temp directory for this test
 			tempDir, err := os.MkdirTemp("", "dotfmt-visual-*")
 			if err != nil {
 				t.Fatalf("failed to create temp directory: %v", err)

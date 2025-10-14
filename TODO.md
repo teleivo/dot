@@ -1,15 +1,12 @@
-## Allman
-
-* read ./layout/BUG_COMMENT_ANALYSIS.md and update tests
 * run visual test script againt ./samples-graphviz and collect any issues as todo
-* setup script to profile formatter and generate DOT graph that I can feed into dotfmt
-  * place some into cmd/dotfmt/testdata/
 
-* fix my :Go to stdlib files
+* add profiling option to dotfmt and generate DOT graph that I can feed into dotfmt
+  * place some into cmd/dotfmt/testdata/
 
 * how to indent using tabs vs spaces? make this a fixed decision but in theory configurable on the
 doc like NewDoc or so?
-  * configure my vim tabwidth to be 2 for all or just dot?
+
+* personal dotfiles: configure my vim tabwidth to be 2 for all or just dot?
 
 * support stanzas ./samples-graphviz/241_0.dot
   * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
@@ -21,8 +18,8 @@ doc like NewDoc or so?
 
 * add godocs to rest of codebase
 * make layout internal?
-* update README.md
 * do thorough code review
+* update README.md
 * merge changes to main
 
 ## Next

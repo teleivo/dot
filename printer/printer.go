@@ -26,6 +26,8 @@ type Printer struct {
 	format  layout.Format // format in which to print the DOT code
 }
 
+// NewPrinter creates a new printer that reads DOT code from r, formats it, and writes the
+// formatted output to w. The format parameter controls the output representation.
 func NewPrinter(r io.Reader, w io.Writer, format layout.Format) *Printer {
 	return &Printer{
 		r:      r,
@@ -34,6 +36,8 @@ func NewPrinter(r io.Reader, w io.Writer, format layout.Format) *Printer {
 	}
 }
 
+// Print parses the DOT code from the reader and writes the formatted output to the writer.
+// Returns an error if parsing or formatting fails.
 func (p *Printer) Print() error {
 	// TODO wrap errors in here to give some context?
 	ps, err := dot.NewParser(p.r)

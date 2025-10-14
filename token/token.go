@@ -86,10 +86,13 @@ var types map[string]TokenType = map[string]TokenType{
 	"subgraph": Subgraph,
 }
 
+// String returns the string representation of the token type.
 func (tt TokenType) String() string {
 	return typeStrings[tt]
 }
 
+// Type returns the [TokenType] for the given string. Returns false if the string does not
+// correspond to a token type (operator, keyword, or punctuation).
 func Type(in string) (TokenType, bool) {
 	v, ok := types[in]
 	return v, ok
@@ -102,6 +105,8 @@ type Token struct {
 	Start, End Position
 }
 
+// String returns the string representation of the token. For identifiers, it returns the literal
+// value. For other token types, it returns the token type's string representation.
 func (t Token) String() string {
 	if t.Type == Identifier {
 		return t.Literal

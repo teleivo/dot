@@ -10,6 +10,7 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
+// Scanner tokenizes DOT language source code into a stream of tokens.
 type Scanner struct {
 	r         *bufio.Reader
 	cur       rune
@@ -20,6 +21,8 @@ type Scanner struct {
 	err       error
 }
 
+// NewScanner creates a new scanner that reads DOT source code from r. Returns an error if the
+// scanner cannot be initialized.
 func NewScanner(r io.Reader) (*Scanner, error) {
 	scanner := Scanner{
 		r:      bufio.NewReader(r),
@@ -441,6 +444,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	}, nil
 }
 
+// Error represents a scanning or parsing error in DOT source code.
 type Error struct {
 	LineNr      int    // Line number the error was found.
 	CharacterNr int    // Character number the error was found.
@@ -448,6 +452,7 @@ type Error struct {
 	Reason      string // Reason for the error.
 }
 
+// Error returns a formatted error message with line and character position.
 func (e Error) Error() string {
 	return fmt.Sprintf("%d:%d: %s", e.LineNr, e.CharacterNr, e.Reason)
 }

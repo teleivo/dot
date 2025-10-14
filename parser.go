@@ -11,6 +11,7 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
+// Parser parses DOT language source code into an abstract syntax tree.
 type Parser struct {
 	scanner   *Scanner
 	curToken  token.Token
@@ -18,6 +19,8 @@ type Parser struct {
 	comments  []ast.Comment
 }
 
+// NewParser creates a new parser that reads DOT source code from r. Returns an error if the
+// underlying scanner cannot be initialized.
 func NewParser(r io.Reader) (*Parser, error) {
 	scanner, err := NewScanner(r)
 	if err != nil {
@@ -37,29 +40,8 @@ func NewParser(r io.Reader) (*Parser, error) {
 	return &p, nil
 }
 
-// nextToken advances to the next non-comment token. Any comments that are encountered in the
-// process are collected.
-func (p *Parser) nextToken() error {
-	var tok token.Token
-	var err error
-	for tok, err = p.scanner.Next(); err == nil && tok.Type == token.Comment; tok, err = p.scanner.Next() {
-		comment := ast.Comment{
-			Text:     tok.Literal,
-			StartPos: tok.Start,
-			EndPos:   tok.End,
-		}
-		p.comments = append(p.comments, comment)
-	}
-	if err != nil {
-		return err
-	}
-
-	p.curToken = p.peekToken
-	p.peekToken = tok
-
-	return nil
-}
-
+// Parse parses the DOT source code and returns the abstract syntax tree representation. Returns an
+// error if the source contains syntax errors.
 func (p *Parser) Parse() (ast.Graph, error) {
 	// if p.isDone() {
 	if p.peekTokenIs(token.EOF) {
@@ -92,6 +74,29 @@ func (p *Parser) Parse() (ast.Graph, error) {
 	graph.Comments = p.comments
 
 	return graph, err
+}
+
+// nextToken advances to the next non-comment token. Any comments that are encountered in the
+// process are collected.
+func (p *Parser) nextToken() error {
+	var tok token.Token
+	var err error
+	for tok, err = p.scanner.Next(); err == nil && tok.Type == token.Comment; tok, err = p.scanner.Next() {
+		comment := ast.Comment{
+			Text:     tok.Literal,
+			StartPos: tok.Start,
+			EndPos:   tok.End,
+		}
+		p.comments = append(p.comments, comment)
+	}
+	if err != nil {
+		return err
+	}
+
+	p.curToken = p.peekToken
+	p.peekToken = tok
+
+	return nil
 }
 
 func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {

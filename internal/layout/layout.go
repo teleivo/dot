@@ -378,9 +378,9 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) error {
 	return nil
 }
 
-// String returns the document structure as HTML-like markup, showing all tags and their
-// properties. This implements [fmt.Stringer] and is equivalent to rendering with [Layout]
-// format. Useful for debugging the layout algorithm.
+// String returns the document structure as HTML-like markup, showing all tags and their properties.
+// This implements [fmt.Stringer] and is like rendering with [Layout] format except that the measure
+// and layout phases are not run. Useful for debugging the layout algorithm.
 func (d *Doc) String() string {
 	var sb strings.Builder
 	stringIter(&sb, d.All(), 0)
@@ -437,8 +437,8 @@ func writeIndent(w io.Writer, columns int) {
 }
 
 // GoString returns the document as runnable Go code that reproduces the layout. This implements
-// [fmt.GoStringer] and is equivalent to rendering with [Go] format. Useful for debugging and
-// iterating on layouts by generating standalone programs.
+// [fmt.GoStringer] and is like rendering with [Go] format except that the measure and layout phase
+// are not run. Useful for debugging and iterating on layouts by generating standalone programs.
 func (d *Doc) GoString() string {
 	return goString(d, 0)
 }

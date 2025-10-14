@@ -6,7 +6,6 @@
       empty or be indented as the surrounding code?
       I need proper token/ast position. for this row and column
 
-* add godocs to rest of codebase
 * do thorough code review
 * update README.md
 * merge changes to main as merge commit

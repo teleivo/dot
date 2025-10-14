@@ -6,7 +6,7 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/ast"
-	"github.com/teleivo/dot/layout"
+	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/token"
 )
 

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/teleivo/assertive/require"
-	"github.com/teleivo/dot/layout"
+	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/printer"
 )
 

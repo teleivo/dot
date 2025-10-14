@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/teleivo/dot/layout"
+	"github.com/teleivo/dot/internal/layout"
 )
 
 func Example() {

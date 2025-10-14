@@ -170,7 +170,8 @@ func (d *Doc) Group(body func(*Doc)) *Doc {
 }
 
 // Indent increases the indentation level by the specified number of columns for the content
-// added in body. The indentation is applied at the start of each line. Indent uses tabs.
+// added in body. The indentation is applied at the start of each line after a newline.
+// Each column of indentation is rendered as a single tab character.
 func (d *Doc) Indent(columns int, body func(*Doc)) *Doc {
 	return d.tagWith(&indentation{columns: columns}, body)
 }
@@ -225,7 +226,7 @@ func (d *Doc) Render(w io.Writer, format Format) error {
 import (
 	"os"
 
-	"github.com/teleivo/dot/layout"
+	"github.com/teleivo/dot/internal/layout"
 )
 
 func main() {

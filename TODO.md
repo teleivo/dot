@@ -1,5 +1,3 @@
-* personal dotfiles: configure my vim tabwidth to be 2 for all or just dot?
-
 * support stanzas ./samples-graphviz/241_0.dot
   * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
   * implement merging multiple Break() using max(n, m)
@@ -9,10 +7,9 @@
       I need proper token/ast position. for this row and column
 
 * add godocs to rest of codebase
-* make layout internal?
 * do thorough code review
 * update README.md
-* merge changes to main
+* merge changes to main as merge commit
 
 ## Next
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
-	"github.com/teleivo/dot/layout"
+	"github.com/teleivo/dot/internal/layout"
 )
 
 func TestLayout(t *testing.T) {

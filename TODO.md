@@ -1,3 +1,7 @@
+* do thorough code review
+* update README.md
+* merge changes to main as merge commit
+
 * support stanzas ./samples-graphviz/241_0.dot
   * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
   * implement merging multiple Break() using max(n, m)
@@ -5,10 +9,6 @@
       Allow users to do that. No more than one empty line though. And will that line be completely
       empty or be indented as the surrounding code?
       I need proper token/ast position. for this row and column
-
-* do thorough code review
-* update README.md
-* merge changes to main as merge commit
 
 ## Next
 

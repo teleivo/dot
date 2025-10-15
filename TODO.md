@@ -1,8 +1,4 @@
-* visual tests
-  * collect all errors/issues in ./run_visual_tests.sh
-  * ./samples-graphviz/share/tests are causing trouble
-  * ./samples-graphviz/share/examples/ are causing trouble. These files are large. I assume its
-  dotfmt having issues not dot
+* go through ./visual_test_error.log errors
 
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility
@@ -17,6 +13,19 @@ graph {
 }
 ```
 
+* do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
+How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
+want something similar for the parser. Is it best to integrate that into the scanner/parser or nicer
+to keep it externally like `cmd/tokens`?
+
+* support comments
+  * line comment
+  * support word-wrapping
+* support splitting IDs using line-continuation?
+* measure in original sets broken if text contains newline. this is not correct for raw strings
+right? `foo\nfaa` in Go or similar with escaped newlines or so in DOT should not cause a newline.
+add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
+
 * support stanzas ./samples-graphviz/241_0.dot
   * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
   * implement merging multiple Break() using max(n, m)
@@ -24,11 +33,6 @@ graph {
       Allow users to do that. No more than one empty line though. And will that line be completely
       empty or be indented as the surrounding code?
       I need proper token/ast position. for this row and column
-
-* do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
-How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
-want something similar for the parser. Is it best to integrate that into the scanner/parser or nicer
-to keep it externally like `cmd/tokens`?
 
 * update README with docs on `dotfmt`
   * indentation: tabs
@@ -49,14 +53,6 @@ to keep it externally like `cmd/tokens`?
         # comment that
         # is too long
     ```
-
-* support comments
-  * line comment
-  * support word-wrapping
-* support splitting IDs using line-continuation?
-* measure in original sets broken if text contains newline. this is not correct for raw strings
-right? `foo\nfaa` in Go or similar with escaped newlines or so in DOT should not cause a newline.
-add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 
 ## Parser
 

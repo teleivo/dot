@@ -1,6 +1,6 @@
 module github.com/teleivo/dot
 
-go 1.22.5
+go 1.25.1
 
 require github.com/teleivo/assertive v0.0.0-20240807044559-4d52e9d98f38
 

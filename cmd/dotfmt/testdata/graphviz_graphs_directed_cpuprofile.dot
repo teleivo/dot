@@ -1,0 +1,1384 @@
+digraph "dotfmt.test" {
+	node [style=filled,fillcolor="#f8f8f8"]
+	subgraph cluster_L {
+		"File: dotfmt.test" [
+			shape=box
+			fontsize=16
+			label="File: dotfmt.test\lBuild ID: 6582e931796a9e56a7ec6e9bc5aeba730a63fe24\lType: cpu\lTime: 2025-10-14 06:07:21 CEST\lDuration: 501.72ms, Total samples = 120ms (23.92%)\lShowing nodes accounting for 120ms, 100% of 120ms total\l\lSee https://git.io/JfYMW for how to read the graph\l"
+			tooltip="dotfmt.test"
+		]
+	}
+	N1 [
+		label="runtime\nsystemstack\n10ms (8.33%)\nof 60ms (50.00%)"
+		id="node1"
+		fontsize=18
+		shape=box
+		tooltip="runtime.systemstack (60ms)"
+		color="#b22100"
+		fillcolor="#edd9d5"
+	]
+	N2 [
+		label="runtime\ntypePointers\nnext\n30ms (25.00%)"
+		id="node2"
+		fontsize=24
+		shape=box
+		tooltip="runtime.typePointers.next (30ms)"
+		color="#b23c00"
+		fillcolor="#edddd5"
+	]
+	N3 [
+		label="runtime\ngcBgMarkWorker\n0 of 50ms (41.67%)"
+		id="node3"
+		fontsize=8
+		shape=box
+		tooltip="runtime.gcBgMarkWorker (50ms)"
+		color="#b22900"
+		fillcolor="#eddad5"
+	]
+	N4 [
+		label="testing\ntRunner\n0 of 70ms (58.33%)"
+		id="node4"
+		fontsize=8
+		shape=box
+		tooltip="testing.tRunner (70ms)"
+		color="#b21a00"
+		fillcolor="#edd8d5"
+	]
+	N5 [
+		label="printer\n(*Printer)\nPrint\n0 of 50ms (41.67%)"
+		id="node5"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).Print (50ms)"
+		color="#b22900"
+		fillcolor="#eddad5"
+	]
+	N6 [
+		label="dotfmt\nTestVerifyVisualOutput\nfunc1\n0 of 70ms (58.33%)"
+		id="node6"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/cmd/dotfmt.TestVerifyVisualOutput.func1 (70ms)"
+		color="#b21a00"
+		fillcolor="#edd8d5"
+	]
+	N7 [
+		label="layout\n(*renderer)\nrender\n10ms (8.33%)"
+		id="node7"
+		fontsize=18
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N8 [
+		label="dot\n(*Parser)\nparseStatementList\n0 of 30ms (25.00%)"
+		id="node8"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).parseStatementList (30ms)"
+		color="#b23c00"
+		fillcolor="#edddd5"
+	]
+	N9 [
+		label="sha256\nblockAVX2\n20ms (16.67%)"
+		id="node9"
+		fontsize=22
+		shape=box
+		tooltip="crypto/internal/fips140/sha256.blockAVX2 (20ms)"
+		color="#b25b1d"
+		fillcolor="#ede1d9"
+	]
+	N10 [
+		label="dot\n(*Parser)\nnextToken\n0 of 20ms (16.67%)"
+		id="node10"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).nextToken (20ms)"
+		color="#b25b1d"
+		fillcolor="#ede1d9"
+	]
+	N11 [
+		label="layout\n(*Doc)\ntagIfWith\n0 of 10ms (8.33%)"
+		id="node11"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N12 [
+		label="runtime\ngcDrain\n0 of 40ms (33.33%)"
+		id="node12"
+		fontsize=8
+		shape=box
+		tooltip="runtime.gcDrain (40ms)"
+		color="#b23200"
+		fillcolor="#eddcd5"
+	]
+	N13 [
+		label="dot\n(*Parser)\nparseStatement\n0 of 20ms (16.67%)"
+		id="node13"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).parseStatement (20ms)"
+		color="#b25b1d"
+		fillcolor="#ede1d9"
+	]
+	N14 [
+		label="runtime\nscanobject\n0 of 30ms (25.00%)"
+		id="node14"
+		fontsize=8
+		shape=box
+		tooltip="runtime.scanobject (30ms)"
+		color="#b23c00"
+		fillcolor="#edddd5"
+	]
+	N15 [
+		label="dot\n(*Scanner)\nhasNext\n10ms (8.33%)"
+		id="node15"
+		fontsize=18
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Scanner).hasNext (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N16 [
+		label="layout\n(*Doc)\nGroup\n0 of 10ms (8.33%)"
+		id="node16"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N17 [
+		label="runtime\ngcMarkDone\nfunc2\n10ms (8.33%)"
+		id="node17"
+		fontsize=18
+		shape=box
+		tooltip="runtime.gcMarkDone.func2 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N18 [
+		label="runtime\nmemmove\n10ms (8.33%)"
+		id="node18"
+		fontsize=18
+		shape=box
+		tooltip="runtime.memmove (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N19 [
+		label="runtime\nprocyield\n10ms (8.33%)"
+		id="node19"
+		fontsize=18
+		shape=box
+		tooltip="runtime.procyield (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N20 [
+		label="runtime\ntypePointers\nnextFast\n10ms (8.33%)"
+		id="node20"
+		fontsize=18
+		shape=box
+		tooltip="runtime.typePointers.nextFast (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N21 [
+		label="layout\n(*Doc)\nIndent\n0 of 10ms (8.33%)"
+		id="node21"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Indent (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N22 [
+		label="layout\n(*Doc)\nnewTagIterator\nfunc1\n0 of 10ms (8.33%)"
+		id="node22"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N23 [
+		label="layout\n(*Doc)\ntagWith\n0 of 10ms (8.33%)"
+		id="node23"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagWith (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N24 [
+		label="layout\n(*renderer)\nrender-range1\n0 of 10ms (8.33%)"
+		id="node24"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render-range1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N25 [
+		label="sha256\n(*Digest)\nWrite\n0 of 20ms (16.67%)"
+		id="node25"
+		fontsize=8
+		shape=box
+		tooltip="crypto/internal/fips140/sha256.(*Digest).Write (20ms)"
+		color="#b25b1d"
+		fillcolor="#ede1d9"
+	]
+	N26 [
+		label="sha256\nblock\n0 of 20ms (16.67%)"
+		id="node26"
+		fontsize=8
+		shape=box
+		tooltip="crypto/internal/fips140/sha256.block (20ms)"
+		color="#b25b1d"
+		fillcolor="#ede1d9"
+	]
+	N27 [
+		label="sha256\nSum256\n0 of 20ms (16.67%)"
+		id="node27"
+		fontsize=8
+		shape=box
+		tooltip="crypto/sha256.Sum256 (20ms)"
+		color="#b25b1d"
+		fillcolor="#ede1d9"
+	]
+	N28 [
+		label="dot\n(*Parser)\nParse\n0 of 30ms (25.00%)"
+		id="node28"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).Parse (30ms)"
+		color="#b23c00"
+		fillcolor="#edddd5"
+	]
+	N29 [
+		label="dot\n(*Parser)\nexpectPeekTokenIsOneOf\n0 of 10ms (8.33%)"
+		id="node29"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).expectPeekTokenIsOneOf (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N30 [
+		label="dot\n(*Parser)\nparseAttrStatement\n0 of 10ms (8.33%)"
+		id="node30"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).parseAttrStatement (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N31 [
+		label="dot\n(*Parser)\nparseEdgeOperand\n0 of 10ms (8.33%)"
+		id="node31"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).parseEdgeOperand (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N32 [
+		label="dot\n(*Parser)\nparseEdgeRHS\n0 of 10ms (8.33%)"
+		id="node32"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).parseEdgeRHS (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N33 [
+		label="dot\n(*Parser)\nparseSubgraph\n0 of 10ms (8.33%)"
+		id="node33"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Parser).parseSubgraph (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N34 [
+		label="dot\n(*Scanner)\nNext\n0 of 10ms (8.33%)"
+		id="node34"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Scanner).Next (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N35 [
+		label="dot\n(*Scanner)\ntokenizeIdentifier\n0 of 10ms (8.33%)"
+		id="node35"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Scanner).tokenizeIdentifier (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N36 [
+		label="dot\n(*Scanner)\ntokenizeUnquotedString\n0 of 10ms (8.33%)"
+		id="node36"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot.(*Scanner).tokenizeUnquotedString (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N37 [
+		label="dotfmt\nformatDot\n0 of 50ms (41.67%)"
+		id="node37"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/cmd/dotfmt.formatDot (50ms)"
+		color="#b22900"
+		fillcolor="#eddad5"
+	]
+	N38 [
+		label="dotfmt\nrun\n0 of 50ms (41.67%)"
+		id="node38"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/cmd/dotfmt.run (50ms)"
+		color="#b22900"
+		fillcolor="#eddad5"
+	]
+	N39 [
+		label="layout\n(*Doc)\nRender\n0 of 10ms (8.33%)"
+		id="node39"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N40 [
+		label="layout\n(*Doc)\nRender\n(*Doc)\nAll\n(*Doc)\nnewTagIterator\nfunc2\n0 of 10ms (8.33%)"
+		id="node40"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N41 [
+		label="layout\n(*Doc)\nRender\n(*renderer)\nrender-range2\n0 of 10ms (8.33%)"
+		id="node41"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render-range2 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N42 [
+		label="layout\n(*Doc)\nRender\n(*renderer)\nrender\n(*Doc)\nRender\n(*Doc)\nAll\n(*Doc)\nnewTagIterator\nfunc2\n(*Doc)\nnewTagIterator\nfunc6\n0 of 10ms (8.33%)"
+		id="node42"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2.(*Doc).newTagIterator.func6 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N43 [
+		label="layout\n(*Doc)\nText\n0 of 10ms (8.33%)"
+		id="node43"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Text (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N44 [
+		label="layout\n(*Doc)\nnewTagIterator\nfunc1\n(*Doc)\nnewTagIterator\n2\n0 of 10ms (8.33%)"
+		id="node44"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1.(*Doc).newTagIterator.2 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N45 [
+		label="layout\n(*Doc)\ntag\n0 of 10ms (8.33%)"
+		id="node45"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tag (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N46 [
+		label="layout\n(*renderer)\nrender\n(*renderer)\nrender-range2\n0 of 10ms (8.33%)"
+		id="node46"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range2 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N47 [
+		label="layout\n(*renderer)\nrender\n(*renderer)\nrender-range3\n0 of 10ms (8.33%)"
+		id="node47"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range3 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N48 [
+		label="printer\n(*Printer)\nlayoutAList\n0 of 10ms (8.33%)"
+		id="node48"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAList (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N49 [
+		label="printer\n(*Printer)\nlayoutAttrList\n0 of 10ms (8.33%)"
+		id="node49"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N50 [
+		label="printer\n(*Printer)\nlayoutAttrList\nfunc1\n0 of 10ms (8.33%)"
+		id="node50"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N51 [
+		label="printer\n(*Printer)\nlayoutAttrList\nfunc1\n1\n0 of 10ms (8.33%)"
+		id="node51"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N52 [
+		label="printer\n(*Printer)\nlayoutAttrList\nfunc1\n1\n1\n0 of 10ms (8.33%)"
+		id="node52"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1.1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N53 [
+		label="printer\n(*Printer)\nlayoutAttribute\n0 of 10ms (8.33%)"
+		id="node53"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttribute (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N54 [
+		label="printer\n(*Printer)\nlayoutGraph\n0 of 10ms (8.33%)"
+		id="node54"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N55 [
+		label="printer\n(*Printer)\nlayoutGraph\nfunc1\n0 of 10ms (8.33%)"
+		id="node55"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N56 [
+		label="printer\n(*Printer)\nlayoutGraph\nfunc1\n1\n0 of 10ms (8.33%)"
+		id="node56"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1.1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N57 [
+		label="printer\n(*Printer)\nlayoutNode\n0 of 10ms (8.33%)"
+		id="node57"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutNode (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N58 [
+		label="printer\n(*Printer)\nlayoutNodeStmt\n0 of 10ms (8.33%)"
+		id="node58"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N59 [
+		label="printer\n(*Printer)\nlayoutNodeStmt\nfunc1\n0 of 10ms (8.33%)"
+		id="node59"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt.func1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N60 [
+		label="printer\n(*Printer)\nlayoutStmt\n0 of 10ms (8.33%)"
+		id="node60"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutStmt (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N61 [
+		label="printer\n(*Printer)\nlayoutStmts\n0 of 10ms (8.33%)"
+		id="node61"
+		fontsize=8
+		shape=box
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutStmts (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N62 [
+		label="runtime\n(*mcache)\nnextFree\n0 of 10ms (8.33%)"
+		id="node62"
+		fontsize=8
+		shape=box
+		tooltip="runtime.(*mcache).nextFree (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N63 [
+		label="runtime\n(*mcache)\nrefill\n0 of 10ms (8.33%)"
+		id="node63"
+		fontsize=8
+		shape=box
+		tooltip="runtime.(*mcache).refill (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N64 [
+		label="runtime\n(*mcentral)\ncacheSpan\n0 of 10ms (8.33%)"
+		id="node64"
+		fontsize=8
+		shape=box
+		tooltip="runtime.(*mcentral).cacheSpan (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N65 [
+		label="runtime\n(*mcentral)\ngrow\n0 of 10ms (8.33%)"
+		id="node65"
+		fontsize=8
+		shape=box
+		tooltip="runtime.(*mcentral).grow (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N66 [
+		label="runtime\n(*mheap)\nalloc\n0 of 10ms (8.33%)"
+		id="node66"
+		fontsize=8
+		shape=box
+		tooltip="runtime.(*mheap).alloc (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N67 [
+		label="runtime\nbulkBarrierPreWrite\n0 of 10ms (8.33%)"
+		id="node67"
+		fontsize=8
+		shape=box
+		tooltip="runtime.bulkBarrierPreWrite (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N68 [
+		label="runtime\nconvT\n0 of 10ms (8.33%)"
+		id="node68"
+		fontsize=8
+		shape=box
+		tooltip="runtime.convT (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N69 [
+		label="runtime\ngcBgMarkWorker\nfunc2\n0 of 40ms (33.33%)"
+		id="node69"
+		fontsize=8
+		shape=box
+		tooltip="runtime.gcBgMarkWorker.func2 (40ms)"
+		color="#b23200"
+		fillcolor="#eddcd5"
+	]
+	N70 [
+		label="runtime\ngcDrainMarkWorkerDedicated\n0 of 40ms (33.33%)"
+		id="node70"
+		fontsize=8
+		shape=box
+		tooltip="runtime.gcDrainMarkWorkerDedicated (40ms)"
+		color="#b23200"
+		fillcolor="#eddcd5"
+	]
+	N71 [
+		label="runtime\ngcMarkDone\n0 of 10ms (8.33%)"
+		id="node71"
+		fontsize=8
+		shape=box
+		tooltip="runtime.gcMarkDone (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N72 [
+		label="runtime\ngrowslice\n0 of 10ms (8.33%)"
+		id="node72"
+		fontsize=8
+		shape=box
+		tooltip="runtime.growslice (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N73 [
+		label="runtime\nmallocgc\n0 of 10ms (8.33%)"
+		id="node73"
+		fontsize=8
+		shape=box
+		tooltip="runtime.mallocgc (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N74 [
+		label="runtime\nmallocgcSmallScanHeader\n0 of 10ms (8.33%)"
+		id="node74"
+		fontsize=8
+		shape=box
+		tooltip="runtime.mallocgcSmallScanHeader (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N75 [
+		label="runtime\nmarkroot\n0 of 10ms (8.33%)"
+		id="node75"
+		fontsize=8
+		shape=box
+		tooltip="runtime.markroot (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N76 [
+		label="runtime\nmarkroot\nfunc1\n0 of 10ms (8.33%)"
+		id="node76"
+		fontsize=8
+		shape=box
+		tooltip="runtime.markroot.func1 (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N77 [
+		label="runtime\nsuspendG\n0 of 10ms (8.33%)"
+		id="node77"
+		fontsize=8
+		shape=box
+		tooltip="runtime.suspendG (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N78 [
+		label="runtime\ntypedmemmove\n0 of 10ms (8.33%)"
+		id="node78"
+		fontsize=8
+		shape=box
+		tooltip="runtime.typedmemmove (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N79 [
+		label="runtime\nwbMove\n0 of 10ms (8.33%)"
+		id="node79"
+		fontsize=8
+		shape=box
+		tooltip="runtime.wbMove (10ms)"
+		color="#b28f68"
+		fillcolor="#ede8e3"
+	]
+	N4 -> N6 [
+		label=" 70ms"
+		weight=59
+		penwidth=3
+		color="#b21a00"
+		tooltip="testing.tRunner -> github.com/teleivo/dot/cmd/dotfmt.TestVerifyVisualOutput.func1 (70ms)"
+		labeltooltip="testing.tRunner -> github.com/teleivo/dot/cmd/dotfmt.TestVerifyVisualOutput.func1 (70ms)"
+	]
+	N6 -> N37 [
+		label=" 50ms"
+		weight=42
+		penwidth=3
+		color="#b22900"
+		tooltip="github.com/teleivo/dot/cmd/dotfmt.TestVerifyVisualOutput.func1 -> github.com/teleivo/dot/cmd/dotfmt.formatDot (50ms)"
+		labeltooltip="github.com/teleivo/dot/cmd/dotfmt.TestVerifyVisualOutput.func1 -> github.com/teleivo/dot/cmd/dotfmt.formatDot (50ms)"
+	]
+	N37 -> N38 [
+		label=" 50ms"
+		weight=42
+		penwidth=3
+		color="#b22900"
+		tooltip="github.com/teleivo/dot/cmd/dotfmt.formatDot -> github.com/teleivo/dot/cmd/dotfmt.run (50ms)"
+		labeltooltip="github.com/teleivo/dot/cmd/dotfmt.formatDot -> github.com/teleivo/dot/cmd/dotfmt.run (50ms)"
+	]
+	N38 -> N5 [
+		label=" 50ms"
+		weight=42
+		penwidth=3
+		color="#b22900"
+		tooltip="github.com/teleivo/dot/cmd/dotfmt.run -> github.com/teleivo/dot/printer.(*Printer).Print (50ms)"
+		labeltooltip="github.com/teleivo/dot/cmd/dotfmt.run -> github.com/teleivo/dot/printer.(*Printer).Print (50ms)"
+	]
+	N3 -> N1 [
+		label=" 40ms"
+		weight=34
+		penwidth=2
+		color="#b23200"
+		tooltip="runtime.gcBgMarkWorker -> runtime.systemstack (40ms)"
+		labeltooltip="runtime.gcBgMarkWorker -> runtime.systemstack (40ms)"
+	]
+	N69 -> N70 [
+		label=" 40ms\n (inline)"
+		weight=34
+		penwidth=2
+		color="#b23200"
+		tooltip="runtime.gcBgMarkWorker.func2 -> runtime.gcDrainMarkWorkerDedicated (40ms)"
+		labeltooltip="runtime.gcBgMarkWorker.func2 -> runtime.gcDrainMarkWorkerDedicated (40ms)"
+	]
+	N70 -> N12 [
+		label=" 40ms"
+		weight=34
+		penwidth=2
+		color="#b23200"
+		tooltip="runtime.gcDrainMarkWorkerDedicated -> runtime.gcDrain (40ms)"
+		labeltooltip="runtime.gcDrainMarkWorkerDedicated -> runtime.gcDrain (40ms)"
+	]
+	N1 -> N69 [
+		label=" 40ms"
+		weight=34
+		penwidth=2
+		color="#b23200"
+		tooltip="runtime.systemstack -> runtime.gcBgMarkWorker.func2 (40ms)"
+		labeltooltip="runtime.systemstack -> runtime.gcBgMarkWorker.func2 (40ms)"
+	]
+	N28 -> N8 [
+		label=" 30ms"
+		weight=26
+		penwidth=2
+		color="#b23c00"
+		tooltip="github.com/teleivo/dot.(*Parser).Parse -> github.com/teleivo/dot.(*Parser).parseStatementList (30ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).Parse -> github.com/teleivo/dot.(*Parser).parseStatementList (30ms)"
+	]
+	N5 -> N28 [
+		label=" 30ms"
+		weight=26
+		penwidth=2
+		color="#b23c00"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).Print -> github.com/teleivo/dot.(*Parser).Parse (30ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).Print -> github.com/teleivo/dot.(*Parser).Parse (30ms)"
+	]
+	N12 -> N14 [
+		label=" 30ms"
+		weight=26
+		penwidth=2
+		color="#b23c00"
+		tooltip="runtime.gcDrain -> runtime.scanobject (30ms)"
+		labeltooltip="runtime.gcDrain -> runtime.scanobject (30ms)"
+	]
+	N25 -> N26 [
+		label=" 20ms"
+		weight=17
+		color="#b25b1d"
+		tooltip="crypto/internal/fips140/sha256.(*Digest).Write -> crypto/internal/fips140/sha256.block (20ms)"
+		labeltooltip="crypto/internal/fips140/sha256.(*Digest).Write -> crypto/internal/fips140/sha256.block (20ms)"
+	]
+	N26 -> N9 [
+		label=" 20ms"
+		weight=17
+		color="#b25b1d"
+		tooltip="crypto/internal/fips140/sha256.block -> crypto/internal/fips140/sha256.blockAVX2 (20ms)"
+		labeltooltip="crypto/internal/fips140/sha256.block -> crypto/internal/fips140/sha256.blockAVX2 (20ms)"
+	]
+	N27 -> N25 [
+		label=" 20ms"
+		weight=17
+		color="#b25b1d"
+		tooltip="crypto/sha256.Sum256 -> crypto/internal/fips140/sha256.(*Digest).Write (20ms)"
+		labeltooltip="crypto/sha256.Sum256 -> crypto/internal/fips140/sha256.(*Digest).Write (20ms)"
+	]
+	N8 -> N13 [
+		label=" 20ms"
+		weight=17
+		color="#b25b1d"
+		tooltip="github.com/teleivo/dot.(*Parser).parseStatementList -> github.com/teleivo/dot.(*Parser).parseStatement (20ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseStatementList -> github.com/teleivo/dot.(*Parser).parseStatement (20ms)"
+	]
+	N6 -> N27 [
+		label=" 20ms"
+		weight=17
+		color="#b25b1d"
+		tooltip="github.com/teleivo/dot/cmd/dotfmt.TestVerifyVisualOutput.func1 -> crypto/sha256.Sum256 (20ms)"
+		labeltooltip="github.com/teleivo/dot/cmd/dotfmt.TestVerifyVisualOutput.func1 -> crypto/sha256.Sum256 (20ms)"
+	]
+	N14 -> N2 [
+		label=" 20ms"
+		weight=17
+		color="#b25b1d"
+		tooltip="runtime.scanobject -> runtime.typePointers.next (20ms)"
+		labeltooltip="runtime.scanobject -> runtime.typePointers.next (20ms)"
+	]
+	N29 -> N10 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).expectPeekTokenIsOneOf -> github.com/teleivo/dot.(*Parser).nextToken (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).expectPeekTokenIsOneOf -> github.com/teleivo/dot.(*Parser).nextToken (10ms)"
+	]
+	N10 -> N34 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).nextToken -> github.com/teleivo/dot.(*Scanner).Next (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).nextToken -> github.com/teleivo/dot.(*Scanner).Next (10ms)"
+	]
+	N10 -> N79 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).nextToken -> runtime.wbMove (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).nextToken -> runtime.wbMove (10ms)"
+	]
+	N30 -> N29 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseAttrStatement -> github.com/teleivo/dot.(*Parser).expectPeekTokenIsOneOf (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseAttrStatement -> github.com/teleivo/dot.(*Parser).expectPeekTokenIsOneOf (10ms)"
+	]
+	N31 -> N68 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseEdgeOperand -> runtime.convT (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseEdgeOperand -> runtime.convT (10ms)"
+	]
+	N32 -> N31 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseEdgeRHS -> github.com/teleivo/dot.(*Parser).parseEdgeOperand (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseEdgeRHS -> github.com/teleivo/dot.(*Parser).parseEdgeOperand (10ms)"
+	]
+	N13 -> N30 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseStatement -> github.com/teleivo/dot.(*Parser).parseAttrStatement (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseStatement -> github.com/teleivo/dot.(*Parser).parseAttrStatement (10ms)"
+	]
+	N13 -> N32 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseStatement -> github.com/teleivo/dot.(*Parser).parseEdgeRHS (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseStatement -> github.com/teleivo/dot.(*Parser).parseEdgeRHS (10ms)"
+	]
+	N13 -> N33 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseStatement -> github.com/teleivo/dot.(*Parser).parseSubgraph (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseStatement -> github.com/teleivo/dot.(*Parser).parseSubgraph (10ms)"
+	]
+	N8 -> N10 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseStatementList -> github.com/teleivo/dot.(*Parser).nextToken (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseStatementList -> github.com/teleivo/dot.(*Parser).nextToken (10ms)"
+	]
+	N33 -> N8 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Parser).parseSubgraph -> github.com/teleivo/dot.(*Parser).parseStatementList (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Parser).parseSubgraph -> github.com/teleivo/dot.(*Parser).parseStatementList (10ms)"
+	]
+	N34 -> N35 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Scanner).Next -> github.com/teleivo/dot.(*Scanner).tokenizeIdentifier (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Scanner).Next -> github.com/teleivo/dot.(*Scanner).tokenizeIdentifier (10ms)"
+	]
+	N35 -> N36 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Scanner).tokenizeIdentifier -> github.com/teleivo/dot.(*Scanner).tokenizeUnquotedString (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Scanner).tokenizeIdentifier -> github.com/teleivo/dot.(*Scanner).tokenizeUnquotedString (10ms)"
+	]
+	N36 -> N15 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot.(*Scanner).tokenizeUnquotedString -> github.com/teleivo/dot.(*Scanner).hasNext (10ms)"
+		labeltooltip="github.com/teleivo/dot.(*Scanner).tokenizeUnquotedString -> github.com/teleivo/dot.(*Scanner).hasNext (10ms)"
+	]
+	N16 -> N23 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Group -> github.com/teleivo/dot/layout.(*Doc).tagWith (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).Group -> github.com/teleivo/dot/layout.(*Doc).tagWith (10ms)"
+	]
+	N21 -> N23 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Indent -> github.com/teleivo/dot/layout.(*Doc).tagWith (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).Indent -> github.com/teleivo/dot/layout.(*Doc).tagWith (10ms)"
+	]
+	N39 -> N7 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).Render -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+	]
+	N40 -> N41 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2 -> github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render-range2 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2 -> github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render-range2 (10ms)"
+	]
+	N41 -> N7 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render-range2 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render-range2 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+	]
+	N42 -> N24 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2.(*Doc).newTagIterator.func6 -> github.com/teleivo/dot/layout.(*renderer).render-range1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2.(*Doc).newTagIterator.func6 -> github.com/teleivo/dot/layout.(*renderer).render-range1 (10ms)"
+	]
+	N43 -> N45 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).Text -> github.com/teleivo/dot/layout.(*Doc).tag (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).Text -> github.com/teleivo/dot/layout.(*Doc).tag (10ms)"
+	]
+	N22 -> N46 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1 -> github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range2 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1 -> github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range2 (10ms)"
+	]
+	N22 -> N47 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1 -> github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range3 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1 -> github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range3 (10ms)"
+	]
+	N44 -> N24 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1.(*Doc).newTagIterator.2 -> github.com/teleivo/dot/layout.(*renderer).render-range1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1.(*Doc).newTagIterator.2 -> github.com/teleivo/dot/layout.(*renderer).render-range1 (10ms)"
+	]
+	N45 -> N11 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tag -> github.com/teleivo/dot/layout.(*Doc).tagIfWith (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tag -> github.com/teleivo/dot/layout.(*Doc).tagIfWith (10ms)"
+	]
+	N11 -> N50 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1 (10ms)"
+	]
+	N11 -> N51 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1 (10ms)"
+	]
+	N11 -> N52 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1.1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1.1 (10ms)"
+	]
+	N11 -> N55 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1 (10ms)"
+	]
+	N11 -> N56 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1.1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1.1 (10ms)"
+	]
+	N11 -> N59 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt.func1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt.func1 (10ms)"
+	]
+	N11 -> N72 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> runtime.growslice (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagIfWith -> runtime.growslice (10ms)"
+	]
+	N23 -> N11 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*Doc).tagWith -> github.com/teleivo/dot/layout.(*Doc).tagIfWith (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*Doc).tagWith -> github.com/teleivo/dot/layout.(*Doc).tagIfWith (10ms)"
+	]
+	N7 -> N40 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2 (10ms)"
+	]
+	N7 -> N42 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2.(*Doc).newTagIterator.func6 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).Render.(*renderer).render.(*Doc).Render.(*Doc).All.(*Doc).newTagIterator.func2.(*Doc).newTagIterator.func6 (10ms)"
+	]
+	N7 -> N22 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1 (10ms)"
+	]
+	N7 -> N44 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1.(*Doc).newTagIterator.2 (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*renderer).render -> github.com/teleivo/dot/layout.(*Doc).newTagIterator.func1.(*Doc).newTagIterator.2 (10ms)"
+	]
+	N24 -> N7 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render-range1 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*renderer).render-range1 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+	]
+	N46 -> N7 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range2 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range2 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+	]
+	N47 -> N7 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range3 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+		labeltooltip="github.com/teleivo/dot/layout.(*renderer).render.(*renderer).render-range3 -> github.com/teleivo/dot/layout.(*renderer).render (10ms)"
+	]
+	N5 -> N39 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).Print -> github.com/teleivo/dot/layout.(*Doc).Render (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).Print -> github.com/teleivo/dot/layout.(*Doc).Render (10ms)"
+	]
+	N5 -> N57 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).Print -> github.com/teleivo/dot/printer.(*Printer).layoutNode (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).Print -> github.com/teleivo/dot/printer.(*Printer).layoutNode (10ms)"
+	]
+	N48 -> N53 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAList -> github.com/teleivo/dot/printer.(*Printer).layoutAttribute (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutAList -> github.com/teleivo/dot/printer.(*Printer).layoutAttribute (10ms)"
+	]
+	N49 -> N16 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+	]
+	N50 -> N16 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1 -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1 -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+	]
+	N51 -> N21 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1 -> github.com/teleivo/dot/layout.(*Doc).Indent (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1 -> github.com/teleivo/dot/layout.(*Doc).Indent (10ms)"
+	]
+	N52 -> N48 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1.1 -> github.com/teleivo/dot/printer.(*Printer).layoutAList (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttrList.func1.1.1 -> github.com/teleivo/dot/printer.(*Printer).layoutAList (10ms)"
+	]
+	N53 -> N43 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttribute -> github.com/teleivo/dot/layout.(*Doc).Text (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutAttribute -> github.com/teleivo/dot/layout.(*Doc).Text (10ms)"
+	]
+	N54 -> N16 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+	]
+	N55 -> N21 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1 -> github.com/teleivo/dot/layout.(*Doc).Indent (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1 -> github.com/teleivo/dot/layout.(*Doc).Indent (10ms)"
+	]
+	N56 -> N61 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1.1 -> github.com/teleivo/dot/printer.(*Printer).layoutStmts (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutGraph.func1.1 -> github.com/teleivo/dot/printer.(*Printer).layoutStmts (10ms)"
+	]
+	N57 -> N54 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutNode -> github.com/teleivo/dot/printer.(*Printer).layoutGraph (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutNode -> github.com/teleivo/dot/printer.(*Printer).layoutGraph (10ms)"
+	]
+	N58 -> N16 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt -> github.com/teleivo/dot/layout.(*Doc).Group (10ms)"
+	]
+	N59 -> N49 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt.func1 -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt.func1 -> github.com/teleivo/dot/printer.(*Printer).layoutAttrList (10ms)"
+	]
+	N60 -> N58 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutStmt -> github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutStmt -> github.com/teleivo/dot/printer.(*Printer).layoutNodeStmt (10ms)"
+	]
+	N61 -> N60 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="github.com/teleivo/dot/printer.(*Printer).layoutStmts -> github.com/teleivo/dot/printer.(*Printer).layoutStmt (10ms)"
+		labeltooltip="github.com/teleivo/dot/printer.(*Printer).layoutStmts -> github.com/teleivo/dot/printer.(*Printer).layoutStmt (10ms)"
+	]
+	N62 -> N63 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.(*mcache).nextFree -> runtime.(*mcache).refill (10ms)"
+		labeltooltip="runtime.(*mcache).nextFree -> runtime.(*mcache).refill (10ms)"
+	]
+	N63 -> N64 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.(*mcache).refill -> runtime.(*mcentral).cacheSpan (10ms)"
+		labeltooltip="runtime.(*mcache).refill -> runtime.(*mcentral).cacheSpan (10ms)"
+	]
+	N64 -> N65 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.(*mcentral).cacheSpan -> runtime.(*mcentral).grow (10ms)"
+		labeltooltip="runtime.(*mcentral).cacheSpan -> runtime.(*mcentral).grow (10ms)"
+	]
+	N65 -> N66 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.(*mcentral).grow -> runtime.(*mheap).alloc (10ms)"
+		labeltooltip="runtime.(*mcentral).grow -> runtime.(*mheap).alloc (10ms)"
+	]
+	N66 -> N1 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.(*mheap).alloc -> runtime.systemstack (10ms)"
+		labeltooltip="runtime.(*mheap).alloc -> runtime.systemstack (10ms)"
+	]
+	N67 -> N2 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.bulkBarrierPreWrite -> runtime.typePointers.next (10ms)"
+		labeltooltip="runtime.bulkBarrierPreWrite -> runtime.typePointers.next (10ms)"
+	]
+	N68 -> N78 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.convT -> runtime.typedmemmove (10ms)"
+		labeltooltip="runtime.convT -> runtime.typedmemmove (10ms)"
+	]
+	N3 -> N71 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.gcBgMarkWorker -> runtime.gcMarkDone (10ms)"
+		labeltooltip="runtime.gcBgMarkWorker -> runtime.gcMarkDone (10ms)"
+	]
+	N12 -> N75 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.gcDrain -> runtime.markroot (10ms)"
+		labeltooltip="runtime.gcDrain -> runtime.markroot (10ms)"
+	]
+	N71 -> N1 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.gcMarkDone -> runtime.systemstack (10ms)"
+		labeltooltip="runtime.gcMarkDone -> runtime.systemstack (10ms)"
+	]
+	N72 -> N73 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.growslice -> runtime.mallocgc (10ms)"
+		labeltooltip="runtime.growslice -> runtime.mallocgc (10ms)"
+	]
+	N73 -> N74 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.mallocgc -> runtime.mallocgcSmallScanHeader (10ms)"
+		labeltooltip="runtime.mallocgc -> runtime.mallocgcSmallScanHeader (10ms)"
+	]
+	N74 -> N62 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.mallocgcSmallScanHeader -> runtime.(*mcache).nextFree (10ms)"
+		labeltooltip="runtime.mallocgcSmallScanHeader -> runtime.(*mcache).nextFree (10ms)"
+	]
+	N75 -> N76 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.markroot -> runtime.markroot.func1 (10ms)"
+		labeltooltip="runtime.markroot -> runtime.markroot.func1 (10ms)"
+	]
+	N76 -> N77 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.markroot.func1 -> runtime.suspendG (10ms)"
+		labeltooltip="runtime.markroot.func1 -> runtime.suspendG (10ms)"
+	]
+	N14 -> N20 [
+		label=" 10ms\n (inline)"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.scanobject -> runtime.typePointers.nextFast (10ms)"
+		labeltooltip="runtime.scanobject -> runtime.typePointers.nextFast (10ms)"
+	]
+	N77 -> N19 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.suspendG -> runtime.procyield (10ms)"
+		labeltooltip="runtime.suspendG -> runtime.procyield (10ms)"
+	]
+	N1 -> N17 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.systemstack -> runtime.gcMarkDone.func2 (10ms)"
+		labeltooltip="runtime.systemstack -> runtime.gcMarkDone.func2 (10ms)"
+	]
+	N78 -> N18 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.typedmemmove -> runtime.memmove (10ms)"
+		labeltooltip="runtime.typedmemmove -> runtime.memmove (10ms)"
+	]
+	N79 -> N67 [
+		label=" 10ms"
+		weight=9
+		color="#b28f68"
+		tooltip="runtime.wbMove -> runtime.bulkBarrierPreWrite (10ms)"
+		labeltooltip="runtime.wbMove -> runtime.bulkBarrierPreWrite (10ms)"
+	]
+}

@@ -1,4 +1,6 @@
-// Package dot provides a parser for the dot language https://graphviz.org/doc/info/lang.html.
+// Package dot provides a parser for the [DOT language].
+//
+// [DOT language]: https://graphviz.org/doc/info/lang.html
 package dot
 
 import (
@@ -11,6 +13,7 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
+// Parser parses DOT language source code into an abstract syntax tree.
 type Parser struct {
 	scanner   *Scanner
 	curToken  token.Token
@@ -18,6 +21,8 @@ type Parser struct {
 	comments  []ast.Comment
 }
 
+// NewParser creates a new parser that reads DOT source code from r. Returns an error if the
+// underlying scanner cannot be initialized.
 func NewParser(r io.Reader) (*Parser, error) {
 	scanner, err := NewScanner(r)
 	if err != nil {
@@ -37,34 +42,13 @@ func NewParser(r io.Reader) (*Parser, error) {
 	return &p, nil
 }
 
-// nextToken advances to the next non-comment token. Any comments that are encountered in the
-// process are collected.
-func (p *Parser) nextToken() error {
-	var tok token.Token
-	var err error
-	for tok, err = p.scanner.Next(); err == nil && tok.Type == token.Comment; tok, err = p.scanner.Next() {
-		comment := ast.Comment{
-			Text:     tok.Literal,
-			StartPos: tok.Start,
-			EndPos:   tok.End,
-		}
-		p.comments = append(p.comments, comment)
-	}
-	if err != nil {
-		return err
-	}
-
-	p.curToken = p.peekToken
-	p.peekToken = tok
-
-	return nil
-}
-
-func (p *Parser) Parse() (ast.Graph, error) {
+// Parse parses the DOT source code and returns the abstract syntax tree representation. Returns an
+// error if the source contains syntax errors.
+func (p *Parser) Parse() (*ast.Graph, error) {
 	// if p.isDone() {
 	if p.peekTokenIs(token.EOF) {
 		var graph ast.Graph
-		return graph, nil
+		return &graph, nil
 	}
 
 	graph, err := p.parseHeader()
@@ -94,7 +78,30 @@ func (p *Parser) Parse() (ast.Graph, error) {
 	return graph, err
 }
 
-func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
+// nextToken advances to the next non-comment token. Any comments that are encountered in the
+// process are collected.
+func (p *Parser) nextToken() error {
+	var tok token.Token
+	var err error
+	for tok, err = p.scanner.Next(); err == nil && tok.Type == token.Comment; tok, err = p.scanner.Next() {
+		comment := ast.Comment{
+			Text:     tok.Literal,
+			StartPos: tok.Start,
+			EndPos:   tok.End,
+		}
+		p.comments = append(p.comments, comment)
+	}
+	if err != nil {
+		return err
+	}
+
+	p.curToken = p.peekToken
+	p.peekToken = tok
+
+	return nil
+}
+
+func (p *Parser) parseStatementList(graph *ast.Graph) ([]ast.Stmt, error) {
 	var stmts []ast.Stmt
 	var err error
 	for ; !p.curTokenIsOneOf(token.EOF, token.RightBrace) && err == nil; err = p.nextToken() {
@@ -112,12 +119,12 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 	return stmts, err
 }
 
-func (p *Parser) parseHeader() (ast.Graph, error) {
+func (p *Parser) parseHeader() (*ast.Graph, error) {
 	var graph ast.Graph
 
 	err := p.expectPeekTokenIsOneOf(token.Strict, token.Graph, token.Digraph)
 	if err != nil {
-		return graph, err
+		return &graph, err
 	}
 
 	if p.curTokenIs(token.Strict) {
@@ -125,7 +132,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 
 		err := p.expectPeekTokenIsOneOf(token.Graph, token.Digraph)
 		if err != nil {
-			return graph, err
+			return &graph, err
 		}
 	}
 
@@ -137,7 +144,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	// graph ID is optional
 	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
 	if err != nil {
-		return graph, err
+		return &graph, err
 	}
 
 	if hasID {
@@ -148,10 +155,10 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 		}
 	}
 
-	return graph, nil
+	return &graph, nil
 }
 
-func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
+func (p *Parser) parseStatement(graph *ast.Graph) (ast.Stmt, error) {
 	if p.curTokenIs(token.Identifier) && p.peekTokenIs(token.Equal) {
 		return p.parseAttribute()
 	} else if p.curTokenIsOneOf(token.Identifier, token.Subgraph, token.LeftBrace) {
@@ -190,7 +197,7 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 			stmt = subraph
 		}
 
-		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEdge, token.DirectedEdge)
 		if err != nil {
 			return stmt, err
 		}
@@ -232,7 +239,7 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 	return nil, nil
 }
 
-func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
+func (p *Parser) parseEdgeOperand(graph *ast.Graph) (ast.EdgeOperand, error) {
 	if p.curTokenIs(token.Identifier) {
 		return p.parseNodeID()
 	}
@@ -240,12 +247,12 @@ func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
 	return subgraph, err
 }
 
-func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
+func (p *Parser) parseEdgeRHS(graph *ast.Graph) (ast.EdgeRHS, error) {
 	var first, cur *ast.EdgeRHS
-	for p.curTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
+	for p.curTokenIsOneOf(token.UndirectedEdge, token.DirectedEdge) {
 		operatorStart := p.curToken.Start
 		var directed bool
-		if p.curTokenIs(token.DirectedEgde) {
+		if p.curTokenIs(token.DirectedEdge) {
 			directed = true
 		}
 		if directed && !graph.Directed {
@@ -280,7 +287,7 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 			cur = cur.Next
 		}
 
-		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEdge, token.DirectedEdge)
 		if err != nil {
 			return *first, err
 		}
@@ -515,7 +522,7 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	return attr, nil
 }
 
-func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
+func (p *Parser) parseSubgraph(graph *ast.Graph) (ast.Subgraph, error) {
 	var subgraph ast.Subgraph
 
 	if p.curTokenIs(token.Subgraph) {
@@ -548,7 +555,7 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 
 	stmts, err := p.parseStatementList(graph)
 	if err != nil {
-		return subgraph, nil
+		return subgraph, err
 	}
 	subgraph.Stmts = stmts
 

@@ -384,7 +384,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 3},
 				},
 				{
-					Type: token.DirectedEgde, Literal: "->",
+					Type: token.DirectedEdge, Literal: "->",
 					Start: token.Position{Row: 1, Column: 5},
 					End:   token.Position{Row: 1, Column: 6},
 				},
@@ -417,7 +417,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 2, Column: 5},
 				},
 				{
-					Type: token.UndirectedEgde, Literal: "--",
+					Type: token.UndirectedEdge, Literal: "--",
 					Start: token.Position{Row: 2, Column: 7},
 					End:   token.Position{Row: 2, Column: 8},
 				},
@@ -517,7 +517,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 3},
 				},
 				{
-					Type:    token.DirectedEgde,
+					Type:    token.DirectedEdge,
 					Literal: "->",
 					Start:   token.Position{Row: 1, Column: 4},
 					End:     token.Position{Row: 1, Column: 5},
@@ -535,7 +535,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 8},
 				},
 				{
-					Type:    token.DirectedEgde,
+					Type:    token.DirectedEdge,
 					Literal: "->",
 					Start:   token.Position{Row: 1, Column: 10},
 					End:     token.Position{Row: 1, Column: 11},
@@ -553,7 +553,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 15},
 				},
 				{
-					Type:    token.UndirectedEgde,
+					Type:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Row: 1, Column: 16},
 					End:     token.Position{Row: 1, Column: 17},
@@ -571,7 +571,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 20},
 				},
 				{
-					Type:    token.UndirectedEgde,
+					Type:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Row: 1, Column: 21},
 					End:     token.Position{Row: 1, Column: 22},
@@ -589,7 +589,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 26},
 				},
 				{
-					Type:    token.UndirectedEgde,
+					Type:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Row: 1, Column: 28},
 					End:     token.Position{Row: 1, Column: 29},

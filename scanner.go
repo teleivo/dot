@@ -10,6 +10,7 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
+// Scanner tokenizes DOT language source code into a stream of tokens.
 type Scanner struct {
 	r         *bufio.Reader
 	cur       rune
@@ -20,6 +21,8 @@ type Scanner struct {
 	err       error
 }
 
+// NewScanner creates a new scanner that reads DOT source code from r. Returns an error if the
+// scanner cannot be initialized.
 func NewScanner(r io.Reader) (*Scanner, error) {
 	scanner := Scanner{
 		r:      bufio.NewReader(r),
@@ -229,15 +232,15 @@ func (sc *Scanner) tokenizeEdgeOperator() (token.Token, error) {
 	end := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	if sc.cur == '-' {
 		return token.Token{
-			Type:    token.UndirectedEgde,
-			Literal: token.UndirectedEgde.String(),
+			Type:    token.UndirectedEdge,
+			Literal: token.UndirectedEdge.String(),
 			Start:   start,
 			End:     end,
 		}, err
 	}
 	return token.Token{
-		Type:    token.DirectedEgde,
-		Literal: token.DirectedEgde.String(),
+		Type:    token.DirectedEdge,
+		Literal: token.DirectedEdge.String(),
 		Start:   start,
 		End:     end,
 	}, err
@@ -257,8 +260,10 @@ func isStartOfUnquotedString(r rune) bool {
 	return r == '_' || isAlphabetic(r)
 }
 
-// isAlphabetic determines if the rune is part of the allowed alphabetic characters of an unquoted
-// identifier as defined in https://graphviz.org/doc/info/lang.html#ids.
+// isAlphabetic determines if the rune is part of the allowed alphabetic characters of an
+// [unquoted identifier].
+//
+// [unquoted identifier]: https://graphviz.org/doc/info/lang.html#ids
 func isAlphabetic(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
 }
@@ -441,6 +446,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	}, nil
 }
 
+// Error represents a scanning or parsing error in DOT source code.
 type Error struct {
 	LineNr      int    // Line number the error was found.
 	CharacterNr int    // Character number the error was found.
@@ -448,6 +454,7 @@ type Error struct {
 	Reason      string // Reason for the error.
 }
 
+// Error returns a formatted error message with line and character position.
 func (e Error) Error() string {
 	return fmt.Sprintf("%d:%d: %s", e.LineNr, e.CharacterNr, e.Reason)
 }

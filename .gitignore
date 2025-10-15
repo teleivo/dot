@@ -21,4 +21,8 @@
 go.work
 go.work.sum
 
+# debugging/testing
+debug/
+samples-graphviz/
 noname.gv.svg
+visual_test_error.log

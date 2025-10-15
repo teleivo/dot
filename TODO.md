@@ -1,12 +1,34 @@
+* visual tests
+  * collect all errors/issues in ./run_visual_tests.sh
+  * ./samples-graphviz/share/tests are causing trouble
+  * ./samples-graphviz/share/examples/ are causing trouble. These files are large. I assume its
+  dotfmt having issues not dot
+
+* Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
+  be used. Its a mere demo/debugging utility
+
 * improve error handling see [Parser](#parser)
+
+* I think this should lead to a parser error but does not
+
+```dot
+graph {
+{1;2;--{3;4}}
+}
+```
+
+* support stanzas ./samples-graphviz/241_0.dot
+  * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
+  * implement merging multiple Break() using max(n, m)
+    * this was my old todo on that: how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
+      Allow users to do that. No more than one empty line though. And will that line be completely
+      empty or be indented as the surrounding code?
+      I need proper token/ast position. for this row and column
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
 How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
 want something similar for the parser. Is it best to integrate that into the scanner/parser or nicer
 to keep it externally like `cmd/tokens`?
-
-* Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
-  be used. Its a mere demo/debugging utility
 
 * update README with docs on `dotfmt`
   * indentation: tabs
@@ -28,11 +50,13 @@ to keep it externally like `cmd/tokens`?
         # is too long
     ```
 
-* properly godoc all the things
-
-* profile any of the above on a large file, generate a pprof dot file and feed that back into the
-parser as a test via testdata
-
+* support comments
+  * line comment
+  * support word-wrapping
+* support splitting IDs using line-continuation?
+* measure in original sets broken if text contains newline. this is not correct for raw strings
+right? `foo\nfaa` in Go or similar with escaped newlines or so in DOT should not cause a newline.
+add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 
 ## Parser
 
@@ -83,7 +107,6 @@ sets the attributes on given nodes in the `{}` but will it affect nodes outside?
 
 ### API
 
-* review all receivers decide on pointer or not
 * is it nicer to work with slices then my choice of linked lists with *Next whenever there was a
 recursive definition?
 * should I remove the Directed field from EdgeRHS as that is clear from graph.Directed?
@@ -102,7 +125,7 @@ identifiers? how much would that even matter at the expense of how much code :sw
 * support concatenating strings?
 https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 > In addition, double-quoted strings can be concatenated using a '+' operator.
-* lex html string
+* lex html string? or at least deal with it gracefully: see ./samples-graphviz/56.dot
 
 ### Compatibility & Fault Tolerance
 
@@ -153,14 +176,6 @@ guess column count can differ in terms of what they mean.
 if endColumn > maxColumn { // the word and \ do not fit on the current line
 ```
 
-Alignment
-* use https://nick-gravgaard.com/elastic-tabstops/
-    * via https://pkg.go.dev/text/tabwriter
-    * https://github.com/mvdan/gofumpt/issues/2
-* how to treat newlines? right now they are discarded. Maybe I'd like to group/make blocks.
-Allow users to do that. No more than one empty line though. And will that line be completely
-empty or be indented as the surrounding code?
-I need proper token/ast position. for this row and column
 * improve breaking up long lines
   * Only the ID individually is considered right now. In this example `]` exceeds the maxCol
 
@@ -168,13 +183,6 @@ I need proper token/ast position. for this row and column
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 ```
 
-* align multiple attribute values (and `=`)
-	`"0" -- "1" -- "2" -- "3" -- "4" -- "0" [
-		color = "blue"
-		len   = 2.6
-	]`
- should that then apply to the entire file :joy:? as global attributes can be set on the
-graph/subraph as well
 * make this prettier
 
 ```dot
@@ -190,8 +198,6 @@ the Attribute should go on a new line like above but it ends up looking like
 	]
 ```
 
-* allow multiple nodes on the same line? how to break them up when > maxCol
-
 comments
     * merge adjacent comments?
     * how to align comments when I do break them up? right now they are not indented at all. indent to
@@ -203,6 +209,8 @@ comments
 have a valid EndPos
   see Go ast.BlockStmt docs which mention exactly that
   could help with Nodes like `AttrList` which might be empty
+
+  or make the zero-value valid
 
 * support parsing/formatting ranges
     * parser should be ok with comments before a graph. how to support that in terms of the parser
@@ -238,16 +246,14 @@ or is that to simplistic as there are rules as to when you are allowed/have to c
 * test using invalid input
   * invalid input should be printed as is, it should not delete user input!
 
-* add profiling flags
-    * capture profile formatting example dot files
-    * capture profiles formatting the profile dot file
-    * all of this to find any lingering bugs I have
-
 * support formatting file/dirs in place
+  * allow passing in file via flag and out file via flag while still allowing stdin/stdout
   * goroutines could be fun once its working ;)
   * format all of https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
     * profile, anything obvious I could improve?
     * add a benchmark to ensure no regressions
+
+* add ability to capture execution traces using flight recorder?
 
   * gofumpt uses positional args as files and reads from stdin if non given
 ```go
@@ -271,13 +277,7 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
-* support subraph shorthand using `{}` and don't always print `subgraph`
-
 * support + on IDs
-
-* strip unnecessary quotes
-  * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
-  * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
 
 * join adjacent comments? unless there is an empty newline in between them
 
@@ -309,5 +309,6 @@ Questions
 
 ## Ideas
 
-* how could I make something like :InspectTree in neovim for my parser?
 * write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
+* how could I make something like :InspectTree in neovim for my parser?
+

@@ -16,7 +16,14 @@ while IFS= read -r -d '' dir; do
     rel_dir="${dir#"$SAMPLES_DIR"/}"
     echo "Testing: $rel_dir"
 
-    if ! output=$(DOTFMT_TEST_DIR="$dir" go test -v ./cmd/dotfmt -run TestVisualOutput 2>&1); then
+    # Build test command with optional timeout
+    test_cmd="DOTFMT_TEST_DIR=\"$dir\" go test -v"
+    if [ -n "${DOTFMT_TEST_TIMEOUT:-}" ]; then
+        test_cmd="$test_cmd -timeout $DOTFMT_TEST_TIMEOUT"
+    fi
+    test_cmd="$test_cmd ./cmd/dotfmt -run TestVisualOutput"
+
+    if ! output=$(eval "$test_cmd" 2>&1); then
         if ! echo "$output" | grep -q "SKIP"; then
             failed=$((failed + 1))
             {

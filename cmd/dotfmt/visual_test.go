@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // TestVisualOutput tests that dotfmt preserves visual output by comparing
@@ -70,7 +72,7 @@ func TestVisualOutput(t *testing.T) {
 				t.Fatalf("failed to read %q: %v", dotFile, err)
 			}
 
-			originalSVG, err := generateSVG(originalDot)
+			originalSVG, err := generateSVG(t, originalDot)
 			if err != nil {
 				t.Fatalf("failed to generate SVG from original: %v", err)
 			}
@@ -79,7 +81,7 @@ func TestVisualOutput(t *testing.T) {
 				t.Fatalf("failed to write original SVG: %v", err)
 			}
 
-			formattedDot, err := formatDot(originalDot)
+			formattedDot, err := formatDot(t, originalDot)
 			if err != nil {
 				t.Fatalf("failed to format DOT file: %v", err)
 			}
@@ -88,7 +90,7 @@ func TestVisualOutput(t *testing.T) {
 				t.Fatalf("failed to write formatted DOT: %v", err)
 			}
 
-			formattedSVG, err := generateSVG(formattedDot)
+			formattedSVG, err := generateSVG(t, formattedDot)
 			if err != nil {
 				t.Fatalf("failed to generate SVG from formatted: %v", err)
 			}
@@ -116,8 +118,20 @@ func TestVisualOutput(t *testing.T) {
 }
 
 // generateSVG runs Graphviz dot to generate SVG from DOT source
-func generateSVG(dotSource []byte) ([]byte, error) {
-	cmd := exec.Command("dot", "-Tsvg")
+func generateSVG(t *testing.T, dotSource []byte) ([]byte, error) {
+	t.Helper()
+
+	timeout := 5 * time.Second
+	if timeoutStr := os.Getenv("DOTFMT_FILE_TIMEOUT"); timeoutStr != "" {
+		if d, err := time.ParseDuration(timeoutStr); err == nil {
+			timeout = d
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(t.Context(), timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "dot", "-Tsvg")
 	cmd.Stdin = bytes.NewReader(dotSource)
 
 	var stdout, stderr bytes.Buffer
@@ -125,6 +139,9 @@ func generateSVG(dotSource []byte) ([]byte, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, fmt.Errorf("dot command timed out after %v (set DOTFMT_FILE_TIMEOUT to override)\nstderr: %s", timeout, stderr.String())
+		}
 		return nil, fmt.Errorf("dot command failed: %v\nstderr: %s", err, stderr.String())
 	}
 
@@ -132,12 +149,37 @@ func generateSVG(dotSource []byte) ([]byte, error) {
 }
 
 // formatDot runs dotfmt on DOT source and returns the formatted output
-func formatDot(dotSource []byte) ([]byte, error) {
-	var stdout, stderr bytes.Buffer
+func formatDot(t *testing.T, dotSource []byte) ([]byte, error) {
+	t.Helper()
 
-	if err := run([]string{"dotfmt"}, bytes.NewReader(dotSource), &stdout, &stderr); err != nil {
-		return nil, fmt.Errorf("dotfmt failed: %v\nstderr: %s", err, stderr.String())
+	timeout := 5 * time.Second
+	if timeoutStr := os.Getenv("DOTFMT_FILE_TIMEOUT"); timeoutStr != "" {
+		if d, err := time.ParseDuration(timeoutStr); err == nil {
+			timeout = d
+		}
 	}
 
-	return stdout.Bytes(), nil
+	ctx, cancel := context.WithTimeout(t.Context(), timeout)
+	defer cancel()
+
+	var stdout, stderr bytes.Buffer
+
+	// run dotfmt directly in-process
+	done := make(chan error, 1)
+	go func() {
+		done <- run([]string{"dotfmt"}, bytes.NewReader(dotSource), &stdout, &stderr)
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			return nil, fmt.Errorf("dotfmt failed: %v\nstderr: %s", err, stderr.String())
+		}
+		return stdout.Bytes(), nil
+	case <-ctx.Done():
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, fmt.Errorf("dotfmt timed out after %v (set DOTFMT_FILE_TIMEOUT to override)\nstderr: %s", timeout, stderr.String())
+		}
+		return nil, fmt.Errorf("dotfmt failed: %v\nstderr: %s", ctx.Err(), stderr.String())
+	}
 }

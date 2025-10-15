@@ -20,12 +20,9 @@ const (
 
 // Printer formats DOT code.
 type Printer struct {
-	r       io.Reader     // r reader to parse dot code from
-	w       io.Writer     // w writer to output formatted DOT code to
-	row     int           // row is the current one-indexed row the printer is at i.e. how many newlines it has printed. 0 means nothing has been printed
-	column  int           // column is the current one-indexed column in terms of runes the printer is at. A tab counts as [tabWidth] columns. 0 means no rune has been printed on the current row
-	newline bool          // newline indicates a buffered newline that should be printed
-	format  layout.Format // format in which to print the DOT code
+	r      io.Reader     // r reader to parse dot code from
+	w      io.Writer     // w writer to output formatted DOT code to
+	format layout.Format // format in which to print the DOT code
 }
 
 // NewPrinter creates a new printer that reads DOT code from r, formats it, and writes the
@@ -186,26 +183,6 @@ func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
 			doc.BreakIf(1, layout.Broken)
 		}
 	}
-}
-
-// hasMultipleAttributes traverses the AttrLists and ALists counting up to two ALists. This can be
-// used to omit empty brackets or split attributes onto multiple lines.
-func hasMultipleAttributes(attrList *ast.AttrList) (int, bool) {
-	if attrList == nil {
-		return 0, false
-	}
-
-	var cnt int
-	for cur := attrList; cur != nil; cur = cur.Next {
-		for curAList := cur.AList; curAList != nil; curAList = curAList.Next {
-			cnt++
-			if cnt > 1 {
-				return cnt, true
-			}
-		}
-	}
-
-	return cnt, false
 }
 
 func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) {

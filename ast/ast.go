@@ -338,7 +338,7 @@ func (er EdgeRHS) Start() token.Position {
 
 func (er EdgeRHS) End() token.Position {
 	var last EdgeOperand
-	for cur := &er; cur != nil; cur = er.Next {
+	for cur := &er; cur != nil; cur = cur.Next {
 		last = cur.Right
 	}
 	return last.End()

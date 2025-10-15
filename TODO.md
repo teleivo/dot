@@ -1,6 +1,8 @@
-* do thorough code review
+* go through ./review.md
 * update README.md
 * merge changes to main as merge commit
+
+## Next
 
 * support stanzas ./samples-graphviz/241_0.dot
   * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
@@ -9,8 +11,6 @@
       Allow users to do that. No more than one empty line though. And will that line be completely
       empty or be indented as the surrounding code?
       I need proper token/ast position. for this row and column
-
-## Next
 
 * visual tests
   * collect all errors/issues in ./run_visual_tests.sh
@@ -54,8 +54,6 @@ to keep it externally like `cmd/tokens`?
         # comment that
         # is too long
     ```
-
-* properly godoc all the things
 
 * support comments
   * line comment

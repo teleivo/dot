@@ -553,7 +553,7 @@ func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
 
 	stmts, err := p.parseStatementList(graph)
 	if err != nil {
-		return subgraph, nil
+		return subgraph, err
 	}
 	subgraph.Stmts = stmts
 

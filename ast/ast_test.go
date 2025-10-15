@@ -403,6 +403,21 @@ func TestPosition(t *testing.T) {
 							},
 						},
 					},
+					Next: &EdgeRHS{
+						Right: NodeID{
+							ID: ID{
+								Literal: `f3`,
+								StartPos: token.Position{
+									Row:    2,
+									Column: 10,
+								},
+								EndPos: token.Position{
+									Row:    2,
+									Column: 21,
+								},
+							},
+						},
+					},
 				},
 			},
 			wantStart: token.Position{
@@ -410,8 +425,8 @@ func TestPosition(t *testing.T) {
 				Column: 1,
 			},
 			wantEnd: token.Position{
-				Row:    1,
-				Column: 8,
+				Row:    2,
+				Column: 21,
 			},
 		},
 		"EdgeStmtWithAttrList": {

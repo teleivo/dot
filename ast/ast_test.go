@@ -97,7 +97,7 @@ func TestStringer(t *testing.T) {
 			want: `1 -> subgraph internal {2} -> 3 -> subgraph {4 5} [a=b]`,
 		},
 		"DigraphWithID": {
-			in: Graph{
+			in: &Graph{
 				StrictStart: &token.Position{Row: 1, Column: 1},
 				Directed:    true,
 				ID:          &ID{Literal: `"wonder"`},
@@ -105,7 +105,7 @@ func TestStringer(t *testing.T) {
 			want: `strict digraph "wonder" {}`,
 		},
 		"Attribute": {
-			in: Graph{
+			in: &Graph{
 				Stmts: []Stmt{
 					Attribute{Name: ID{Literal: "foo"}, Value: ID{Literal: "bar"}},
 				},
@@ -132,7 +132,7 @@ func TestPosition(t *testing.T) {
 		wantEnd   token.Position
 	}{
 		"Graph": {
-			in: Graph{
+			in: &Graph{
 				GraphStart: token.Position{
 					Row:    1,
 					Column: 1,
@@ -152,7 +152,7 @@ func TestPosition(t *testing.T) {
 			},
 		},
 		"GraphWithStrict": {
-			in: Graph{
+			in: &Graph{
 				StrictStart: &token.Position{
 					Row:    1,
 					Column: 2,
@@ -480,7 +480,7 @@ func TestPosition(t *testing.T) {
 			},
 		},
 		"AttrStmt": {
-			in: AttrStmt{
+			in: &AttrStmt{
 				ID: ID{
 					Literal: `f1`,
 					StartPos: token.Position{

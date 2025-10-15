@@ -99,7 +99,7 @@ graph {
 				g, err := p.Parse()
 
 				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
 			})
 		}
 
@@ -969,7 +969,7 @@ graph {
 				g, err := p.Parse()
 
 				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
 			})
 		}
 
@@ -1441,7 +1441,7 @@ graph {
 				g, err := p.Parse()
 
 				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
 			})
 		}
 
@@ -1661,7 +1661,7 @@ graph {
 				g, err := p.Parse()
 
 				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
 			})
 		}
 
@@ -1786,7 +1786,7 @@ graph {
 				g, err := p.Parse()
 
 				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
 			})
 		}
 
@@ -1936,7 +1936,7 @@ graph {
 				g, err := p.Parse()
 
 				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
 			})
 		}
 
@@ -2036,7 +2036,7 @@ graph {
 				g, err := p.Parse()
 
 				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, g, test.want, "Parse(%q)", test.in)
+				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
 			})
 		}
 

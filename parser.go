@@ -42,11 +42,11 @@ func NewParser(r io.Reader) (*Parser, error) {
 
 // Parse parses the DOT source code and returns the abstract syntax tree representation. Returns an
 // error if the source contains syntax errors.
-func (p *Parser) Parse() (ast.Graph, error) {
+func (p *Parser) Parse() (*ast.Graph, error) {
 	// if p.isDone() {
 	if p.peekTokenIs(token.EOF) {
 		var graph ast.Graph
-		return graph, nil
+		return &graph, nil
 	}
 
 	graph, err := p.parseHeader()
@@ -99,7 +99,7 @@ func (p *Parser) nextToken() error {
 	return nil
 }
 
-func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
+func (p *Parser) parseStatementList(graph *ast.Graph) ([]ast.Stmt, error) {
 	var stmts []ast.Stmt
 	var err error
 	for ; !p.curTokenIsOneOf(token.EOF, token.RightBrace) && err == nil; err = p.nextToken() {
@@ -117,12 +117,12 @@ func (p *Parser) parseStatementList(graph ast.Graph) ([]ast.Stmt, error) {
 	return stmts, err
 }
 
-func (p *Parser) parseHeader() (ast.Graph, error) {
+func (p *Parser) parseHeader() (*ast.Graph, error) {
 	var graph ast.Graph
 
 	err := p.expectPeekTokenIsOneOf(token.Strict, token.Graph, token.Digraph)
 	if err != nil {
-		return graph, err
+		return &graph, err
 	}
 
 	if p.curTokenIs(token.Strict) {
@@ -130,7 +130,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 
 		err := p.expectPeekTokenIsOneOf(token.Graph, token.Digraph)
 		if err != nil {
-			return graph, err
+			return &graph, err
 		}
 	}
 
@@ -142,7 +142,7 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 	// graph ID is optional
 	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
 	if err != nil {
-		return graph, err
+		return &graph, err
 	}
 
 	if hasID {
@@ -153,10 +153,10 @@ func (p *Parser) parseHeader() (ast.Graph, error) {
 		}
 	}
 
-	return graph, nil
+	return &graph, nil
 }
 
-func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
+func (p *Parser) parseStatement(graph *ast.Graph) (ast.Stmt, error) {
 	if p.curTokenIs(token.Identifier) && p.peekTokenIs(token.Equal) {
 		return p.parseAttribute()
 	} else if p.curTokenIsOneOf(token.Identifier, token.Subgraph, token.LeftBrace) {
@@ -237,7 +237,7 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 	return nil, nil
 }
 
-func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
+func (p *Parser) parseEdgeOperand(graph *ast.Graph) (ast.EdgeOperand, error) {
 	if p.curTokenIs(token.Identifier) {
 		return p.parseNodeID()
 	}
@@ -245,7 +245,7 @@ func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
 	return subgraph, err
 }
 
-func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
+func (p *Parser) parseEdgeRHS(graph *ast.Graph) (ast.EdgeRHS, error) {
 	var first, cur *ast.EdgeRHS
 	for p.curTokenIsOneOf(token.UndirectedEdge, token.DirectedEdge) {
 		operatorStart := p.curToken.Start
@@ -520,7 +520,7 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 	return attr, nil
 }
 
-func (p *Parser) parseSubgraph(graph ast.Graph) (ast.Subgraph, error) {
+func (p *Parser) parseSubgraph(graph *ast.Graph) (ast.Subgraph, error) {
 	var subgraph ast.Subgraph
 
 	if p.curTokenIs(token.Subgraph) {

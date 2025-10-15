@@ -59,12 +59,12 @@ func (p *Printer) Print() error {
 
 func (p *Printer) layoutNode(doc *layout.Doc, node ast.Node) {
 	switch n := node.(type) {
-	case ast.Graph:
+	case *ast.Graph:
 		p.layoutGraph(doc, n)
 	}
 }
 
-func (p *Printer) layoutGraph(doc *layout.Doc, graph ast.Graph) {
+func (p *Printer) layoutGraph(doc *layout.Doc, graph *ast.Graph) {
 	// TODO create strict graph id in a group? so ideally on one line but if not break each onto
 	// their own line? or at least the id?
 	if graph.IsStrict() {

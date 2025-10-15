@@ -23,11 +23,11 @@ type Graph struct {
 // for its meaning.
 //
 // [Lexical and Semantic Notes]: https://graphviz.org/doc/info/lang.html#lexical-and-semantic-notes
-func (g Graph) IsStrict() bool {
+func (g *Graph) IsStrict() bool {
 	return g.StrictStart != nil
 }
 
-func (g Graph) String() string {
+func (g *Graph) String() string {
 	var out strings.Builder
 	if g.IsStrict() {
 		out.WriteString("strict ")
@@ -59,7 +59,7 @@ func (g Graph) String() string {
 // first rune of 'strict', 'graph', 'digraph' or the opening '{'. Use	the corresponding fields on
 // the [Graph] if you need to access the individual starting positions. There might be leading
 // comments that you can access via [Graph.Comments].
-func (g Graph) Start() token.Position {
+func (g *Graph) Start() token.Position {
 	if g.StrictStart != nil {
 		return *g.StrictStart
 	}
@@ -68,7 +68,7 @@ func (g Graph) Start() token.Position {
 
 // End returns the position of the closing '}' of the graph. There might be trailing comments which
 // you can access via [Graph.Comments].
-func (g Graph) End() token.Position {
+func (g *Graph) End() token.Position {
 	return g.RightBrace
 }
 
@@ -365,7 +365,7 @@ type AttrStmt struct {
 	AttrList AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
 }
 
-func (ns AttrStmt) String() string {
+func (ns *AttrStmt) String() string {
 	var out strings.Builder
 
 	out.WriteString(ns.ID.String())
@@ -375,15 +375,15 @@ func (ns AttrStmt) String() string {
 	return out.String()
 }
 
-func (ns AttrStmt) Start() token.Position {
+func (ns *AttrStmt) Start() token.Position {
 	return ns.ID.Start()
 }
 
-func (ns AttrStmt) End() token.Position {
+func (ns *AttrStmt) End() token.Position {
 	return ns.AttrList.End()
 }
 
-func (ns AttrStmt) stmtNode() {}
+func (ns *AttrStmt) stmtNode() {}
 
 // AttrList is a list of attributes as defined by [Attributes].
 //

@@ -1,4 +1,6 @@
-// Package dot provides a parser for the dot language https://graphviz.org/doc/info/lang.html.
+// Package dot provides a parser for the [DOT language].
+//
+// [DOT language]: https://graphviz.org/doc/info/lang.html
 package dot
 
 import (

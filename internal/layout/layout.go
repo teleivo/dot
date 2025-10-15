@@ -26,9 +26,11 @@
 //
 // # Acknowledgments
 //
-// This package is a Go port of allman (https://github.com/mcy/strings/tree/main/allman) by
-// mcyoung. The layout algorithm and design are based on the excellent article "The Art of
-// Formatting Code" (https://mcyoung.xyz/2025/03/11/formatters/).
+// This package is a Go port of [allman] by mcyoung. The layout algorithm and design are based on
+// the excellent article ["The Art of Formatting Code"].
+//
+// [allman]: https://github.com/mcy/strings/tree/main/allman
+// ["The Art of Formatting Code"]: https://mcyoung.xyz/2025/03/11/formatters/
 package layout
 
 import (

@@ -1,4 +1,6 @@
-// Package ast contains an abstract syntax tree representation of the dot language https://graphviz.org/doc/info/lang.html.
+// Package ast contains an abstract syntax tree representation of the [DOT language].
+//
+// [DOT language]: https://graphviz.org/doc/info/lang.html
 package ast
 
 import (
@@ -85,8 +87,9 @@ type Stmt interface {
 	stmtNode()
 }
 
-// ID is a dot identifier as defined by https://graphviz.org/doc/info/lang.html#ids. HTML strings
-// are not supported.
+// ID is a DOT [identifier]. HTML strings are not supported.
+//
+// [identifier]: https://graphviz.org/doc/info/lang.html#ids
 type ID struct {
 	Literal  string         // Identifier literal
 	StartPos token.Position // Position of the first rune of the ID
@@ -168,8 +171,10 @@ func (ni NodeID) End() token.Position {
 
 func (ni NodeID) edgeOperand() {}
 
-// Port defines a node port where an edge can attach to as defined by
-// https://graphviz.org/doc/info/lang.html. At least one of name and compass point must be defined.
+// Port defines a node [port] where an edge can attach to. At least one of name and compass point
+// must be defined.
+//
+// [port]: https://graphviz.org/doc/info/lang.html
 type Port struct {
 	Name         *ID           // Name is the identifier of the port.
 	CompassPoint *CompassPoint // CompassPoint is the position at which an edge can attach to.
@@ -207,7 +212,9 @@ func (p Port) End() token.Position {
 	return p.CompassPoint.EndPos
 }
 
-// CompassPoint position at which an edge can attach to a node https://graphviz.org/docs/attr-types/portPos.
+// CompassPoint is the [position] at which an edge can attach to a node.
+//
+// [position]: https://graphviz.org/docs/attr-types/portPos
 type CompassPoint struct {
 	Type     CompassPointType
 	StartPos token.Position // Position of the first rune of the compass point
@@ -424,7 +431,9 @@ func (atl *AttrList) End() token.Position {
 	return end
 }
 
-// AList is a list of name-value attribute pairs https://graphviz.org/doc/info/attrs.html.
+// AList is a list of name-value [attribute pairs].
+//
+// [attribute pairs]: https://graphviz.org/doc/info/attrs.html
 type AList struct {
 	Attribute Attribute // Attribute is the name-value attribute pair.
 	Next      *AList    // Next optionally points to the attribute following this one.
@@ -455,9 +464,10 @@ func (al *AList) End() token.Position {
 	return last.End()
 }
 
-// Attribute is a name-value attribute pair https://graphviz.org/doc/info/attrs.html. Note that this
-// name is not defined in the abstract grammar of the dot language. It is defined as a statement and
-// as part of the a_list as ID '=' ID.
+// Attribute is a name-value [attribute pair]. Note that this name is not defined in the abstract
+// grammar of the DOT language. It is defined as a statement and as part of the a_list as ID '=' ID.
+//
+// [attribute pair]: https://graphviz.org/doc/info/attrs.html
 type Attribute struct {
 	Name  ID // Name is an identifier naming the attribute.
 	Value ID // Value is the identifier representing the value of the attribute.
@@ -529,8 +539,9 @@ func (s Subgraph) End() token.Position {
 func (s Subgraph) stmtNode()    {}
 func (s Subgraph) edgeOperand() {}
 
-// Comment is a dot comment as defined in
-// https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting.
+// Comment is a DOT [comment].
+//
+// [comment]: https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 type Comment struct {
 	Text     string         // Comment text including any opening and closing markers.
 	StartPos token.Position // Position of the first rune of the comment.

@@ -1,4 +1,6 @@
-// Package printer prints dot ASTs formatted in the spirit of https://github.com/mvdan/gofumpt.
+// Package printer prints DOT ASTs formatted in the spirit of [gofumpt].
+//
+// [gofumpt]: https://github.com/mvdan/gofumpt
 package printer
 
 import (

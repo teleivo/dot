@@ -260,8 +260,10 @@ func isStartOfUnquotedString(r rune) bool {
 	return r == '_' || isAlphabetic(r)
 }
 
-// isAlphabetic determines if the rune is part of the allowed alphabetic characters of an unquoted
-// identifier as defined in https://graphviz.org/doc/info/lang.html#ids.
+// isAlphabetic determines if the rune is part of the allowed alphabetic characters of an
+// [unquoted identifier].
+//
+// [unquoted identifier]: https://graphviz.org/doc/info/lang.html#ids
 func isAlphabetic(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
 }

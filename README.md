@@ -78,7 +78,6 @@ View the package documentation locally with an interactive example playground:
 go install golang.org/x/pkgsite/cmd/pkgsite@latest
 
 # Run the documentation server
-cd layout
 pkgsite -open .
 ```
 

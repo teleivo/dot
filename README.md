@@ -15,7 +15,7 @@ As such it is opinionated and has no options to change its format.
 
 ```sh
 go run ./cmd/dotfmt/main.go <<EOF
-digraph data_pipeline{graph[rankdir=TB,bgcolor="#fafafa",splines=curved]
+digraph data_pipeline{graph[rankdir=TB,bgcolor="#fafafa"]
 node[shape=box,style="rounded,filled",fontname="Arial",fontsize=11]
 edge[fontname="Arial",fontsize=9,arrowsize=0.8]
 

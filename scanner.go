@@ -232,15 +232,15 @@ func (sc *Scanner) tokenizeEdgeOperator() (token.Token, error) {
 	end := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	if sc.cur == '-' {
 		return token.Token{
-			Type:    token.UndirectedEgde,
-			Literal: token.UndirectedEgde.String(),
+			Type:    token.UndirectedEdge,
+			Literal: token.UndirectedEdge.String(),
 			Start:   start,
 			End:     end,
 		}, err
 	}
 	return token.Token{
-		Type:    token.DirectedEgde,
-		Literal: token.DirectedEgde.String(),
+		Type:    token.DirectedEdge,
+		Literal: token.DirectedEdge.String(),
 		Start:   start,
 		End:     end,
 	}, err

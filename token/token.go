@@ -26,8 +26,8 @@ const (
 	Semicolon      // ;
 	Equal          // =
 	Comma          // ,
-	DirectedEgde   // ->
-	UndirectedEgde // --
+	DirectedEdge   // ->
+	UndirectedEdge // --
 
 	// Keywords
 	Digraph  // digraph
@@ -53,8 +53,8 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	Semicolon:      ";",
 	Equal:          "=",
 	Comma:          ",",
-	DirectedEgde:   "->",
-	UndirectedEgde: "--",
+	DirectedEdge:   "->",
+	UndirectedEdge: "--",
 
 	// Keywords
 	Digraph:  "digraph",
@@ -74,8 +74,8 @@ var types map[string]TokenType = map[string]TokenType{
 	";":  Semicolon,
 	"=":  Equal,
 	",":  Comma,
-	"->": DirectedEgde,
-	"--": UndirectedEgde,
+	"->": DirectedEdge,
+	"--": UndirectedEdge,
 
 	// Keywords,
 	"digraph":  Digraph,

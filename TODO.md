@@ -2,8 +2,6 @@
 * update README.md
 * merge changes to main as merge commit
 
-## Next
-
 * support stanzas ./samples-graphviz/241_0.dot
   * how do I even know of newlines? Right now I don't generate Breaks based on the tokens
   * implement merging multiple Break() using max(n, m)
@@ -250,17 +248,14 @@ or is that to simplistic as there are rules as to when you are allowed/have to c
 * test using invalid input
   * invalid input should be printed as is, it should not delete user input!
 
-* add profiling flags
-    * capture profile formatting example dot files
-    * capture profiles formatting the profile dot file
-    * all of this to find any lingering bugs I have
-
 * support formatting file/dirs in place
   * allow passing in file via flag and out file via flag while still allowing stdin/stdout
   * goroutines could be fun once its working ;)
   * format all of https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
     * profile, anything obvious I could improve?
     * add a benchmark to ensure no regressions
+
+* add ability to capture execution traces using flight recorder?
 
   * gofumpt uses positional args as files and reads from stdin if non given
 ```go
@@ -285,10 +280,6 @@ so I need to detect such errors and try with `digraph {}`.
 ### Features
 
 * support + on IDs
-
-* strip unnecessary quotes
-  * unstripped ID would need to be a valid ID, imagine `"A->B"` quotes cannot be stripped here
-  * is the "easiest" to try to parse the unquoted literal as ID and only if valid strip them
 
 * join adjacent comments? unless there is an empty newline in between them
 
@@ -320,5 +311,6 @@ Questions
 
 ## Ideas
 
-* how could I make something like :InspectTree in neovim for my parser?
 * write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
+* how could I make something like :InspectTree in neovim for my parser?
+

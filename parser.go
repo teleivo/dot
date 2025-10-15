@@ -195,7 +195,7 @@ func (p *Parser) parseStatement(graph ast.Graph) (ast.Stmt, error) {
 			stmt = subraph
 		}
 
-		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEdge, token.DirectedEdge)
 		if err != nil {
 			return stmt, err
 		}
@@ -247,10 +247,10 @@ func (p *Parser) parseEdgeOperand(graph ast.Graph) (ast.EdgeOperand, error) {
 
 func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 	var first, cur *ast.EdgeRHS
-	for p.curTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde) {
+	for p.curTokenIsOneOf(token.UndirectedEdge, token.DirectedEdge) {
 		operatorStart := p.curToken.Start
 		var directed bool
-		if p.curTokenIs(token.DirectedEgde) {
+		if p.curTokenIs(token.DirectedEdge) {
 			directed = true
 		}
 		if directed && !graph.Directed {
@@ -285,7 +285,7 @@ func (p *Parser) parseEdgeRHS(graph ast.Graph) (ast.EdgeRHS, error) {
 			cur = cur.Next
 		}
 
-		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEgde, token.DirectedEgde)
+		hasEdgeOperator, err := p.advanceIfPeekTokenIsOneOf(token.UndirectedEdge, token.DirectedEdge)
 		if err != nil {
 			return *first, err
 		}

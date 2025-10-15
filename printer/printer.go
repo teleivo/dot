@@ -215,20 +215,19 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) {
 			doc.Space()
 
 			if edgeStmt.Right.Directed {
-				doc.Text(token.DirectedEgde.String())
+				doc.Text(token.DirectedEdge.String())
 			} else {
-				doc.Text(token.UndirectedEgde.String())
+				doc.Text(token.UndirectedEdge.String())
 			}
 			doc.Space()
 
 			p.layoutEdgeOperand(doc, edgeStmt.Right.Right)
-
 			for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
 				doc.Space()
 				if edgeStmt.Right.Directed {
-					doc.Text(token.DirectedEgde.String())
+					doc.Text(token.DirectedEdge.String())
 				} else {
-					doc.Text(token.UndirectedEgde.String())
+					doc.Text(token.UndirectedEdge.String())
 				}
 				doc.Space()
 

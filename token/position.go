@@ -25,7 +25,7 @@ func (p Position) Before(o Position) bool {
 	return false
 }
 
-// Before reports whether the position p is after o.
+// After reports whether the position p is after o.
 func (p Position) After(o Position) bool {
 	if p.Row > o.Row {
 		return true

@@ -214,6 +214,8 @@ have a valid EndPos
   see Go ast.BlockStmt docs which mention exactly that
   could help with Nodes like `AttrList` which might be empty
 
+  or make the zero-value valid
+
 * support parsing/formatting ranges
     * parser should be ok with comments before a graph. how to support that in terms of the parser
     API? right now it returns an ast.Graph but the leading comment comes before the ast.Graph

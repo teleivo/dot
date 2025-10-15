@@ -1,6 +1,3 @@
-* re-read README.md
-* merge changes to main as merge commit
-
 * visual tests
   * collect all errors/issues in ./run_visual_tests.sh
   * ./samples-graphviz/share/tests are causing trouble

@@ -657,6 +657,15 @@ func TestScanner(t *testing.T) {
 						End:     token.Position{Row: 1, Column: 2},
 					},
 				},
+				{
+					in: `Контрагенты`,
+					want: token.Token{
+						Type:    token.Identifier,
+						Literal: `Контрагенты`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 11},
+					},
+				},
 			}
 
 			for i, test := range tests {
@@ -690,24 +699,6 @@ func TestScanner(t *testing.T) {
 						LineNr:      1,
 						CharacterNr: 7,
 						Character:   '',
-						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
-					},
-				},
-				{
-					in: `Ā`, // Unicode character U+0100 = \400 which cannot be written as rune(\400) as its outside of Gos valid octal range
-					want: Error{
-						LineNr:      1,
-						CharacterNr: 1,
-						Character:   'Ā',
-						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
-					},
-				},
-				{
-					in: `_Ā`, // Unicode character U+0100 = \400 which cannot be written as rune(\400) as its outside of Gos valid octal range
-					want: Error{
-						LineNr:      1,
-						CharacterNr: 2,
-						Character:   'Ā',
 						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
 					},
 				},
@@ -1313,3 +1304,4 @@ func assertError(t *testing.T, scanner *Scanner, want Error) {
 		assert.EqualValuesf(t, got, want, "Next()")
 	}
 }
+

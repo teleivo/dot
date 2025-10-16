@@ -263,9 +263,12 @@ func isStartOfUnquotedString(r rune) bool {
 // isAlphabetic determines if the rune is part of the allowed alphabetic characters of an
 // [unquoted identifier].
 //
+// The Graphviz spec mentions \200-\377 which refers to UTF-8 bytes with the high bit set.
+// In practice, this means any UTF-8 encoded character (rune >= 0x80) is accepted.
+//
 // [unquoted identifier]: https://graphviz.org/doc/info/lang.html#ids
 func isAlphabetic(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200' && r <= '\377')
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '\200')
 }
 
 func isStartOfNumeral(r rune) bool {

@@ -1,5 +1,5 @@
-* go through ./visual_test_error.log errors
-  * ./errors.md
+* go through ./errors.md
+  * fix unquoted numeric ids
 
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility
@@ -148,6 +148,8 @@ echo -e 'graph{ "A\000--B" }' | dot -Tsvg -O
 Error: <stdin>: syntax error in line 1 scanning a quoted string (missing endquote? longer than 16384?)
 String starting:"A
 ```
+
+* deal with ./maxlen.md
 
 ### Hints
 

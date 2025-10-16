@@ -14,7 +14,7 @@ failed=0
 while IFS= read -r -d '' dir; do
     total=$((total + 1))
     rel_dir="${dir#"$SAMPLES_DIR"/}"
-    echo "Testing: $rel_dir"
+    printf "Testing: %s" "$rel_dir"
 
     # Build test command with optional timeout
     test_cmd="DOTFMT_TEST_DIR=\"$dir\" go test -v"
@@ -26,12 +26,17 @@ while IFS= read -r -d '' dir; do
     if ! output=$(eval "$test_cmd" 2>&1); then
         if ! echo "$output" | grep -q "SKIP"; then
             failed=$((failed + 1))
+            echo -e " \033[31m✘\033[0m"
             {
                 echo "FAILED: $rel_dir (dir: $dir)"
                 echo "$output"
                 echo ""
             } >> "$ERROR_LOG"
+        else
+            echo -e " \033[90m-\033[0m"
         fi
+    else
+        echo -e " \033[32m✔\033[0m"
     fi
 done < <(find "$SAMPLES_DIR" -type d -print0)
 

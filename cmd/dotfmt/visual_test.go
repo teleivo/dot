@@ -90,6 +90,18 @@ func TestVisualOutput(t *testing.T) {
 				t.Fatalf("failed to write formatted DOT: %v", err)
 			}
 
+			// Check idempotency: formatting the formatted output should produce identical result
+			formattedDotSecond, err := formatDot(t, formattedDot)
+			if err != nil {
+				t.Fatalf("failed to format DOT file (second pass): %v", err)
+			}
+
+			if string(formattedDotSecond) != string(formattedDot) {
+				// Preserve temp files on failure
+				shouldCleanup = false
+				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", formattedDot, formattedDotSecond, formattedDot)
+			}
+
 			formattedSVG, err := generateSVG(t, formattedDot)
 			if err != nil {
 				t.Fatalf("failed to generate SVG from formatted: %v", err)

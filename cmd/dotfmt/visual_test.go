@@ -3,17 +3,20 @@ package main
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/teleivo/assertive/assert"
 )
 
 // TestVisualOutput tests that dotfmt preserves visual output by comparing
-// SVG renderings of original and formatted DOT files.
+// plain text renderings of original and formatted DOT files.
 //
 // By default, it tests files in testdata/. Set DOTFMT_TEST_DIR to test external files.
 // Temp files are preserved on failure for debugging, or always if DOTFMT_KEEP_TEMP=1.
@@ -27,8 +30,8 @@ func TestVisualOutput(t *testing.T) {
 		testDir = "testdata"
 	}
 
-	if _, err := os.Stat(testDir); os.IsNotExist(err) {
-		t.Skipf("test directory %q does not exist, skipping visual test", testDir)
+	if _, err := os.Stat(testDir); errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("test directory %q does not exist, skipping visual test", testDir)
 	}
 
 	dotFiles, err := filepath.Glob(filepath.Join(testDir, "*.dot"))
@@ -72,13 +75,13 @@ func TestVisualOutput(t *testing.T) {
 				t.Fatalf("failed to read %q: %v", dotFile, err)
 			}
 
-			originalSVG, err := generateSVG(t, originalDot)
+			originalPlain, err := generatePlain(t, originalDot)
 			if err != nil {
-				t.Fatalf("failed to generate SVG from original: %v", err)
+				t.Skipf("Skipping: original file fails with dot: %v", err)
 			}
-			originalSVGPath := filepath.Join(tempDir, "original.svg")
-			if err := os.WriteFile(originalSVGPath, originalSVG, 0o644); err != nil {
-				t.Fatalf("failed to write original SVG: %v", err)
+			originalPlainPath := filepath.Join(tempDir, "original.plain")
+			if err := os.WriteFile(originalPlainPath, originalPlain, 0o644); err != nil {
+				t.Fatalf("failed to write original plain output: %v", err)
 			}
 
 			formattedDot, err := formatDot(t, originalDot)
@@ -95,42 +98,37 @@ func TestVisualOutput(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to format DOT file (second pass): %v", err)
 			}
-
 			if string(formattedDotSecond) != string(formattedDot) {
 				// Preserve temp files on failure
 				shouldCleanup = false
 				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", formattedDot, formattedDotSecond, formattedDot)
 			}
 
-			formattedSVG, err := generateSVG(t, formattedDot)
+			formattedPlain, err := generatePlain(t, formattedDot)
 			if err != nil {
-				t.Fatalf("failed to generate SVG from formatted: %v", err)
+				t.Fatalf("failed to generate plain output from formatted: %v", err)
 			}
-			formattedSVGPath := filepath.Join(tempDir, "formatted.svg")
-			if err := os.WriteFile(formattedSVGPath, formattedSVG, 0o644); err != nil {
-				t.Fatalf("failed to write formatted SVG: %v", err)
+			formattedPlainPath := filepath.Join(tempDir, "formatted.plain")
+			if err := os.WriteFile(formattedPlainPath, formattedPlain, 0o644); err != nil {
+				t.Fatalf("failed to write formatted plain output: %v", err)
 			}
 
-			originalHash := sha256.Sum256(originalSVG)
-			formattedHash := sha256.Sum256(formattedSVG)
-			if originalHash != formattedHash {
+			if string(originalPlain) != string(formattedPlain) {
 				// Preserve temp files on failure
 				shouldCleanup = false
-				t.Errorf("SVG output differs after formatting\n"+
-					"  Original SVG:  %s\n"+
-					"  Formatted SVG: %s\n"+
-					"  Formatted DOT: %s\n"+
-					"  Original hash:  %x\n"+
-					"  Formatted hash: %x",
-					originalSVGPath, formattedSVGPath, formattedDotPath,
-					originalHash, formattedHash)
+				t.Logf("plain output differs after formatting\n"+
+					"  Original plain:  %s\n"+
+					"  Formatted plain: %s\n"+
+					"  Formatted DOT:   %s\n",
+					originalPlainPath, formattedPlainPath, formattedDotPath)
+				assert.EqualValues(t, string(originalPlain), string(formattedPlain))
 			}
 		})
 	}
 }
 
-// generateSVG runs Graphviz dot to generate SVG from DOT source
-func generateSVG(t *testing.T, dotSource []byte) ([]byte, error) {
+// generatePlain runs Graphviz dot to generate plain text output from DOT source
+func generatePlain(t *testing.T, dotSource []byte) ([]byte, error) {
 	t.Helper()
 
 	timeout := 5 * time.Second
@@ -143,7 +141,7 @@ func generateSVG(t *testing.T, dotSource []byte) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(t.Context(), timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "dot", "-Tsvg")
+	cmd := exec.CommandContext(ctx, "dot", "-Tplain")
 	cmd.Stdin = bytes.NewReader(dotSource)
 
 	var stdout, stderr bytes.Buffer

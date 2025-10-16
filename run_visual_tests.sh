@@ -24,7 +24,16 @@ while IFS= read -r -d '' dir; do
     test_cmd="$test_cmd ./cmd/dotfmt -run TestVisualOutput"
 
     if ! output=$(eval "$test_cmd" 2>&1); then
-        if ! echo "$output" | grep -q "SKIP"; then
+        has_skip=$(echo "$output" | grep -q "SKIP" && echo "yes" || echo "no")
+
+        if [ "$has_skip" = "yes" ]; then
+            echo -e " \033[90m-\033[0m"
+            {
+                echo "SKIPPED: $rel_dir (dir: $dir)"
+                echo "$output"
+                echo ""
+            } >> "$ERROR_LOG"
+        else
             failed=$((failed + 1))
             echo -e " \033[31m✘\033[0m"
             {
@@ -32,8 +41,6 @@ while IFS= read -r -d '' dir; do
                 echo "$output"
                 echo ""
             } >> "$ERROR_LOG"
-        else
-            echo -e " \033[90m-\033[0m"
         fi
     else
         echo -e " \033[32m✔\033[0m"

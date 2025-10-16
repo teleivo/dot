@@ -90,6 +90,7 @@ This opens a browser with pkg.go.dev-style documentation where you can:
 
 ## Limitations
 
+* does not yet support comments
 * does not support https://graphviz.org/doc/info/lang.html#html-strings as I have not needed them
 for my purposes
 * does not support [double-quoted strings can be concatenated using a '+'

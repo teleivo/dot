@@ -1,4 +1,5 @@
 * go through ./visual_test_error.log errors
+  * ./errors.md
 
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility

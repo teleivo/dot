@@ -1,5 +1,4 @@
-* go through ./errors.md
-  * fix unquoted numeric ids
+* read ./cmd/dotfmt/format_benchmark_test.go
 
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility
@@ -276,8 +275,8 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
+* support multiple graphs in a file like in samples-graphviz/tests/graphs/multi.gv
 * support + on IDs
-
 * join adjacent comments? unless there is an empty newline in between them
 
 ## Highl Level API

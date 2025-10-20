@@ -153,7 +153,7 @@ func (sc *Scanner) skipWhitespace() {
 // whitespace \240 which is considered whitespace by [unicode.isWhitespace].
 func isWhitespace(r rune) bool {
 	switch r {
-	case ' ', '\t', '\n':
+	case ' ', '\t', '\r', '\n':
 		return true
 	}
 	return false

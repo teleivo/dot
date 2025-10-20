@@ -23,7 +23,7 @@ func TestScanner(t *testing.T) {
 			},
 		},
 		"OnlyWhitespace": {
-			in: "\t \n \t\t   ",
+			in: "\t \n \t\t   \r\n",
 			want: []token.Token{
 				{Type: token.EOF},
 			},

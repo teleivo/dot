@@ -649,10 +649,10 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: `ÿ  `,
+					in: "\u0080ÿ  ",
 					want: token.Token{
 						Type:    token.Identifier,
-						Literal: `ÿ`,
+						Literal: "\u0080ÿ",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 2},
 					},

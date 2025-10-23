@@ -1,18 +1,7 @@
-* go through ./errors.md
-  * fix unquoted numeric ids
-
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility
 
 * improve error handling see [Parser](#parser)
-
-* I think this should lead to a parser error but does not
-
-```dot
-graph {
-{1;2;--{3;4}}
-}
-```
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
 How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
@@ -57,7 +46,17 @@ add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 
 ## Parser
 
-* how to continue generating tokens when finding invalid ones? user the illegal token? how
+* test parser error will keep code as is in dotfmt
+
+* I think this should lead to a parser error but does not
+
+```dot
+graph {
+{1;2;--{3;4}}
+}
+```
+
+* how to continue generating tokens when finding invalid ones? use the illegal token? how
   does treesitter do it? they have a missing node and an illegal one? Go has ast.BadExpr for
   example. Refresh mind on crafting interpreters panic mode. The parser can skip tokens until it finds
   a safe point. I think sync is used as the word. I think I also saw it in the Go parser or gofumpt.

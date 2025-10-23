@@ -1,7 +1,7 @@
+* improve error handling see [Parser](#parser)
+
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility
-
-* improve error handling see [Parser](#parser)
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
 How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
@@ -47,6 +47,8 @@ add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 ## Parser
 
 * test parser error will keep code as is in dotfmt
+
+* read ./research/summary.md and get started on panic mode  
 
 * I think this should lead to a parser error but does not
 
@@ -275,8 +277,8 @@ so I need to detect such errors and try with `digraph {}`.
 
 ### Features
 
+* support multiple graphs in a file like in samples-graphviz/tests/graphs/multi.gv
 * support + on IDs
-
 * join adjacent comments? unless there is an empty newline in between them
 
 ## Highl Level API

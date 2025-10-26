@@ -1,4 +1,48 @@
-* improve error handling see [Parser](#parser)
+* emit token.INVALID from scanner
+  * token.INVALID should be emitted together with an error
+    should already fit in my existing scanner_test.go
+
+    when would I emit the invalid token
+
+  * continue scanning on error
+// Next advances the scanners position by one token and returns it. The scanner will stop trying to
+// tokenize more tokens on the first error it encounters. A token of typen [token.EOF] is returned
+// once the underlying reader returns [io.EOF] and the peek token has been consumed.
+
+  the parser should not need a change as it stops on first error
+
+  how to adjust the scanner_test.go? []error? so each token in want has its associated error?
+  or []error being all errors that were emitted in order but no nils
+
+  * handle it in parser
+  * handle it in dotfmt
+
+Error cases to think about and here is what Go does
+
+* LETTERS AFTER NUMBERS
+
+```
+   (Non-decimal/non-hex letters stop consumption)
+   Decimal + letters: "123xyz"
+      Token 1: INT        (pos=0, lit="123")
+      Token 2: IDENT      (pos=3, lit="xyz")
+      Token 3: ;          (pos=6, lit="\n")
+      (No errors)
+```
+
+I don't like this as this requires the parser to then flag this as invalid and its way more
+complicated to do that than needed. That should be a single token with an error. Its neither a valid
+number nor a valid identifier.
+
+* test parser error will keep code as is in dotfmt
+
+* read pros/cons of using reader vs taking in []byte into Parser/Formatter
+
+## Next
+
+* use assertions
+
+* improve error handling [Parser](#parser)
 
 * Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
   be used. Its a mere demo/debugging utility
@@ -46,9 +90,8 @@ add a new tag/attribute? rawtext, `<text raw/>` or don't implement that?
 
 ## Parser
 
-* test parser error will keep code as is in dotfmt
-
-* read ./research/summary.md and get started on panic mode  
+* make a plan on how to implement
+https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html
 
 * I think this should lead to a parser error but does not
 

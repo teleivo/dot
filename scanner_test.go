@@ -684,7 +684,7 @@ func TestScanner(t *testing.T) {
 				want Error
 			}{
 				{
-					in: "  ", // \177
+					in: "  \x7f", // \177
 					want: Error{
 						LineNr:      1,
 						CharacterNr: 3,
@@ -693,7 +693,7 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: "  _zabx", // \177
+					in: "  _zab\x7fx", // \177
 					want: Error{
 						LineNr:      1,
 						CharacterNr: 7,

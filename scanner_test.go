@@ -718,7 +718,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.want)
+					assertError(t, scanner, test.want, test.in)
 				})
 			}
 		})
@@ -884,11 +884,11 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: "100\u00A0200", // non-breakig space between 100 and 200
+					in: "100\u00A0200", // non-breaking space between 100 and 200
 					want: Error{
 						LineNr:      1,
 						CharacterNr: 4,
-						Character:   0o240,
+						Character:   160,
 						Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
 					},
 				},
@@ -909,7 +909,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.want)
+					assertError(t, scanner, test.want, test.in)
 				})
 			}
 		})
@@ -1109,7 +1109,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.want)
+					assertError(t, scanner, test.want, test.in)
 				})
 			}
 		})
@@ -1242,7 +1242,7 @@ spacious
 						assertNextToken(t, scanner, *test.want)
 					}
 
-					assertError(t, scanner, test.wantError)
+					assertError(t, scanner, test.wantError, test.in)
 				})
 			}
 		})
@@ -1282,25 +1282,24 @@ func assertEOF(t *testing.T, scanner *Scanner) {
 	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "Next()")
 }
 
-func assertError(t *testing.T, scanner *Scanner, want Error) {
+func assertError(t *testing.T, scanner *Scanner, want Error, input string) {
 	t.Helper()
 
 	tok, err := scanner.Next()
 
 	var wantTok token.Token
-	assert.EqualValuesf(t, tok, wantTok, "Next()")
+	assert.EqualValuesf(t, tok, wantTok, "Next() for input %q", input)
 	got, ok := err.(Error)
-	assert.Truef(t, ok, "Next() wanted scanner.Error, instead got %v", err)
+	assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
 	if ok {
-		assert.EqualValuesf(t, got, want, "Next()")
+		assert.EqualValuesf(t, got, want, "Next() for input %q", input)
 	}
 
 	// TODO is this so that subsequent calls will always get the same error?
 	_, err = scanner.Next()
 	got, ok = err.(Error)
-	assert.Truef(t, ok, "Next() wanted scanner.Error, instead got %v", err)
+	assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
 	if ok {
-		assert.EqualValuesf(t, got, want, "Next()")
+		assert.EqualValuesf(t, got, want, "Next() for input %q", input)
 	}
 }
-

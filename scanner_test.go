@@ -14,7 +14,6 @@ func TestScanner(t *testing.T) {
 	tests := map[string]struct {
 		in   string
 		want []token.Token
-		err  error
 	}{
 		"Empty": {
 			in: "",

@@ -884,11 +884,11 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: `100 200 `, // non-breakig space \240 between 100 and 200
+					in: "100\u00A0200", // non-breakig space between 100 and 200
 					want: Error{
 						LineNr:      1,
 						CharacterNr: 4,
-						Character:   ' ',
+						Character:   0o240,
 						Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
 					},
 				},

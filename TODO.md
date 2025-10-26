@@ -14,6 +14,17 @@
   how to adjust the scanner_test.go? []error? so each token in want has its associated error?
   or []error being all errors that were emitted in order but no nils
 
+For example
+
+```dot
+graph {  B
+A/
+}
+```
+
+The scanner can now emit A and then errors on `/`. dotfmt should be able to format this and return
+the error(s) that `/` might miss another `/` or `*`.
+
   * handle it in parser
   * handle it in dotfmt
 
@@ -101,22 +112,7 @@ graph {
 }
 ```
 
-* how to continue generating tokens when finding invalid ones? use the illegal token? how
-  does treesitter do it? they have a missing node and an illegal one? Go has ast.BadExpr for
-  example. Refresh mind on crafting interpreters panic mode. The parser can skip tokens until it finds
-  a safe point. I think sync is used as the word. I think I also saw it in the Go parser or gofumpt.
-
-For example
-
-```dot
-graph {  B
-A/
-}
-```
-
-The scanner can now emit A and then errors on `/`. dotfmt should be able to format this and return
-the error(s) that `/` might miss another `/` or `*`.
-
+* improve error printing, how to print the line/snippet with ^^^ to highlight were the error is
 * implement parser.Trace like the Go parser
 
 * ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates

@@ -187,7 +187,9 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	var hasClosingMarker bool
 
 	if sc.cur == '/' && sc.hasNext() && sc.next != '/' && sc.next != '*' {
-		return token.Token{}, sc.error("missing '/' for single-line or a '*' for a multi-line comment")
+		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
+		return tok, sc.error("missing '/' for single-line or a '*' for a multi-line comment")
 	}
 
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
@@ -207,6 +209,8 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	}
 
 	if isMultiLine && !hasClosingMarker {
+		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("missing closing marker '*/' for multi-line comment")
 	}
 	if err != nil {
@@ -446,12 +450,16 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 			break
 		}
 		if pos > maxUnquotedStringLen {
+			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			return tok, sc.error(fmt.Sprintf("potentially missing closing quote, found none after max %d characters", maxUnquotedStringLen+1))
 		}
 		prev = sc.cur
 	}
 
 	if !hasClosingQuote {
+		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("missing closing quote")
 	}
 	if err != nil {

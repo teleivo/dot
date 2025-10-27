@@ -734,7 +734,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertErrorNew(t, scanner, test.wantToken, test.wantErr, test.in)
+					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
 				})
 			}
 		})
@@ -899,7 +899,7 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "-.",
-					wantToken: token.Token{
+					wantToken: token.Token{ // TODO is this token correct?
 						Type: token.ILLEGAL, Literal: "\x00",
 						Start: token.Position{Row: 1, Column: 3},
 						End:   token.Position{Row: 1, Column: 3},
@@ -913,7 +913,7 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "\n. 0",
-					wantToken: token.Token{
+					wantToken: token.Token{ // TODO whitespace is usually a token separator
 						Type: token.ILLEGAL, Literal: " ",
 						Start: token.Position{Row: 2, Column: 2},
 						End:   token.Position{Row: 2, Column: 2},
@@ -961,7 +961,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertErrorNew(t, scanner, test.wantToken, test.wantErr, test.in)
+					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
 				})
 			}
 		})
@@ -1122,12 +1122,18 @@ func TestScanner(t *testing.T) {
 
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in   string
-				want Error
+				in        string
+				wantToken token.Token
+				wantErr   Error
 			}{
 				{
 					in: `"asdf`,
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\x00",
+						Start: token.Position{Row: 1, Column: 6},
+						End:   token.Position{Row: 1, Column: 6},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 6,
 						Character:   0,
@@ -1135,9 +1141,14 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: `"asdf	
+					in: `"asdf
 		}`,
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\x00",
+						Start: token.Position{Row: 2, Column: 4},
+						End:   token.Position{Row: 2, Column: 4},
+					},
+					wantErr: Error{
 						LineNr:      2,
 						CharacterNr: 4,
 						Character:   0,
@@ -1146,7 +1157,12 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: `"` + strings.Repeat("a", 16348),
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "a",
+						Start: token.Position{Row: 1, Column: 16349},
+						End:   token.Position{Row: 1, Column: 16349},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 16349,
 						Character:   'a',
@@ -1161,7 +1177,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.want, test.in)
+					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
 				})
 			}
 		})
@@ -1230,13 +1246,19 @@ spacious
 		})
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in        string
-				want      *token.Token
-				wantError Error
+				in             string
+				wantFirstToken *token.Token
+				wantToken      token.Token
+				wantErr        Error
 			}{
 				{
 					in: "/ is not a valid comment",
-					wantError: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "/",
+						Start: token.Position{Row: 1, Column: 1},
+						End:   token.Position{Row: 1, Column: 1},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 1,
 						Character:   '/',
@@ -1245,7 +1267,7 @@ spacious
 				},
 				{
 					in: "A/",
-					want: &token.Token{
+					wantFirstToken: &token.Token{
 						Type:    token.Identifier,
 						Literal: "A",
 						Start: token.Position{
@@ -1257,7 +1279,12 @@ spacious
 							Column: 1,
 						},
 					},
-					wantError: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "/",
+						Start: token.Position{Row: 1, Column: 2},
+						End:   token.Position{Row: 1, Column: 2},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 2,
 						Character:   '/',
@@ -1266,7 +1293,12 @@ spacious
 				},
 				{
 					in: "/# is not a valid comment",
-					wantError: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "/",
+						Start: token.Position{Row: 1, Column: 1},
+						End:   token.Position{Row: 1, Column: 1},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 1,
 						Character:   '/',
@@ -1275,7 +1307,12 @@ spacious
 				},
 				{
 					in: "/* is not a valid comment",
-					wantError: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\x00",
+						Start: token.Position{Row: 1, Column: 26},
+						End:   token.Position{Row: 1, Column: 26},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 26,
 						Character:   0,
@@ -1290,11 +1327,11 @@ spacious
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					if test.want != nil {
-						assertNextToken(t, scanner, *test.want)
+					if test.wantFirstToken != nil {
+						assertNextToken(t, scanner, *test.wantFirstToken)
 					}
 
-					assertError(t, scanner, test.wantError, test.in)
+					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
 				})
 			}
 		})
@@ -1334,7 +1371,7 @@ func assertEOF(t *testing.T, scanner *Scanner) {
 	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "Next()")
 }
 
-func assertErrorNew(t *testing.T, scanner *Scanner, wantToken token.Token, wantErr error, input string) {
+func assertError(t *testing.T, scanner *Scanner, wantToken token.Token, wantErr error, input string) {
 	t.Helper()
 
 	got, err := scanner.Next()
@@ -1348,7 +1385,7 @@ func assertErrorNew(t *testing.T, scanner *Scanner, wantToken token.Token, wantE
 			assert.EqualValuesf(t, gotErr, wantErr, "Next() for input %q", input)
 		}
 
-		// TODO is this so that subsequent calls will always get the same error?
+		// Verify that subsequent calls to Next() return the same error (scanner should be sticky on errors)
 		_, err = scanner.Next()
 		gotErr, ok = err.(Error)
 		assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
@@ -1356,28 +1393,6 @@ func assertErrorNew(t *testing.T, scanner *Scanner, wantToken token.Token, wantE
 			assert.EqualValuesf(t, gotErr, wantErr, "Next() for input %q", input)
 		}
 	} else {
-		// TODO assert we did not get an error
-	}
-}
-
-func assertError(t *testing.T, scanner *Scanner, want Error, input string) {
-	t.Helper()
-
-	tok, err := scanner.Next()
-
-	var wantTok token.Token
-	assert.EqualValuesf(t, tok, wantTok, "Next() for input %q", input)
-	got, ok := err.(Error)
-	assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
-	if ok {
-		assert.EqualValuesf(t, got, want, "Next() for input %q", input)
-	}
-
-	// TODO is this so that subsequent calls will always get the same error?
-	_, err = scanner.Next()
-	got, ok = err.(Error)
-	assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
-	if ok {
-		assert.EqualValuesf(t, got, want, "Next() for input %q", input)
+		assert.NoErrorf(t, err, "Next() for input %q should not return an error", input)
 	}
 }

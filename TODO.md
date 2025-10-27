@@ -1,4 +1,8 @@
 scanner error handling
+  * go through each invalid test case and think about when to return an actual token instead of
+  ILLEGAL and if i should continue consuming for example entire quoted string even if it contains
+  invalid characters
+
   * continue scanning on error
 
 find different cases where I need to decide if I emit the token.ILLEGAL with an error or a proper

@@ -1,10 +1,9 @@
-* emit token.INVALID from scanner
-  * token.INVALID should be emitted together with an error
-    should already fit in my existing scanner_test.go
-
-    when would I emit the invalid token
-
+scanner error handling
   * continue scanning on error
+
+find different cases where I need to decide if I emit the token.ILLEGAL with an error or a proper
+token with an error
+
 // Next advances the scanners position by one token and returns it. The scanner will stop trying to
 // tokenize more tokens on the first error it encounters. A token of typen [token.EOF] is returned
 // once the underlying reader returns [io.EOF] and the peek token has been consumed.
@@ -25,8 +24,10 @@ A/
 The scanner can now emit A and then errors on `/`. dotfmt should be able to format this and return
 the error(s) that `/` might miss another `/` or `*`.
 
-  * handle it in parser
-  * handle it in dotfmt
+  * handle ./research/error-handling/maxlen.md better
+
+* handle it in parser
+* handle it in dotfmt
 
 Error cases to think about and here is what Go does
 
@@ -45,6 +46,7 @@ I don't like this as this requires the parser to then flag this as invalid and i
 complicated to do that than needed. That should be a single token with an error. Its neither a valid
 number nor a valid identifier.
 
+* move scanner to iter.Seq2?
 * test parser error will keep code as is in dotfmt
 
 * read pros/cons of using reader vs taking in []byte into Parser/Formatter
@@ -348,6 +350,8 @@ Questions
 
 ## Ideas
 
+* how can I make the simplest autocomplete mainly for attributes
+  * is an LSP overkill? and if a simple LSP would do can it also provide hot reloading?
 * write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
 * how could I make something like :InspectTree in neovim for my parser?
 

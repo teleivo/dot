@@ -680,34 +680,50 @@ func TestScanner(t *testing.T) {
 
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in   string
-				want Error
+				in        string
+				wantToken token.Token
+				wantErr   Error
 			}{
 				{
 					in: "  \x7f", // \177
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\x7f",
+						Start: token.Position{Row: 1, Column: 3},
+						End:   token.Position{Row: 1, Column: 3},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 3,
-						Character:   '',
-						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
+						Character:   '\177',
+						Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
 					},
 				},
 				{
 					in: "  _zab\x7fx", // \177
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\x7f",
+						Start: token.Position{Row: 1, Column: 7},
+						End:   token.Position{Row: 1, Column: 7},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 7,
-						Character:   '',
-						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
+						Character:   '\177',
+						Reason:      "unquoted identifiers can only contain letters, digits, and underscores",
 					},
 				},
 				{
 					in: "A\000B", // null byte
-					want: Error{
+				wantToken: token.Token{
+					Type: token.ILLEGAL, Literal: "\x00",
+					Start: token.Position{Row: 1, Column: 2},
+					End:   token.Position{Row: 1, Column: 2},
+				},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 2,
 						Character:   '\000',
-						Reason:      `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`,
+						Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
 					},
 				},
 			}
@@ -718,7 +734,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.want, test.in)
+					assertErrorNew(t, scanner, test.wantToken, test.wantErr, test.in)
 				})
 			}
 		})
@@ -1280,6 +1296,32 @@ func assertEOF(t *testing.T, scanner *Scanner) {
 
 	assert.NoErrorf(t, err, "Next()")
 	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "Next()")
+}
+
+func assertErrorNew(t *testing.T, scanner *Scanner, wantToken token.Token, wantErr error, input string) {
+	t.Helper()
+
+	got, err := scanner.Next()
+
+	assert.EqualValuesf(t, got, wantToken, "Next() for input %q", input)
+
+	if wantErr != nil {
+		gotErr, ok := err.(Error)
+		assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
+		if ok {
+			assert.EqualValuesf(t, gotErr, wantErr, "Next() for input %q", input)
+		}
+
+		// TODO is this so that subsequent calls will always get the same error?
+		_, err = scanner.Next()
+		gotErr, ok = err.(Error)
+		assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
+		if ok {
+			assert.EqualValuesf(t, gotErr, wantErr, "Next() for input %q", input)
+		}
+	} else {
+		// TODO assert we did not get an error
+	}
 }
 
 func assertError(t *testing.T, scanner *Scanner, want Error, input string) {

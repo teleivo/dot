@@ -45,8 +45,10 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 }
 
 const (
-	maxUnquotedStringLen = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
-	unquotedStringErr    = `unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit`
+	maxUnquotedStringLen   = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
+	unquotedStringStartErr = "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores"
+	unquotedStringErr      = "unquoted identifiers can only contain letters, digits, and underscores"
+	unquotedStringNulErr   = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
 )
 
 // Next advances the scanners position by one token and returns it. The scanner will stop trying to
@@ -96,7 +98,9 @@ func (sc *Scanner) Next() (token.Token, error) {
 			}
 			return tok, err
 		} else {
-			err = sc.error(unquotedStringErr)
+			err = sc.error(unquotedStringStartErr)
+			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		}
 	}
 
@@ -313,6 +317,11 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 	for ; sc.hasNext() && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.readRune() {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if !isLegalInUnquotedString(sc.cur) {
+			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
+			if sc.cur == 0 {
+				return tok, sc.error(unquotedStringNulErr)
+			}
 			return tok, sc.error(unquotedStringErr)
 		}
 
@@ -459,5 +468,8 @@ type Error struct {
 
 // Error returns a formatted error message with line and character position.
 func (e Error) Error() string {
-	return fmt.Sprintf("%d:%d: %s", e.LineNr, e.CharacterNr, e.Reason)
+	if e.Character == 0 {
+		return fmt.Sprintf("%d:%d: %s", e.LineNr, e.CharacterNr, e.Reason)
+	}
+	return fmt.Sprintf("%d:%d: illegal character %#U: %s", e.LineNr, e.CharacterNr, e.Character, e.Reason)
 }

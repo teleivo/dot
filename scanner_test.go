@@ -714,11 +714,11 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "A\000B", // null byte
-				wantToken: token.Token{
-					Type: token.ILLEGAL, Literal: "\x00",
-					Start: token.Position{Row: 1, Column: 2},
-					End:   token.Position{Row: 1, Column: 2},
-				},
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\x00",
+						Start: token.Position{Row: 1, Column: 2},
+						End:   token.Position{Row: 1, Column: 2},
+					},
 					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 2,
@@ -851,12 +851,18 @@ func TestScanner(t *testing.T) {
 
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in   string
-				want Error
+				in        string
+				wantToken token.Token
+				wantErr   Error
 			}{
 				{
 					in: "-.1A",
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "A",
+						Start: token.Position{Row: 1, Column: 4},
+						End:   token.Position{Row: 1, Column: 4},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 4,
 						Character:   'A',
@@ -865,7 +871,12 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "1-20",
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "-",
+						Start: token.Position{Row: 1, Column: 2},
+						End:   token.Position{Row: 1, Column: 2},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 2,
 						Character:   '-',
@@ -874,7 +885,12 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: ".13.4",
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: ".",
+						Start: token.Position{Row: 1, Column: 4},
+						End:   token.Position{Row: 1, Column: 4},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 4,
 						Character:   '.',
@@ -883,7 +899,12 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "-.",
-					want: Error{ // TODO I point the error past the EOF
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\x00",
+						Start: token.Position{Row: 1, Column: 3},
+						End:   token.Position{Row: 1, Column: 3},
+					},
+					wantErr: Error{ // TODO I point the error past the EOF
 						LineNr:      1,
 						CharacterNr: 3,
 						// Character:   '.',
@@ -892,7 +913,12 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "\n. 0",
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: " ",
+						Start: token.Position{Row: 2, Column: 2},
+						End:   token.Position{Row: 2, Column: 2},
+					},
+					wantErr: Error{
 						LineNr:      2,
 						CharacterNr: 2,
 						Character:   ' ',
@@ -901,7 +927,12 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "100\u00A0200", // non-breaking space between 100 and 200
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: "\u00A0",
+						Start: token.Position{Row: 1, Column: 4},
+						End:   token.Position{Row: 1, Column: 4},
+					},
+					wantErr: Error{
 						LineNr:      1,
 						CharacterNr: 4,
 						Character:   160,
@@ -910,7 +941,12 @@ func TestScanner(t *testing.T) {
 				},
 				{
 					in: "\n\n\n\t  - F",
-					want: Error{
+					wantToken: token.Token{
+						Type: token.ILLEGAL, Literal: " ",
+						Start: token.Position{Row: 4, Column: 5},
+						End:   token.Position{Row: 4, Column: 5},
+					},
+					wantErr: Error{
 						LineNr:      4,
 						CharacterNr: 5,
 						Character:   ' ',
@@ -925,7 +961,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.want, test.in)
+					assertErrorNew(t, scanner, test.wantToken, test.wantErr, test.in)
 				})
 			}
 		})

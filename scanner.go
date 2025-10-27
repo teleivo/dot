@@ -381,14 +381,20 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	for pos, hasDot := 0, false; sc.hasNext() && err == nil && !sc.isNumeralSeparator(); err, pos = sc.readRune(), pos+1 {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if sc.cur == '-' && pos != 0 {
+			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			return tok, sc.error("a numeral can only be prefixed with a `-`")
 		}
 
 		if sc.cur == '.' && hasDot {
+			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			return tok, sc.error("a numeral can only have one `.` that is at least preceded or followed by digits")
 		}
 
 		if sc.cur != '-' && sc.cur != '.' && !unicode.IsDigit(sc.cur) { // otherwise only digits are allowed
+			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			return tok, sc.error("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
 		}
 
@@ -402,6 +408,8 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	}
 
 	if !hasDigit {
+		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("a numeral must have at least one digit")
 	}
 	if err != nil {

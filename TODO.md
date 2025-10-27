@@ -46,7 +46,6 @@ I don't like this as this requires the parser to then flag this as invalid and i
 complicated to do that than needed. That should be a single token with an error. Its neither a valid
 number nor a valid identifier.
 
-* move scanner to iter.Seq2?
 * test parser error will keep code as is in dotfmt
 
 * read pros/cons of using reader vs taking in []byte into Parser/Formatter

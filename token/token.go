@@ -91,6 +91,16 @@ func (tt TokenType) String() string {
 	return typeStrings[tt]
 }
 
+// IsTerminal reports whether the token type is a terminal symbol (punctuation or operator).
+// Terminal symbols include braces, brackets, colon, semicolon, equal, and comma.
+func (tt TokenType) IsTerminal() bool {
+	switch tt {
+	case LeftBrace, RightBrace, LeftBracket, RightBracket, Colon, Semicolon, Equal, Comma:
+		return true
+	}
+	return false
+}
+
 // Type returns the [TokenType] for the given string. Returns false if the string does not
 // correspond to a token type (operator, keyword, or punctuation).
 func Type(in string) (TokenType, bool) {

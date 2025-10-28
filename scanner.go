@@ -364,11 +364,7 @@ func isTerminal(r rune) bool {
 		return false
 	}
 
-	switch tok {
-	case token.LeftBrace, token.RightBrace, token.LeftBracket, token.RightBracket, token.Colon, token.Semicolon, token.Equal, token.Comma:
-		return true
-	}
-	return false
+	return tok.IsTerminal()
 }
 
 func isLegalInUnquotedString(r rune) bool {

@@ -352,7 +352,8 @@ func isUnquotedStringSeparator(r rune) bool {
 	// - potential edge operator
 	// / potential single- or multi-line comment
 	// # potential line comment
-	return isTerminal(r) || isWhitespace(r) || r == '-' || r == '/' || r == '#'
+	// " potential quoted identifier
+	return isTerminal(r) || isWhitespace(r) || r == '-' || r == '/' || r == '#' || r == '"'
 }
 
 // isTerminal determines if the rune is considered a terminal token in the dot language. This does

@@ -209,6 +209,59 @@ func TestScanner(t *testing.T) {
 				{Type: token.EOF},
 			},
 		},
+		"Identifiers": {
+			in: `
+			  A;B;C"D""E"
+			}`,
+			want: []token.Token{
+				{
+					Type:    token.Identifier,
+					Literal: "A",
+					Start:   token.Position{Row: 2, Column: 6},
+					End:     token.Position{Row: 2, Column: 6},
+				},
+				{
+					Type: token.Semicolon, Literal: ";",
+					Start: token.Position{Row: 2, Column: 7},
+					End:   token.Position{Row: 2, Column: 7},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "B",
+					Start:   token.Position{Row: 2, Column: 8},
+					End:     token.Position{Row: 2, Column: 8},
+				},
+				{
+					Type: token.Semicolon, Literal: ";",
+					Start: token.Position{Row: 2, Column: 9},
+					End:   token.Position{Row: 2, Column: 9},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "C",
+					Start:   token.Position{Row: 2, Column: 10},
+					End:     token.Position{Row: 2, Column: 10},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: `"D"`,
+					Start:   token.Position{Row: 2, Column: 11},
+					End:     token.Position{Row: 2, Column: 13},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: `"E"`,
+					Start:   token.Position{Row: 2, Column: 14},
+					End:     token.Position{Row: 2, Column: 16},
+				},
+				{
+					Type: token.RightBrace, Literal: "}",
+					Start: token.Position{Row: 3, Column: 4},
+					End:   token.Position{Row: 3, Column: 4},
+				},
+				{Type: token.EOF},
+			},
+		},
 		"AttributeList": {
 			in: `	graph [
 				labelloc = t

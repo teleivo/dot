@@ -4,6 +4,7 @@ scanner error handling
   invalid characters
 
   * continue scanning on error
+  add new subtest to show this behavior
 
 find different cases where I need to decide if I emit the token.ILLEGAL with an error or a proper
 token with an error

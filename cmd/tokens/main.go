@@ -1,12 +1,14 @@
-// Stream dot tokens from stdin to stdout. This is mainly meant as a demonstration and debugging aid
-// for the [dot.Scanner].
+// Stream DOT tokens from stdin to stdout.
+//
+// This is a development and debugging tool for the [dot.Scanner]. It is not intended for
+// distribution or production use.
 package main
 
 import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
+	"text/tabwriter"
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/token"
@@ -25,8 +27,13 @@ func run(r io.Reader, w io.Writer) error {
 		return fmt.Errorf("error scanning: %v", err)
 	}
 
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	defer tw.Flush()
+
+	fmt.Fprintf(tw, "POSITION\tTYPE\tVALUE\n")
+
 	for tok, err := sc.Next(); tok.Type != token.EOF; tok, err = sc.Next() {
-		fmt.Fprintf(w, "%s, err: %v\n", format(tok), err)
+		fmt.Fprintf(tw, "%s\t%s\t%s\n", position(tok), tok.Type.String(), value(tok))
 		if err != nil { // adapt once I collect errors
 			return err
 		}
@@ -35,19 +42,16 @@ func run(r io.Reader, w io.Writer) error {
 	return nil
 }
 
-func format(t token.Token) string {
-	var sb strings.Builder
-
-	sb.WriteString(t.Start.String())
-	sb.WriteRune(' ')
-	sb.WriteString(t.End.String())
-	sb.WriteRune(' ')
-
-	if t.Type == token.Identifier {
-		sb.WriteString(t.Literal)
-	} else {
-		sb.WriteString(t.Type.String())
+func position(t token.Token) string {
+	if t.Start == t.End {
+		return t.Start.String()
 	}
+	return t.Start.String() + "-" + t.End.String()
+}
 
-	return sb.String()
+func value(t token.Token) string {
+	if t.Type == token.Identifier {
+		return t.Literal
+	}
+	return t.Type.String()
 }

@@ -30,13 +30,10 @@ func run(r io.Reader, w io.Writer) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	defer tw.Flush()
 
-	fmt.Fprintf(tw, "POSITION\tTYPE\tVALUE\n")
+	fmt.Fprintf(tw, "POSITION\tTYPE\tLITERAL\tERROR\n")
 
 	for tok, err := sc.Next(); tok.Type != token.EOF; tok, err = sc.Next() {
-		fmt.Fprintf(tw, "%s\t%s\t%s\n", position(tok), tok.Type.String(), value(tok))
-		if err != nil { // adapt once I collect errors
-			return err
-		}
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%v\n", position(tok), tok.Type.String(), literal(tok), err)
 	}
 
 	return nil
@@ -49,8 +46,8 @@ func position(t token.Token) string {
 	return t.Start.String() + "-" + t.End.String()
 }
 
-func value(t token.Token) string {
-	if t.Type == token.Identifier {
+func literal(t token.Token) string {
+	if t.Type == token.Identifier || t.Type == token.ILLEGAL {
 		return t.Literal
 	}
 	return t.Type.String()

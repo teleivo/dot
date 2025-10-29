@@ -1,10 +1,132 @@
+## Scanner
+
+### BUG: Identifier Lost When Illegal Character Encountered Mid-Scan
+
+**Status:** Discovered 2025-10-30 - Needs investigation and decision
+
+When `tokenizeUnquotedString()` encounters an illegal character in the middle of collecting an
+identifier, it returns an ILLEGAL token but **discards the characters collected so far**.
+
+#### Examples
+
+Input: `"A\x00\x00B"`
+
+* **Current behavior:**
+  1. ILLEGAL (null byte at 1:2) - 'A' is lost!
+  2. ILLEGAL (null byte at 1:3)
+  3. IDENTIFIER "B" (at 1:4)
+
+* **Expected behavior:**
+  1. IDENTIFIER "A" (at 1:1)
+  2. ILLEGAL (null byte at 1:2)
+  3. ILLEGAL (null byte at 1:3)
+  4. IDENTIFIER "B" (at 1:4)
+
+Input: `"_zab\x7fx"`
+
+* **Current behavior:**
+  1. ILLEGAL (\x7f at 1:5) - "_zab" is lost!
+  2. IDENTIFIER "x" (at 1:6)
+
+* **Expected behavior:**
+  1. IDENTIFIER "_zab" (at 1:1-1:4)
+  2. ILLEGAL (\x7f at 1:5)
+  3. IDENTIFIER "x" (at 1:6)
+
+#### Verification
+
+```bash
+echo -n "A\x00\x00B" | go run ./cmd/tokens/main.go
+echo -n "_zab\x7fx" | go run ./cmd/tokens/main.go
+```
+
+#### Root Cause
+
+In `scanner.go:344-364`, when an illegal character is detected (line 346):
+
+* The function creates an ILLEGAL token (lines 347-360)
+* Returns immediately
+* The `id` slice contains collected characters but they're never emitted
+
+#### Potential Fix
+
+When illegal character is encountered:
+
+1. If `len(id) > 0`: break from loop and emit the identifier token
+2. The illegal character will be handled on the next `Next()` call
+3. If `len(id) == 0`: emit ILLEGAL token immediately (current behavior for illegal at start)
+
+#### Test Impact
+
+The test added at `scanner_test.go:795` (ContinuesScanningAfterError) currently expects the
+**buggy behavior** and needs to be updated once this is fixed.
+
+### Comparison with official dot tool behavior
+
+#### Numeral followed by letters (e.g., `1ABC`, `123abc`)
+
+* **dot behavior**: Issues warning "syntax ambiguity - badly delimited number" and splits
+  into two tokens (e.g., `1ABC` becomes `1` and `ABC`)
+* **My scanner**: Returns ILLEGAL token with error "a numeral can optionally lead with a `-`,
+  has to have at least one digit before or after a `.` which must only be followed by digits"
+* **Decision needed**: Should I match dot's behavior and split, or keep the error? The spec
+  says numerals match `[-]?(.[0-9]+ | [0-9]+(.[0-9]*)?)` which doesn't allow letters.
+
+#### Multiple dots in numerals (e.g., `1.2.3`)
+
+* **dot behavior**: Warning "syntax ambiguity - badly delimited number '1.2.'" and splits into
+  `1.2` and `.3`
+* **My scanner**: Error "a numeral can only have one `.` that is at least preceded or followed
+  by digits"
+* **Status**: My scanner correctly rejects this per spec
+
+#### Hyphen/minus in middle of identifiers (e.g., `A-B`, `1-2`)
+
+* **dot behavior**: Syntax error near `-` (treats `-` as potential edge operator)
+* **My scanner**: For `A-B`, stops at `A` and tries to parse `-B` as numeral, fails. For
+  `1-2`, error "a numeral can only be prefixed with a `-`"
+* **Status**: Both reject, but for different reasons. My scanner needs better error messages
+  here.
+
+#### String concatenation with `+` (e.g., `"A"+"B"`)
+
+* **dot behavior**: Supports this, concatenates to `AB`
+* **My scanner**: Not implemented (spec says "double-quoted strings can be concatenated using
+  a '+' operator")
+* **Status**: Missing feature (see TODO.md line 325)
+
+#### HTML identifiers (e.g., `<html>`)
+
+* **dot behavior**: Accepts as valid identifier
+* **My scanner**: Not implemented (known limitation)
+* **Status**: Documented limitation
+
+#### Null bytes
+
+* **dot behavior**: Syntax error in both unquoted and quoted strings
+* **My scanner**: Error "illegal character NUL" in unquoted, "missing closing quote" in quoted
+* **Status**: Both reject, different error messages
+
+### Missing test cases for quoted/unquoted identifiers
+
+* `"A"B` - quoted followed by unquoted (reverse of `C"D"`)
+* `""` - empty quoted string (valid identifier in DOT)
+* `A"B"C` - unquoted-quoted-unquoted sandwich pattern
+* `"A""B""C"` - multiple consecutive quoted identifiers (currently only tests 2 adjacent)
+* `"A"_B` or `A_1"B"` - underscore/digit transitions with quotes
+
+Currently, the "Identifiers" test case at scanner_test.go:212 has `C"D""E"` which covers:
+* Unquoted followed by quoted (`C"D"`)
+* Adjacent quoted identifiers (`"D""E"`)
+
+But missing the reverse direction and longer chains.
+
 scanner error handling
   * go through each invalid test case and think about when to return an actual token instead of
   ILLEGAL and if i should continue consuming for example entire quoted string even if it contains
   invalid characters
 
-  * continue scanning on error
-  add new subtest to show this behavior
+  * continue scanning on error: add new subtest to show this behavior
 
 find different cases where I need to decide if I emit the token.ILLEGAL with an error or a proper
 token with an error

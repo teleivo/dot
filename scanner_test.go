@@ -733,50 +733,108 @@ func TestScanner(t *testing.T) {
 
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in        string
-				wantToken token.Token
-				wantErr   Error
+				in   string
+				want []struct {
+					token token.Token
+					err   error
+				}
 			}{
 				{
 					in: "  \x7f", // \177
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "\x7f",
-						Start: token.Position{Row: 1, Column: 3},
-						End:   token.Position{Row: 1, Column: 3},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 3,
-						Character:   '\177',
-						Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\x7f",
+								Start:   token.Position{Row: 1, Column: 3},
+								End:     token.Position{Row: 1, Column: 3},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 3,
+								Character:   '\177',
+								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+							},
+						},
 					},
 				},
 				{
 					in: "  _zab\x7fx", // \177
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "\x7f",
-						Start: token.Position{Row: 1, Column: 7},
-						End:   token.Position{Row: 1, Column: 7},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 7,
-						Character:   '\177',
-						Reason:      "unquoted identifiers can only contain letters, digits, and underscores",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\x7f",
+								Start:   token.Position{Row: 1, Column: 7},
+								End:     token.Position{Row: 1, Column: 7},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 7,
+								Character:   '\177',
+								Reason:      "unquoted identifiers can only contain letters, digits, and underscores",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "x",
+								Start:   token.Position{Row: 1, Column: 8},
+								End:     token.Position{Row: 1, Column: 8},
+							},
+							nil,
+						},
 					},
 				},
 				{
-					in: "A\000B", // null byte
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "\x00",
-						Start: token.Position{Row: 1, Column: 2},
-						End:   token.Position{Row: 1, Column: 2},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 2,
-						Character:   '\000',
-						Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
+					in: "A\000\000B", // null bytes
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\x00",
+								Start:   token.Position{Row: 1, Column: 2},
+								End:     token.Position{Row: 1, Column: 2},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 2,
+								Character:   '\000',
+								Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\x00",
+								Start:   token.Position{Row: 1, Column: 3},
+								End:     token.Position{Row: 1, Column: 3},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 3,
+								Character:   '\000',
+								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "B",
+								Start:   token.Position{Row: 1, Column: 4},
+								End:     token.Position{Row: 1, Column: 4},
+							},
+							nil,
+						},
 					},
 				},
 			}
@@ -784,10 +842,9 @@ func TestScanner(t *testing.T) {
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					scanner, err := NewScanner(strings.NewReader(test.in))
-
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
+					assertNext(t, scanner, test.want, test.in)
 				})
 			}
 		})
@@ -904,106 +961,209 @@ func TestScanner(t *testing.T) {
 
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in        string
-				wantToken token.Token
-				wantErr   Error
+				in   string
+				want []struct {
+					token token.Token
+					err   error
+				}
 			}{
 				{
 					in: "-.1A",
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "A",
-						Start: token.Position{Row: 1, Column: 4},
-						End:   token.Position{Row: 1, Column: 4},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 4,
-						Character:   'A',
-						Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "A",
+								Start:   token.Position{Row: 1, Column: 4},
+								End:     token.Position{Row: 1, Column: 4},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 4,
+								Character:   'A',
+								Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
+							},
+						},
 					},
 				},
 				{
 					in: "1-20",
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "-",
-						Start: token.Position{Row: 1, Column: 2},
-						End:   token.Position{Row: 1, Column: 2},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 2,
-						Character:   '-',
-						Reason:      "a numeral can only be prefixed with a `-`",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "-",
+								Start:   token.Position{Row: 1, Column: 2},
+								End:     token.Position{Row: 1, Column: 2},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 2,
+								Character:   '-',
+								Reason:      "a numeral can only be prefixed with a `-`",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "20",
+								Start:   token.Position{Row: 1, Column: 3},
+								End:     token.Position{Row: 1, Column: 4},
+							},
+							nil,
+						},
 					},
 				},
 				{
 					in: ".13.4",
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: ".",
-						Start: token.Position{Row: 1, Column: 4},
-						End:   token.Position{Row: 1, Column: 4},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 4,
-						Character:   '.',
-						Reason:      "a numeral can only have one `.` that is at least preceded or followed by digits",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: ".",
+								Start:   token.Position{Row: 1, Column: 4},
+								End:     token.Position{Row: 1, Column: 4},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 4,
+								Character:   '.',
+								Reason:      "a numeral can only have one `.` that is at least preceded or followed by digits",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "4",
+								Start:   token.Position{Row: 1, Column: 5},
+								End:     token.Position{Row: 1, Column: 5},
+							},
+							nil,
+						},
 					},
 				},
 				{
 					in: "-.",
-					wantToken: token.Token{ // TODO is this token correct?
-						Type: token.ILLEGAL, Literal: "\x00",
-						Start: token.Position{Row: 1, Column: 3},
-						End:   token.Position{Row: 1, Column: 3},
-					},
-					wantErr: Error{ // TODO I point the error past the EOF
-						LineNr:      1,
-						CharacterNr: 3,
-						// Character:   '.',
-						Reason: "a numeral must have at least one digit",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{ // TODO is this token correct?
+								Type:    token.ILLEGAL,
+								Literal: "\x00",
+								Start:   token.Position{Row: 1, Column: 3},
+								End:     token.Position{Row: 1, Column: 3},
+							},
+							Error{ // TODO I point the error past the EOF
+								LineNr:      1,
+								CharacterNr: 3,
+								// Character:   '.',
+								Reason: "a numeral must have at least one digit",
+							},
+						},
 					},
 				},
 				{
 					in: "\n. 0",
-					wantToken: token.Token{ // TODO whitespace is usually a token separator
-						Type: token.ILLEGAL, Literal: " ",
-						Start: token.Position{Row: 2, Column: 2},
-						End:   token.Position{Row: 2, Column: 2},
-					},
-					wantErr: Error{
-						LineNr:      2,
-						CharacterNr: 2,
-						Character:   ' ',
-						Reason:      "a numeral must have at least one digit",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{ // TODO whitespace is usually a token separator
+								Type:    token.ILLEGAL,
+								Literal: " ",
+								Start:   token.Position{Row: 2, Column: 2},
+								End:     token.Position{Row: 2, Column: 2},
+							},
+							Error{
+								LineNr:      2,
+								CharacterNr: 2,
+								Character:   ' ',
+								Reason:      "a numeral must have at least one digit",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "0",
+								Start:   token.Position{Row: 2, Column: 3},
+								End:     token.Position{Row: 2, Column: 3},
+							},
+							nil,
+						},
 					},
 				},
 				{
 					in: "100\u00A0200", // non-breaking space between 100 and 200
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "\u00A0",
-						Start: token.Position{Row: 1, Column: 4},
-						End:   token.Position{Row: 1, Column: 4},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 4,
-						Character:   160,
-						Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\u00A0",
+								Start:   token.Position{Row: 1, Column: 4},
+								End:     token.Position{Row: 1, Column: 4},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 4,
+								Character:   160,
+								Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "200",
+								Start:   token.Position{Row: 1, Column: 5},
+								End:     token.Position{Row: 1, Column: 7},
+							},
+							nil,
+						},
 					},
 				},
 				{
 					in: "\n\n\n\t  - F",
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: " ",
-						Start: token.Position{Row: 4, Column: 5},
-						End:   token.Position{Row: 4, Column: 5},
-					},
-					wantErr: Error{
-						LineNr:      4,
-						CharacterNr: 5,
-						Character:   ' ',
-						Reason:      "a numeral must have at least one digit",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: " ",
+								Start:   token.Position{Row: 4, Column: 5},
+								End:     token.Position{Row: 4, Column: 5},
+							},
+							Error{
+								LineNr:      4,
+								CharacterNr: 5,
+								Character:   ' ',
+								Reason:      "a numeral must have at least one digit",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "F",
+								Start:   token.Position{Row: 4, Column: 6},
+								End:     token.Position{Row: 4, Column: 6},
+							},
+							nil,
+						},
 					},
 				},
 			}
@@ -1011,10 +1171,9 @@ func TestScanner(t *testing.T) {
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					scanner, err := NewScanner(strings.NewReader(test.in))
-
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
+					assertNext(t, scanner, test.want, test.in)
 				})
 			}
 		})
@@ -1175,51 +1334,77 @@ func TestScanner(t *testing.T) {
 
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in        string
-				wantToken token.Token
-				wantErr   Error
+				in   string
+				want []struct {
+					token token.Token
+					err   error
+				}
 			}{
 				{
 					in: `"asdf`,
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "\x00",
-						Start: token.Position{Row: 1, Column: 6},
-						End:   token.Position{Row: 1, Column: 6},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 6,
-						Character:   0,
-						Reason:      "missing closing quote",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\x00",
+								Start:   token.Position{Row: 1, Column: 6},
+								End:     token.Position{Row: 1, Column: 6},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 6,
+								Character:   0,
+								Reason:      "missing closing quote",
+							},
+						},
 					},
 				},
 				{
 					in: `"asdf
 		}`,
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "\x00",
-						Start: token.Position{Row: 2, Column: 4},
-						End:   token.Position{Row: 2, Column: 4},
-					},
-					wantErr: Error{
-						LineNr:      2,
-						CharacterNr: 4,
-						Character:   0,
-						Reason:      "missing closing quote",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\x00",
+								Start:   token.Position{Row: 2, Column: 4},
+								End:     token.Position{Row: 2, Column: 4},
+							},
+							Error{
+								LineNr:      2,
+								CharacterNr: 4,
+								Character:   0,
+								Reason:      "missing closing quote",
+							},
+						},
 					},
 				},
 				{
 					in: `"` + strings.Repeat("a", 16348),
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "a",
-						Start: token.Position{Row: 1, Column: 16349},
-						End:   token.Position{Row: 1, Column: 16349},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 16349,
-						Character:   'a',
-						Reason:      "potentially missing closing quote, found none after max 16348 characters",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "a",
+								Start:   token.Position{Row: 1, Column: 16349},
+								End:     token.Position{Row: 1, Column: 16349},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 16349,
+								Character:   'a',
+								Reason:      "potentially missing closing quote, found none after max 16348 characters",
+							},
+						},
 					},
 				},
 			}
@@ -1227,10 +1412,9 @@ func TestScanner(t *testing.T) {
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					scanner, err := NewScanner(strings.NewReader(test.in))
-
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
+					assertNext(t, scanner, test.want, test.in)
 				})
 			}
 		})
@@ -1245,7 +1429,7 @@ func TestScanner(t *testing.T) {
 			}{
 				{
 					in: `
-						
+
 							#  C preprocessor style comment "noidentifier" /* ignore this */ edge  `,
 					want: token.Token{
 						Type:    token.Comment,
@@ -1255,14 +1439,14 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: ` 
-							//	C++ style line comment "noidentifier" /* ignore this */ edge 
+					in: `
+							//	C++ style line comment "noidentifier" /* ignore this */ edge
 			`,
 					want: token.Token{
 						Type:    token.Comment,
-						Literal: `//	C++ style line comment "noidentifier" /* ignore this */ edge `,
+						Literal: `//	C++ style line comment "noidentifier" /* ignore this */ edge`,
 						Start:   token.Position{Row: 2, Column: 8},
-						End:     token.Position{Row: 2, Column: 71},
+						End:     token.Position{Row: 2, Column: 70},
 					},
 				},
 				{
@@ -1299,77 +1483,161 @@ spacious
 		})
 		t.Run("Invalid", func(t *testing.T) {
 			tests := []struct {
-				in             string
-				wantFirstToken *token.Token
-				wantToken      token.Token
-				wantErr        Error
+				in   string
+				want []struct {
+					token token.Token
+					err   error
+				}
 			}{
 				{
 					in: "/ is not a valid comment",
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "/",
-						Start: token.Position{Row: 1, Column: 1},
-						End:   token.Position{Row: 1, Column: 1},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 1,
-						Character:   '/',
-						Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "/",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 1},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 1,
+								Character:   '/',
+								Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "is",
+								Start:   token.Position{Row: 1, Column: 3},
+								End:     token.Position{Row: 1, Column: 4},
+							},
+							nil,
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "not",
+								Start:   token.Position{Row: 1, Column: 6},
+								End:     token.Position{Row: 1, Column: 8},
+							},
+							nil,
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "a",
+								Start:   token.Position{Row: 1, Column: 10},
+								End:     token.Position{Row: 1, Column: 10},
+							},
+							nil,
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "valid",
+								Start:   token.Position{Row: 1, Column: 12},
+								End:     token.Position{Row: 1, Column: 16},
+							},
+							nil,
+						},
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "comment",
+								Start:   token.Position{Row: 1, Column: 18},
+								End:     token.Position{Row: 1, Column: 24},
+							},
+							nil,
+						},
 					},
 				},
 				{
 					in: "A/",
-					wantFirstToken: &token.Token{
-						Type:    token.Identifier,
-						Literal: "A",
-						Start: token.Position{
-							Row:    1,
-							Column: 1,
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "A",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 1},
+							},
+							nil,
 						},
-						End: token.Position{
-							Row:    1,
-							Column: 1,
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "/",
+								Start:   token.Position{Row: 1, Column: 2},
+								End:     token.Position{Row: 1, Column: 2},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 2,
+								Character:   '/',
+								Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+							},
 						},
-					},
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "/",
-						Start: token.Position{Row: 1, Column: 2},
-						End:   token.Position{Row: 1, Column: 2},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 2,
-						Character:   '/',
-						Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
 					},
 				},
 				{
 					in: "/# is not a valid comment",
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "/",
-						Start: token.Position{Row: 1, Column: 1},
-						End:   token.Position{Row: 1, Column: 1},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 1,
-						Character:   '/',
-						Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "/",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 1},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 1,
+								Character:   '/',
+								Reason:      "missing '/' for single-line or a '*' for a multi-line comment",
+							},
+						},
+						{
+							token.Token{
+								Type:    token.Comment,
+								Literal: "# is not a valid comment",
+								Start:   token.Position{Row: 1, Column: 2},
+								End:     token.Position{Row: 1, Column: 25},
+							},
+							nil,
+						},
 					},
 				},
 				{
 					in: "/* is not a valid comment",
-					wantToken: token.Token{
-						Type: token.ILLEGAL, Literal: "\x00",
-						Start: token.Position{Row: 1, Column: 26},
-						End:   token.Position{Row: 1, Column: 26},
-					},
-					wantErr: Error{
-						LineNr:      1,
-						CharacterNr: 26,
-						Character:   0,
-						Reason:      "missing closing marker '*/' for multi-line comment",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ILLEGAL,
+								Literal: "\x00",
+								Start:   token.Position{Row: 1, Column: 26},
+								End:     token.Position{Row: 1, Column: 26},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 26,
+								Character:   0,
+								Reason:      "missing closing marker '*/' for multi-line comment",
+							},
+						},
 					},
 				},
 			}
@@ -1377,14 +1645,9 @@ spacious
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					scanner, err := NewScanner(strings.NewReader(test.in))
-
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					if test.wantFirstToken != nil {
-						assertNextToken(t, scanner, *test.wantFirstToken)
-					}
-
-					assertError(t, scanner, test.wantToken, test.wantErr, test.in)
+					assertNext(t, scanner, test.want, test.in)
 				})
 			}
 		})
@@ -1398,12 +1661,6 @@ func assertTokens(t *testing.T, scanner *Scanner, want []token.Token) {
 		assertNextTokenf(t, scanner, wantToken, "Next() at i=%d", i)
 	}
 	assertEOF(t, scanner)
-}
-
-func assertNextToken(t *testing.T, scanner *Scanner, wantToken token.Token) {
-	t.Helper()
-
-	assertNextTokenf(t, scanner, wantToken, "Next()")
 }
 
 func assertNextTokenf(t *testing.T, scanner *Scanner, wantToken token.Token, format string, args ...any) {
@@ -1424,28 +1681,31 @@ func assertEOF(t *testing.T, scanner *Scanner) {
 	assert.EqualValuesf(t, tok, token.Token{Type: token.EOF}, "Next()")
 }
 
-func assertError(t *testing.T, scanner *Scanner, wantToken token.Token, wantErr error, input string) {
+func assertNext(t *testing.T, scanner *Scanner, want []struct {
+	token token.Token
+	err   error
+}, input string,
+) {
 	t.Helper()
 
-	got, err := scanner.Next()
+	for i, wantPair := range want {
+		gotToken, gotErr := scanner.Next()
 
-	assert.EqualValuesf(t, got, wantToken, "Next() for input %q", input)
+		assert.EqualValuesf(t, wantPair.token, gotToken, "token at index %d for input %q", i, input)
 
-	if wantErr != nil {
-		gotErr, ok := err.(Error)
-		assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
-		if ok {
-			assert.EqualValuesf(t, gotErr, wantErr, "Next() for input %q", input)
+		if wantPair.err != nil {
+			gotScanErr, ok := gotErr.(Error)
+			assert.Truef(t, ok, "Next() at index %d for input %q wanted scanner.Error, instead got %v", i, input, gotErr)
+			if ok {
+				assert.EqualValuesf(t, wantPair.err, gotScanErr, "error at index %d for input %q", i, input)
+			}
+		} else {
+			assert.NoErrorf(t, gotErr, "Next() at index %d for input %q should not return an error", i, input)
 		}
-
-		// Verify that subsequent calls to Next() return the same error (scanner should be sticky on errors)
-		_, err = scanner.Next()
-		gotErr, ok = err.(Error)
-		assert.Truef(t, ok, "Next() for input %q wanted scanner.Error, instead got %v", input, err)
-		if ok {
-			assert.EqualValuesf(t, gotErr, wantErr, "Next() for input %q", input)
-		}
-	} else {
-		assert.NoErrorf(t, err, "Next() for input %q should not return an error", input)
 	}
+
+	// Verify EOF after all expected tokens
+	eofToken, eofErr := scanner.Next()
+	assert.NoErrorf(t, eofErr, "EOF for input %q", input)
+	assert.EqualValuesf(t, token.Token{Type: token.EOF}, eofToken, "EOF for input %q", input)
 }

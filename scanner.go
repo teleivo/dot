@@ -20,7 +20,7 @@ type Scanner struct {
 	cur       rune
 	curRow    int
 	curColumn int
-	next      rune
+	peek      rune
 	eof       bool
 }
 
@@ -30,16 +30,16 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 	scanner := Scanner{
 		r:      bufio.NewReader(r),
 		cur:    eof,
-		next:   eof,
+		peek:   eof,
 		curRow: 1,
 	}
 
 	// initialize current and next runes
-	err := scanner.readRune()
+	err := scanner.next()
 	if err != nil {
 		return nil, err
 	}
-	err = scanner.readRune()
+	err = scanner.next()
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (sc *Scanner) Next() (token.Token, error) {
 	case '#', '/':
 		tok, err = sc.tokenizeComment()
 	default:
-		if isEdgeOperator(sc.cur, sc.next) {
+		if isEdgeOperator(sc.cur, sc.peek) {
 			tok, err = sc.tokenizeEdgeOperator()
 		} else if isStartofIdentifier(sc.cur) {
 			tok, err = sc.tokenizeIdentifier()
@@ -97,7 +97,7 @@ func (sc *Scanner) Next() (token.Token, error) {
 			err = sc.error(unquotedStringStartErr)
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
-			if advanceErr := sc.readRune(); advanceErr != nil {
+			if advanceErr := sc.next(); advanceErr != nil {
 				return tok, advanceErr
 			}
 		}
@@ -106,12 +106,12 @@ func (sc *Scanner) Next() (token.Token, error) {
 	return tok, err
 }
 
-// readRune reads one rune and advances the scanner's position markers depending on the read rune.
+// next reads one rune and advances the scanner's position markers depending on the read rune.
 // It returns an error only for non-EOF I/O errors (such as disk read failures or network errors).
 // Any non-EOF error is considered terminal and will cause scanning to stop. [io.EOF] is not considered
 // an error and causes the scanner to enter EOF state (sc.cur = eof). After any error, subsequent
-// calls to readRune are no-ops.
-func (sc *Scanner) readRune() error {
+// calls to next are no-ops.
+func (sc *Scanner) next() error {
 	if sc.eof {
 		// Already at EOF, advance position
 		if sc.cur == '\n' {
@@ -134,8 +134,8 @@ func (sc *Scanner) readRune() error {
 		} else {
 			sc.curColumn++
 		}
-		sc.cur = sc.next
-		sc.next = eof
+		sc.cur = sc.peek
+		sc.peek = eof
 		if errors.Is(err, io.EOF) {
 			return nil // EOF is not an error
 		}
@@ -148,14 +148,14 @@ func (sc *Scanner) readRune() error {
 	} else {
 		sc.curColumn++
 	}
-	sc.cur = sc.next
-	sc.next = r
+	sc.cur = sc.peek
+	sc.peek = r
 	return nil
 }
 
 func (sc *Scanner) skipWhitespace() {
 	for sc.cur >= 0 && isWhitespace(sc.cur) {
-		err := sc.readRune()
+		err := sc.next()
 		if err != nil {
 			return
 		}
@@ -175,7 +175,7 @@ func isWhitespace(r rune) bool {
 func (sc *Scanner) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
 	pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	tok := token.Token{Type: tokenType, Literal: string(sc.cur), Start: pos, End: pos}
-	err := sc.readRune()
+	err := sc.next()
 	return tok, err
 }
 
@@ -185,11 +185,11 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	var comment []rune
 	var hasClosingMarker bool
 
-	if sc.cur == '/' && (sc.next < 0 || (sc.next != '/' && sc.next != '*')) {
+	if sc.cur == '/' && (sc.peek < 0 || (sc.peek != '/' && sc.peek != '*')) {
 		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err := sc.error("missing '/' for single-line or a '*' for a multi-line comment")
-		if advanceErr := sc.readRune(); advanceErr != nil {
+		if advanceErr := sc.next(); advanceErr != nil {
 			return tok, advanceErr
 		}
 		return tok, err
@@ -197,20 +197,20 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
-	isMultiLine := sc.cur == '/' && sc.next == '*'
-	for ; sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.readRune() {
+	isMultiLine := sc.cur == '/' && sc.peek == '*'
+	for ; sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.next() {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		comment = append(comment, sc.cur)
 
-		if isMultiLine && sc.cur == '*' && sc.next == '/' {
+		if isMultiLine && sc.cur == '*' && sc.peek == '/' {
 			hasClosingMarker = true
-			comment = append(comment, sc.next)
-			err = sc.readRune() // consume last rune '/' of closing marker
+			comment = append(comment, sc.peek)
+			err = sc.next() // consume last rune '/' of closing marker
 			if err != nil {
 				break
 			}
 			end = token.Position{Row: sc.curRow, Column: sc.curColumn}
-			err = sc.readRune() // advance past the closing '/' to next char
+			err = sc.next() // advance past the closing '/' to next char
 			break
 		}
 	}
@@ -219,7 +219,7 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("missing closing marker '*/' for multi-line comment")
-		if advanceErr := sc.readRune(); advanceErr != nil {
+		if advanceErr := sc.next(); advanceErr != nil {
 			return tok, advanceErr
 		}
 	}
@@ -242,7 +242,7 @@ func isEdgeOperator(first, second rune) bool {
 func (sc *Scanner) tokenizeEdgeOperator() (token.Token, error) {
 	var tok token.Token
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
-	err := sc.readRune()
+	err := sc.next()
 	if err != nil {
 		return tok, err
 	}
@@ -263,7 +263,7 @@ func (sc *Scanner) tokenizeEdgeOperator() (token.Token, error) {
 			End:     end,
 		}
 	}
-	err = sc.readRune()
+	err = sc.next()
 	return tok, err
 }
 
@@ -332,7 +332,7 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
 
-	for ; sc.cur >= 0 && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.readRune() {
+	for ; sc.cur >= 0 && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.next() {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if !isLegalInUnquotedString(sc.cur) {
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
@@ -343,7 +343,7 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 			} else {
 				err = sc.error(unquotedStringErr)
 			}
-			if advanceErr := sc.readRune(); advanceErr != nil {
+			if advanceErr := sc.next(); advanceErr != nil {
 				return tok, advanceErr
 			}
 			return tok, err
@@ -399,13 +399,13 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
 
-	for pos, hasDot := 0, false; sc.cur >= 0 && err == nil && !sc.isNumeralSeparator(); err, pos = sc.readRune(), pos+1 {
+	for pos, hasDot := 0, false; sc.cur >= 0 && err == nil && !sc.isNumeralSeparator(); err, pos = sc.next(), pos+1 {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if sc.cur == '-' && pos != 0 {
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			err := sc.error("a numeral can only be prefixed with a `-`")
-			if advanceErr := sc.readRune(); advanceErr != nil {
+			if advanceErr := sc.next(); advanceErr != nil {
 				return tok, advanceErr
 			}
 			return tok, err
@@ -415,7 +415,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			err := sc.error("a numeral can only have one `.` that is at least preceded or followed by digits")
-			if advanceErr := sc.readRune(); advanceErr != nil {
+			if advanceErr := sc.next(); advanceErr != nil {
 				return tok, advanceErr
 			}
 			return tok, err
@@ -425,7 +425,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			err := sc.error("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
-			if advanceErr := sc.readRune(); advanceErr != nil {
+			if advanceErr := sc.next(); advanceErr != nil {
 				return tok, advanceErr
 			}
 			return tok, err
@@ -444,7 +444,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("a numeral must have at least one digit")
-		if advanceErr := sc.readRune(); advanceErr != nil {
+		if advanceErr := sc.next(); advanceErr != nil {
 			return tok, advanceErr
 		}
 	}
@@ -461,7 +461,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 }
 
 func (sc *Scanner) isNumeralSeparator() bool {
-	return isTerminal(sc.cur) || isWhitespace(sc.cur) || isEdgeOperator(sc.cur, sc.next)
+	return isTerminal(sc.cur) || isWhitespace(sc.cur) || isEdgeOperator(sc.cur, sc.peek)
 }
 
 func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
@@ -472,20 +472,20 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
 
-	for pos, prev := 0, rune(0); sc.cur >= 0 && err == nil; err, pos = sc.readRune(), pos+1 {
+	for pos, prev := 0, rune(0); sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		id = append(id, sc.cur)
 
 		if pos != 0 && sc.cur == '"' && prev != '\\' { // assuming a non-escaped quote after pos 0 closes the string
 			hasClosingQuote = true
-			err = sc.readRune() // consume closing quote
+			err = sc.next() // consume closing quote
 			break
 		}
 		if pos > maxUnquotedStringLen {
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			err := sc.error(fmt.Sprintf("potentially missing closing quote, found none after max %d characters", maxUnquotedStringLen+1))
-			if advanceErr := sc.readRune(); advanceErr != nil {
+			if advanceErr := sc.next(); advanceErr != nil {
 				return tok, advanceErr
 			}
 			return tok, err
@@ -497,7 +497,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("missing closing quote")
-		if advanceErr := sc.readRune(); advanceErr != nil {
+		if advanceErr := sc.next(); advanceErr != nil {
 			return tok, advanceErr
 		}
 	}

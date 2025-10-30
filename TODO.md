@@ -1,5 +1,9 @@
 ## Scanner
 
+* can I simplify scanner.next()?
+* add test for single character/double character scanning. what happens? test the error/eof cases
+* think about eof todos and the literal/position I return
+
 scanner error handling
   * go through each invalid test case and think about when to return an actual token instead of
   ILLEGAL and if i should continue consuming for example entire quoted string even if it contains

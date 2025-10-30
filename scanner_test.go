@@ -1060,15 +1060,15 @@ func TestScanner(t *testing.T) {
 						{
 							token.Token{ // TODO is this token correct?
 								Type:    token.ILLEGAL,
-								Literal: "\x00",
+								Literal: "�",
 								Start:   token.Position{Row: 1, Column: 3},
 								End:     token.Position{Row: 1, Column: 3},
 							},
 							Error{ // TODO I point the error past the EOF
 								LineNr:      1,
 								CharacterNr: 3,
-								// Character:   '.',
-								Reason: "a numeral must have at least one digit",
+								Character:   -1,
+								Reason:      "a numeral must have at least one digit",
 							},
 						},
 					},
@@ -1349,14 +1349,14 @@ func TestScanner(t *testing.T) {
 						{
 							token.Token{
 								Type:    token.ILLEGAL,
-								Literal: "\x00",
+								Literal: "�",
 								Start:   token.Position{Row: 1, Column: 6},
 								End:     token.Position{Row: 1, Column: 6},
 							},
 							Error{
 								LineNr:      1,
 								CharacterNr: 6,
-								Character:   0,
+								Character:   -1,
 								Reason:      "missing closing quote",
 							},
 						},
@@ -1372,14 +1372,14 @@ func TestScanner(t *testing.T) {
 						{
 							token.Token{
 								Type:    token.ILLEGAL,
-								Literal: "\x00",
+								Literal: "�",
 								Start:   token.Position{Row: 2, Column: 4},
 								End:     token.Position{Row: 2, Column: 4},
 							},
 							Error{
 								LineNr:      2,
 								CharacterNr: 4,
-								Character:   0,
+								Character:   -1,
 								Reason:      "missing closing quote",
 							},
 						},
@@ -1627,14 +1627,14 @@ spacious
 						{
 							token.Token{
 								Type:    token.ILLEGAL,
-								Literal: "\x00",
+								Literal: "�",
 								Start:   token.Position{Row: 1, Column: 26},
 								End:     token.Position{Row: 1, Column: 26},
 							},
 							Error{
 								LineNr:      1,
 								CharacterNr: 26,
-								Character:   0,
+								Character:   -1,
 								Reason:      "missing closing marker '*/' for multi-line comment",
 							},
 						},

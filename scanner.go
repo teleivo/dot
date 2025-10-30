@@ -10,6 +10,10 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
+const (
+	eof = -1 // end of file
+)
+
 // Scanner tokenizes DOT language source code into a stream of tokens.
 type Scanner struct {
 	r         *bufio.Reader
@@ -25,6 +29,8 @@ type Scanner struct {
 func NewScanner(r io.Reader) (*Scanner, error) {
 	scanner := Scanner{
 		r:      bufio.NewReader(r),
+		cur:    eof,
+		next:   eof,
 		curRow: 1,
 	}
 
@@ -58,7 +64,7 @@ func (sc *Scanner) Next() (token.Token, error) {
 	var err error
 
 	sc.skipWhitespace()
-	if !sc.hasNext() {
+	if sc.cur < 0 {
 		tok.Type = token.EOF
 		return tok, nil
 	}
@@ -103,26 +109,25 @@ func (sc *Scanner) Next() (token.Token, error) {
 // readRune reads one rune and advances the scanner's position markers depending on the read rune.
 // It returns an error only for non-EOF I/O errors (such as disk read failures or network errors).
 // Any non-EOF error is considered terminal and will cause scanning to stop. [io.EOF] is not considered
-// an error and causes the scanner to enter EOF state (sc.eof = true). After any error, subsequent
+// an error and causes the scanner to enter EOF state (sc.cur = eof). After any error, subsequent
 // calls to readRune are no-ops.
 func (sc *Scanner) readRune() error {
-	if sc.isDone() {
-		// Already at EOF, advance position and clear cur to signal no more chars
-		// Only skip position advancement if cur was already cleared (is 0)
+	if sc.eof {
+		// Already at EOF, advance position
 		if sc.cur == '\n' {
 			sc.curRow++
 			sc.curColumn = 1
-		} else if sc.cur != 0 {
+		} else if sc.cur >= 0 {
 			sc.curColumn++
 		}
-		sc.cur = 0
+		sc.cur = eof
 		return nil
 	}
 
 	r, _, err := sc.r.ReadRune()
 	if err != nil {
 		sc.eof = true // set EOF state for any error to prevent retry loops
-		// Still advance position even at EOF (including for null bytes)
+		// Still advance position even at EOF
 		if sc.cur == '\n' {
 			sc.curRow++
 			sc.curColumn = 1
@@ -130,7 +135,7 @@ func (sc *Scanner) readRune() error {
 			sc.curColumn++
 		}
 		sc.cur = sc.next
-		sc.next = 0
+		sc.next = eof
 		if errors.Is(err, io.EOF) {
 			return nil // EOF is not an error
 		}
@@ -149,7 +154,7 @@ func (sc *Scanner) readRune() error {
 }
 
 func (sc *Scanner) skipWhitespace() {
-	for sc.hasNext() && isWhitespace(sc.cur) {
+	for sc.cur >= 0 && isWhitespace(sc.cur) {
 		err := sc.readRune()
 		if err != nil {
 			return
@@ -167,14 +172,6 @@ func isWhitespace(r rune) bool {
 	return false
 }
 
-func (sc *Scanner) hasNext() bool {
-	return !sc.eof || sc.cur != 0
-}
-
-func (sc *Scanner) isDone() bool {
-	return sc.eof
-}
-
 func (sc *Scanner) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
 	pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	tok := token.Token{Type: tokenType, Literal: string(sc.cur), Start: pos, End: pos}
@@ -188,7 +185,7 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	var comment []rune
 	var hasClosingMarker bool
 
-	if sc.cur == '/' && sc.hasNext() && sc.next != '/' && sc.next != '*' {
+	if sc.cur == '/' && (sc.next < 0 || (sc.next != '/' && sc.next != '*')) {
 		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err := sc.error("missing '/' for single-line or a '*' for a multi-line comment")
@@ -200,12 +197,12 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
-	isMultiLine := sc.cur == '/' && sc.hasNext() && sc.next == '*'
-	for ; sc.hasNext() && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.readRune() {
+	isMultiLine := sc.cur == '/' && sc.next == '*'
+	for ; sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.readRune() {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		comment = append(comment, sc.cur)
 
-		if isMultiLine && sc.cur == '*' && sc.hasNext() && sc.next == '/' {
+		if isMultiLine && sc.cur == '*' && sc.next == '/' {
 			hasClosingMarker = true
 			comment = append(comment, sc.next)
 			err = sc.readRune() // consume last rune '/' of closing marker
@@ -335,7 +332,7 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
 
-	for ; sc.hasNext() && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.readRune() {
+	for ; sc.cur >= 0 && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.readRune() {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if !isLegalInUnquotedString(sc.cur) {
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
@@ -402,7 +399,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
 
-	for pos, hasDot := 0, false; sc.hasNext() && err == nil && !sc.isNumeralSeparator(); err, pos = sc.readRune(), pos+1 {
+	for pos, hasDot := 0, false; sc.cur >= 0 && err == nil && !sc.isNumeralSeparator(); err, pos = sc.readRune(), pos+1 {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		if sc.cur == '-' && pos != 0 {
 			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
@@ -475,7 +472,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
 	var end token.Position
 
-	for pos, prev := 0, rune(0); sc.hasNext() && err == nil; err, pos = sc.readRune(), pos+1 {
+	for pos, prev := 0, rune(0); sc.cur >= 0 && err == nil; err, pos = sc.readRune(), pos+1 {
 		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		id = append(id, sc.cur)
 
@@ -526,7 +523,7 @@ type Error struct {
 
 // Error returns a formatted error message with line and character position.
 func (e Error) Error() string {
-	if e.Character == 0 {
+	if e.Character < 0 {
 		return fmt.Sprintf("%d:%d: %s", e.LineNr, e.CharacterNr, e.Reason)
 	}
 	return fmt.Sprintf("%d:%d: illegal character %#U: %s", e.LineNr, e.CharacterNr, e.Character, e.Reason)

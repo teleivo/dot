@@ -1,6 +1,5 @@
 ## Scanner
 
-* can I simplify scanner.next()?
 * add test for single character/double character scanning. what happens? test the error/eof cases
 * think about eof todos and the literal/position I return
 

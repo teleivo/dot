@@ -27,26 +27,25 @@ type Scanner struct {
 // NewScanner creates a new scanner that reads DOT source code from r. Returns an error if the
 // scanner cannot be initialized.
 func NewScanner(r io.Reader) (*Scanner, error) {
-	scanner := Scanner{
+	sc := Scanner{
 		r:      bufio.NewReader(r),
 		cur:    eof,
 		peek:   eof,
 		curRow: 1,
 	}
 
-	// initialize current and next runes
-	err := scanner.next()
+	// initialize current and peek runes
+	err := sc.next()
 	if err != nil {
 		return nil, err
 	}
-	err = scanner.next()
+	err = sc.next()
 	if err != nil {
 		return nil, err
 	}
-	// 2 readRune calls are needed to fill the cur and next runes
-	scanner.curColumn = 1
+	sc.curColumn = 1
 
-	return &scanner, nil
+	return &sc, nil
 }
 
 const (
@@ -56,9 +55,11 @@ const (
 	unquotedStringNulErr   = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
 )
 
-// Next advances the scanners position by one token and returns it. The scanner will stop trying to
-// tokenize more tokens on the first error it encounters. A token of typen [token.EOF] is returned
-// once the underlying reader returns [io.EOF] and the peek token has been consumed.
+// Next advances the scanners position by one token and returns it. When encountering invalid input,
+// the scanner continues scanning and returns both a token and an error. The token type depends on
+// the error context and may be [token.ILLEGAL] or another type. I/O errors (other than [io.EOF])
+// stop scanning immediately. A token of type [token.EOF] is returned once the underlying reader
+// returns [io.EOF] and the peek token has been consumed.
 func (sc *Scanner) Next() (token.Token, error) {
 	var tok token.Token
 	var err error
@@ -112,42 +113,31 @@ func (sc *Scanner) Next() (token.Token, error) {
 // an error and causes the scanner to enter EOF state (sc.cur = eof). After any error, subsequent
 // calls to next are no-ops.
 func (sc *Scanner) next() error {
+	// advance position based on current rune
+	if sc.cur == '\n' {
+		sc.curRow++
+		sc.curColumn = 1
+	} else if sc.cur >= 0 {
+		sc.curColumn++
+	}
+
+	// already at EOF
 	if sc.eof {
-		// Already at EOF, advance position
-		if sc.cur == '\n' {
-			sc.curRow++
-			sc.curColumn = 1
-		} else if sc.cur >= 0 {
-			sc.curColumn++
-		}
 		sc.cur = eof
 		return nil
 	}
 
 	r, _, err := sc.r.ReadRune()
 	if err != nil {
-		sc.eof = true // set EOF state for any error to prevent retry loops
-		// Still advance position even at EOF
-		if sc.cur == '\n' {
-			sc.curRow++
-			sc.curColumn = 1
-		} else {
-			sc.curColumn++
-		}
+		sc.eof = true
 		sc.cur = sc.peek
 		sc.peek = eof
 		if errors.Is(err, io.EOF) {
-			return nil // EOF is not an error
+			return nil
 		}
 		return fmt.Errorf("failed to read rune: %v", err)
 	}
 
-	if sc.cur == '\n' {
-		sc.curRow++
-		sc.curColumn = 1
-	} else {
-		sc.curColumn++
-	}
 	sc.cur = sc.peek
 	sc.peek = r
 	return nil

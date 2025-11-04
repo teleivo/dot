@@ -1194,125 +1194,146 @@ func TestScanner(t *testing.T) {
 		t.Run("Valid", func(t *testing.T) {
 			tests := []struct {
 				in   string
-				want token.Token
+				want []token.Token
 			}{
 				{
-					in: `"graph"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"graph"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 7},
-					},
-				},
-				{
-					in: `"strict"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"strict"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 8},
+					in: `"graph""strict"`,
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"graph"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 7},
+						},
+						{
+							Type:    token.Identifier,
+							Literal: `"strict"`,
+							Start:   token.Position{Row: 1, Column: 8},
+							End:     token.Position{Row: 1, Column: 15},
+						},
 					},
 				},
 				{
 					in: `"\"d"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"\"d"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 5},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"\"d"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 5},
+						},
 					},
 				},
 				{
 					in: `"\nd"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"\nd"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 5},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"\nd"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 5},
+						},
 					},
 				},
 				{
 					in: `"\\d"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"\\d"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 5},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"\\d"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 5},
+						},
 					},
 				},
 				{
 					in: `"_A"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"_A"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 4},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"_A"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 4},
+						},
 					},
 				},
 				{
 					in: `"-.9"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"-.9"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 5},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"-.9"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 5},
+						},
 					},
 				},
 				{
 					in: `"A--B"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"A--B"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 6},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"A--B"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 6},
+						},
 					},
 				},
 				{
 					in: `"A->B"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"A->B"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 6},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"A->B"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 6},
+						},
 					},
 				},
 				{
 					in: `"A-B"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"A-B"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 5},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"A-B"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 5},
+						},
 					},
 				},
 				{
 					in: `"Helvetica,Arial,sans-serif"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"Helvetica,Arial,sans-serif"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 28},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"Helvetica,Arial,sans-serif"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 28},
+						},
 					},
 				},
 				{
 					in: `"#00008844"`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `"#00008844"`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 11},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"#00008844"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 11},
+						},
 					},
 				},
 				{
 					in: `"color\
 #00008844"`,
-					want: token.Token{
-						Type: token.Identifier,
-						Literal: `"color\
+					want: []token.Token{
+						{
+							Type: token.Identifier,
+							Literal: `"color\
 #00008844"`,
-						Start: token.Position{Row: 1, Column: 1},
-						End:   token.Position{Row: 2, Column: 10},
+							Start: token.Position{Row: 1, Column: 1},
+							End:   token.Position{Row: 2, Column: 10},
+						},
 					},
 				},
 				// this is not legal according to https://graphviz.org/doc/info/lang.html#ids but actually
@@ -1322,12 +1343,14 @@ func TestScanner(t *testing.T) {
 				{
 					in: `"color
 #00008844"`,
-					want: token.Token{
-						Type: token.Identifier,
-						Literal: `"color
+					want: []token.Token{
+						{
+							Type: token.Identifier,
+							Literal: `"color
 #00008844"`,
-						Start: token.Position{Row: 1, Column: 1},
-						End:   token.Position{Row: 2, Column: 10},
+							Start: token.Position{Row: 1, Column: 1},
+							End:   token.Position{Row: 2, Column: 10},
+						},
 					},
 				},
 			}
@@ -1338,7 +1361,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertTokens(t, scanner, []token.Token{test.want})
+					assertTokens(t, scanner, test.want)
 				})
 			}
 		})

@@ -49,7 +49,6 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 }
 
 const (
-	maxUnquotedStringLen   = 16347 // adjusted https://gitlab.com/graphviz/graphviz/-/issues/1261 to be zero based
 	unquotedStringStartErr = "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores"
 	unquotedStringErr      = "unquoted identifiers can only contain letters, digits, and underscores"
 	unquotedStringNulErr   = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
@@ -460,10 +459,8 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	var id []rune
 	var hasClosingQuote bool
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
-	var end token.Position
 
 	for pos, prev := 0, rune(0); sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
-		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		id = append(id, sc.cur)
 
 		if pos != 0 && sc.cur == '"' && prev != '\\' { // assuming a non-escaped quote after pos 0 closes the string
@@ -471,28 +468,20 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 			err = sc.next() // consume closing quote
 			break
 		}
-		if pos > maxUnquotedStringLen {
-			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
-			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
-			err := sc.error(fmt.Sprintf("potentially missing closing quote, found none after max %d characters", maxUnquotedStringLen+1))
-			if advanceErr := sc.next(); advanceErr != nil {
-				return tok, advanceErr
-			}
-			return tok, err
-		}
 		prev = sc.cur
 	}
 
 	if !hasClosingQuote {
-		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
-		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
-		err = sc.error("missing closing quote")
+		// Report error at opening quote position
+		err = Error{
+			LineNr:      start.Row,
+			CharacterNr: start.Column,
+			Character:   '"',
+			Reason:      "missing closing quote",
+		}
 		if advanceErr := sc.next(); advanceErr != nil {
 			return tok, advanceErr
 		}
-	}
-	if err != nil {
-		return tok, err
 	}
 
 	return token.Token{
@@ -500,7 +489,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 		Literal: string(id),
 		Start:   start,
 		End:     end,
-	}, nil
+	}, err
 }
 
 // Error represents a scanning or parsing error in DOT source code.

@@ -1382,15 +1382,15 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "�",
-								Start:   token.Position{Row: 1, Column: 6},
-								End:     token.Position{Row: 1, Column: 6},
+								Type:    token.Identifier,
+								Literal: `"asdf`,
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 5},
 							},
 							Error{
 								LineNr:      1,
-								CharacterNr: 6,
-								Character:   -1,
+								CharacterNr: 1,
+								Character:   '"',
 								Reason:      "missing closing quote",
 							},
 						},
@@ -1405,38 +1405,17 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "�",
-								Start:   token.Position{Row: 2, Column: 4},
-								End:     token.Position{Row: 2, Column: 4},
-							},
-							Error{
-								LineNr:      2,
-								CharacterNr: 4,
-								Character:   -1,
-								Reason:      "missing closing quote",
-							},
-						},
-					},
-				},
-				{
-					in: `"` + strings.Repeat("a", 16348),
-					want: []struct {
-						token token.Token
-						err   error
-					}{
-						{
-							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "a",
-								Start:   token.Position{Row: 1, Column: 16349},
-								End:     token.Position{Row: 1, Column: 16349},
+								Type: token.Identifier,
+								Literal: `"asdf
+		}`,
+								Start: token.Position{Row: 1, Column: 1},
+								End:   token.Position{Row: 2, Column: 3},
 							},
 							Error{
 								LineNr:      1,
-								CharacterNr: 16349,
-								Character:   'a',
-								Reason:      "potentially missing closing quote, found none after max 16348 characters",
+								CharacterNr: 1,
+								Character:   '"',
+								Reason:      "missing closing quote",
 							},
 						},
 					},
@@ -1747,13 +1726,13 @@ func assertNext(t *testing.T, scanner *Scanner, want []struct {
 	for i, wantPair := range want {
 		gotToken, gotErr := scanner.Next()
 
-		assert.EqualValuesf(t, wantPair.token, gotToken, "token at index %d for input %q", i, input)
+		assert.EqualValuesf(t, gotToken, wantPair.token, "token at index %d for input %q", i, input)
 
 		if wantPair.err != nil {
 			gotScanErr, ok := gotErr.(Error)
 			assert.Truef(t, ok, "Next() at index %d for input %q wanted scanner.Error, instead got %v", i, input, gotErr)
 			if ok {
-				assert.EqualValuesf(t, wantPair.err, gotScanErr, "error at index %d for input %q", i, input)
+				assert.EqualValuesf(t, gotScanErr, wantPair.err, "error at index %d for input %q", i, input)
 			}
 		} else {
 			assert.NoErrorf(t, gotErr, "Next() at index %d for input %q should not return an error", i, input)

@@ -1,32 +1,12 @@
 ## Scanner
 
-* think about eof todos and the literal/position I return
+* quoted identifier
+  * should I validate? any character that is illegal?
 
 scanner error handling
   * go through each invalid test case and think about when to return an actual token instead of
   ILLEGAL and if i should continue consuming for example entire quoted string even if it contains
   invalid characters
-
-// Next advances the scanners position by one token and returns it. The scanner will stop trying to
-// tokenize more tokens on the first error it encounters. A token of typen [token.EOF] is returned
-// once the underlying reader returns [io.EOF] and the peek token has been consumed.
-
-  the parser should not need a change as it stops on first error
-
-  how to adjust the scanner_test.go? []error? so each token in want has its associated error?
-  or []error being all errors that were emitted in order but no nils
-
-For example
-
-```dot
-graph {  B
-A/
-}
-```
-
-The scanner can now emit A and then errors on `/`. dotfmt should be able to format this and return
-the error(s) that `/` might miss another `/` or `*`.
-
 
 ### BUG: Identifier Lost When Illegal Character Encountered Mid-Scan
 
@@ -149,8 +129,6 @@ Currently, the "Identifiers" test case at scanner_test.go:212 has `C"D""E"` whic
 
 But missing the reverse direction and longer chains.
 
-  * handle ./research/error-handling/maxlen.md better
-
 * handle it in parser
 * handle it in dotfmt
 
@@ -170,6 +148,8 @@ Error cases to think about and here is what Go does
 I don't like this as this requires the parser to then flag this as invalid and its way more
 complicated to do that than needed. That should be a single token with an error. Its neither a valid
 number nor a valid identifier.
+
+* think about eof todos and the literal/position I return
 
 * test parser error will keep code as is in dotfmt
 

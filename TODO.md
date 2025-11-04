@@ -1,9 +1,8 @@
 ## Scanner
 
 scanner error handling
-  * go through each invalid test case and think about when to return an actual token instead of
-  ILLEGAL and if i should continue consuming for example entire quoted string even if it contains
-  invalid characters
+* go through unquoted id tokenizing
+* go through numeric id tokenizing
 
 ### BUG: Identifier Lost When Illegal Character Encountered Mid-Scan
 
@@ -93,28 +92,11 @@ The test added at `scanner_test.go:795` (ContinuesScanningAfterError) currently 
 * **Status**: Both reject, but for different reasons. My scanner needs better error messages
   here.
 
-#### String concatenation with `+` (e.g., `"A"+"B"`)
-
-* **dot behavior**: Supports this, concatenates to `AB`
-* **My scanner**: Not implemented (spec says "double-quoted strings can be concatenated using
-  a '+' operator")
-* **Status**: Missing feature (see TODO.md line 325)
-
-#### HTML identifiers (e.g., `<html>`)
-
-* **dot behavior**: Accepts as valid identifier
-* **My scanner**: Not implemented (known limitation)
-* **Status**: Documented limitation
-
 #### Null bytes
 
 * **dot behavior**: Syntax error in both unquoted and quoted strings
 * **My scanner**: Error "illegal character NUL" in unquoted, "missing closing quote" in quoted
 * **Status**: Both reject, different error messages
-
-
-* handle it in parser
-* handle it in dotfmt
 
 Error cases to think about and here is what Go does
 

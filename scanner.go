@@ -135,7 +135,7 @@ func (sc *Scanner) next() error {
 		if errors.Is(err, io.EOF) {
 			return nil
 		}
-		return fmt.Errorf("failed to read rune: %v", err)
+		return fmt.Errorf("failed to read character: %v", err)
 	}
 
 	sc.cur = sc.peek

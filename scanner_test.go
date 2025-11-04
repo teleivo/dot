@@ -1,6 +1,7 @@
 package dot
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"testing"
@@ -19,6 +20,16 @@ func TestScanner(t *testing.T) {
 			in: "",
 			want: []token.Token{
 				{Type: token.EOF},
+			},
+		},
+		"SingleCharacter": {
+			in: "a",
+			want: []token.Token{
+				{
+					Type: token.Identifier, Literal: "a",
+					Start: token.Position{Row: 1, Column: 1},
+					End:   token.Position{Row: 1, Column: 1},
+				},
 			},
 		},
 		"OnlyWhitespace": {
@@ -1651,6 +1662,28 @@ spacious
 				})
 			}
 		})
+	})
+}
+
+type errorReader struct {
+	err error
+}
+
+func (r *errorReader) Read(p []byte) (n int, err error) {
+	return 0, r.err
+}
+
+func TestNewScanner(t *testing.T) {
+	t.Run("ReaderError", func(t *testing.T) {
+		expectedErr := errors.New("disk read failure")
+		reader := &errorReader{err: expectedErr}
+
+		scanner, err := NewScanner(reader)
+
+		require.Nil(t, scanner)
+		require.NotNil(t, err)
+		assert.True(t, strings.Contains(err.Error(), "failed to read character"))
+		assert.Truef(t, strings.Contains(err.Error(), expectedErr.Error()), "error message should include underlying error, got: %v", err)
 	})
 }
 

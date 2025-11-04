@@ -1,6 +1,5 @@
 ## Scanner
 
-* add test for single character/double character scanning. what happens? test the error/eof cases
 * think about eof todos and the literal/position I return
 
 scanner error handling
@@ -182,9 +181,6 @@ number nor a valid identifier.
 
 * improve error handling [Parser](#parser)
 
-* Move cmd/tokens to example/cmd/tokens or example/tokens? Its not really something I would want to
-  be used. Its a mere demo/debugging utility
-
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
 How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
 want something similar for the parser. Is it best to integrate that into the scanner/parser or nicer
@@ -240,7 +236,9 @@ graph {
 ```
 
 * improve error printing, how to print the line/snippet with ^^^ to highlight were the error is
-* implement parser.Trace like the Go parser
+* give a better error message for edge operators that do not match the graph type
+directed/undirected
+* implement parser.Trace like the Go parser?
 
 * ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates
 unquoted string identifiers can contain alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), but not begin with a digit
@@ -445,7 +443,6 @@ so I need to detect such errors and try with `digraph {}`.
 
 * support multiple graphs in a file like in samples-graphviz/tests/graphs/multi.gv
 * support + on IDs
-* join adjacent comments? unless there is an empty newline in between them
 
 ## Highl Level API
 
@@ -475,8 +472,8 @@ Questions
 
 ## Ideas
 
+* write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
 * how can I make the simplest autocomplete mainly for attributes
   * is an LSP overkill? and if a simple LSP would do can it also provide hot reloading?
-* write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
 * how could I make something like :InspectTree in neovim for my parser?
 

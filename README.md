@@ -13,6 +13,12 @@ go get -u github.com/teleivo/dot
 Format your DOT files with `dotfmt`. `dotfmt` is inspired by [gofmt](https://pkg.go.dev/cmd/gofmt).
 As such it is opinionated and has no options to change its format.
 
+Core principles:
+
+* **Idempotency**: Formatting the same code multiple times produces identical output.
+* **Only formats valid code**: Parse errors leave the original input unchanged. The formatter does
+not assume or alter user intent when it cannot parse the code.
+
 ```sh
 go run ./cmd/dotfmt/main.go <<EOF
 digraph data_pipeline{graph[rankdir=TB,bgcolor="#fafafa"]

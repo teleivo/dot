@@ -117,15 +117,13 @@ number nor a valid identifier.
 
 * think about eof todos and the literal/position I return
 
-* test parser error will keep code as is in dotfmt
-
+* read ./research/stderr/summary.md
 * read pros/cons of using reader vs taking in []byte into Parser/Formatter
 
 ## Next
 
-* use assertions
-
 * improve error handling [Parser](#parser)
+* use assertions?
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
 How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I

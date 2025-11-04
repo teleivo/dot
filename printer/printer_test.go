@@ -402,3 +402,21 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		})
 	}
 }
+
+func TestPrintErrorReturnsError(t *testing.T) {
+	input := "graph { a = }"
+
+	var output strings.Builder
+	p := printer.NewPrinter(strings.NewReader(input), &output, layout.Default)
+
+	err := p.Print()
+
+	require.NotNilf(t, err, "Print(%q) should return an error when parsing fails", input)
+
+	// Print() should not write anything to the writer when parsing fails. The implementation
+	// returns early on parse error, ensuring the output writer remains empty.
+	got := output.String()
+	if got != "" {
+		t.Errorf("Print() wrote to output on parse error, got: %q, want empty string", got)
+	}
+}

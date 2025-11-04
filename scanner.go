@@ -459,8 +459,10 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	var id []rune
 	var hasClosingQuote bool
 	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	var end token.Position
 
 	for pos, prev := 0, rune(0); sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
+		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
 		id = append(id, sc.cur)
 
 		if pos != 0 && sc.cur == '"' && prev != '\\' { // assuming a non-escaped quote after pos 0 closes the string

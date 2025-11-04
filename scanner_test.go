@@ -1353,6 +1353,39 @@ func TestScanner(t *testing.T) {
 						},
 					},
 				},
+				{
+					in: "\"node\x00with\x00nul\"",
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: "\"node\x00with\x00nul\"",
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 15},
+						},
+					},
+				},
+				{
+					in: `"emoji 🎉 test"`,
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"emoji 🎉 test"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 14},
+						},
+					},
+				},
+				{
+					in: `"unicode: éñ中文"`,
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `"unicode: éñ中文"`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 15},
+						},
+					},
+				},
 			}
 
 			for i, test := range tests {

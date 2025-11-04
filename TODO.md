@@ -1,8 +1,5 @@
 ## Scanner
 
-* quoted identifier
-  * should I validate? any character that is illegal?
-
 scanner error handling
   * go through each invalid test case and think about when to return an actual token instead of
   ILLEGAL and if i should continue consuming for example entire quoted string even if it contains
@@ -115,19 +112,6 @@ The test added at `scanner_test.go:795` (ContinuesScanningAfterError) currently 
 * **My scanner**: Error "illegal character NUL" in unquoted, "missing closing quote" in quoted
 * **Status**: Both reject, different error messages
 
-### Missing test cases for quoted/unquoted identifiers
-
-* `"A"B` - quoted followed by unquoted (reverse of `C"D"`)
-* `""` - empty quoted string (valid identifier in DOT)
-* `A"B"C` - unquoted-quoted-unquoted sandwich pattern
-* `"A""B""C"` - multiple consecutive quoted identifiers (currently only tests 2 adjacent)
-* `"A"_B` or `A_1"B"` - underscore/digit transitions with quotes
-
-Currently, the "Identifiers" test case at scanner_test.go:212 has `C"D""E"` which covers:
-* Unquoted followed by quoted (`C"D"`)
-* Adjacent quoted identifiers (`"D""E"`)
-
-But missing the reverse direction and longer chains.
 
 * handle it in parser
 * handle it in dotfmt

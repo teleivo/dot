@@ -220,6 +220,18 @@ func TestScanner(t *testing.T) {
 				{Type: token.EOF},
 			},
 		},
+		"EmptyQuotedIdentifier": {
+			in: `""`,
+			want: []token.Token{
+				{
+					Type:    token.Identifier,
+					Literal: `""`,
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 2},
+				},
+				{Type: token.EOF},
+			},
+		},
 		"Identifiers": {
 			in: `
 			  A;B;C"D""E"
@@ -269,6 +281,66 @@ func TestScanner(t *testing.T) {
 					Type: token.RightBrace, Literal: "}",
 					Start: token.Position{Row: 3, Column: 4},
 					End:   token.Position{Row: 3, Column: 4},
+				},
+				{Type: token.EOF},
+			},
+		},
+		"UnquotedQuotedUnquotedSandwich": {
+			in: `A"B"C`,
+			want: []token.Token{
+				{
+					Type:    token.Identifier,
+					Literal: "A",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 1},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: `"B"`,
+					Start:   token.Position{Row: 1, Column: 2},
+					End:     token.Position{Row: 1, Column: 4},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "C",
+					Start:   token.Position{Row: 1, Column: 5},
+					End:     token.Position{Row: 1, Column: 5},
+				},
+				{Type: token.EOF},
+			},
+		},
+		"QuotedFollowedByUnquoted": {
+			in: `"A"_B`,
+			want: []token.Token{
+				{
+					Type:    token.Identifier,
+					Literal: `"A"`,
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 3},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: "_B",
+					Start:   token.Position{Row: 1, Column: 4},
+					End:     token.Position{Row: 1, Column: 5},
+				},
+				{Type: token.EOF},
+			},
+		},
+		"UnquotedFollowedByQuoted": {
+			in: `A_1"B"`,
+			want: []token.Token{
+				{
+					Type:    token.Identifier,
+					Literal: "A_1",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 3},
+				},
+				{
+					Type:    token.Identifier,
+					Literal: `"B"`,
+					Start:   token.Position{Row: 1, Column: 4},
+					End:     token.Position{Row: 1, Column: 6},
 				},
 				{Type: token.EOF},
 			},

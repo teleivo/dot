@@ -95,7 +95,7 @@ func (sc *Scanner) Next() (token.Token, error) {
 			tok, err = sc.tokenizeIdentifier()
 		} else {
 			err = sc.error(unquotedStringStartErr)
-			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			pos := sc.pos()
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			if advanceErr := sc.next(); advanceErr != nil {
 				return tok, advanceErr
@@ -142,6 +142,11 @@ func (sc *Scanner) next() error {
 	return nil
 }
 
+// pos returns the current position as a token.Position.
+func (sc *Scanner) pos() token.Position {
+	return token.Position{Row: sc.curRow, Column: sc.curColumn}
+}
+
 func (sc *Scanner) skipWhitespace() {
 	for sc.cur >= 0 && isWhitespace(sc.cur) {
 		err := sc.next()
@@ -162,7 +167,7 @@ func isWhitespace(r rune) bool {
 }
 
 func (sc *Scanner) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
-	pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	pos := sc.pos()
 	tok := token.Token{Type: tokenType, Literal: string(sc.cur), Start: pos, End: pos}
 	err := sc.next()
 	return tok, err
@@ -175,7 +180,7 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	var hasClosingMarker bool
 
 	if sc.cur == '/' && (sc.peek < 0 || (sc.peek != '/' && sc.peek != '*')) {
-		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+		pos := sc.pos()
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err := sc.error("missing '/' for single-line or a '*' for a multi-line comment")
 		if advanceErr := sc.next(); advanceErr != nil {
@@ -184,11 +189,11 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 		return tok, err
 	}
 
-	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	start := sc.pos()
 	var end token.Position
 	isMultiLine := sc.cur == '/' && sc.peek == '*'
 	for ; sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.next() {
-		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
+		end = sc.pos()
 		comment = append(comment, sc.cur)
 
 		if isMultiLine && sc.cur == '*' && sc.peek == '/' {
@@ -198,14 +203,14 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 			if err != nil {
 				break
 			}
-			end = token.Position{Row: sc.curRow, Column: sc.curColumn}
+			end = sc.pos()
 			err = sc.next() // advance past the closing '/' to next char
 			break
 		}
 	}
 
 	if isMultiLine && !hasClosingMarker {
-		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+		pos := sc.pos()
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("missing closing marker '*/' for multi-line comment")
 		if advanceErr := sc.next(); advanceErr != nil {
@@ -230,13 +235,13 @@ func isEdgeOperator(first, second rune) bool {
 
 func (sc *Scanner) tokenizeEdgeOperator() (token.Token, error) {
 	var tok token.Token
-	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	start := sc.pos()
 	err := sc.next()
 	if err != nil {
 		return tok, err
 	}
 
-	end := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	end := sc.pos()
 	if sc.cur == '-' {
 		tok = token.Token{
 			Type:    token.UndirectedEdge,
@@ -318,13 +323,13 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 	var tok token.Token
 	var err error
 	var id []rune
-	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	start := sc.pos()
 	var end token.Position
 
 	for ; sc.cur >= 0 && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.next() {
-		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
+		end = sc.pos()
 		if !isLegalInUnquotedString(sc.cur) {
-			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			pos := sc.pos()
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			var err error
 			if sc.cur == 0 {
@@ -385,13 +390,13 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	var err error
 	var id []rune
 	var hasDigit bool
-	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	start := sc.pos()
 	var end token.Position
 
 	for pos, hasDot := 0, false; sc.cur >= 0 && err == nil && !sc.isNumeralSeparator(); err, pos = sc.next(), pos+1 {
-		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
+		end = sc.pos()
 		if sc.cur == '-' && pos != 0 {
-			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			pos := sc.pos()
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			err := sc.error("a numeral can only be prefixed with a `-`")
 			if advanceErr := sc.next(); advanceErr != nil {
@@ -401,7 +406,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 		}
 
 		if sc.cur == '.' && hasDot {
-			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			pos := sc.pos()
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			err := sc.error("a numeral can only have one `.` that is at least preceded or followed by digits")
 			if advanceErr := sc.next(); advanceErr != nil {
@@ -411,7 +416,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 		}
 
 		if sc.cur != '-' && sc.cur != '.' && !unicode.IsDigit(sc.cur) { // otherwise only digits are allowed
-			pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+			pos := sc.pos()
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			err := sc.error("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
 			if advanceErr := sc.next(); advanceErr != nil {
@@ -430,7 +435,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	}
 
 	if !hasDigit {
-		pos := token.Position{Row: sc.curRow, Column: sc.curColumn}
+		pos := sc.pos()
 		tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 		err = sc.error("a numeral must have at least one digit")
 		if advanceErr := sc.next(); advanceErr != nil {
@@ -458,11 +463,11 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	var err error
 	var id []rune
 	var hasClosingQuote bool
-	start := token.Position{Row: sc.curRow, Column: sc.curColumn}
+	start := sc.pos()
 	var end token.Position
 
 	for pos, prev := 0, rune(0); sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
-		end = token.Position{Row: sc.curRow, Column: sc.curColumn}
+		end = sc.pos()
 		id = append(id, sc.cur)
 
 		if pos != 0 && sc.cur == '"' && prev != '\\' { // assuming a non-escaped quote after pos 0 closes the string

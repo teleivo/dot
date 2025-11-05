@@ -1,69 +1,7 @@
 ## Scanner
 
 scanner error handling
-* go through unquoted id tokenizing
 * go through numeric id tokenizing
-
-### BUG: Identifier Lost When Illegal Character Encountered Mid-Scan
-
-**Status:** Discovered 2025-10-30 - Needs investigation and decision
-
-When `tokenizeUnquotedString()` encounters an illegal character in the middle of collecting an
-identifier, it returns an ILLEGAL token but **discards the characters collected so far**.
-
-#### Examples
-
-Input: `"A\x00\x00B"`
-
-* **Current behavior:**
-  1. ILLEGAL (null byte at 1:2) - 'A' is lost!
-  2. ILLEGAL (null byte at 1:3)
-  3. IDENTIFIER "B" (at 1:4)
-
-* **Expected behavior:**
-  1. IDENTIFIER "A" (at 1:1)
-  2. ILLEGAL (null byte at 1:2)
-  3. ILLEGAL (null byte at 1:3)
-  4. IDENTIFIER "B" (at 1:4)
-
-Input: `"_zab\x7fx"`
-
-* **Current behavior:**
-  1. ILLEGAL (\x7f at 1:5) - "_zab" is lost!
-  2. IDENTIFIER "x" (at 1:6)
-
-* **Expected behavior:**
-  1. IDENTIFIER "_zab" (at 1:1-1:4)
-  2. ILLEGAL (\x7f at 1:5)
-  3. IDENTIFIER "x" (at 1:6)
-
-#### Verification
-
-```bash
-echo -n "A\x00\x00B" | go run ./cmd/tokens/main.go
-echo -n "_zab\x7fx" | go run ./cmd/tokens/main.go
-```
-
-#### Root Cause
-
-In `scanner.go:344-364`, when an illegal character is detected (line 346):
-
-* The function creates an ILLEGAL token (lines 347-360)
-* Returns immediately
-* The `id` slice contains collected characters but they're never emitted
-
-#### Potential Fix
-
-When illegal character is encountered:
-
-1. If `len(id) > 0`: break from loop and emit the identifier token
-2. The illegal character will be handled on the next `Next()` call
-3. If `len(id) == 0`: emit ILLEGAL token immediately (current behavior for illegal at start)
-
-#### Test Impact
-
-The test added at `scanner_test.go:795` (ContinuesScanningAfterError) currently expects the
-**buggy behavior** and needs to be updated once this is fixed.
 
 ### Comparison with official dot tool behavior
 

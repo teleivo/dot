@@ -50,7 +50,6 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 
 const (
 	unquotedStringStartErr = "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores"
-	unquotedStringErr      = "unquoted identifiers can only contain letters, digits, and underscores"
 	unquotedStringNulErr   = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
 )
 
@@ -94,7 +93,11 @@ func (sc *Scanner) Next() (token.Token, error) {
 		} else if isStartofIdentifier(sc.cur) {
 			tok, err = sc.tokenizeIdentifier()
 		} else {
-			err = sc.error(unquotedStringStartErr)
+			if sc.cur == 0 {
+				err = sc.error(unquotedStringNulErr)
+			} else {
+				err = sc.error(unquotedStringStartErr)
+			}
 			pos := sc.pos()
 			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
 			if advanceErr := sc.next(); advanceErr != nil {
@@ -317,48 +320,30 @@ func (sc *Scanner) error(reason string) Error {
 	}
 }
 
-// tokenizeUnquotedString considers the current rune(s) as an identifier that might be a dot
+// tokenizeUnquotedString considers the current rune(s) as an identifier that might be a DOT
 // keyword.
 func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
-	var tok token.Token
 	var err error
 	var id []rune
 	start := sc.pos()
 	var end token.Position
 
 	for ; sc.cur >= 0 && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.next() {
-		end = sc.pos()
 		if !isLegalInUnquotedString(sc.cur) {
-			pos := sc.pos()
-			tok = token.Token{Type: token.ILLEGAL, Literal: string(sc.cur), Start: pos, End: pos}
-			var err error
-			if sc.cur == 0 {
-				err = sc.error(unquotedStringNulErr)
-			} else {
-				err = sc.error(unquotedStringErr)
-			}
-			if advanceErr := sc.next(); advanceErr != nil {
-				return tok, advanceErr
-			}
-			return tok, err
+			break // emit valid id and let main loop emit illegal token
 		}
 
 		id = append(id, sc.cur)
-	}
-
-	if err != nil {
-		return tok, err
+		end = sc.pos()
 	}
 
 	literal := string(id)
-	tok = token.Token{
+	return token.Token{
 		Type:    token.Lookup(literal),
 		Literal: literal,
 		Start:   start,
 		End:     end,
-	}
-
-	return tok, nil
+	}, err
 }
 
 // isUnquotedStringSeparator determines if the rune separates tokens.

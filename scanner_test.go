@@ -801,11 +801,11 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: `Контрагенты`,
+					in: "Контрагенты",
 					want: []token.Token{
 						{
 							Type:    token.Identifier,
-							Literal: `Контрагенты`,
+							Literal: "Контрагенты",
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 11},
 						},
@@ -862,6 +862,15 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
+								Type:    token.Identifier,
+								Literal: "_zab",
+								Start:   token.Position{Row: 1, Column: 3},
+								End:     token.Position{Row: 1, Column: 6},
+							},
+							nil,
+						},
+						{
+							token.Token{
 								Type:    token.ILLEGAL,
 								Literal: "\x7f",
 								Start:   token.Position{Row: 1, Column: 7},
@@ -871,7 +880,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 7,
 								Character:   '\177',
-								Reason:      "unquoted identifiers can only contain letters, digits, and underscores",
+								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
 							},
 						},
 						{
@@ -891,6 +900,15 @@ func TestScanner(t *testing.T) {
 						token token.Token
 						err   error
 					}{
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "A",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 1},
+							},
+							nil,
+						},
 						{
 							token.Token{
 								Type:    token.ILLEGAL,
@@ -916,7 +934,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 3,
 								Character:   '\000',
-								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+								Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
 							},
 						},
 						{

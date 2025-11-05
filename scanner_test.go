@@ -1454,17 +1454,6 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: "\"node\x00with\x00nul\"",
-					want: []token.Token{
-						{
-							Type:    token.Identifier,
-							Literal: "\"node\x00with\x00nul\"",
-							Start:   token.Position{Row: 1, Column: 1},
-							End:     token.Position{Row: 1, Column: 15},
-						},
-					},
-				},
-				{
 					in: `"emoji 🎉 test"`,
 					want: []token.Token{
 						{
@@ -1553,6 +1542,28 @@ func TestScanner(t *testing.T) {
 						},
 					},
 				},
+			{
+				in: "\"node\x00with\x00nul\"",
+				want: []struct {
+					token token.Token
+					err   error
+				}{
+					{
+						token.Token{
+							Type:    token.Identifier,
+							Literal: "\"node\x00with\x00nul\"",
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 15},
+						},
+						Error{
+							LineNr:      1,
+							CharacterNr: 6,
+							Character:   '\x00',
+							Reason:      "illegal character NUL: quoted identifiers cannot contain null bytes",
+						},
+					},
+				},
+			},
 			}
 
 			for i, test := range tests {

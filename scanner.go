@@ -51,6 +51,7 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 const (
 	unquotedStringStartErr = "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores"
 	unquotedStringNulErr   = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
+	quotedStringNulErr     = "illegal character NUL: quoted identifiers cannot contain null bytes"
 )
 
 // Next advances the scanners position by one token and returns it. When encountering invalid input,
@@ -444,8 +445,8 @@ func (sc *Scanner) isNumeralSeparator() bool {
 }
 
 func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
-	var tok token.Token
 	var err error
+	var nulByteErr error
 	var id []rune
 	var hasClosingQuote bool
 	start := sc.pos()
@@ -455,16 +456,21 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 		end = sc.pos()
 		id = append(id, sc.cur)
 
-		if pos != 0 && sc.cur == '"' && prev != '\\' { // assuming a non-escaped quote after pos 0 closes the string
+		if sc.cur == 0 && nulByteErr == nil {
+			nulByteErr = sc.error(quotedStringNulErr)
+		}
+
+		if pos != 0 && sc.cur == '"' && prev != '\\' {
 			hasClosingQuote = true
-			err = sc.next() // consume closing quote
+			err = sc.next()
 			break
 		}
 		prev = sc.cur
 	}
 
-	if !hasClosingQuote {
-		// Report error at opening quote position
+	if nulByteErr != nil {
+		err = nulByteErr // prioritize the first error
+	} else if !hasClosingQuote {
 		err = Error{
 			LineNr:      start.Row,
 			CharacterNr: start.Column,
@@ -472,6 +478,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 			Reason:      "missing closing quote",
 		}
 		if advanceErr := sc.next(); advanceErr != nil {
+			var tok token.Token
 			return tok, advanceErr
 		}
 	}

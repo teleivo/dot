@@ -30,12 +30,6 @@ scanner error handling
 * **Status**: Both reject, but for different reasons. My scanner needs better error messages
   here.
 
-#### Null bytes
-
-* **dot behavior**: Syntax error in both unquoted and quoted strings
-* **My scanner**: Error "illegal character NUL" in unquoted, "missing closing quote" in quoted
-* **Status**: Both reject, different error messages
-
 Error cases to think about and here is what Go does
 
 * LETTERS AFTER NUMBERS

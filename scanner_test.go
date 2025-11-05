@@ -754,51 +754,61 @@ func TestScanner(t *testing.T) {
 		t.Run("Valid", func(t *testing.T) {
 			tests := []struct {
 				in   string
-				want token.Token
+				want []token.Token
 			}{
 				{
 					in: "_A",
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: "_A",
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 2},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: "_A",
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 2},
+						},
 					},
 				},
 				{
 					in: "A_cZ",
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: "A_cZ",
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 4},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: "A_cZ",
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 4},
+						},
 					},
 				},
 				{
 					in: "A10",
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: "A10",
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 3},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: "A10",
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 3},
+						},
 					},
 				},
 				{
 					in: "\u0080ÿ  ",
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: "\u0080ÿ",
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 2},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: "\u0080ÿ",
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 2},
+						},
 					},
 				},
 				{
 					in: `Контрагенты`,
-					want: token.Token{
-						Type:    token.Identifier,
-						Literal: `Контрагенты`,
-						Start:   token.Position{Row: 1, Column: 1},
-						End:     token.Position{Row: 1, Column: 11},
+					want: []token.Token{
+						{
+							Type:    token.Identifier,
+							Literal: `Контрагенты`,
+							Start:   token.Position{Row: 1, Column: 1},
+							End:     token.Position{Row: 1, Column: 11},
+						},
 					},
 				},
 			}
@@ -809,7 +819,7 @@ func TestScanner(t *testing.T) {
 
 					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
 
-					assertTokens(t, scanner, []token.Token{test.want})
+					assertTokens(t, scanner, test.want)
 				})
 			}
 		})

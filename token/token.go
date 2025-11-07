@@ -10,7 +10,7 @@ import (
 type TokenType int
 
 const (
-	ILLEGAL TokenType = iota
+	ERROR TokenType = iota
 	// EOF is not part of the DOT language and is used to indicate the end of the file or stream. No
 	// language token should follow the EOF token.
 	EOF
@@ -39,8 +39,8 @@ const (
 )
 
 var typeStrings map[TokenType]string = map[TokenType]string{
-	ILLEGAL: "ILLEGAL",
-	EOF:     "EOF",
+	ERROR: "ERROR",
+	EOF:   "EOF",
 
 	Identifier: "IDENTIFIER",
 	Comment:    "COMMENT",

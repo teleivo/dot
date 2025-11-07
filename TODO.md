@@ -1,60 +1,17 @@
 ## Scanner
 
-scanner error handling
-* go through numeric id tokenizing
+are all tokenize methods now properly advancing even in case of err?
+* think of better edge related scanner errors
+* think of better error messages without going full Elm so stick to one sentence
+* should these not be very similar? I think the second one might miss comment runes as separators isUnquotedStringSeparator(r rune) and isNumeralSeparator()
 
-### Comparison with official dot tool behavior
-
-#### Numeral followed by letters (e.g., `1ABC`, `123abc`)
-
-* **dot behavior**: Issues warning "syntax ambiguity - badly delimited number" and splits
-  into two tokens (e.g., `1ABC` becomes `1` and `ABC`)
-* **My scanner**: Returns ILLEGAL token with error "a numeral can optionally lead with a `-`,
-  has to have at least one digit before or after a `.` which must only be followed by digits"
-* **Decision needed**: Should I match dot's behavior and split, or keep the error? The spec
-  says numerals match `[-]?(.[0-9]+ | [0-9]+(.[0-9]*)?)` which doesn't allow letters.
-
-#### Multiple dots in numerals (e.g., `1.2.3`)
-
-* **dot behavior**: Warning "syntax ambiguity - badly delimited number '1.2.'" and splits into
-  `1.2` and `.3`
-* **My scanner**: Error "a numeral can only have one `.` that is at least preceded or followed
-  by digits"
-* **Status**: My scanner correctly rejects this per spec
-
-#### Hyphen/minus in middle of identifiers (e.g., `A-B`, `1-2`)
-
-* **dot behavior**: Syntax error near `-` (treats `-` as potential edge operator)
-* **My scanner**: For `A-B`, stops at `A` and tries to parse `-B` as numeral, fails. For
-  `1-2`, error "a numeral can only be prefixed with a `-`"
-* **Status**: Both reject, but for different reasons. My scanner needs better error messages
-  here.
-
-Error cases to think about and here is what Go does
-
-* LETTERS AFTER NUMBERS
-
-```
-   (Non-decimal/non-hex letters stop consumption)
-   Decimal + letters: "123xyz"
-      Token 1: INT        (pos=0, lit="123")
-      Token 2: IDENT      (pos=3, lit="xyz")
-      Token 3: ;          (pos=6, lit="\n")
-      (No errors)
-```
-
-I don't like this as this requires the parser to then flag this as invalid and its way more
-complicated to do that than needed. That should be a single token with an error. Its neither a valid
-number nor a valid identifier.
-
-* think about eof todos and the literal/position I return
-
-* read ./research/stderr/summary.md
-* read pros/cons of using reader vs taking in []byte into Parser/Formatter
 
 ## Next
 
 * improve error handling [Parser](#parser)
+  * give a better error message for edge operators that do not match the graph type
+  directed/undirected
+  * then matklad approach
 * use assertions?
 
 * do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
@@ -112,8 +69,6 @@ graph {
 ```
 
 * improve error printing, how to print the line/snippet with ^^^ to highlight were the error is
-* give a better error message for edge operators that do not match the graph type
-directed/undirected
 * implement parser.Trace like the Go parser?
 
 * ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates

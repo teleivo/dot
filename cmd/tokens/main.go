@@ -47,7 +47,7 @@ func position(t token.Token) string {
 }
 
 func literal(t token.Token) string {
-	if t.Type == token.Identifier || t.Type == token.ILLEGAL {
+	if t.Type == token.Identifier || t.Type == token.ERROR {
 		return t.Literal
 	}
 	return t.Type.String()

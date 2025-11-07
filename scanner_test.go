@@ -833,14 +833,14 @@ func TestScanner(t *testing.T) {
 				}
 			}{
 				{
-					in: "  \x7f", // \177
+					in: "  \x7f", // \177 - cannot start any token
 					want: []struct {
 						token token.Token
 						err   error
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
+								Type:    token.ERROR,
 								Literal: "\x7f",
 								Start:   token.Position{Row: 1, Column: 3},
 								End:     token.Position{Row: 1, Column: 3},
@@ -855,26 +855,17 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
-					in: "  _zab\x7fx", // \177
+					in: "  _zab\x7fx", // \177 in middle - ERROR token consumes until separator
 					want: []struct {
 						token token.Token
 						err   error
 					}{
 						{
 							token.Token{
-								Type:    token.Identifier,
-								Literal: "_zab",
+								Type:    token.ERROR,
+								Literal: "_zab\x7fx",
 								Start:   token.Position{Row: 1, Column: 3},
-								End:     token.Position{Row: 1, Column: 6},
-							},
-							nil,
-						},
-						{
-							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "\x7f",
-								Start:   token.Position{Row: 1, Column: 7},
-								End:     token.Position{Row: 1, Column: 7},
+								End:     token.Position{Row: 1, Column: 8},
 							},
 							Error{
 								LineNr:      1,
@@ -883,19 +874,32 @@ func TestScanner(t *testing.T) {
 								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
 							},
 						},
+					},
+				},
+				{
+					in: "A\000\000B", // null bytes within identifier - consume entire sequence as ERROR
+					want: []struct {
+						token token.Token
+						err   error
+					}{
 						{
 							token.Token{
-								Type:    token.Identifier,
-								Literal: "x",
-								Start:   token.Position{Row: 1, Column: 8},
-								End:     token.Position{Row: 1, Column: 8},
+								Type:    token.ERROR,
+								Literal: "A\x00\x00B",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 4},
 							},
-							nil,
+							Error{
+								LineNr:      1,
+								CharacterNr: 2,
+								Character:   '\000',
+								Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
+							},
 						},
 					},
 				},
 				{
-					in: "A\000\000B", // null bytes
+					in: "A;x\000y{B", // null byte with adjacent chars grouped into ERROR, separated by terminals
 					want: []struct {
 						token token.Token
 						err   error
@@ -911,40 +915,88 @@ func TestScanner(t *testing.T) {
 						},
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "\x00",
+								Type:    token.Semicolon,
+								Literal: ";",
 								Start:   token.Position{Row: 1, Column: 2},
 								End:     token.Position{Row: 1, Column: 2},
 							},
+							nil,
+						},
+						{
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "x\x00y",
+								Start:   token.Position{Row: 1, Column: 3},
+								End:     token.Position{Row: 1, Column: 5},
+							},
 							Error{
 								LineNr:      1,
-								CharacterNr: 2,
+								CharacterNr: 4,
 								Character:   '\000',
 								Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
 							},
 						},
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "\x00",
-								Start:   token.Position{Row: 1, Column: 3},
-								End:     token.Position{Row: 1, Column: 3},
+								Type:    token.LeftBrace,
+								Literal: "{",
+								Start:   token.Position{Row: 1, Column: 6},
+								End:     token.Position{Row: 1, Column: 6},
 							},
-							Error{
-								LineNr:      1,
-								CharacterNr: 3,
-								Character:   '\000',
-								Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
-							},
+							nil,
 						},
 						{
 							token.Token{
 								Type:    token.Identifier,
 								Literal: "B",
-								Start:   token.Position{Row: 1, Column: 4},
-								End:     token.Position{Row: 1, Column: 4},
+								Start:   token.Position{Row: 1, Column: 7},
+								End:     token.Position{Row: 1, Column: 7},
 							},
 							nil,
+						},
+					},
+				},
+				{
+					in: "@@@",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "@@@",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 3},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 1,
+								Character:   '@',
+								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+							},
+						},
+					},
+				},
+				{
+					in: "abc@def$ghi",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "abc@def$ghi",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 11},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 4,
+								Character:   '@',
+								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+							},
 						},
 					},
 				},
@@ -1086,9 +1138,9 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "A",
-								Start:   token.Position{Row: 1, Column: 4},
+								Type:    token.ERROR,
+								Literal: "-.1A",
+								Start:   token.Position{Row: 1, Column: 1},
 								End:     token.Position{Row: 1, Column: 4},
 							},
 							Error{
@@ -1108,10 +1160,10 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "-",
-								Start:   token.Position{Row: 1, Column: 2},
-								End:     token.Position{Row: 1, Column: 2},
+								Type:    token.ERROR,
+								Literal: "1-20",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 4},
 							},
 							Error{
 								LineNr:      1,
@@ -1119,15 +1171,6 @@ func TestScanner(t *testing.T) {
 								Character:   '-',
 								Reason:      "a numeral can only be prefixed with a `-`",
 							},
-						},
-						{
-							token.Token{
-								Type:    token.Identifier,
-								Literal: "20",
-								Start:   token.Position{Row: 1, Column: 3},
-								End:     token.Position{Row: 1, Column: 4},
-							},
-							nil,
 						},
 					},
 				},
@@ -1139,10 +1182,10 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: ".",
-								Start:   token.Position{Row: 1, Column: 4},
-								End:     token.Position{Row: 1, Column: 4},
+								Type:    token.ERROR,
+								Literal: ".13.4",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 5},
 							},
 							Error{
 								LineNr:      1,
@@ -1150,15 +1193,6 @@ func TestScanner(t *testing.T) {
 								Character:   '.',
 								Reason:      "a numeral can only have one `.` that is at least preceded or followed by digits",
 							},
-						},
-						{
-							token.Token{
-								Type:    token.Identifier,
-								Literal: "4",
-								Start:   token.Position{Row: 1, Column: 5},
-								End:     token.Position{Row: 1, Column: 5},
-							},
-							nil,
 						},
 					},
 				},
@@ -1169,15 +1203,15 @@ func TestScanner(t *testing.T) {
 						err   error
 					}{
 						{
-							token.Token{ // TODO is this token correct?
-								Type:    token.ILLEGAL,
-								Literal: "�",
-								Start:   token.Position{Row: 1, Column: 3},
-								End:     token.Position{Row: 1, Column: 3},
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "-.",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 2},
 							},
-							Error{ // TODO I point the error past the EOF
+							Error{
 								LineNr:      1,
-								CharacterNr: 3,
+								CharacterNr: 1,
 								Character:   -1,
 								Reason:      "a numeral must have at least one digit",
 							},
@@ -1191,15 +1225,15 @@ func TestScanner(t *testing.T) {
 						err   error
 					}{
 						{
-							token.Token{ // TODO whitespace is usually a token separator
-								Type:    token.ILLEGAL,
-								Literal: " ",
-								Start:   token.Position{Row: 2, Column: 2},
-								End:     token.Position{Row: 2, Column: 2},
+							token.Token{
+								Type:    token.ERROR,
+								Literal: ".",
+								Start:   token.Position{Row: 2, Column: 1},
+								End:     token.Position{Row: 2, Column: 1},
 							},
 							Error{
 								LineNr:      2,
-								CharacterNr: 2,
+								CharacterNr: 1,
 								Character:   ' ',
 								Reason:      "a numeral must have at least one digit",
 							},
@@ -1223,10 +1257,10 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "\u00A0",
-								Start:   token.Position{Row: 1, Column: 4},
-								End:     token.Position{Row: 1, Column: 4},
+								Type:    token.ERROR,
+								Literal: "100\u00A0200",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 7},
 							},
 							Error{
 								LineNr:      1,
@@ -1234,15 +1268,6 @@ func TestScanner(t *testing.T) {
 								Character:   160,
 								Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
 							},
-						},
-						{
-							token.Token{
-								Type:    token.Identifier,
-								Literal: "200",
-								Start:   token.Position{Row: 1, Column: 5},
-								End:     token.Position{Row: 1, Column: 7},
-							},
-							nil,
 						},
 					},
 				},
@@ -1254,14 +1279,14 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: " ",
-								Start:   token.Position{Row: 4, Column: 5},
-								End:     token.Position{Row: 4, Column: 5},
+								Type:    token.ERROR,
+								Literal: "-",
+								Start:   token.Position{Row: 4, Column: 4},
+								End:     token.Position{Row: 4, Column: 4},
 							},
 							Error{
 								LineNr:      4,
-								CharacterNr: 5,
+								CharacterNr: 4,
 								Character:   ' ',
 								Reason:      "a numeral must have at least one digit",
 							},
@@ -1274,6 +1299,68 @@ func TestScanner(t *testing.T) {
 								End:     token.Position{Row: 4, Column: 6},
 							},
 							nil,
+						},
+					},
+				},
+				{
+					in: "A---B",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.Identifier,
+								Literal: "A",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 1},
+							},
+							nil,
+						},
+						{
+							token.Token{
+								Type:    token.UndirectedEdge,
+								Literal: "--",
+								Start:   token.Position{Row: 1, Column: 2},
+								End:     token.Position{Row: 1, Column: 3},
+							},
+							nil,
+						},
+						{
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "-B",
+								Start:   token.Position{Row: 1, Column: 4},
+								End:     token.Position{Row: 1, Column: 5},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 5,
+								Character:   'B',
+								Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
+							},
+						},
+					},
+				},
+				{
+					in: "1.2.3abc",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "1.2.3abc",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 8},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 4,
+								Character:   '.',
+								Reason:      "a numeral can only have one `.` that is at least preceded or followed by digits",
+							},
 						},
 					},
 				},
@@ -1504,7 +1591,7 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ERROR,
 								Literal: `"asdf`,
 								Start:   token.Position{Row: 1, Column: 1},
 								End:     token.Position{Row: 1, Column: 5},
@@ -1527,7 +1614,7 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type: token.Identifier,
+								Type: token.ERROR,
 								Literal: `"asdf
 		}`,
 								Start: token.Position{Row: 1, Column: 1},
@@ -1542,28 +1629,28 @@ func TestScanner(t *testing.T) {
 						},
 					},
 				},
-			{
-				in: "\"node\x00with\x00nul\"",
-				want: []struct {
-					token token.Token
-					err   error
-				}{
-					{
-						token.Token{
-							Type:    token.Identifier,
-							Literal: "\"node\x00with\x00nul\"",
-							Start:   token.Position{Row: 1, Column: 1},
-							End:     token.Position{Row: 1, Column: 15},
-						},
-						Error{
-							LineNr:      1,
-							CharacterNr: 6,
-							Character:   '\x00',
-							Reason:      "illegal character NUL: quoted identifiers cannot contain null bytes",
+				{
+					in: "\"node\x00with\x00nul\"",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "\"node\x00with\x00nul\"",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 15},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 6,
+								Character:   '\x00',
+								Reason:      "illegal character NUL: quoted identifiers cannot contain null bytes",
+							},
 						},
 					},
 				},
-			},
 			}
 
 			for i, test := range tests {
@@ -1654,7 +1741,7 @@ spacious
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
+								Type:    token.ERROR,
 								Literal: "/",
 								Start:   token.Position{Row: 1, Column: 1},
 								End:     token.Position{Row: 1, Column: 1},
@@ -1730,7 +1817,7 @@ spacious
 						},
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
+								Type:    token.ERROR,
 								Literal: "/",
 								Start:   token.Position{Row: 1, Column: 2},
 								End:     token.Position{Row: 1, Column: 2},
@@ -1752,7 +1839,7 @@ spacious
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
+								Type:    token.ERROR,
 								Literal: "/",
 								Start:   token.Position{Row: 1, Column: 1},
 								End:     token.Position{Row: 1, Column: 1},
@@ -1783,15 +1870,15 @@ spacious
 					}{
 						{
 							token.Token{
-								Type:    token.ILLEGAL,
-								Literal: "�",
-								Start:   token.Position{Row: 1, Column: 26},
-								End:     token.Position{Row: 1, Column: 26},
+								Type:    token.ERROR,
+								Literal: "/* is not a valid comment",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 25},
 							},
 							Error{
 								LineNr:      1,
-								CharacterNr: 26,
-								Character:   -1,
+								CharacterNr: 1,
+								Character:   '/',
 								Reason:      "missing closing marker '*/' for multi-line comment",
 							},
 						},

@@ -185,19 +185,16 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	var end token.Position
 	var comment []rune
 	var hasClosingMarker bool
-	for ; sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.next() {
+	for prev := rune(eof); sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.next() {
 		end = sc.pos()
 		comment = append(comment, sc.cur)
 
-		var prev rune
-		if len(comment) > 2 {
-			prev = comment[len(comment)-2]
-		}
 		if isMultiLine && prev == '*' && sc.cur == '/' {
 			hasClosingMarker = true
-			err = sc.next() // advance past the closing '/' to next char
+			err = sc.next() // advance past the closing '/'
 			break
 		}
+		prev = sc.cur
 	}
 
 	tType := token.Comment
@@ -414,14 +411,6 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 			Character:   sc.cur,
 			Reason:      "a numeral must have at least one digit",
 		}
-		if advanceErr := sc.next(); advanceErr != nil {
-			return token.Token{
-				Type:    token.ERROR,
-				Literal: literal,
-				Start:   start,
-				End:     end,
-			}, advanceErr
-		}
 	}
 
 	if firstErr != nil {
@@ -453,7 +442,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 	start := sc.pos()
 	var end token.Position
 
-	for pos, prev := 0, rune(0); sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
+	for pos, prev := 0, rune(eof); sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
 		end = sc.pos()
 		id = append(id, sc.cur)
 
@@ -463,7 +452,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 
 		if pos != 0 && sc.cur == '"' && prev != '\\' {
 			hasClosingQuote = true
-			err = sc.next()
+			err = sc.next() // advance past the closing '"'
 			break
 		}
 		prev = sc.cur
@@ -493,14 +482,6 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 			Reason:      "missing closing quote",
 		}
 		tType = token.ERROR
-		if advanceErr := sc.next(); advanceErr != nil {
-			return token.Token{
-				Type:    token.ERROR,
-				Literal: literal,
-				Start:   start,
-				End:     end,
-			}, advanceErr
-		}
 	}
 
 	return token.Token{

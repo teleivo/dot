@@ -1,6 +1,5 @@
 ## Scanner
 
-* think of better edge related scanner errors
 * think of better error messages without going full Elm so stick to one sentence
 
 ## Next

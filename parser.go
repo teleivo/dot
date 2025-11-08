@@ -564,14 +564,6 @@ func (p *Parser) parseSubgraph(graph *ast.Graph) (ast.Subgraph, error) {
 	return subgraph, nil
 }
 
-func (p *Parser) isDone() bool {
-	return p.isEOF()
-}
-
-func (p *Parser) isEOF() bool {
-	return p.curTokenIs(token.EOF)
-}
-
 func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }

@@ -49,9 +49,9 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 }
 
 const (
-	unquotedStringStartErr = "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores"
-	unquotedStringNulErr   = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
-	quotedStringNulErr     = "illegal character NUL: quoted identifiers cannot contain null bytes"
+	unquotedIDErr    = "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores"
+	unquotedIDNulErr = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
+	quotedIDNulErr   = "illegal character NUL: quoted identifiers cannot contain null bytes"
 )
 
 // Next advances the scanners position by one token and returns it. When encountering invalid input,
@@ -277,7 +277,7 @@ func (sc *Scanner) tokenizeIdentifier() (token.Token, error) {
 	} else if isStartOfQuotedString(sc.cur) {
 		return sc.tokenizeQuotedID()
 	} else {
-		return sc.tokenizeUnquotedString()
+		return sc.tokenizeUnquotedID()
 	}
 }
 
@@ -290,9 +290,9 @@ func (sc *Scanner) error(reason string) Error {
 	}
 }
 
-// tokenizeUnquotedString considers the current rune(s) as an identifier that might be a DOT
+// tokenizeUnquotedID considers the current rune(s) as an identifier that might be a DOT
 // keyword.
-func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
+func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
 	var firstErr error
 	var err error
 	var id []rune
@@ -301,10 +301,13 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 
 	for ; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err = sc.next() {
 		if firstErr == nil && !isLegalInUnquotedID(sc.cur) {
-			if sc.cur == 0 {
-				firstErr = sc.error(unquotedStringNulErr)
-			} else {
-				firstErr = sc.error(unquotedStringStartErr)
+			switch sc.cur {
+			case 0:
+				firstErr = sc.error(unquotedIDNulErr)
+			case '-':
+				firstErr = sc.error("must be followed by '-' for undirected edges or '>' for directed edges, or be inside a quoted identifier")
+			default:
+				firstErr = sc.error(unquotedIDErr)
 			}
 		}
 
@@ -364,14 +367,18 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	start := sc.pos()
 	var end token.Position
 
-	for pos, hasDot := 0, false; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err, pos = sc.next(), pos+1 {
+	for pos, prev, hasDot := 0, rune(eof), false; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err, pos = sc.next(), pos+1 {
 		end = sc.pos()
 		if firstErr == nil && sc.cur == '-' && pos != 0 {
 			firstErr = sc.error("a numeral can only be prefixed with a `-`")
 		} else if firstErr == nil && sc.cur == '.' && hasDot {
 			firstErr = sc.error("a numeral can only have one `.` that is at least preceded or followed by digits")
 		} else if firstErr == nil && sc.cur != '-' && sc.cur != '.' && !unicode.IsDigit(sc.cur) { // otherwise only digits are allowed
-			firstErr = sc.error("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
+			if prev == '-' {
+				firstErr = sc.error("not allowed after '-' in number: only digits and '.' are allowed")
+			} else {
+				firstErr = sc.error("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
+			}
 		}
 
 		if sc.cur == '.' {
@@ -381,6 +388,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 		}
 
 		id = append(id, sc.cur)
+		prev = sc.cur
 	}
 
 	literal := string(id)
@@ -439,7 +447,7 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 		id = append(id, sc.cur)
 
 		if sc.cur == 0 && nulByteErr == nil {
-			nulByteErr = sc.error(quotedStringNulErr)
+			nulByteErr = sc.error(quotedIDNulErr)
 		}
 
 		if pos != 0 && sc.cur == '"' && prev != '\\' {

@@ -1139,6 +1139,50 @@ func TestScanner(t *testing.T) {
 		})
 	})
 
+	t.Run("EdgeOperators", func(t *testing.T) {
+		t.Run("Invalid", func(t *testing.T) {
+			tests := []struct {
+				in   string
+				want []struct {
+					token token.Token
+					err   error
+				}
+			}{
+				{
+					in: "a-b",
+					want: []struct {
+						token token.Token
+						err   error
+					}{
+						{
+							token.Token{
+								Type:    token.ERROR,
+								Literal: "a-b",
+								Start:   token.Position{Row: 1, Column: 1},
+								End:     token.Position{Row: 1, Column: 3},
+							},
+							Error{
+								LineNr:      1,
+								CharacterNr: 2,
+								Character:   '-',
+								Reason:      "must be followed by '-' for undirected edges or '>' for directed edges, or be inside a quoted identifier",
+							},
+						},
+					},
+				},
+			}
+
+			for i, test := range tests {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					scanner, err := NewScanner(strings.NewReader(test.in))
+					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
+
+					assertNext(t, scanner, test.want, test.in)
+				})
+			}
+		})
+	})
+
 	t.Run("NumeralIdentifiers", func(t *testing.T) {
 		t.Run("Valid", func(t *testing.T) {
 			tests := []struct {
@@ -1463,7 +1507,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 5,
 								Character:   'B',
-								Reason:      "a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits",
+								Reason:      "not allowed after '-' in number: only digits and '.' are allowed",
 							},
 						},
 					},

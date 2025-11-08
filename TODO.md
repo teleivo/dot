@@ -1,10 +1,10 @@
 ## Scanner
 
-are all tokenize methods now properly advancing even in case of err?
+* review/clean one last time
 * think of better edge related scanner errors
 * think of better error messages without going full Elm so stick to one sentence
-* should these not be very similar? I think the second one might miss comment runes as separators isUnquotedStringSeparator(r rune) and isNumeralSeparator()
-
+* should these funcs not be very similar? I think the second one might miss comment runes as
+separators isUnquotedStringSeparator(r rune) and isNumeralSeparator()
 
 ## Next
 
@@ -13,11 +13,7 @@ are all tokenize methods now properly advancing even in case of err?
   directed/undirected
   * then matklad approach
 * use assertions?
-
-* do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
-How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
-want something similar for the parser. Is it best to integrate that into the scanner/parser or nicer
-to keep it externally like `cmd/tokens`?
+  * for example to check each Next() or its submethods advance by at least one rune
 
 * support comments
   * line comment
@@ -106,6 +102,10 @@ recursive definition?
 * make error messages more user friendly
   * for example when parsing the attr_stmt the attr_list is mandatory, instead of saying expected [
     I could say that
+* do I need the Stringer impls in the AST? would be great to get rid of extra code if not needed.
+How to debug/trace then? see Gos trace in the parser. `./cmd/tokens/main.go` is of great help. I
+want something similar for the parser. Is it best to integrate that into the scanner/parser or nicer
+to keep it externally like `cmd/tokens`?
 
 #### Nice to have
 
@@ -178,25 +178,9 @@ if endColumn > maxColumn { // the word and \ do not fit on the current line
 	"Node1234" [label="This is a test\nof a long multi-line\nlabel where the value exceeds the max col"]
 ```
 
-* make this prettier
-
-```dot
-	B [
-		style="filled" //  this should stay with style="filled"
-	]
-```
-
-the Attribute should go on a new line like above but it ends up looking like
-
-```dot
-	B [style="filled" // this should stay with style="filled"
-	]
-```
-
 comments
-    * merge adjacent comments?
-    * how to align comments when I do break them up? right now they are not indented at all. indent to
-    the level of the previous comment?
+  * how to align comments when I do break them up? right now they are not indented at all. indent to
+  the level of the previous comment?
 
 * do I need to shield against ASTs generated from code?
 * implement isValid and Stringer on token.Position like Go does? the EOF token for example does not
@@ -230,16 +214,10 @@ ast.ID without parsing the identifier, should I not parse it first?
   * LexError return the token.Token.Start token.Position? or return the invalid token at some point?
 
 improve
-* handling of EOF better and move these special tokens up top like Go does
-
 * count opening braces and brackets and decrement them on closing to validate they match?
 or is that to simplistic as there are rules as to when you are allowed/have to close them?
 
 * how to handle error on fmt.Fprint?
-* how to handle errors?
-
-* test using invalid input
-  * invalid input should be printed as is, it should not delete user input!
 
 * support formatting file/dirs in place
   * allow passing in file via flag and out file via flag while still allowing stdin/stdout

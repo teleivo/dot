@@ -168,9 +168,6 @@ func (sc *Scanner) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error
 
 func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	var tok token.Token
-	var err error
-	var comment []rune
-	var hasClosingMarker bool
 
 	if sc.cur == '/' && (sc.peek < 0 || (sc.peek != '/' && sc.peek != '*')) {
 		pos := sc.pos()
@@ -183,20 +180,21 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	}
 
 	start := sc.pos()
-	var end token.Position
 	isMultiLine := sc.cur == '/' && sc.peek == '*'
+	var err error
+	var end token.Position
+	var comment []rune
+	var hasClosingMarker bool
 	for ; sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.next() {
 		end = sc.pos()
 		comment = append(comment, sc.cur)
 
-		if isMultiLine && sc.cur == '*' && sc.peek == '/' {
+		var prev rune
+		if len(comment) > 2 {
+			prev = comment[len(comment)-2]
+		}
+		if isMultiLine && prev == '*' && sc.cur == '/' {
 			hasClosingMarker = true
-			comment = append(comment, sc.peek)
-			err = sc.next() // consume last rune '/' of closing marker
-			if err != nil {
-				break
-			}
-			end = sc.pos()
 			err = sc.next() // advance past the closing '/' to next char
 			break
 		}
@@ -211,14 +209,6 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 			Reason:      "missing closing marker '*/' for multi-line comment",
 		}
 		tType = token.ERROR
-		if advanceErr := sc.next(); advanceErr != nil {
-			return token.Token{
-				Type:    token.ERROR,
-				Literal: string(comment),
-				Start:   start,
-				End:     end,
-			}, advanceErr
-		}
 	}
 
 	return token.Token{

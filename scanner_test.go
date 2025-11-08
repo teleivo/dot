@@ -1713,6 +1713,35 @@ spacious
 						End:   token.Position{Row: 6, Column: 7},
 					},
 				},
+				{
+					in: `/* ** */`,
+					want: token.Token{
+						Type:    token.Comment,
+						Literal: `/* ** */`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 8},
+					},
+				},
+				{
+					in: `/* * */`,
+					want: token.Token{
+						Type:    token.Comment,
+						Literal: `/* * */`,
+						Start:   token.Position{Row: 1, Column: 1},
+						End:     token.Position{Row: 1, Column: 7},
+					},
+				},
+				{
+					in: `/* *
+*/`,
+					want: token.Token{
+						Type: token.Comment,
+						Literal: `/* *
+*/`,
+						Start: token.Position{Row: 1, Column: 1},
+						End:   token.Position{Row: 2, Column: 2},
+					},
+				},
 			}
 
 			for i, test := range tests {

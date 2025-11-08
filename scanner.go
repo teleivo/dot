@@ -48,12 +48,6 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 	return &sc, nil
 }
 
-const (
-	unquotedIDStartErr = "unquoted IDs must start with a letter or underscore"
-	unquotedIDContErr  = "unquoted IDs can only contain letters, digits, and underscores"
-	unquotedIDNulErr   = "unquoted IDs cannot contain null bytes"
-	quotedIDNulErr     = "quoted IDs cannot contain null bytes"
-)
 
 // Next advances the scanners position by one token and returns it. When encountering invalid input,
 // the scanner continues scanning and returns both a token and an error. Invalid input results in a
@@ -304,14 +298,14 @@ func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
 		if firstErr == nil && !isLegalInUnquotedID(sc.cur) {
 			switch sc.cur {
 			case 0:
-				firstErr = sc.error(unquotedIDNulErr)
+				firstErr = sc.error("unquoted IDs cannot contain null bytes")
 			case '-':
 				firstErr = sc.error("use '--' (undirected) or '->' (directed) for edges, or quote the ID")
 			default:
 				if len(id) == 0 {
-					firstErr = sc.error(unquotedIDStartErr)
+					firstErr = sc.error("unquoted IDs must start with a letter or underscore")
 				} else {
-					firstErr = sc.error(unquotedIDContErr)
+					firstErr = sc.error("unquoted IDs can only contain letters, digits, and underscores")
 				}
 			}
 		}
@@ -452,7 +446,7 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 		id = append(id, sc.cur)
 
 		if sc.cur == 0 && nulByteErr == nil {
-			nulByteErr = sc.error(quotedIDNulErr)
+			nulByteErr = sc.error("quoted IDs cannot contain null bytes")
 		}
 
 		if pos != 0 && sc.cur == '"' && prev != '\\' {

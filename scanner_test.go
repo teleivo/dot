@@ -737,6 +737,132 @@ func TestScanner(t *testing.T) {
 				},
 			},
 		},
+		"NumeralFollowedByLineComment": {
+			in: "123#comment",
+			want: []token.Token{
+				{
+					Type:    token.ID,
+					Literal: "123",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 3},
+				},
+				{
+					Type:    token.Comment,
+					Literal: "#comment",
+					Start:   token.Position{Row: 1, Column: 4},
+					End:     token.Position{Row: 1, Column: 11},
+				},
+			},
+		},
+		"NumeralFollowedBySingleLineComment": {
+			in: "456//comment",
+			want: []token.Token{
+				{
+					Type:    token.ID,
+					Literal: "456",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 3},
+				},
+				{
+					Type:    token.Comment,
+					Literal: "//comment",
+					Start:   token.Position{Row: 1, Column: 4},
+					End:     token.Position{Row: 1, Column: 12},
+				},
+			},
+		},
+		"UnquotedIDFollowedByUndirectedEdgeNoWhitespace": {
+			in: "ab--cd",
+			want: []token.Token{
+				{
+					Type:    token.ID,
+					Literal: "ab",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 2},
+				},
+				{
+					Type:    token.UndirectedEdge,
+					Literal: "--",
+					Start:   token.Position{Row: 1, Column: 3},
+					End:     token.Position{Row: 1, Column: 4},
+				},
+				{
+					Type:    token.ID,
+					Literal: "cd",
+					Start:   token.Position{Row: 1, Column: 5},
+					End:     token.Position{Row: 1, Column: 6},
+				},
+			},
+		},
+		"UnquotedIDFollowedByDirectedEdgeNoWhitespace": {
+			in: "ab->cd",
+			want: []token.Token{
+				{
+					Type:    token.ID,
+					Literal: "ab",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 2},
+				},
+				{
+					Type:    token.DirectedEdge,
+					Literal: "->",
+					Start:   token.Position{Row: 1, Column: 3},
+					End:     token.Position{Row: 1, Column: 4},
+				},
+				{
+					Type:    token.ID,
+					Literal: "cd",
+					Start:   token.Position{Row: 1, Column: 5},
+					End:     token.Position{Row: 1, Column: 6},
+				},
+			},
+		},
+		"NumeralFollowedByUndirectedEdgeNoWhitespace": {
+			in: "12--34",
+			want: []token.Token{
+				{
+					Type:    token.ID,
+					Literal: "12",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 2},
+				},
+				{
+					Type:    token.UndirectedEdge,
+					Literal: "--",
+					Start:   token.Position{Row: 1, Column: 3},
+					End:     token.Position{Row: 1, Column: 4},
+				},
+				{
+					Type:    token.ID,
+					Literal: "34",
+					Start:   token.Position{Row: 1, Column: 5},
+					End:     token.Position{Row: 1, Column: 6},
+				},
+			},
+		},
+		"NumeralFollowedByDirectedEdgeNoWhitespace": {
+			in: "12->34",
+			want: []token.Token{
+				{
+					Type:    token.ID,
+					Literal: "12",
+					Start:   token.Position{Row: 1, Column: 1},
+					End:     token.Position{Row: 1, Column: 2},
+				},
+				{
+					Type:    token.DirectedEdge,
+					Literal: "->",
+					Start:   token.Position{Row: 1, Column: 3},
+					End:     token.Position{Row: 1, Column: 4},
+				},
+				{
+					Type:    token.ID,
+					Literal: "34",
+					Start:   token.Position{Row: 1, Column: 5},
+					End:     token.Position{Row: 1, Column: 6},
+				},
+			},
+		},
 	}
 
 	for name, test := range tests {

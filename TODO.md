@@ -1,10 +1,7 @@
 ## Scanner
 
-* review/clean one last time
 * think of better edge related scanner errors
 * think of better error messages without going full Elm so stick to one sentence
-* should these funcs not be very similar? I think the second one might miss comment runes as
-separators isUnquotedStringSeparator(r rune) and isNumeralSeparator()
 
 ## Next
 

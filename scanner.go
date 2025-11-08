@@ -299,8 +299,8 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 	start := sc.pos()
 	var end token.Position
 
-	for ; sc.cur >= 0 && err == nil && !isUnquotedStringSeparator(sc.cur); err = sc.next() {
-		if firstErr == nil && !isLegalInUnquotedString(sc.cur) {
+	for ; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err = sc.next() {
+		if firstErr == nil && !isLegalInUnquotedID(sc.cur) {
 			if sc.cur == 0 {
 				firstErr = sc.error(unquotedStringNulErr)
 			} else {
@@ -341,15 +341,6 @@ func (sc *Scanner) tokenizeUnquotedString() (token.Token, error) {
 	}, nil
 }
 
-// isUnquotedStringSeparator determines if the rune separates tokens.
-func isUnquotedStringSeparator(r rune) bool {
-	// - potential edge operator
-	// / potential single- or multi-line comment
-	// # potential line comment
-	// " potential quoted identifier
-	return isTerminal(r) || isWhitespace(r) || r == '-' || r == '/' || r == '#' || r == '"'
-}
-
 // isTerminal determines if the rune is considered a terminal token in the dot language. This does
 // only checks for single rune terminals. Edge operators are thus not considered.
 func isTerminal(r rune) bool {
@@ -361,7 +352,7 @@ func isTerminal(r rune) bool {
 	return tok.IsTerminal()
 }
 
-func isLegalInUnquotedString(r rune) bool {
+func isLegalInUnquotedID(r rune) bool {
 	return isStartOfUnquotedString(r) || unicode.IsDigit(r)
 }
 
@@ -373,7 +364,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	start := sc.pos()
 	var end token.Position
 
-	for pos, hasDot := 0, false; sc.cur >= 0 && err == nil && !sc.isNumeralSeparator(); err, pos = sc.next(), pos+1 {
+	for pos, hasDot := 0, false; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err, pos = sc.next(), pos+1 {
 		end = sc.pos()
 		if firstErr == nil && sc.cur == '-' && pos != 0 {
 			firstErr = sc.error("a numeral can only be prefixed with a `-`")
@@ -430,8 +421,9 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	}, nil
 }
 
-func (sc *Scanner) isNumeralSeparator() bool {
-	return isTerminal(sc.cur) || isWhitespace(sc.cur) || isEdgeOperator(sc.cur, sc.peek)
+// isTokenSeparator determines if the rune separates tokens.
+func (sc *Scanner) isTokenSeparator() bool {
+	return isTerminal(sc.cur) || isWhitespace(sc.cur) || isEdgeOperator(sc.cur, sc.peek) || sc.cur == '/' || sc.cur == '#' || sc.cur == '"'
 }
 
 func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {

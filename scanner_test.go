@@ -1165,7 +1165,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 2,
 								Character:   '-',
-								Reason:      "must be followed by '-' for undirected edges or '>' for directed edges, or be inside a quoted identifier",
+								Reason:      "use '--' (undirected) or '->' (directed) for edges, or quote the ID",
 							},
 						},
 					},

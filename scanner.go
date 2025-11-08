@@ -306,7 +306,7 @@ func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
 			case 0:
 				firstErr = sc.error(unquotedIDNulErr)
 			case '-':
-				firstErr = sc.error("must be followed by '-' for undirected edges or '>' for directed edges, or be inside a quoted identifier")
+				firstErr = sc.error("use '--' (undirected) or '->' (directed) for edges, or quote the ID")
 			default:
 				if len(id) == 0 {
 					firstErr = sc.error(unquotedIDStartErr)

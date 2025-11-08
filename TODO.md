@@ -2,26 +2,6 @@
 
 ## Scanner Error Message Analysis
 
-### 2. Hyphen in Unquoted ID
-
-**Input:** `graph{ A-B }`
-
-**Current message:**
-```
-1:9: illegal character U+002D '-': must be followed by '-' for undirected edges or '>' for directed edges, or be inside a quoted identifier
-```
-
-**DOT's message:**
-```
-syntax error in line 1 near '-'
-```
-
-**Suggestions:**
-* `'-' starts an edge operator: use '--' or '->', or quote the name like "A-B"`
-* `unexpected '-': did you mean '--' (edge), '->' (edge), or "A-B" (quoted name)?`
-
-**Notes:** Current message is too wordy and makes assumptions. The user might want an edge, or they might want a name with a hyphen. Present both options equally without guessing intent.
-
 ### 3. Incomplete Comment Marker
 
 **Input:** `graph{ / }`

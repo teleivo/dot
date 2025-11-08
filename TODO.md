@@ -1,6 +1,223 @@
-## Scanner
+# TODO
 
-* think of better error messages without going full Elm so stick to one sentence
+## Scanner Error Message Analysis
+
+### 2. Hyphen in Unquoted ID
+
+**Input:** `graph{ A-B }`
+
+**Current message:**
+```
+1:9: illegal character U+002D '-': must be followed by '-' for undirected edges or '>' for directed edges, or be inside a quoted identifier
+```
+
+**DOT's message:**
+```
+syntax error in line 1 near '-'
+```
+
+**Suggestions:**
+* `'-' starts an edge operator: use '--' or '->', or quote the name like "A-B"`
+* `unexpected '-': did you mean '--' (edge), '->' (edge), or "A-B" (quoted name)?`
+
+**Notes:** Current message is too wordy and makes assumptions. The user might want an edge, or they might want a name with a hyphen. Present both options equally without guessing intent.
+
+### 3. Incomplete Comment Marker
+
+**Input:** `graph{ / }`
+
+**Current message:**
+```
+1:8: illegal character U+002F '/': missing '/' for single-line or a '*' for a multi-line comment
+```
+
+**DOT's message:**
+```
+syntax error in line 1 near '/'
+```
+
+**Suggestions:**
+* `unexpected '/': use '//' for comments or '->' for edges`
+* `incomplete comment: use '//' (line) or '/*...*/' (block)`
+
+**Notes:** Current message assumes the user wants a comment. They might want an edge operator that's malformed. Don't assume - present options.
+
+### 4. Unclosed Multi-line Comment
+
+**Input:** `graph{ /* unclosed }`
+
+**Current message:**
+```
+1:8: illegal character U+002F '/': missing closing marker '*/' for multi-line comment
+```
+
+**DOT's message:**
+```
+syntax error in line 2 scanning a /*...*/ comment (missing '*/? longer than 16384?)
+```
+
+**Suggestions:**
+* `unclosed comment: missing '*/'`
+* `comment started but never closed: add '*/' to end it`
+
+**Notes:** Simpler is better. DOT's message incorrectly suggests a length limit. Your message is clearer but drop "marker" (jargon).
+
+### 5. Hyphen in Middle of Numeral
+
+**Input:** `graph{ 1-2 }`
+
+**Current message:**
+```
+1:9: illegal character U+002D '-': a numeral can only be prefixed with a `-`
+```
+
+**DOT's behavior:** Accepts this as two tokens: `1` and `-2`
+
+**Suggestions:**
+* `'-' not allowed mid-number: use spaces like '1 -2' or quote it like "1-2"`
+* `unexpected '-' in number: did you mean '1 -2' (two numbers) or a name like "1-2"?`
+
+**Notes:** Current message doesn't explain what would work. Show valid alternatives without assuming intent.
+
+### 6. Multiple Dots in Numeral
+
+**Input:** `graph{ 1.2.3 }`
+
+**Current message:**
+```
+1:11: illegal character U+002E '.': a numeral can only have one `.` that is at least preceded or followed by digits
+```
+
+**DOT's behavior:** Accepts with warning: `badly delimited number '1.2.' splits into two tokens`
+
+**Suggestions:**
+* `too many '.' in number: use one decimal point like '1.2' or separate like '1.2 .3'`
+* `unexpected second '.': numbers can have only one decimal point`
+
+**Notes:** Current message is too wordy. Focus on the problem (two dots) and the fix (one dot).
+
+### 7. Numeral with No Digits
+
+**Input:** `graph{ -. }`
+
+**Current message:**
+```
+1:8: illegal character U+0020 ' ': a numeral must have at least one digit
+```
+
+**DOT's message:**
+```
+syntax error in line 1 near '-'
+```
+
+**Suggestions:**
+* `incomplete number: '-.' needs at least one digit like '-.5' or '-0.'`
+* `invalid number '-': add digits before or after the '.'`
+
+**Notes:** The error points to the space (U+0020), which is confusing! Point to where the problem actually is (the number itself).
+
+### 8. Invalid Character After Minus in Number
+
+**Input:** `graph{ -@5 }`
+
+**Current message:**
+```
+1:9: illegal character U+0040 '@': not allowed after '-' in number: only digits and '.' are allowed
+```
+
+**DOT's message:**
+```
+syntax error in line 1 near '-'
+```
+
+**Suggestions:**
+* `'@' not allowed in number: after '-' use digits or '.'`
+* `invalid character '@' in number: only digits and '.' can follow '-'`
+
+**Notes:** Good message but slightly wordy. The second half could be tighter.
+
+### 9. Long Numeral Error Message
+
+**Current message:**
+```
+a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits
+```
+
+**This appears in scanner.go:380 but I didn't trigger it in testing**
+
+**Suggestions:**
+* `invalid number: use digits with optional '-' prefix and '.' decimal point`
+* `malformed number: valid forms are '123', '-123', '1.23', '-.5', '.5'`
+
+**Notes:** This is way too long and grammatically awkward. Show examples of valid numbers instead of describing grammar rules.
+
+### 10. Missing Closing Quote
+
+**Input:** `graph{ "unclosed }`
+
+**Current message:**
+```
+1:8: illegal character U+0022 '"': missing closing quote
+```
+
+**DOT's message:**
+```
+syntax error in line 1 scanning a quoted string (missing endquote? longer than 16384?)
+```
+
+**Suggestions:**
+* `unclosed string: missing closing '"'`
+* `string never closed: add '"' to end it`
+
+**Notes:** Simple and clear. Could drop "illegal character U+0022" since it points to the opening quote which isn't illegal.
+
+### 11. Null Byte in Quoted String
+
+**Input:** `graph{ "has\x00null" }`
+
+**Current message:**
+```
+1:12: illegal character U+0000: illegal character NUL: quoted identifiers cannot contain null bytes
+```
+
+**DOT's message:**
+```
+syntax error in line 1 scanning a quoted string (missing endquote? longer than 16384?)
+```
+
+**Suggestions:**
+* `null byte (\0) not allowed in quoted strings`
+* `invalid character: quoted strings cannot contain null bytes`
+
+**Notes:** Says "illegal character" twice. Also "identifiers" → use "strings" or "names" for clarity.
+
+### 12. Invalid Start of Unquoted ID (from constants)
+
+**Current message:**
+```
+unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores
+```
+
+**Suggestions:**
+* `unquoted names must start with a letter or '_', then use letters, digits, or '_'`
+* `invalid start: unquoted names begin with letters or '_'`
+
+**Notes:** This constant is used when the ID starts with an invalid character. Focus on the start requirement first.
+
+### Summary of Improvement Principles
+
+Based on research and these test cases:
+
+1. **Avoid "illegal character U+XXXX" prefix** - It adds noise. Just say the character.
+2. **Don't repeat yourself** - "illegal character: illegal character NUL" should be one phrase.
+3. **Use simple words** - "identifier" → "name", "marker" → just say what it is.
+4. **Show alternatives without assuming intent** - Don't say "you wanted a comment". Say "use X or Y".
+5. **Point to the right location** - The `-. ` error points to the space, not the number.
+6. **Be specific about what's wrong** - "too many dots" not "a numeral can only have one..."
+7. **Use examples over rules** - Show "-.5" not "preceded or followed by digits".
+8. **One sentence when possible** - Only use two if genuinely needed for clarity.
+9. **Drop jargon** - "closing marker" → "closing", "numeral" → "number".
+10. **Test against DOT** - Your errors are generally much clearer than DOT's!
 
 ## Next
 

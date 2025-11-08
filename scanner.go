@@ -49,9 +49,10 @@ func NewScanner(r io.Reader) (*Scanner, error) {
 }
 
 const (
-	unquotedIDErr    = "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores"
-	unquotedIDNulErr = "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores"
-	quotedIDNulErr   = "illegal character NUL: quoted identifiers cannot contain null bytes"
+	unquotedIDStartErr = "unquoted IDs must start with a letter or underscore"
+	unquotedIDContErr  = "unquoted IDs can only contain letters, digits, and underscores"
+	unquotedIDNulErr   = "unquoted IDs cannot contain null bytes"
+	quotedIDNulErr     = "quoted IDs cannot contain null bytes"
 )
 
 // Next advances the scanners position by one token and returns it. When encountering invalid input,
@@ -307,7 +308,11 @@ func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
 			case '-':
 				firstErr = sc.error("must be followed by '-' for undirected edges or '>' for directed edges, or be inside a quoted identifier")
 			default:
-				firstErr = sc.error(unquotedIDErr)
+				if len(id) == 0 {
+					firstErr = sc.error(unquotedIDStartErr)
+				} else {
+					firstErr = sc.error(unquotedIDContErr)
+				}
 			}
 		}
 
@@ -500,10 +505,15 @@ type Error struct {
 	Reason      string // Reason for the error.
 }
 
-// Error returns a formatted error message with line and character position.
 func (e Error) Error() string {
-	if e.Character < 0 {
+	switch {
+	case e.Character < 0:
 		return fmt.Sprintf("%d:%d: %s", e.LineNr, e.CharacterNr, e.Reason)
+	case e.Character >= 0x20 && e.Character < 0x7F:
+		return fmt.Sprintf("%d:%d: invalid character %q: %s", e.LineNr, e.CharacterNr, e.Character, e.Reason)
+	case e.Character >= 0x80 && unicode.IsPrint(e.Character):
+		return fmt.Sprintf("%d:%d: invalid character U+%04X %q: %s", e.LineNr, e.CharacterNr, e.Character, e.Character, e.Reason)
+	default:
+		return fmt.Sprintf("%d:%d: invalid character U+%04X: %s", e.LineNr, e.CharacterNr, e.Character, e.Reason)
 	}
-	return fmt.Sprintf("%d:%d: illegal character %#U: %s", e.LineNr, e.CharacterNr, e.Character, e.Reason)
 }

@@ -975,7 +975,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 3,
 								Character:   '\177',
-								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+								Reason:      "unquoted IDs must start with a letter or underscore",
 							},
 						},
 					},
@@ -997,7 +997,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 7,
 								Character:   '\177',
-								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+								Reason:      "unquoted IDs can only contain letters, digits, and underscores",
 							},
 						},
 					},
@@ -1019,7 +1019,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 2,
 								Character:   '\000',
-								Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
+								Reason:      "unquoted IDs cannot contain null bytes",
 							},
 						},
 					},
@@ -1059,7 +1059,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 4,
 								Character:   '\000',
-								Reason:      "illegal character NUL: unquoted identifiers can only contain letters, digits, and underscores",
+								Reason:      "unquoted IDs cannot contain null bytes",
 							},
 						},
 						{
@@ -1099,7 +1099,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 1,
 								Character:   '@',
-								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+								Reason:      "unquoted IDs must start with a letter or underscore",
 							},
 						},
 					},
@@ -1121,7 +1121,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 4,
 								Character:   '@',
-								Reason:      "unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores",
+								Reason:      "unquoted IDs can only contain letters, digits, and underscores",
 							},
 						},
 					},
@@ -1816,7 +1816,7 @@ func TestScanner(t *testing.T) {
 								LineNr:      1,
 								CharacterNr: 6,
 								Character:   '\x00',
-								Reason:      "illegal character NUL: quoted identifiers cannot contain null bytes",
+								Reason:      "quoted IDs cannot contain null bytes",
 							},
 						},
 					},
@@ -2173,4 +2173,91 @@ func assertNext(t *testing.T, scanner *Scanner, want []struct {
 	eofToken, eofErr := scanner.Next()
 	assert.NoErrorf(t, eofErr, "EOF for input %q", input)
 	assert.EqualValuesf(t, token.Token{Type: token.EOF}, eofToken, "EOF for input %q", input)
+}
+
+func TestError(t *testing.T) {
+	tests := map[string]struct {
+		err  Error
+		want string
+	}{
+		"CommonPrintableAsciiCharacter": {
+			err: Error{
+				LineNr:      1,
+				CharacterNr: 8,
+				Character:   '@',
+				Reason:      "unquoted IDs must start with a letter or underscore",
+			},
+			want: "1:8: invalid character '@': unquoted IDs must start with a letter or underscore",
+		},
+		"NullByte": {
+			err: Error{
+				LineNr:      2,
+				CharacterNr: 5,
+				Character:   '\x00',
+				Reason:      "unquoted IDs cannot contain null bytes",
+			},
+			want: "2:5: invalid character U+0000: unquoted IDs cannot contain null bytes",
+		},
+		"TabControlCharacter": {
+			err: Error{
+				LineNr:      1,
+				CharacterNr: 10,
+				Character:   '\t',
+				Reason:      "unexpected character in ID",
+			},
+			want: "1:10: invalid character U+0009: unexpected character in ID",
+		},
+		"DelCharacter": {
+			err: Error{
+				LineNr:      1,
+				CharacterNr: 3,
+				Character:   '\x7f',
+				Reason:      "unquoted IDs must start with a letter or underscore",
+			},
+			want: "1:3: invalid character U+007F: unquoted IDs must start with a letter or underscore",
+		},
+		"NonBreakingSpace": {
+			err: Error{
+				LineNr:      5,
+				CharacterNr: 12,
+				Character:   '\u00A0',
+				Reason:      "unexpected whitespace character",
+			},
+			want: "5:12: invalid character U+00A0: unexpected whitespace character",
+		},
+		"CyrillicALooksLikeLatin": {
+			err: Error{
+				LineNr:      3,
+				CharacterNr: 7,
+				Character:   '\u0410',
+				Reason:      "test ambiguous character",
+			},
+			want: "3:7: invalid character U+0410 'А': test ambiguous character",
+		},
+		"RegularDash": {
+			err: Error{
+				LineNr:      1,
+				CharacterNr: 9,
+				Character:   '-',
+				Reason:      "must be followed by '-' or '>'",
+			},
+			want: "1:9: invalid character '-': must be followed by '-' or '>'",
+		},
+		"NegativeCharacterNoFormatting": {
+			err: Error{
+				LineNr:      1,
+				CharacterNr: 5,
+				Character:   -1,
+				Reason:      "unexpected EOF",
+			},
+			want: "1:5: unexpected EOF",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tt.err.Error()
+			assert.EqualValuesf(t, tt.want, got, "Error message for %s", name)
+		})
+	}
 }

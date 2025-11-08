@@ -374,9 +374,9 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 			firstErr = sc.error("ambiguous: quote for ID containing multiple '.', or use one decimal point for number")
 		} else if firstErr == nil && sc.cur != '-' && sc.cur != '.' && !unicode.IsDigit(sc.cur) { // otherwise only digits are allowed
 			if prev == '-' {
-				firstErr = sc.error("not allowed after '-' in number: only digits and '.' are allowed")
+				firstErr = sc.error("invalid character in number: only digits and decimal point can follow '-'")
 			} else {
-				firstErr = sc.error("a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits")
+				firstErr = sc.error("invalid character in number: valid forms are '1', '-1', '1.2', '-.1', '.1'")
 			}
 		}
 
@@ -407,7 +407,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 			LineNr:      start.Row,
 			CharacterNr: start.Column,
 			Character:   sc.cur,
-			Reason:      "a numeral must have at least one digit",
+			Reason:      "ambiguous: quote for ID, or add digit for number like '-.1' or '-0.'",
 		}
 	}
 

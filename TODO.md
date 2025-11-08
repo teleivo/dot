@@ -1,82 +1,12 @@
 # TODO
 
-## Scanner Error Message Analysis
-
-### 7. Numeral with No Digits
-
-**Input:** `graph{ -. }`
-
-**Current message:**
-```
-1:8: illegal character U+0020 ' ': a numeral must have at least one digit
-```
-
-**DOT's message:**
-```
-syntax error in line 1 near '-'
-```
-
-**Suggestions:**
-* `incomplete number: '-.' needs at least one digit like '-.5' or '-0.'`
-* `invalid number '-': add digits before or after the '.'`
-
-**Notes:** The error points to the space (U+0020), which is confusing! Point to where the problem actually is (the number itself).
-
-### 8. Invalid Character After Minus in Number
-
-**Input:** `graph{ -@5 }`
-
-**Current message:**
-```
-1:9: illegal character U+0040 '@': not allowed after '-' in number: only digits and '.' are allowed
-```
-
-**DOT's message:**
-```
-syntax error in line 1 near '-'
-```
-
-**Suggestions:**
-* `'@' not allowed in number: after '-' use digits or '.'`
-* `invalid character '@' in number: only digits and '.' can follow '-'`
-
-**Notes:** Good message but slightly wordy. The second half could be tighter.
-
-### 9. Long Numeral Error Message
-
-**Current message:**
-```
-a numeral can optionally lead with a `-`, has to have at least one digit before or after a `.` which must only be followed by digits
-```
-
-**This appears in scanner.go:380 but I didn't trigger it in testing**
-
-**Suggestions:**
-* `invalid number: use digits with optional '-' prefix and '.' decimal point`
-* `malformed number: valid forms are '123', '-123', '1.23', '-.5', '.5'`
-
-**Notes:** This is way too long and grammatically awkward. Show examples of valid numbers instead of describing grammar rules.
-
-### Summary of Improvement Principles
-
-Based on research and these test cases:
-
-1. **Avoid "illegal character U+XXXX" prefix** - It adds noise. Just say the character.
-2. **Don't repeat yourself** - "illegal character: illegal character NUL" should be one phrase.
-3. **Use simple words** - "identifier" → "name", "marker" → just say what it is.
-4. **Show alternatives without assuming intent** - Don't say "you wanted a comment". Say "use X or Y".
-5. **Point to the right location** - The `-. ` error points to the space, not the number.
-6. **Be specific about what's wrong** - "too many dots" not "a numeral can only have one..."
-7. **Use examples over rules** - Show "-.5" not "preceded or followed by digits".
-8. **One sentence when possible** - Only use two if genuinely needed for clarity.
-9. **Drop jargon** - "closing marker" → "closing", "numeral" → "number".
-10. **Test against DOT** - Your errors are generally much clearer than DOT's!
+* give a better error message for edge operators that do not match the graph type
+directed/undirected. for now a graph and everything in it is directed/undirected. later on with
+multiple graphs per file how would that change?
 
 ## Next
 
 * improve error handling [Parser](#parser)
-  * give a better error message for edge operators that do not match the graph type
-  directed/undirected
   * then matklad approach
 * use assertions?
   * for example to check each Next() or its submethods advance by at least one rune

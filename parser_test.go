@@ -980,15 +980,15 @@ graph {
 			}{
 				"AttributeListWithoutClosingBracket": {
 					in:     "graph { foo [ }",
-					errMsg: `expected next token to be one of ["]" "IDENTIFIER"]`,
+					errMsg: `expected next token to be one of ["]" "ID"]`,
 				},
 				"NodeWithPortWithoutName": {
 					in:     "graph { foo: }",
-					errMsg: `expected next token to be "IDENTIFIER"`,
+					errMsg: `expected next token to be "ID"`,
 				},
 				"NodeWithPortWithoutCompassPoint": {
 					in:     "graph { foo:f: }",
-					errMsg: `expected next token to be "IDENTIFIER"`,
+					errMsg: `expected next token to be "ID"`,
 				},
 				"NodeWithPortWithInvalidCompassPoint": {
 					in:     "graph { foo:n:bottom }",
@@ -1460,7 +1460,7 @@ graph {
 				},
 				"MissingRHSOperand": {
 					in:     "graph { 1 -- [style=filled] }",
-					errMsg: `expected next token to be one of ["IDENTIFIER" "subgraph" "{"]`,
+					errMsg: `expected next token to be one of ["ID" "subgraph" "{"]`,
 				},
 			}
 
@@ -1797,11 +1797,11 @@ graph {
 			}{
 				"MissingName": {
 					in:     "graph { = b }",
-					errMsg: `expected an "IDENTIFIER" before the '='`,
+					errMsg: `expected an "ID" before the '='`,
 				},
 				"MissingValue": {
 					in:     "graph { a = }",
-					errMsg: `expected next token to be "IDENTIFIER"`,
+					errMsg: `expected next token to be "ID"`,
 				},
 			}
 
@@ -1949,7 +1949,7 @@ graph {
 			}{
 				"MissingClosingBrace": {
 					in:     "graph { { }",
-					errMsg: `expected next token to be one of ["}" "IDENTIFIER"]`,
+					errMsg: `expected next token to be one of ["}" "ID"]`,
 				},
 			}
 
@@ -2049,7 +2049,7 @@ graph {
 			}{
 				"CPreprocessorStyleEatsClosingBrace": {
 					in:     "graph { # ok }",
-					errMsg: `expected next token to be one of ["}" "IDENTIFIER"]`,
+					errMsg: `expected next token to be one of ["}" "ID"]`,
 				},
 			}
 

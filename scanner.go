@@ -275,7 +275,7 @@ func (sc *Scanner) tokenizeIdentifier() (token.Token, error) {
 	if isStartOfNumeral(sc.cur) {
 		return sc.tokenizeNumeral()
 	} else if isStartOfQuotedString(sc.cur) {
-		return sc.tokenizeQuotedString()
+		return sc.tokenizeQuotedID()
 	} else {
 		return sc.tokenizeUnquotedString()
 	}
@@ -434,7 +434,7 @@ func (sc *Scanner) isNumeralSeparator() bool {
 	return isTerminal(sc.cur) || isWhitespace(sc.cur) || isEdgeOperator(sc.cur, sc.peek)
 }
 
-func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
+func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 	var err error
 	var nulByteErr error
 	var id []rune
@@ -470,7 +470,7 @@ func (sc *Scanner) tokenizeQuotedString() (token.Token, error) {
 		}, err
 	}
 
-	tType := token.Identifier
+	tType := token.ID
 	if nulByteErr != nil {
 		err = nulByteErr
 		tType = token.ERROR

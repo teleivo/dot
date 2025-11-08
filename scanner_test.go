@@ -26,7 +26,7 @@ func TestScanner(t *testing.T) {
 			in: "a",
 			want: []token.Token{
 				{
-					Type: token.Identifier, Literal: "a",
+					Type: token.ID, Literal: "a",
 					Start: token.Position{Row: 1, Column: 1},
 					End:   token.Position{Row: 1, Column: 1},
 				},
@@ -170,7 +170,7 @@ func TestScanner(t *testing.T) {
 `,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Row: 1, Column: 1},
 					End:     token.Position{Row: 1, Column: 1},
@@ -182,7 +182,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 18},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Row: 2, Column: 4},
 					End:     token.Position{Row: 2, Column: 4},
@@ -194,7 +194,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 2, Column: 20},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"C"`,
 					Start:   token.Position{Row: 3, Column: 1},
 					End:     token.Position{Row: 3, Column: 3},
@@ -206,7 +206,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 3, Column: 20},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"D"`,
 					Start:   token.Position{Row: 4, Column: 1},
 					End:     token.Position{Row: 4, Column: 3},
@@ -224,7 +224,7 @@ func TestScanner(t *testing.T) {
 			in: `""`,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `""`,
 					Start:   token.Position{Row: 1, Column: 1},
 					End:     token.Position{Row: 1, Column: 2},
@@ -238,7 +238,7 @@ func TestScanner(t *testing.T) {
 			}`,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Row: 2, Column: 6},
 					End:     token.Position{Row: 2, Column: 6},
@@ -249,7 +249,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 2, Column: 7},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Row: 2, Column: 8},
 					End:     token.Position{Row: 2, Column: 8},
@@ -260,19 +260,19 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 2, Column: 9},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Row: 2, Column: 10},
 					End:     token.Position{Row: 2, Column: 10},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"D"`,
 					Start:   token.Position{Row: 2, Column: 11},
 					End:     token.Position{Row: 2, Column: 13},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"E"`,
 					Start:   token.Position{Row: 2, Column: 14},
 					End:     token.Position{Row: 2, Column: 16},
@@ -289,19 +289,19 @@ func TestScanner(t *testing.T) {
 			in: `A"B"C`,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Row: 1, Column: 1},
 					End:     token.Position{Row: 1, Column: 1},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"B"`,
 					Start:   token.Position{Row: 1, Column: 2},
 					End:     token.Position{Row: 1, Column: 4},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Row: 1, Column: 5},
 					End:     token.Position{Row: 1, Column: 5},
@@ -313,13 +313,13 @@ func TestScanner(t *testing.T) {
 			in: `"A"_B`,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"A"`,
 					Start:   token.Position{Row: 1, Column: 1},
 					End:     token.Position{Row: 1, Column: 3},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "_B",
 					Start:   token.Position{Row: 1, Column: 4},
 					End:     token.Position{Row: 1, Column: 5},
@@ -331,13 +331,13 @@ func TestScanner(t *testing.T) {
 			in: `A_1"B"`,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "A_1",
 					Start:   token.Position{Row: 1, Column: 1},
 					End:     token.Position{Row: 1, Column: 3},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"B"`,
 					Start:   token.Position{Row: 1, Column: 4},
 					End:     token.Position{Row: 1, Column: 6},
@@ -364,7 +364,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 1, Column: 8},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "labelloc",
 					Start:   token.Position{Row: 2, Column: 5},
 					End:     token.Position{Row: 2, Column: 12},
@@ -375,13 +375,13 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 2, Column: 14},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "t",
 					Start:   token.Position{Row: 2, Column: 16},
 					End:     token.Position{Row: 2, Column: 16},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "fontname",
 					Start:   token.Position{Row: 3, Column: 5},
 					End:     token.Position{Row: 3, Column: 12},
@@ -392,7 +392,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 3, Column: 14},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"Helvetica,Arial,sans-serif"`,
 					Start:   token.Position{Row: 3, Column: 16},
 					End:     token.Position{Row: 3, Column: 43},
@@ -403,7 +403,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 3, Column: 44},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "fontsize",
 					Start:   token.Position{Row: 3, Column: 45},
 					End:     token.Position{Row: 3, Column: 52},
@@ -414,7 +414,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 3, Column: 53},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "16",
 					Start:   token.Position{Row: 3, Column: 54},
 					End:     token.Position{Row: 3, Column: 55},
@@ -436,7 +436,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 11},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "arrowhead",
 					Start:   token.Position{Row: 5, Column: 12},
 					End:     token.Position{Row: 5, Column: 20},
@@ -447,13 +447,13 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 21},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "none",
 					Start:   token.Position{Row: 5, Column: 22},
 					End:     token.Position{Row: 5, Column: 25},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "color",
 					Start:   token.Position{Row: 5, Column: 27},
 					End:     token.Position{Row: 5, Column: 31},
@@ -464,7 +464,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 32},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"#00008844"`,
 					Start:   token.Position{Row: 5, Column: 33},
 					End:     token.Position{Row: 5, Column: 43},
@@ -475,7 +475,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 44},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "style",
 					Start:   token.Position{Row: 5, Column: 45},
 					End:     token.Position{Row: 5, Column: 49},
@@ -486,7 +486,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 51},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "filled",
 					Start:   token.Position{Row: 5, Column: 53},
 					End:     token.Position{Row: 5, Column: 58},
@@ -513,7 +513,7 @@ func TestScanner(t *testing.T) {
 			}`,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Row: 1, Column: 3},
 					End:     token.Position{Row: 1, Column: 3},
@@ -529,13 +529,13 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 1, Column: 8},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Row: 1, Column: 9},
 					End:     token.Position{Row: 1, Column: 9},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Row: 1, Column: 11},
 					End:     token.Position{Row: 1, Column: 11},
@@ -546,7 +546,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 1, Column: 12},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "D",
 					Start:   token.Position{Row: 2, Column: 5},
 					End:     token.Position{Row: 2, Column: 5},
@@ -557,7 +557,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 2, Column: 8},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "E",
 					Start:   token.Position{Row: 2, Column: 10},
 					End:     token.Position{Row: 2, Column: 10},
@@ -574,13 +574,13 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 3, Column: 13},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: `"F"`,
 					Start:   token.Position{Row: 4, Column: 5},
 					End:     token.Position{Row: 4, Column: 7},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "rank",
 					Start:   token.Position{Row: 5, Column: 6},
 					End:     token.Position{Row: 5, Column: 9},
@@ -591,7 +591,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 11},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "same",
 					Start:   token.Position{Row: 5, Column: 13},
 					End:     token.Position{Row: 5, Column: 16},
@@ -602,7 +602,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 17},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Row: 5, Column: 19},
 					End:     token.Position{Row: 5, Column: 19},
@@ -613,7 +613,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 20},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Row: 5, Column: 21},
 					End:     token.Position{Row: 5, Column: 21},
@@ -624,7 +624,7 @@ func TestScanner(t *testing.T) {
 					End:   token.Position{Row: 5, Column: 22},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Row: 5, Column: 23},
 					End:     token.Position{Row: 5, Column: 23},
@@ -646,7 +646,7 @@ func TestScanner(t *testing.T) {
 			in: `  1->2 3 ->4  5--6 7-- 8 9 --10`,
 			want: []token.Token{
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "1",
 					Start:   token.Position{Row: 1, Column: 3},
 					End:     token.Position{Row: 1, Column: 3},
@@ -658,13 +658,13 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 5},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "2",
 					Start:   token.Position{Row: 1, Column: 6},
 					End:     token.Position{Row: 1, Column: 6},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "3",
 					Start:   token.Position{Row: 1, Column: 8},
 					End:     token.Position{Row: 1, Column: 8},
@@ -676,13 +676,13 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 11},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "4",
 					Start:   token.Position{Row: 1, Column: 12},
 					End:     token.Position{Row: 1, Column: 12},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "5",
 					Start:   token.Position{Row: 1, Column: 15},
 					End:     token.Position{Row: 1, Column: 15},
@@ -694,13 +694,13 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 17},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "6",
 					Start:   token.Position{Row: 1, Column: 18},
 					End:     token.Position{Row: 1, Column: 18},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "7",
 					Start:   token.Position{Row: 1, Column: 20},
 					End:     token.Position{Row: 1, Column: 20},
@@ -712,13 +712,13 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 22},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "8",
 					Start:   token.Position{Row: 1, Column: 24},
 					End:     token.Position{Row: 1, Column: 24},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "9",
 					Start:   token.Position{Row: 1, Column: 26},
 					End:     token.Position{Row: 1, Column: 26},
@@ -730,7 +730,7 @@ func TestScanner(t *testing.T) {
 					End:     token.Position{Row: 1, Column: 29},
 				},
 				{
-					Type:    token.Identifier,
+					Type:    token.ID,
 					Literal: "10",
 					Start:   token.Position{Row: 1, Column: 30},
 					End:     token.Position{Row: 1, Column: 31},
@@ -760,7 +760,7 @@ func TestScanner(t *testing.T) {
 					in: "_A",
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: "_A",
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 2},
@@ -771,7 +771,7 @@ func TestScanner(t *testing.T) {
 					in: "A_cZ",
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: "A_cZ",
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 4},
@@ -782,7 +782,7 @@ func TestScanner(t *testing.T) {
 					in: "A10",
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: "A10",
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 3},
@@ -793,7 +793,7 @@ func TestScanner(t *testing.T) {
 					in: "\u0080ÿ  ",
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: "\u0080ÿ",
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 2},
@@ -804,7 +804,7 @@ func TestScanner(t *testing.T) {
 					in: "Контрагенты",
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: "Контрагенты",
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 11},
@@ -906,7 +906,7 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "A",
 								Start:   token.Position{Row: 1, Column: 1},
 								End:     token.Position{Row: 1, Column: 1},
@@ -947,7 +947,7 @@ func TestScanner(t *testing.T) {
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "B",
 								Start:   token.Position{Row: 1, Column: 7},
 								End:     token.Position{Row: 1, Column: 7},
@@ -1022,7 +1022,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: " -.9\t\n",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "-.9",
 						Start:   token.Position{Row: 1, Column: 2},
 						End:     token.Position{Row: 1, Column: 4},
@@ -1031,7 +1031,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-0.13",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "-0.13",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 5},
@@ -1040,7 +1040,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-0.",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "-0.",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 3},
@@ -1049,7 +1049,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-92.58",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "-92.58",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 6},
@@ -1058,7 +1058,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-92",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "-92",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 3},
@@ -1067,7 +1067,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: ".13",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: ".13",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 3},
@@ -1076,7 +1076,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "0.",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "0.",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 2},
@@ -1085,7 +1085,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "0.13",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "0.13",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 4},
@@ -1094,7 +1094,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "47",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "47",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 2},
@@ -1103,7 +1103,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "47.58",
 					want: token.Token{
-						Type:    token.Identifier,
+						Type:    token.ID,
 						Literal: "47.58",
 						Start:   token.Position{Row: 1, Column: 1},
 						End:     token.Position{Row: 1, Column: 5},
@@ -1240,7 +1240,7 @@ func TestScanner(t *testing.T) {
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "0",
 								Start:   token.Position{Row: 2, Column: 3},
 								End:     token.Position{Row: 2, Column: 3},
@@ -1293,7 +1293,7 @@ func TestScanner(t *testing.T) {
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "F",
 								Start:   token.Position{Row: 4, Column: 6},
 								End:     token.Position{Row: 4, Column: 6},
@@ -1310,7 +1310,7 @@ func TestScanner(t *testing.T) {
 					}{
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "A",
 								Start:   token.Position{Row: 1, Column: 1},
 								End:     token.Position{Row: 1, Column: 1},
@@ -1387,13 +1387,13 @@ func TestScanner(t *testing.T) {
 					in: `"graph""strict"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"graph"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 7},
 						},
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"strict"`,
 							Start:   token.Position{Row: 1, Column: 8},
 							End:     token.Position{Row: 1, Column: 15},
@@ -1404,7 +1404,7 @@ func TestScanner(t *testing.T) {
 					in: `"\"d"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"\"d"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 5},
@@ -1415,7 +1415,7 @@ func TestScanner(t *testing.T) {
 					in: `"\nd"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"\nd"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 5},
@@ -1426,7 +1426,7 @@ func TestScanner(t *testing.T) {
 					in: `"\\d"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"\\d"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 5},
@@ -1437,7 +1437,7 @@ func TestScanner(t *testing.T) {
 					in: `"_A"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"_A"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 4},
@@ -1448,7 +1448,7 @@ func TestScanner(t *testing.T) {
 					in: `"-.9"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"-.9"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 5},
@@ -1459,7 +1459,7 @@ func TestScanner(t *testing.T) {
 					in: `"A--B"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"A--B"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 6},
@@ -1470,7 +1470,7 @@ func TestScanner(t *testing.T) {
 					in: `"A->B"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"A->B"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 6},
@@ -1481,7 +1481,7 @@ func TestScanner(t *testing.T) {
 					in: `"A-B"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"A-B"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 5},
@@ -1492,7 +1492,7 @@ func TestScanner(t *testing.T) {
 					in: `"Helvetica,Arial,sans-serif"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"Helvetica,Arial,sans-serif"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 28},
@@ -1503,7 +1503,7 @@ func TestScanner(t *testing.T) {
 					in: `"#00008844"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"#00008844"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 11},
@@ -1515,7 +1515,7 @@ func TestScanner(t *testing.T) {
 #00008844"`,
 					want: []token.Token{
 						{
-							Type: token.Identifier,
+							Type: token.ID,
 							Literal: `"color\
 #00008844"`,
 							Start: token.Position{Row: 1, Column: 1},
@@ -1532,7 +1532,7 @@ func TestScanner(t *testing.T) {
 #00008844"`,
 					want: []token.Token{
 						{
-							Type: token.Identifier,
+							Type: token.ID,
 							Literal: `"color
 #00008844"`,
 							Start: token.Position{Row: 1, Column: 1},
@@ -1544,7 +1544,7 @@ func TestScanner(t *testing.T) {
 					in: `"emoji 🎉 test"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"emoji 🎉 test"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 14},
@@ -1555,7 +1555,7 @@ func TestScanner(t *testing.T) {
 					in: `"unicode: éñ中文"`,
 					want: []token.Token{
 						{
-							Type:    token.Identifier,
+							Type:    token.ID,
 							Literal: `"unicode: éñ中文"`,
 							Start:   token.Position{Row: 1, Column: 1},
 							End:     token.Position{Row: 1, Column: 15},
@@ -1784,7 +1784,7 @@ spacious
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "is",
 								Start:   token.Position{Row: 1, Column: 3},
 								End:     token.Position{Row: 1, Column: 4},
@@ -1793,7 +1793,7 @@ spacious
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "not",
 								Start:   token.Position{Row: 1, Column: 6},
 								End:     token.Position{Row: 1, Column: 8},
@@ -1802,7 +1802,7 @@ spacious
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "a",
 								Start:   token.Position{Row: 1, Column: 10},
 								End:     token.Position{Row: 1, Column: 10},
@@ -1811,7 +1811,7 @@ spacious
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "valid",
 								Start:   token.Position{Row: 1, Column: 12},
 								End:     token.Position{Row: 1, Column: 16},
@@ -1820,7 +1820,7 @@ spacious
 						},
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "comment",
 								Start:   token.Position{Row: 1, Column: 18},
 								End:     token.Position{Row: 1, Column: 24},
@@ -1837,7 +1837,7 @@ spacious
 					}{
 						{
 							token.Token{
-								Type:    token.Identifier,
+								Type:    token.ID,
 								Literal: "A",
 								Start:   token.Position{Row: 1, Column: 1},
 								End:     token.Position{Row: 1, Column: 1},

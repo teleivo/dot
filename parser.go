@@ -142,7 +142,7 @@ func (p *Parser) parseHeader() (*ast.Graph, error) {
 	}
 
 	// graph ID is optional
-	hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
+	hasID, err := p.advanceIfPeekTokenIsOneOf(token.ID)
 	if err != nil {
 		return &graph, err
 	}
@@ -159,14 +159,14 @@ func (p *Parser) parseHeader() (*ast.Graph, error) {
 }
 
 func (p *Parser) parseStatement(graph *ast.Graph) (ast.Stmt, error) {
-	if p.curTokenIs(token.Identifier) && p.peekTokenIs(token.Equal) {
+	if p.curTokenIs(token.ID) && p.peekTokenIs(token.Equal) {
 		return p.parseAttribute()
-	} else if p.curTokenIsOneOf(token.Identifier, token.Subgraph, token.LeftBrace) {
+	} else if p.curTokenIsOneOf(token.ID, token.Subgraph, token.LeftBrace) {
 		var stmt ast.Stmt
 		var err error
 
 		var left ast.EdgeOperand
-		if p.curTokenIs(token.Identifier) {
+		if p.curTokenIs(token.ID) {
 			nid, err := p.parseNodeID()
 			if err != nil {
 				return stmt, err
@@ -233,14 +233,14 @@ func (p *Parser) parseStatement(graph *ast.Graph) (ast.Stmt, error) {
 	} else if p.curTokenIsOneOf(token.Graph, token.Node, token.Edge) {
 		return p.parseAttrStatement()
 	} else if p.curTokenIs(token.Equal) {
-		return nil, errors.New(`expected an "IDENTIFIER" before the '='`)
+		return nil, errors.New(`expected an "ID" before the '='`)
 	}
 
 	return nil, nil
 }
 
 func (p *Parser) parseEdgeOperand(graph *ast.Graph) (ast.EdgeOperand, error) {
-	if p.curTokenIs(token.Identifier) {
+	if p.curTokenIs(token.ID) {
 		return p.parseNodeID()
 	}
 	subgraph, err := p.parseSubgraph(graph)
@@ -262,7 +262,7 @@ func (p *Parser) parseEdgeRHS(graph *ast.Graph) (ast.EdgeRHS, error) {
 			return ast.EdgeRHS{}, errors.New("directed graph cannot contain undirected edges")
 		}
 
-		err := p.expectPeekTokenIsOneOf(token.Identifier, token.Subgraph, token.LeftBrace)
+		err := p.expectPeekTokenIsOneOf(token.ID, token.Subgraph, token.LeftBrace)
 		if err != nil {
 			return ast.EdgeRHS{}, err
 		}
@@ -323,7 +323,7 @@ func (p *Parser) parseNodeID() (ast.NodeID, error) {
 }
 
 func (p *Parser) parsePort() (*ast.Port, error) {
-	err := p.expectPeekTokenIsOneOf(token.Identifier)
+	err := p.expectPeekTokenIsOneOf(token.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (p *Parser) parsePort() (*ast.Port, error) {
 	if err != nil {
 		return &port, err
 	}
-	err = p.expectPeekTokenIsOneOf(token.Identifier)
+	err = p.expectPeekTokenIsOneOf(token.ID)
 	if err != nil {
 		return &port, err
 	}
@@ -420,14 +420,14 @@ func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 	var first, cur *ast.AttrList
 	for p.curTokenIs(token.LeftBracket) {
 		openingBracketStart := p.curToken.Start
-		err := p.expectPeekTokenIsOneOf(token.RightBracket, token.Identifier)
+		err := p.expectPeekTokenIsOneOf(token.RightBracket, token.ID)
 		if err != nil {
 			return first, err
 		}
 
 		// a_list is optional
 		var alist *ast.AList
-		if p.curTokenIs(token.Identifier) {
+		if p.curTokenIs(token.ID) {
 			alist, err = p.parseAList()
 			if err != nil {
 				return first, err
@@ -465,7 +465,7 @@ func (p *Parser) parseAttrList() (*ast.AttrList, error) {
 
 func (p *Parser) parseAList() (*ast.AList, error) {
 	var first, cur *ast.AList
-	for p.curTokenIs(token.Identifier) {
+	for p.curTokenIs(token.ID) {
 		attr, err := p.parseAttribute()
 		if err != nil {
 			return first, err
@@ -483,7 +483,7 @@ func (p *Parser) parseAList() (*ast.AList, error) {
 			return first, err
 		}
 
-		hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
+		hasID, err := p.advanceIfPeekTokenIsOneOf(token.ID)
 		if err != nil {
 			return first, err
 		}
@@ -509,7 +509,7 @@ func (p *Parser) parseAttribute() (ast.Attribute, error) {
 		return attr, err
 	}
 
-	err = p.expectPeekTokenIsOneOf(token.Identifier)
+	err = p.expectPeekTokenIsOneOf(token.ID)
 	if err != nil {
 		return attr, err
 	}
@@ -529,7 +529,7 @@ func (p *Parser) parseSubgraph(graph *ast.Graph) (ast.Subgraph, error) {
 		subgraph.SubgraphStart = p.curPos()
 
 		// subgraph ID is optional
-		hasID, err := p.advanceIfPeekTokenIsOneOf(token.Identifier)
+		hasID, err := p.advanceIfPeekTokenIsOneOf(token.ID)
 		if err != nil {
 			return subgraph, err
 		}

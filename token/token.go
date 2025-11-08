@@ -15,8 +15,8 @@ const (
 	// language token should follow the EOF token.
 	EOF
 
-	Identifier // like _A 12 "234"
-	Comment    // like C pre-processor ones '# 34'
+	ID      // like _A 12 "234"
+	Comment // like C pre-processor ones '# 34'
 
 	LeftBrace      // {
 	RightBrace     // }
@@ -42,8 +42,8 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	ERROR: "ERROR",
 	EOF:   "EOF",
 
-	Identifier: "IDENTIFIER",
-	Comment:    "COMMENT",
+	ID:      "ID",
+	Comment: "COMMENT",
 
 	LeftBrace:      "{",
 	RightBrace:     "}",
@@ -115,10 +115,10 @@ type Token struct {
 	Start, End Position
 }
 
-// String returns the string representation of the token. For identifiers, it returns the literal
+// String returns the string representation of the token. For IDs, it returns the literal
 // value. For other token types, it returns the token type's string representation.
 func (t Token) String() string {
-	if t.Type == Identifier {
+	if t.Type == ID {
 		return t.Literal
 	}
 
@@ -144,7 +144,7 @@ var keywords = map[string]TokenType{
 // [IDs]: https://graphviz.org/doc/info/lang.html#ids
 func Lookup(identifier string) TokenType {
 	if len(identifier) > maxKeywordLen {
-		return Identifier
+		return ID
 	}
 
 	identifier = strings.ToLower(identifier)
@@ -152,5 +152,5 @@ func Lookup(identifier string) TokenType {
 		return tokenType
 	}
 
-	return Identifier
+	return ID
 }

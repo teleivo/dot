@@ -478,7 +478,7 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 			LineNr:      start.Row,
 			CharacterNr: start.Column,
 			Character:   '"',
-			Reason:      "missing closing quote",
+			Reason:      "unclosed ID: missing closing '\"'",
 		}
 		tType = token.ERROR
 	}

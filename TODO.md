@@ -91,46 +91,6 @@ a numeral can optionally lead with a `-`, has to have at least one digit before 
 
 **Notes:** This is way too long and grammatically awkward. Show examples of valid numbers instead of describing grammar rules.
 
-### 10. Missing Closing Quote
-
-**Input:** `graph{ "unclosed }`
-
-**Current message:**
-```
-1:8: illegal character U+0022 '"': missing closing quote
-```
-
-**DOT's message:**
-```
-syntax error in line 1 scanning a quoted string (missing endquote? longer than 16384?)
-```
-
-**Suggestions:**
-* `unclosed string: missing closing '"'`
-* `string never closed: add '"' to end it`
-
-**Notes:** Simple and clear. Could drop "illegal character U+0022" since it points to the opening quote which isn't illegal.
-
-### 11. Null Byte in Quoted String
-
-**Input:** `graph{ "has\x00null" }`
-
-**Current message:**
-```
-1:12: illegal character U+0000: illegal character NUL: quoted identifiers cannot contain null bytes
-```
-
-**DOT's message:**
-```
-syntax error in line 1 scanning a quoted string (missing endquote? longer than 16384?)
-```
-
-**Suggestions:**
-* `null byte (\0) not allowed in quoted strings`
-* `invalid character: quoted strings cannot contain null bytes`
-
-**Notes:** Says "illegal character" twice. Also "identifiers" → use "strings" or "names" for clarity.
-
 ### 12. Invalid Start of Unquoted ID (from constants)
 
 **Current message:**

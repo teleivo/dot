@@ -167,7 +167,7 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 	if sc.cur == '/' && (sc.peek < 0 || (sc.peek != '/' && sc.peek != '*')) {
 		pos := sc.pos()
 		tok = token.Token{Type: token.ERROR, Literal: string(sc.cur), Start: pos, End: pos}
-		err := sc.error("missing '/' for single-line or a '*' for a multi-line comment")
+		err := sc.error("use '//' (line) or '/*...*/' (block) for comments")
 		if advanceErr := sc.next(); advanceErr != nil {
 			return tok, advanceErr
 		}
@@ -198,7 +198,7 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 			LineNr:      start.Row,
 			CharacterNr: start.Column,
 			Character:   '/',
-			Reason:      "missing closing marker '*/' for multi-line comment",
+			Reason:      "unclosed comment: missing '*/'",
 		}
 		tType = token.ERROR
 	}

@@ -2,46 +2,6 @@
 
 ## Scanner Error Message Analysis
 
-### 3. Incomplete Comment Marker
-
-**Input:** `graph{ / }`
-
-**Current message:**
-```
-1:8: illegal character U+002F '/': missing '/' for single-line or a '*' for a multi-line comment
-```
-
-**DOT's message:**
-```
-syntax error in line 1 near '/'
-```
-
-**Suggestions:**
-* `unexpected '/': use '//' for comments or '->' for edges`
-* `incomplete comment: use '//' (line) or '/*...*/' (block)`
-
-**Notes:** Current message assumes the user wants a comment. They might want an edge operator that's malformed. Don't assume - present options.
-
-### 4. Unclosed Multi-line Comment
-
-**Input:** `graph{ /* unclosed }`
-
-**Current message:**
-```
-1:8: illegal character U+002F '/': missing closing marker '*/' for multi-line comment
-```
-
-**DOT's message:**
-```
-syntax error in line 2 scanning a /*...*/ comment (missing '*/? longer than 16384?)
-```
-
-**Suggestions:**
-* `unclosed comment: missing '*/'`
-* `comment started but never closed: add '*/' to end it`
-
-**Notes:** Simpler is better. DOT's message incorrectly suggests a length limit. Your message is clearer but drop "marker" (jargon).
-
 ### 5. Hyphen in Middle of Numeral
 
 **Input:** `graph{ 1-2 }`

@@ -369,9 +369,9 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 	for pos, prev, hasDot := 0, rune(eof), false; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err, pos = sc.next(), pos+1 {
 		end = sc.pos()
 		if firstErr == nil && sc.cur == '-' && pos != 0 {
-			firstErr = sc.error("a numeral can only be prefixed with a `-`")
+			firstErr = sc.error("ambiguous: quote for ID containing '-', use space for separate IDs, or '--'/'->' for edges")
 		} else if firstErr == nil && sc.cur == '.' && hasDot {
-			firstErr = sc.error("a numeral can only have one `.` that is at least preceded or followed by digits")
+			firstErr = sc.error("ambiguous: quote for ID containing multiple '.', or use one decimal point for number")
 		} else if firstErr == nil && sc.cur != '-' && sc.cur != '.' && !unicode.IsDigit(sc.cur) { // otherwise only digits are allowed
 			if prev == '-' {
 				firstErr = sc.error("not allowed after '-' in number: only digits and '.' are allowed")

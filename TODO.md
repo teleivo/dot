@@ -2,40 +2,6 @@
 
 ## Scanner Error Message Analysis
 
-### 5. Hyphen in Middle of Numeral
-
-**Input:** `graph{ 1-2 }`
-
-**Current message:**
-```
-1:9: illegal character U+002D '-': a numeral can only be prefixed with a `-`
-```
-
-**DOT's behavior:** Accepts this as two tokens: `1` and `-2`
-
-**Suggestions:**
-* `'-' not allowed mid-number: use spaces like '1 -2' or quote it like "1-2"`
-* `unexpected '-' in number: did you mean '1 -2' (two numbers) or a name like "1-2"?`
-
-**Notes:** Current message doesn't explain what would work. Show valid alternatives without assuming intent.
-
-### 6. Multiple Dots in Numeral
-
-**Input:** `graph{ 1.2.3 }`
-
-**Current message:**
-```
-1:11: illegal character U+002E '.': a numeral can only have one `.` that is at least preceded or followed by digits
-```
-
-**DOT's behavior:** Accepts with warning: `badly delimited number '1.2.' splits into two tokens`
-
-**Suggestions:**
-* `too many '.' in number: use one decimal point like '1.2' or separate like '1.2 .3'`
-* `unexpected second '.': numbers can have only one decimal point`
-
-**Notes:** Current message is too wordy. Focus on the problem (two dots) and the fix (one dot).
-
 ### 7. Numeral with No Digits
 
 **Input:** `graph{ -. }`
@@ -90,19 +56,6 @@ a numeral can optionally lead with a `-`, has to have at least one digit before 
 * `malformed number: valid forms are '123', '-123', '1.23', '-.5', '.5'`
 
 **Notes:** This is way too long and grammatically awkward. Show examples of valid numbers instead of describing grammar rules.
-
-### 12. Invalid Start of Unquoted ID (from constants)
-
-**Current message:**
-```
-unquoted identifiers must start with a letter or underscore, and can only contain letters, digits, and underscores
-```
-
-**Suggestions:**
-* `unquoted names must start with a letter or '_', then use letters, digits, or '_'`
-* `invalid start: unquoted names begin with letters or '_'`
-
-**Notes:** This constant is used when the ID starts with an invalid character. Focus on the start requirement first.
 
 ### Summary of Improvement Principles
 

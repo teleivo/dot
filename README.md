@@ -63,7 +63,7 @@ EOF
 The formatter uses two test strategies:
 
 * Idempotency tests verify formatting is stable
-* Visual tests ensure formatting preserves graph semantics by comparing SVG outputs
+* Visual tests ensure formatting preserves graph semantics by comparing `dot -Tplain` outputs
 
 Run visual tests on external graphs:
 

@@ -6,6 +6,8 @@ multiple graphs per file how would that change?
 
 ## Next
 
+* double-check idempotency with escape sequences in strings: initial testing showed `\n` converting
+to actual newline on second format, but cannot reproduce now. May have been testing artifact.
 * improve error handling [Parser](#parser)
   * then matklad approach
 * use assertions?

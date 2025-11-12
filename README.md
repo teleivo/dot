@@ -5,7 +5,7 @@ Parser and formatter for the [DOT language](https://graphviz.org/doc/info/lang.h
 ## Install
 
 ```sh
-go get -u github.com/teleivo/dot
+go install github.com/teleivo/dot@latest
 ```
 
 ## Formatter
@@ -44,7 +44,7 @@ color="#388e3c"penwidth=2
 cache[label="Cache",shape=cylinder,fillcolor="#a5d6a7",color="#2e7d32"]
 warehouse[label="Data Warehouse",shape=cylinder,fillcolor="#a5d6a7",color="#2e7d32"]}
 
-analytics[label="Analytics\nDashboard",shape=tab,fillcolor="#fff9c4",color="#f57f17",style="filled,bold"]
+analytics[label="Analytics Dashboard",shape=tab,fillcolor="#fff9c4",color="#f57f17",style="filled,bold"]
 alerts[label="Alert System",shape=octagon,fillcolor="#ffccbc",color="#d84315",style="filled,bold"]
 
 raw_logs->parser[label="ingest",color="#1976d2",penwidth=1.5]
@@ -68,12 +68,15 @@ The formatter uses two test strategies:
 Run visual tests on external graphs:
 
 ```sh
-# Sync samples from graphviz repository
+# Sync samples from the Graphviz repository (https://gitlab.com/graphviz/graphviz)
 ./sync-graphviz-samples.sh
 
 cd cmd/dotfmt
 DOTFMT_TEST_DIR=../../samples-graphviz/tests go test -v -run TestVisualOutput
 ```
+
+Note: Some tests will fail due to [known limitations](#limitations) such as HTML labels and
+comments. These failures are expected and indicate features not yet supported rather than bugs.
 
 ## Documentation
 
@@ -87,7 +90,7 @@ go install golang.org/x/pkgsite/cmd/pkgsite@latest
 pkgsite -open .
 ```
 
-This opens a browser with pkg.go.dev-style documentation where you can:
+This opens a browser with [pkg.go.dev-style](https://pkg.go.dev) documentation where you can:
 
 * Read the full package documentation
 * View and run the interactive example
@@ -104,7 +107,7 @@ operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatti
 * does not treat records in any special way. Labels will be parsed as strings.
 * attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
 * add test for nested subgraphs adhere to some requirements which are not validated. The values are
-parsed as identifiers (unquoted, numeral, quoted) and ultimately stored as strings.
+parsed as IDs (unquoted, numeral, quoted) and ultimately stored as strings.
 
 ## Acknowledgments
 

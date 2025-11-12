@@ -1,26 +1,28 @@
 # DOT
 
-Parser and formatter for the [DOT language](https://graphviz.org/doc/info/lang.html) written in Go.
-
-## Install
-
-```sh
-go install github.com/teleivo/dot@latest
-```
+Formatter and parser for the [DOT language](https://graphviz.org/doc/info/lang.html) written in Go.
 
 ## Formatter
 
 Format your DOT files with `dotfmt`. `dotfmt` is inspired by [gofmt](https://pkg.go.dev/cmd/gofmt).
 As such it is opinionated and has no options to change its format.
 
-Core principles:
-
-* **Idempotency**: Formatting the same code multiple times produces identical output.
-* **Only formats valid code**: Parse errors leave the original input unchanged. The formatter does
-not assume or alter user intent when it cannot parse the code.
+### Install
 
 ```sh
-go run ./cmd/dotfmt/main.go <<EOF
+go install github.com/teleivo/dot/cmd/dotfmt@latest
+```
+
+### Usage
+
+```sh
+dotfmt < input.dot > output.dot
+```
+
+Or try it directly:
+
+```sh
+dotfmt <<EOF
 digraph data_pipeline{graph[rankdir=TB,bgcolor="#fafafa"]
 node[shape=box,style="rounded,filled",fontname="Arial",fontsize=11]
 edge[fontname="Arial",fontsize=9,arrowsize=0.8]
@@ -58,9 +60,16 @@ warehouse->alerts[label="monitor",color="#d84315",style=dotted]}
 EOF
 ```
 
-## Testing
+### Design principles
 
-The formatter uses two test strategies:
+* **No configuration**: `dotfmt` is opinionated and has no options to change its format.
+* **Idempotency**: Formatting the same code multiple times produces identical output.
+* **Only formats valid code**: Parse errors leave the original input unchanged. The formatter does
+not assume or alter user intent when it cannot parse the code.
+
+### Testing
+
+`dotfmt` uses two test strategies:
 
 * Idempotency tests verify formatting is stable
 * Visual tests ensure formatting preserves graph semantics by comparing `dot -Tplain` outputs
@@ -117,6 +126,9 @@ Formatting Code"](https://mcyoung.xyz/2025/03/11/formatters/).
 
 ## Disclaimer
 
-I wrote this library for my personal projects. It is thus tailored to my needs. Feel free to use it!
-That being said, my intention is not to adjust it to someone elses liking.
+I wrote this library for my personal projects and it is provided as-is without warranty. It is
+tailored to my needs and my intention is not to adjust it to someone else's liking. Feel free to use
+it!
+
+See [LICENSE](LICENSE) for full license terms.
 

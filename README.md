@@ -80,8 +80,11 @@ Run visual tests on external graphs:
 # Sync samples from the Graphviz repository (https://gitlab.com/graphviz/graphviz)
 ./sync-graphviz-samples.sh
 
-cd cmd/dotfmt
-DOTFMT_TEST_DIR=../../samples-graphviz/tests go test -v -run TestVisualOutput
+# Run from repository root
+DOTFMT_TEST_DIR=../../samples-graphviz/tests go test -C cmd/dotfmt -v -run TestVisualOutput
+
+# For comprehensive testing of all sample directories
+./run-visual-tests.sh
 ```
 
 Note: Some tests will fail due to [known limitations](#limitations) such as HTML labels and

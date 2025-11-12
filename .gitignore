@@ -25,5 +25,5 @@ go.work.sum
 debug/
 samples-graphviz/
 noname.gv.svg
-visual_test_error.log
+visual-test-error.log
 _research/

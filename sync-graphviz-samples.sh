@@ -12,6 +12,7 @@ cd "$(dirname "$0")"
 if [ -d "$TARGET_DIR/.git" ]; then
     echo "Updating existing samples..."
     cd "$TARGET_DIR"
+    git sparse-checkout set --no-cone '*.dot' '*.gv'
     git pull
 else
     echo "Cloning graphviz samples..."

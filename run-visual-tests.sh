@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SAMPLES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/samples-graphviz"
-ERROR_LOG="visual_test_error.log"
+ERROR_LOG="visual-test-error.log"
 
 : > "$ERROR_LOG"
 
@@ -17,11 +17,11 @@ while IFS= read -r -d '' dir; do
     printf "Testing: %s" "$rel_dir"
 
     # Build test command with optional timeout
-    test_cmd="DOTFMT_TEST_DIR=\"$dir\" go test -v"
+    test_cmd="DOTFMT_TEST_DIR=\"$dir\" go test -C cmd/dotfmt -v"
     if [ -n "${DOTFMT_TEST_TIMEOUT:-}" ]; then
         test_cmd="$test_cmd -timeout $DOTFMT_TEST_TIMEOUT"
     fi
-    test_cmd="$test_cmd ./cmd/dotfmt -run TestVisualOutput"
+    test_cmd="$test_cmd -run TestVisualOutput"
 
     if ! output=$(eval "$test_cmd" 2>&1); then
         has_skip=$(echo "$output" | grep -q "SKIP" && echo "yes" || echo "no")

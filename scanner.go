@@ -154,7 +154,7 @@ func isWhitespace(r rune) bool {
 	return false
 }
 
-func (sc *Scanner) tokenizeRuneAs(tokenType token.TokenType) (token.Token, error) {
+func (sc *Scanner) tokenizeRuneAs(tokenType token.Kind) (token.Token, error) {
 	pos := sc.pos()
 	tok := token.Token{Type: tokenType, Literal: string(sc.cur), Start: pos, End: pos}
 	err := sc.next()

@@ -564,25 +564,25 @@ func (p *Parser) parseSubgraph(graph *ast.Graph) (ast.Subgraph, error) {
 	return subgraph, nil
 }
 
-func (p *Parser) curTokenIs(t token.TokenType) bool {
+func (p *Parser) curTokenIs(t token.Kind) bool {
 	return p.curToken.Type == t
 }
 
-func (p *Parser) curTokenIsOneOf(tokens ...token.TokenType) bool {
+func (p *Parser) curTokenIsOneOf(tokens ...token.Kind) bool {
 	return slices.ContainsFunc(tokens, p.curTokenIs)
 }
 
-func (p *Parser) peekTokenIsOneOf(tokens ...token.TokenType) bool {
+func (p *Parser) peekTokenIsOneOf(tokens ...token.Kind) bool {
 	return slices.ContainsFunc(tokens, p.peekTokenIs)
 }
 
-func (p *Parser) peekTokenIs(t token.TokenType) bool {
+func (p *Parser) peekTokenIs(t token.Kind) bool {
 	return p.peekToken.Type == t
 }
 
 // expectPeekTokenIsOneOf advances the parser to the peek token if it is one of the wanted tokens.
 // Otherwise, the parser position is not changed and an error is returned.
-func (p *Parser) expectPeekTokenIsOneOf(want ...token.TokenType) error {
+func (p *Parser) expectPeekTokenIsOneOf(want ...token.Kind) error {
 	if !p.peekTokenIsOneOf(want...) {
 		if len(want) == 1 {
 			return fmt.Errorf("expected next token to be %q but got %q instead", want[0], p.peekToken)
@@ -598,7 +598,7 @@ func (p *Parser) expectPeekTokenIsOneOf(want ...token.TokenType) error {
 	return nil
 }
 
-func (p *Parser) advanceIfPeekTokenIsOneOf(tokens ...token.TokenType) (bool, error) {
+func (p *Parser) advanceIfPeekTokenIsOneOf(tokens ...token.Kind) (bool, error) {
 	if !p.peekTokenIsOneOf(tokens...) {
 		return false, nil
 	}

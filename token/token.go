@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-// TokenType represents the types of lexical tokens of the DOT language.
-type TokenType int
+// Kind represents the types of lexical tokens of the DOT language.
+type Kind int
 
 const (
-	ERROR TokenType = iota
+	ERROR Kind = iota
 	// EOF is not part of the DOT language and is used to indicate the end of the file or stream. No
 	// language token should follow the EOF token.
 	EOF
@@ -38,7 +38,7 @@ const (
 	Subgraph // subgraph
 )
 
-var typeStrings map[TokenType]string = map[TokenType]string{
+var typeStrings map[Kind]string = map[Kind]string{
 	ERROR: "ERROR",
 	EOF:   "EOF",
 
@@ -65,7 +65,7 @@ var typeStrings map[TokenType]string = map[TokenType]string{
 	Subgraph: "subgraph",
 }
 
-var types map[string]TokenType = map[string]TokenType{
+var types map[string]Kind = map[string]Kind{
 	"{":  LeftBrace,
 	"}":  RightBrace,
 	"[":  LeftBracket,
@@ -87,30 +87,30 @@ var types map[string]TokenType = map[string]TokenType{
 }
 
 // String returns the string representation of the token type.
-func (tt TokenType) String() string {
-	return typeStrings[tt]
+func (k Kind) String() string {
+	return typeStrings[k]
 }
 
 // IsTerminal reports whether the token type is a terminal symbol (punctuation or operator).
 // Terminal symbols include braces, brackets, colon, semicolon, equal, and comma.
-func (tt TokenType) IsTerminal() bool {
-	switch tt {
+func (k Kind) IsTerminal() bool {
+	switch k {
 	case LeftBrace, RightBrace, LeftBracket, RightBracket, Colon, Semicolon, Equal, Comma:
 		return true
 	}
 	return false
 }
 
-// Type returns the [TokenType] for the given string. Returns false if the string does not
+// Type returns the [Kind] for the given string. Returns false if the string does not
 // correspond to a token type (operator, keyword, or punctuation).
-func Type(in string) (TokenType, bool) {
+func Type(in string) (Kind, bool) {
 	v, ok := types[in]
 	return v, ok
 }
 
 // Token represents a token of the DOT language.
 type Token struct {
-	Type       TokenType
+	Type       Kind
 	Literal    string
 	Start, End Position
 }
@@ -128,7 +128,7 @@ func (t Token) String() string {
 // maxKeywordLen is the length of the longest DOT keyword which is "subgraph".
 const maxKeywordLen = 8
 
-var keywords = map[string]TokenType{
+var keywords = map[string]Kind{
 	"digraph":  Digraph,
 	"edge":     Edge,
 	"graph":    Graph,
@@ -142,7 +142,7 @@ var keywords = map[string]TokenType{
 // as specified in [IDs].
 //
 // [IDs]: https://graphviz.org/doc/info/lang.html#ids
-func Lookup(identifier string) TokenType {
+func Lookup(identifier string) Kind {
 	if len(identifier) > maxKeywordLen {
 		return ID
 	}

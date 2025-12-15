@@ -26,7 +26,7 @@ func Example() {
 		d.BreakIf(1, layout.Broken)
 	})
 	d.Text("}")
-	d.Render(os.Stdout, layout.Default)
+	_ = d.Render(os.Stdout, layout.Default)
 	fmt.Println()
 	// Output:
 	// person := Person{

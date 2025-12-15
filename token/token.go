@@ -3,14 +3,17 @@
 package token
 
 import (
+	"fmt"
 	"strings"
 )
 
 // Kind represents the types of lexical tokens of the DOT language.
-type Kind int
+// Token kinds are powers of 2 and can be combined using bitwise OR
+// to create token sets for efficient membership testing.
+type Kind uint
 
 const (
-	ERROR Kind = iota
+	ERROR Kind = 1 << iota
 	// EOF is not part of the DOT language and is used to indicate the end of the file or stream. No
 	// language token should follow the EOF token.
 	EOF
@@ -38,80 +41,68 @@ const (
 	Subgraph // subgraph
 )
 
-var typeStrings map[Kind]string = map[Kind]string{
-	ERROR: "ERROR",
-	EOF:   "EOF",
-
-	ID:      "ID",
-	Comment: "COMMENT",
-
-	LeftBrace:      "{",
-	RightBrace:     "}",
-	LeftBracket:    "[",
-	RightBracket:   "]",
-	Colon:          ":",
-	Semicolon:      ";",
-	Equal:          "=",
-	Comma:          ",",
-	DirectedEdge:   "->",
-	UndirectedEdge: "--",
-
-	// Keywords
-	Digraph:  "digraph",
-	Edge:     "edge",
-	Graph:    "graph",
-	Node:     "node",
-	Strict:   "strict",
-	Subgraph: "subgraph",
-}
-
-var types map[string]Kind = map[string]Kind{
-	"{":  LeftBrace,
-	"}":  RightBrace,
-	"[":  LeftBracket,
-	"]":  RightBracket,
-	":":  Colon,
-	";":  Semicolon,
-	"=":  Equal,
-	",":  Comma,
-	"->": DirectedEdge,
-	"--": UndirectedEdge,
-
-	// Keywords,
-	"digraph":  Digraph,
-	"edge":     Edge,
-	"graph":    Graph,
-	"node":     Node,
-	"strict":   Strict,
-	"subgraph": Subgraph,
-}
+// terminalSet is the set of terminal symbols (punctuation and operators)
+const terminalSet = LeftBrace | RightBrace | LeftBracket | RightBracket | Colon | Semicolon | Equal | Comma
 
 // String returns the string representation of the token type.
 func (k Kind) String() string {
-	return typeStrings[k]
+	switch k {
+	case ERROR:
+		return "ERROR"
+	case EOF:
+		return "EOF"
+	case ID:
+		return "ID"
+	case Comment:
+		return "COMMENT"
+	case LeftBrace:
+		return "{"
+	case RightBrace:
+		return "}"
+	case LeftBracket:
+		return "["
+	case RightBracket:
+		return "]"
+	case Colon:
+		return ":"
+	case Semicolon:
+		return ";"
+	case Equal:
+		return "="
+	case Comma:
+		return ","
+	case DirectedEdge:
+		return "->"
+	case UndirectedEdge:
+		return "--"
+	case Digraph:
+		return "digraph"
+	case Edge:
+		return "edge"
+	case Graph:
+		return "graph"
+	case Node:
+		return "node"
+	case Strict:
+		return "strict"
+	case Subgraph:
+		return "subgraph"
+	default:
+		panic(fmt.Sprintf("missing String() case for token.Kind: %d", k))
+	}
 }
 
 // IsTerminal reports whether the token type is a terminal symbol (punctuation or operator).
 // Terminal symbols include braces, brackets, colon, semicolon, equal, and comma.
 func (k Kind) IsTerminal() bool {
-	switch k {
-	case LeftBrace, RightBrace, LeftBracket, RightBracket, Colon, Semicolon, Equal, Comma:
-		return true
-	}
-	return false
-}
-
-// Type returns the [Kind] for the given string. Returns false if the string does not
-// correspond to a token type (operator, keyword, or punctuation).
-func Type(in string) (Kind, bool) {
-	v, ok := types[in]
-	return v, ok
+	return k&terminalSet != 0
 }
 
 // Token represents a token of the DOT language.
 type Token struct {
 	Type       Kind
 	Literal    string
+	Error      string // Error message for ERROR tokens, empty otherwise
 	Start, End Position
 }
 
@@ -125,17 +116,31 @@ func (t Token) String() string {
 	return t.Type.String()
 }
 
+func (t Token) IsKeyword() bool {
+	switch t.Type {
+	case Digraph, Edge, Graph, Node, Strict, Subgraph:
+		return true
+	default:
+		return false
+
+	}
+}
+
+func (t Token) IsCompassPoint() bool {
+	if t.Type != ID {
+		return false
+	}
+
+	switch t.Literal {
+	case "_", "n", "ne", "e", "se", "s", "sw", "w", "nw", "c":
+		return true
+	default:
+		return false
+	}
+}
+
 // maxKeywordLen is the length of the longest DOT keyword which is "subgraph".
 const maxKeywordLen = 8
-
-var keywords = map[string]Kind{
-	"digraph":  Digraph,
-	"edge":     Edge,
-	"graph":    Graph,
-	"node":     Node,
-	"strict":   Strict,
-	"subgraph": Subgraph,
-}
 
 // Lookup returns the token type associated with given identifier which is either a DOT keyword or a
 // DOT ID. DOT keywords are case-insensitive. This function expects that the input is a valid DOT ID
@@ -147,10 +152,20 @@ func Lookup(identifier string) Kind {
 		return ID
 	}
 
-	identifier = strings.ToLower(identifier)
-	if tokenType, ok := keywords[identifier]; ok {
-		return tokenType
+	switch strings.ToLower(identifier) {
+	case "digraph":
+		return Digraph
+	case "edge":
+		return Edge
+	case "graph":
+		return Graph
+	case "node":
+		return Node
+	case "strict":
+		return Strict
+	case "subgraph":
+		return Subgraph
+	default:
+		return ID
 	}
-
-	return ID
 }

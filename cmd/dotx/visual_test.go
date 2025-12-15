@@ -15,17 +15,17 @@ import (
 	"github.com/teleivo/assertive/assert"
 )
 
-// TestVisualOutput tests that dotfmt preserves visual output by comparing
+// TestVisualOutput tests that dotx fmt preserves visual output by comparing
 // plain text renderings of original and formatted DOT files.
 //
-// By default, it tests files in testdata/. Set DOTFMT_TEST_DIR to test external files.
-// Temp files are preserved on failure for debugging, or always if DOTFMT_KEEP_TEMP=1.
+// By default, it tests files in testdata/. Set DOTX_TEST_DIR to test external files.
+// Temp files are preserved on failure for debugging, or always if DOTX_KEEP_TEMP=1.
 func TestVisualOutput(t *testing.T) {
 	if _, err := exec.LookPath("dot"); err != nil {
 		t.Skip("dot (Graphviz) not found in PATH, skipping visual test")
 	}
 
-	testDir := os.Getenv("DOTFMT_TEST_DIR")
+	testDir := os.Getenv("DOTX_TEST_DIR")
 	if testDir == "" {
 		testDir = "testdata"
 	}
@@ -50,12 +50,12 @@ func TestVisualOutput(t *testing.T) {
 		t.Skipf("no .dot or .gv files found in %q, skipping visual test", testDir)
 	}
 
-	keepTemp := os.Getenv("DOTFMT_KEEP_TEMP") == "1"
+	keepTemp := os.Getenv("DOTX_KEEP_TEMP") == "1"
 	for _, dotFile := range dotFiles {
 		t.Run(filepath.Base(dotFile), func(t *testing.T) {
 			t.Parallel()
 
-			tempDir, err := os.MkdirTemp("", "dotfmt-visual-*")
+			tempDir, err := os.MkdirTemp("", "dotx-visual-*")
 			if err != nil {
 				t.Fatalf("failed to create temp directory: %v", err)
 			}
@@ -64,7 +64,7 @@ func TestVisualOutput(t *testing.T) {
 			shouldCleanup := !keepTemp
 			defer func() {
 				if shouldCleanup {
-					os.RemoveAll(tempDir)
+					_ = os.RemoveAll(tempDir)
 				} else if !t.Failed() {
 					t.Logf("Temp files preserved at: %s", tempDir)
 				}
@@ -132,7 +132,7 @@ func generatePlain(t *testing.T, dotSource []byte) ([]byte, error) {
 	t.Helper()
 
 	timeout := 5 * time.Second
-	if timeoutStr := os.Getenv("DOTFMT_FILE_TIMEOUT"); timeoutStr != "" {
+	if timeoutStr := os.Getenv("DOTX_FILE_TIMEOUT"); timeoutStr != "" {
 		if d, err := time.ParseDuration(timeoutStr); err == nil {
 			timeout = d
 		}
@@ -150,7 +150,7 @@ func generatePlain(t *testing.T, dotSource []byte) ([]byte, error) {
 
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
-			return nil, fmt.Errorf("dot command timed out after %v (set DOTFMT_FILE_TIMEOUT to override)\nstderr: %s", timeout, stderr.String())
+			return nil, fmt.Errorf("dot command timed out after %v (set DOTX_FILE_TIMEOUT to override)\nstderr: %s", timeout, stderr.String())
 		}
 		return nil, fmt.Errorf("dot command failed: %v\nstderr: %s", err, stderr.String())
 	}
@@ -158,12 +158,12 @@ func generatePlain(t *testing.T, dotSource []byte) ([]byte, error) {
 	return stdout.Bytes(), nil
 }
 
-// formatDot runs dotfmt on DOT source and returns the formatted output
+// formatDot runs dotx fmt on DOT source and returns the formatted output
 func formatDot(t *testing.T, dotSource []byte) ([]byte, error) {
 	t.Helper()
 
 	timeout := 5 * time.Second
-	if timeoutStr := os.Getenv("DOTFMT_FILE_TIMEOUT"); timeoutStr != "" {
+	if timeoutStr := os.Getenv("DOTX_FILE_TIMEOUT"); timeoutStr != "" {
 		if d, err := time.ParseDuration(timeoutStr); err == nil {
 			timeout = d
 		}
@@ -174,22 +174,22 @@ func formatDot(t *testing.T, dotSource []byte) ([]byte, error) {
 
 	var stdout, stderr bytes.Buffer
 
-	// run dotfmt directly in-process
+	// run dotx fmt directly in-process
 	done := make(chan error, 1)
 	go func() {
-		done <- run([]string{"dotfmt"}, bytes.NewReader(dotSource), &stdout, &stderr)
+		done <- run([]string{"dotx", "fmt"}, bytes.NewReader(dotSource), &stdout, &stderr)
 	}()
 
 	select {
 	case err := <-done:
 		if err != nil {
-			return nil, fmt.Errorf("dotfmt failed: %v\nstderr: %s", err, stderr.String())
+			return nil, fmt.Errorf("dotx fmt failed: %v\nstderr: %s", err, stderr.String())
 		}
 		return stdout.Bytes(), nil
 	case <-ctx.Done():
 		if ctx.Err() == context.DeadlineExceeded {
-			return nil, fmt.Errorf("dotfmt timed out after %v (set DOTFMT_FILE_TIMEOUT to override)\nstderr: %s", timeout, stderr.String())
+			return nil, fmt.Errorf("dotx fmt timed out after %v (set DOTX_FILE_TIMEOUT to override)\nstderr: %s", timeout, stderr.String())
 		}
-		return nil, fmt.Errorf("dotfmt failed: %v\nstderr: %s", ctx.Err(), stderr.String())
+		return nil, fmt.Errorf("dotx fmt failed: %v\nstderr: %s", ctx.Err(), stderr.String())
 	}
 }

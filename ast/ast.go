@@ -1,561 +1,436 @@
-// Package ast contains an abstract syntax tree representation of the [DOT language].
+// Package ast provides an abstract syntax tree representation for DOT graphs.
 //
-// [DOT language]: https://graphviz.org/doc/info/lang.html
+// The AST types wrap the concrete syntax tree produced by [dot.Parser] and provide a high-level,
+// semantic view of DOT source code. Use [NewGraph] to create a Graph from a parsed tree.
 package ast
 
 import (
-	"strings"
-
+	"github.com/teleivo/dot"
+	"github.com/teleivo/dot/internal/assert"
 	"github.com/teleivo/dot/token"
 )
 
-// Graph is a directed or undirected dot graph.
-type Graph struct {
-	StrictStart *token.Position // StrictStart is the starting position of the optional 'strict' keyword.
-	GraphStart  token.Position  // GraphStart is the starting position of the 'graph' or 'digraph' keyword.
-	Directed    bool            // Directed indicates that the graph is a directed graph.
-	ID          *ID             // ID is the optional identifier of a graph.
-	LeftBrace   token.Position  // Position of the opening '{'.
-	Stmts       []Stmt          // Stmts lists all the graphs statements.
-	RightBrace  token.Position  // Position of the closing '}'.
-	Comments    []Comment       // List of all comments in the graph.
-}
-
-// IsStrict indicates whether the graph is declared as strict. Refer to [Lexical and Semantic Notes]
-// for its meaning.
-//
-// [Lexical and Semantic Notes]: https://graphviz.org/doc/info/lang.html#lexical-and-semantic-notes
-func (g *Graph) IsStrict() bool {
-	return g.StrictStart != nil
-}
-
-func (g *Graph) String() string {
-	var out strings.Builder
-	if g.IsStrict() {
-		out.WriteString("strict ")
-	}
-	if g.Directed {
-		out.WriteString("digraph")
-	} else {
-		out.WriteString("graph")
-	}
-	if g.ID != nil {
-		out.WriteRune(' ')
-		out.WriteString(g.ID.String())
-	}
-	out.WriteString(" {")
-	if len(g.Stmts) > 0 {
-		out.WriteRune('\n')
-	}
-	for _, stmt := range g.Stmts {
-		out.WriteRune('\t')
-		out.WriteString(stmt.String())
-		out.WriteRune('\n')
-	}
-	out.WriteRune('}')
-
-	return out.String()
-}
-
-// Start returns the starting position of the first rune belonging to the graph. This can be the
-// first rune of 'strict', 'graph', 'digraph' or the opening '{'. Use	the corresponding fields on
-// the [Graph] if you need to access the individual starting positions. There might be leading
-// comments that you can access via [Graph.Comments].
-func (g *Graph) Start() token.Position {
-	if g.StrictStart != nil {
-		return *g.StrictStart
-	}
-	return g.GraphStart
-}
-
-// End returns the position of the closing '}' of the graph. There might be trailing comments which
-// you can access via [Graph.Comments].
-func (g *Graph) End() token.Position {
-	return g.RightBrace
-}
-
-// Node represents an AST node of a dot graph.
-type Node interface {
-	String() string        // String returns a string representation of the AST node.
-	Start() token.Position // Starting position returns the position of the first rune of the AST node.
-	End() token.Position   // Starting position returns the position of the last rune of the AST node.
-}
-
-// Stmt nodes implement the Stmt interface.
+// Stmt represents a statement in a DOT graph or subgraph.
 type Stmt interface {
-	Node
 	stmtNode()
 }
 
-// ID is a DOT [identifier]. HTML strings are not supported.
-//
-// [identifier]: https://graphviz.org/doc/info/lang.html#ids
-type ID struct {
-	Literal  string         // Identifier literal
-	StartPos token.Position // Position of the first rune of the ID
-	EndPos   token.Position // Position of the last rune of the ID
-}
-
-func (id ID) String() string {
-	return string(id.Literal)
-}
-
-func (id ID) Start() token.Position {
-	return id.StartPos
-}
-
-func (id ID) End() token.Position {
-	return id.EndPos
-}
-
-// NodeStmt is a dot node statement defining a node with optional attributes.
-type NodeStmt struct {
-	NodeID   NodeID    // NodeID is the identifier of the node targeted by the node statement.
-	AttrList *AttrList // AttrList is an optional list of attributes for the node targeted by the node statement.
-}
-
-func (ns *NodeStmt) String() string {
-	var out strings.Builder
-
-	out.WriteString(ns.NodeID.String())
-	if ns.AttrList != nil {
-		out.WriteRune(' ')
-		out.WriteString(ns.AttrList.String())
-	}
-
-	return out.String()
-}
-
-func (ns *NodeStmt) Start() token.Position {
-	return ns.NodeID.Start()
-}
-
-func (ns *NodeStmt) End() token.Position {
-	if ns.AttrList != nil {
-		return ns.AttrList.End()
-	}
-
-	return ns.NodeID.End()
-}
-
-func (ns *NodeStmt) stmtNode() {}
-
-// NodeID identifies a dot node with an optional port.
-type NodeID struct {
-	ID   ID    // ID is the identifier of the node.
-	Port *Port // Port is an optioal port an edge can attach to.
-}
-
-func (ni NodeID) String() string {
-	var out strings.Builder
-
-	out.WriteString(ni.ID.String())
-	if ni.Port != nil {
-		out.WriteRune(':')
-		out.WriteString(ni.Port.String())
-	}
-
-	return out.String()
-}
-
-func (ni NodeID) Start() token.Position {
-	return ni.ID.StartPos
-}
-
-func (ni NodeID) End() token.Position {
-	if ni.Port != nil {
-		return ni.Port.End()
-	}
-	return ni.ID.EndPos
-}
-
-func (ni NodeID) edgeOperand() {}
-
-// Port defines a node [port] where an edge can attach to. At least one of name and compass point
-// must be defined.
-//
-// [port]: https://graphviz.org/doc/info/lang.html
-type Port struct {
-	Name         *ID           // Name is the identifier of the port.
-	CompassPoint *CompassPoint // CompassPoint is the position at which an edge can attach to.
-}
-
-func (p Port) String() string {
-	if p.Name == nil {
-		return ":" + p.CompassPoint.String()
-	} else if p.CompassPoint == nil {
-		return p.Name.String()
-	}
-
-	return p.Name.String() + ":" + p.CompassPoint.String()
-}
-
-func (p Port) Start() token.Position {
-	if p.Name != nil {
-		return token.Position{
-			Row:    p.Name.StartPos.Row,
-			Column: p.Name.StartPos.Column - 1, // account for leading ':'
-		}
-	}
-
-	return token.Position{
-		Row:    p.CompassPoint.StartPos.Row,
-		Column: p.CompassPoint.StartPos.Column - 1, // account for leading ':'
-	}
-}
-
-func (p Port) End() token.Position {
-	if p.CompassPoint == nil {
-		return p.Name.EndPos
-	}
-
-	return p.CompassPoint.EndPos
-}
-
-// CompassPoint is the [position] at which an edge can attach to a node.
-//
-// [position]: https://graphviz.org/docs/attr-types/portPos
-type CompassPoint struct {
-	Type     CompassPointType
-	StartPos token.Position // Position of the first rune of the compass point
-	EndPos   token.Position // Position of the last rune of the compass point
-}
-
-func (cp CompassPoint) String() string {
-	return cp.Type.String()
-}
-
-type CompassPointType int
-
-const (
-	CompassPointUnderscore CompassPointType = iota // Underscore is the default compass point in a port with a name https://graphviz.org/docs/attr-types/portPos.
-	CompassPointNorth
-	CompassPointNorthEast
-	CompassPointEast
-	CompassPointSouthEast
-	CompassPointSouth
-	CompassPointSouthWest
-	CompassPointWest
-	CompassPointNorthWest
-	CompassPointCenter
-)
-
-func (cpt CompassPointType) String() string {
-	return compassPointStrings[cpt]
-}
-
-var compassPointStrings = map[CompassPointType]string{
-	CompassPointUnderscore: "_",
-	CompassPointNorth:      "n",
-	CompassPointNorthEast:  "ne",
-	CompassPointEast:       "e",
-	CompassPointSouthEast:  "se",
-	CompassPointSouth:      "s",
-	CompassPointSouthWest:  "sw",
-	CompassPointWest:       "w",
-	CompassPointNorthWest:  "nw",
-	CompassPointCenter:     "c",
-}
-
-var compassPoints = map[string]CompassPointType{
-	"_":  CompassPointUnderscore,
-	"n":  CompassPointNorth,
-	"ne": CompassPointNorthEast,
-	"e":  CompassPointEast,
-	"se": CompassPointSouthEast,
-	"s":  CompassPointSouth,
-	"sw": CompassPointSouthWest,
-	"w":  CompassPointWest,
-	"nw": CompassPointNorthWest,
-	"c":  CompassPointCenter,
-}
-
-func IsCompassPoint(in string) (CompassPointType, bool) {
-	v, ok := compassPoints[in]
-	return v, ok
-}
-
-// EdgeStmt is a dot edge statement connecting nodes or subgraphs.
-type EdgeStmt struct {
-	Left     EdgeOperand // Left is the left node identifier or subgraph of the edge statement.
-	Right    EdgeRHS     // Right is the edge statements right hand side.
-	AttrList *AttrList   // AttrList is an optional list of attributes for the edge.
-}
-
-func (ns *EdgeStmt) String() string {
-	var out strings.Builder
-
-	out.WriteString(ns.Left.String())
-	out.WriteString(ns.Right.String())
-	if ns.AttrList != nil {
-		out.WriteRune(' ')
-		out.WriteString(ns.AttrList.String())
-	}
-
-	return out.String()
-}
-
-func (ns *EdgeStmt) Start() token.Position {
-	return ns.Left.Start()
-}
-
-func (ns *EdgeStmt) End() token.Position {
-	if ns.AttrList != nil {
-		return ns.AttrList.End()
-	}
-
-	return ns.Right.End()
-}
-
-func (ns *EdgeStmt) stmtNode() {}
-
-// EdgeRHS is the right-hand side of an edge statement.
-type EdgeRHS struct {
-	StartPos token.Position // StartPos is the starting position of the edge operator '--' or '->' as specified by [EdgeRHS.Directed].
-	Directed bool           // Directed indicates that this is a directed edge.
-	Right    EdgeOperand    // Right is the right node identifier or subgraph of the edge right hand side.
-	Next     *EdgeRHS       // Next is an optional edge right hand side.
-}
-
-func (er EdgeRHS) String() string {
-	var out strings.Builder
-
-	if er.Directed {
-		out.WriteString(" -> ")
-	} else {
-		out.WriteString(" -- ")
-	}
-	out.WriteString(er.Right.String())
-
-	for cur := er.Next; cur != nil; cur = cur.Next {
-		if cur.Directed {
-			out.WriteString(" -> ")
-		} else {
-			out.WriteString(" -- ")
-		}
-		out.WriteString(cur.Right.String())
-	}
-
-	return out.String()
-}
-
-func (er EdgeRHS) Start() token.Position {
-	return er.StartPos
-}
-
-func (er EdgeRHS) End() token.Position {
-	var last EdgeOperand
-	for cur := &er; cur != nil; cur = cur.Next {
-		last = cur.Right
-	}
-	return last.End()
-}
-
-// EdgeOperand is an operand in an edge statement that can either be a graph or a subgraph.
+// EdgeOperand represents a node or subgraph that can appear in an edge statement.
 type EdgeOperand interface {
-	Node
 	edgeOperand()
 }
 
-// AttrStmt is an attribute list defining default attributes for graphs, nodes or edges defined
-// after this statement. The attr_stmt production requires an attr_list
-//
-//	attr_stmt :	(graph | node | edge) attr_list
-//
-// while the attr_list only requires opening and closing brackets.
-//
-//	attr_list :	'[' [ a_list ] ']' [ attr_list ]
-//
-// This means that the attr_list might be empty.
+// Graph represents a DOT graph, either directed (digraph) or undirected (graph).
+type Graph struct {
+	tree *dot.Tree
+}
+
+// NewGraph returns all graphs from a parsed [dot.Tree]. Returns nil if the tree is not a File.
+func NewGraph(tree *dot.Tree) []*Graph {
+	if tree.Type != dot.KindFile {
+		return nil
+	}
+
+	var result []*Graph
+	for _, child := range tree.Children {
+		if tc, ok := child.(dot.TreeChild); ok && tc.Type == dot.KindGraph {
+			result = append(result, &Graph{tc.Tree})
+		}
+	}
+	return result
+}
+
+// IsStrict reports whether the graph was declared with the "strict" keyword.
+func (g Graph) IsStrict() bool {
+	// graph : [ strict ] (graph | digraph) [ ID ] '{' stmt_list '}'
+	_, ok := tokenAt(g.tree, token.Strict, 0)
+	return ok
+}
+
+// Directed reports whether the graph is directed (digraph) or undirected (graph).
+func (g Graph) Directed() bool {
+	// graph : [ strict ] (graph | digraph) [ ID ] '{' stmt_list '}'
+	_, _, ok := tokenFirst(g.tree, token.Digraph, 1)
+	return ok
+}
+
+// tokenAt returns the token at index if it matches want.
+func tokenAt(tree *dot.Tree, want token.Kind, at int) (token.Token, bool) {
+	var tok token.Token
+	if at >= len(tree.Children) {
+		return tok, false
+	}
+
+	if tc, ok := tree.Children[at].(dot.TokenChild); ok && tc.Type&want != 0 {
+		return tc.Token, true
+	}
+	return tok, false
+}
+
+// tokenFirst returns the first token matching want within children[0:last] (inclusive).
+func tokenFirst(tree *dot.Tree, want token.Kind, last int) (token.Token, int, bool) {
+	for i, child := range tree.Children {
+		if last < 0 {
+			break
+		}
+
+		if tc, ok := child.(dot.TokenChild); ok && tc.Type&want != 0 {
+			return tc.Token, i, true
+		}
+		last--
+	}
+	var tok token.Token
+	return tok, 0, false
+}
+
+// treeAt returns the tree at index if it matches want.
+func treeAt(tree *dot.Tree, want dot.TreeKind, at int) (*dot.Tree, bool) {
+	if at >= len(tree.Children) {
+		return nil, false
+	}
+
+	if tc, ok := tree.Children[at].(dot.TreeChild); ok && tc.Type == want {
+		return tc.Tree, true
+	}
+	return nil, false
+}
+
+// idAt returns the ID at index if present.
+func idAt(tree *dot.Tree, at int) (*ID, bool) {
+	if id, ok := treeAt(tree, dot.KindID, at); ok {
+		tok, ok := id.Children[0].(dot.TokenChild)
+		assert.That(ok, "ID missing required token child")
+		return &ID{tok.Token}, true
+	}
+	return nil, false
+}
+
+// treeFirst returns the first tree matching want within children[0:last] (inclusive).
+func treeFirst(tree *dot.Tree, want dot.TreeKind, last int) (*dot.Tree, bool) {
+	for _, child := range tree.Children {
+		if last < 0 {
+			break
+		}
+
+		if tc, ok := child.(dot.TreeChild); ok && tc.Type == want {
+			return tc.Tree, true
+		}
+		last--
+	}
+	return nil, false
+}
+
+// ID returns the graph identifier, or nil if not present.
+func (g Graph) ID() *ID {
+	// graph : [ strict ] (graph | digraph) [ ID ] '{' stmt_list '}'
+	_, i, _ := tokenFirst(g.tree, token.Graph|token.Digraph, 1)
+	id, _ := idAt(g.tree, i+1)
+	return id
+}
+
+// Stmts returns the statements in the graph body.
+func (g Graph) Stmts() []Stmt {
+	return stmts(g.tree)
+}
+
+func stmts(tree *dot.Tree) []Stmt {
+	var result []Stmt
+	// graph : [ strict ] (graph | digraph) [ ID ] '{' stmt_list '}'
+	stmtList, ok := treeFirst(tree, dot.KindStmtList, 4)
+	if !ok {
+		return result
+	}
+
+	for _, child := range stmtList.Children {
+		if tc, ok := child.(dot.TreeChild); ok {
+			switch tc.Type {
+			case dot.KindAttribute:
+				result = append(result, Attribute{tc.Tree})
+			case dot.KindAttrStmt:
+				result = append(result, AttrStmt{tc.Tree})
+			case dot.KindEdgeStmt:
+				result = append(result, EdgeStmt{tc.Tree})
+			case dot.KindSubgraph:
+				result = append(result, Subgraph{tc.Tree})
+			case dot.KindNodeStmt:
+				result = append(result, NodeStmt{tc.Tree})
+			}
+		}
+	}
+	return result
+}
+
+// ID represents an identifier in DOT (node names, attribute names/values, graph names).
+type ID struct {
+	tok token.Token
+}
+
+// Literal returns the identifier text as it appears in the source.
+func (id ID) Literal() string {
+	return id.tok.Literal
+}
+
+// NodeStmt represents a node statement that declares a node with optional attributes.
+type NodeStmt struct {
+	tree *dot.Tree
+}
+
+// NodeID returns the node identifier with optional port.
+func (n NodeStmt) NodeID() NodeID {
+	// node_stmt : node_id [ attr_list ]
+	nid, ok := treeAt(n.tree, dot.KindNodeID, 0)
+	assert.That(ok, "NodeStmt missing required NodeID child")
+	return NodeID{nid}
+}
+
+// AttrList returns the attribute list. Check Lists() for empty to detect absence.
+func (n NodeStmt) AttrList() AttrList {
+	t, _ := treeAt(n.tree, dot.KindAttrList, len(n.tree.Children)-1)
+	return AttrList{t}
+}
+
+func (NodeStmt) stmtNode() {}
+
+// NodeID identifies a node, optionally with a port specification.
+type NodeID struct {
+	tree *dot.Tree
+}
+
+// ID returns the node name.
+func (n NodeID) ID() ID {
+	// node_id : ID [ port ]
+	id, ok := idAt(n.tree, 0)
+	assert.That(ok, "NodeID missing required ID child")
+	return *id
+}
+
+// Port returns the port specification, or nil if not present.
+func (n NodeID) Port() *Port {
+	// node_id : ID [ port ]
+	if port, ok := treeAt(n.tree, dot.KindPort, 1); ok {
+		return &Port{port}
+	}
+	return nil
+}
+
+func (NodeID) edgeOperand() {}
+
+// Port specifies where an edge attaches to a node.
+type Port struct {
+	tree *dot.Tree
+}
+
+// Name returns the port name, or nil if only a compass point is specified.
+func (p Port) Name() *ID {
+	// port : ':' ID [ ':' compass_pt ] | ':' compass_pt
+	id, _ := idAt(p.tree, 1)
+	return id
+}
+
+// CompassPoint returns the compass point, or nil if not present.
+func (p Port) CompassPoint() *CompassPoint {
+	// port : ':' ID [ ':' compass_pt ] | ':' compass_pt
+	if id, ok := treeFirst(p.tree, dot.KindCompassPoint, 3); ok {
+		tok, _, _ := tokenFirst(id, token.ID, 0)
+		return &CompassPoint{tok}
+	}
+	return nil
+}
+
+// CompassPointType represents a compass direction for edge attachment.
+type CompassPointType int
+
+const (
+	CompassPointUnderscore CompassPointType = iota // "_" - default/center
+	CompassPointNorth                              // "n"
+	CompassPointNorthEast                          // "ne"
+	CompassPointEast                               // "e"
+	CompassPointSouthEast                          // "se"
+	CompassPointSouth                              // "s"
+	CompassPointSouthWest                          // "sw"
+	CompassPointWest                               // "w"
+	CompassPointNorthWest                          // "nw"
+	CompassPointCenter                             // "c"
+)
+
+// CompassPoint represents a compass direction where an edge attaches to a node.
+type CompassPoint struct {
+	tok token.Token
+}
+
+// Type returns the compass direction.
+func (cp CompassPoint) Type() CompassPointType {
+	switch cp.tok.Literal {
+	case "n":
+		return CompassPointNorth
+	case "ne":
+		return CompassPointNorthEast
+	case "e":
+		return CompassPointEast
+	case "se":
+		return CompassPointSouthEast
+	case "s":
+		return CompassPointSouth
+	case "sw":
+		return CompassPointSouthWest
+	case "w":
+		return CompassPointWest
+	case "nw":
+		return CompassPointNorthWest
+	case "c":
+		return CompassPointCenter
+	case "_":
+		fallthrough
+	default:
+		return CompassPointUnderscore
+	}
+}
+
+// String returns the compass point as it appears in the source (e.g., "n", "se").
+func (cp CompassPoint) String() string {
+	return cp.tok.Literal
+}
+
+// EdgeStmt represents an edge statement connecting nodes or subgraphs.
+type EdgeStmt struct {
+	tree *dot.Tree
+}
+
+// Directed reports whether this is a directed edge (->).
+func (e EdgeStmt) Directed() bool {
+	// edge_stmt : (node_id | subgraph) edgeRHS [ attr_list ]
+	// edgeRHS   : edgeop (node_id | subgraph) [ edgeRHS ]
+	_, ok := tokenAt(e.tree, token.DirectedEdge, 1)
+	return ok
+}
+
+// Operands returns all edge operands in order (e.g., for "A -> B -> C" returns [A, B, C]).
+func (e EdgeStmt) Operands() []EdgeOperand {
+	var result []EdgeOperand
+	for _, child := range e.tree.Children {
+		if tc, ok := child.(dot.TreeChild); ok {
+			switch tc.Type {
+			case dot.KindNodeID:
+				result = append(result, NodeID{tc.Tree})
+			case dot.KindSubgraph:
+				result = append(result, Subgraph{tc.Tree})
+			}
+		}
+	}
+	return result
+}
+
+// AttrList returns the attribute list. Check Lists() for empty to detect absence.
+func (e EdgeStmt) AttrList() AttrList {
+	t, _ := treeAt(e.tree, dot.KindAttrList, len(e.tree.Children)-1)
+	return AttrList{t}
+}
+
+func (EdgeStmt) stmtNode() {}
+
+// AttrStmt represents a default attribute statement for graph, node, or edge.
 type AttrStmt struct {
-	ID       ID       // ID is either graph, node or edge.
-	AttrList AttrList // AttrList is a list of attributes for the graph, node or edge keyword.
+	tree *dot.Tree
 }
 
-func (ns *AttrStmt) String() string {
-	var out strings.Builder
-
-	out.WriteString(ns.ID.String())
-	out.WriteRune(' ')
-	out.WriteString(ns.AttrList.String())
-
-	return out.String()
+// Target returns the target type (graph, node, or edge).
+func (a AttrStmt) Target() ID {
+	// attr_stmt : (graph | node | edge) attr_list
+	tok, ok := tokenAt(a.tree, token.Graph|token.Node|token.Edge, 0)
+	assert.That(ok, "AttrStmt missing required graph, node, or edge token")
+	return ID{tok}
 }
 
-func (ns *AttrStmt) Start() token.Position {
-	return ns.ID.Start()
+// AttrList returns the attribute list.
+func (a AttrStmt) AttrList() AttrList {
+	t, _ := treeAt(a.tree, dot.KindAttrList, len(a.tree.Children)-1)
+	return AttrList{t}
 }
 
-func (ns *AttrStmt) End() token.Position {
-	return ns.AttrList.End()
-}
+func (AttrStmt) stmtNode() {}
 
-func (ns *AttrStmt) stmtNode() {}
-
-// AttrList is a list of attributes as defined by [Attributes].
-//
-// [Attributes]: https://graphviz.org/doc/info/attrs.html
+// AttrList represents one or more bracketed attribute lists.
 type AttrList struct {
-	LeftBracket  token.Position // Position of the opening '['.
-	AList        *AList         // AList is an optional list of attributes.
-	RightBracket token.Position // Position of the first closing ']'. Note this might not be last ']' if
-	// there are Next AttrList which themselves have '[]'. Use [AttrList.End] to get the position of
-	// the last closing ']'.
-	Next *AttrList // Next optionally points to the attribute list following this one.
+	tree *dot.Tree
 }
 
-func (atl *AttrList) String() string {
-	var out strings.Builder
-
-	for cur := atl; cur != nil; cur = cur.Next {
-		out.WriteRune('[')
-		out.WriteString(cur.AList.String())
-		out.WriteRune(']')
-		if cur.Next != nil {
-			out.WriteRune(' ')
+// Lists returns attribute groups, preserving bracket structure
+// (e.g., [a=1][b=2] returns [[{a,1}], [{b,2}]]).
+func (a AttrList) Lists() [][]Attribute {
+	if a.tree == nil {
+		return nil
+	}
+	var result [][]Attribute
+	var current []Attribute
+	for _, child := range a.tree.Children {
+		if tc, ok := child.(dot.TokenChild); ok {
+			switch tc.Type {
+			case token.LeftBracket:
+				current = make([]Attribute, 0)
+			case token.RightBracket:
+				result = append(result, current)
+			}
+		} else if tc, ok := child.(dot.TreeChild); ok && tc.Type == dot.KindAList {
+			for _, ac := range tc.Children {
+				if attr, ok := ac.(dot.TreeChild); ok && attr.Type == dot.KindAttribute {
+					current = append(current, Attribute{attr.Tree})
+				}
+			}
 		}
 	}
-
-	return out.String()
+	return result
 }
 
-func (atl *AttrList) Start() token.Position {
-	return atl.LeftBracket
-}
-
-func (atl *AttrList) End() token.Position {
-	var end token.Position
-	for cur := atl; cur != nil; cur = cur.Next {
-		end = cur.RightBracket
-	}
-	return end
-}
-
-// AList is a list of name-value [attribute pairs].
-//
-// [attribute pairs]: https://graphviz.org/doc/info/attrs.html
-type AList struct {
-	Attribute Attribute // Attribute is the name-value attribute pair.
-	Next      *AList    // Next optionally points to the attribute following this one.
-}
-
-func (al *AList) String() string {
-	var out strings.Builder
-
-	for cur := al; cur != nil; cur = cur.Next {
-		out.WriteString(cur.Attribute.String())
-		if cur.Next != nil {
-			out.WriteRune(',')
-		}
-	}
-
-	return out.String()
-}
-
-func (al *AList) Start() token.Position {
-	return al.Attribute.Start()
-}
-
-func (al *AList) End() token.Position {
-	var last Attribute
-	for cur := al; cur != nil; cur = cur.Next {
-		last = cur.Attribute
-	}
-	return last.End()
-}
-
-// Attribute is a name-value [attribute pair]. Note that this name is not defined in the abstract
-// grammar of the DOT language. It is defined as a statement and as part of the a_list as ID '=' ID.
-//
-// [attribute pair]: https://graphviz.org/doc/info/attrs.html
+// Attribute represents a name=value attribute assignment.
 type Attribute struct {
-	Name  ID // Name is an identifier naming the attribute.
-	Value ID // Value is the identifier representing the value of the attribute.
+	tree *dot.Tree
 }
 
-func (a Attribute) String() string {
-	var out strings.Builder
-
-	out.WriteString(a.Name.String())
-	out.WriteString("=")
-	out.WriteString(a.Value.String())
-
-	return out.String()
+// Name returns the attribute name.
+func (a Attribute) Name() ID {
+	// a_list : ID '=' ID [ (';' | ',') ] [ a_list ]
+	id, ok := idAt(a.tree, 0)
+	assert.That(ok, "Attribute missing required name ID child")
+	return *id
 }
 
-func (a Attribute) Start() token.Position {
-	return a.Name.Start()
+// Value returns the attribute value.
+func (a Attribute) Value() ID {
+	// a_list : ID '=' ID [ (';' | ',') ] [ a_list ]
+	id, ok := idAt(a.tree, 2)
+	assert.That(ok, "Attribute missing required value ID child")
+	return *id
 }
 
-func (a Attribute) End() token.Position {
-	return a.Value.End()
-}
+func (Attribute) stmtNode() {}
 
-func (a Attribute) stmtNode() {}
-
-// Subgraph is a dot subgraph.
+// Subgraph represents a subgraph definition.
 type Subgraph struct {
-	SubgraphStart *token.Position // SubgraphStart is the starting position of the optional keyword 'subgraph'.
-	ID            *ID             // ID is the optional identifier.
-	LeftBrace     token.Position  // LeftBrace is the position of the opening '{'.
-	Stmts         []Stmt          // Stmts contains all the subraphs statements.
-	RightBrace    token.Position  // RightBrace is the position of the closing '}'.
+	tree *dot.Tree
 }
 
-func (s Subgraph) String() string {
-	var out strings.Builder
+// HasKeyword reports whether the subgraph was declared with the "subgraph" keyword.
+// A subgraph can be declared without the keyword (just braces).
+func (s Subgraph) HasKeyword() bool {
+	// subgraph : [ subgraph [ ID ] ] '{' stmt_list '}'
+	_, ok := tokenAt(s.tree, token.Subgraph, 0)
+	return ok
+}
 
-	out.WriteString("subgraph ")
-	if s.ID != nil {
-		out.WriteString(s.ID.String())
-		out.WriteRune(' ')
+// ID returns the subgraph identifier, or nil if not present.
+func (s Subgraph) ID() *ID {
+	// subgraph : [ subgraph [ ID ] ] '{' stmt_list '}'
+	if _, ok := tokenAt(s.tree, token.Subgraph, 0); !ok {
+		return nil
 	}
-	out.WriteRune('{')
-	for i, stmt := range s.Stmts {
-		out.WriteString(stmt.String())
-		if i != len(s.Stmts)-1 {
-			out.WriteRune(' ')
-		}
-	}
-	out.WriteRune('}')
-
-	return out.String()
+	id, _ := idAt(s.tree, 1)
+	return id
 }
 
-// Start returns the position of the first token belonging to the subgraph. This is either the
-// 'subraph' keyword or the opening left brace.
-func (s Subgraph) Start() token.Position {
-	if s.SubgraphStart != nil {
-		return *s.SubgraphStart
-	}
-	return s.LeftBrace
+// Stmts returns the statements in the subgraph body.
+func (s Subgraph) Stmts() []Stmt {
+	return stmts(s.tree)
 }
 
-// End returns the position of the last token belonging to the subgraph which is the closing brace.
-func (s Subgraph) End() token.Position {
-	return s.RightBrace
-}
-
-func (s Subgraph) stmtNode()    {}
-func (s Subgraph) edgeOperand() {}
-
-// Comment is a DOT [comment].
-//
-// [comment]: https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
-type Comment struct {
-	Text     string         // Comment text including any opening and closing markers.
-	StartPos token.Position // Position of the first rune of the comment.
-	EndPos   token.Position // Position of the last rune of the comment.
-}
-
-func (c Comment) String() string {
-	return c.Text
-}
-
-func (c Comment) Start() token.Position {
-	return c.StartPos
-}
-
-func (c Comment) End() token.Position {
-	return c.EndPos
-}
+func (Subgraph) stmtNode()    {}
+func (Subgraph) edgeOperand() {}

@@ -4,22 +4,26 @@ import (
 	"strconv"
 )
 
-// Position describes a position in dot source code.
+// Position describes a position in DOT source code.
+// A Position is valid if the line number is > 0.
 type Position struct {
-	Row    int // Row is the line number starting at 1. A row of zero is not valid.
-	Column int // Column is the horizontal position of in terms of runes starting at 1. A column of zero is not valid.
+	Line   int // line number, starting at 1
+	Column int // column number, starting at 1 (rune count)
 }
+
+// IsValid reports whether the position is valid.
+func (p Position) IsValid() bool { return p.Line > 0 }
 
 // String returns the position in line:column format.
 func (p Position) String() string {
-	return strconv.Itoa(p.Row) + ":" + strconv.Itoa(p.Column)
+	return strconv.Itoa(p.Line) + ":" + strconv.Itoa(p.Column)
 }
 
 // Before reports whether the position p is before o.
 func (p Position) Before(o Position) bool {
-	if p.Row < o.Row {
+	if p.Line < o.Line {
 		return true
-	} else if p.Row == o.Row && p.Column < o.Column {
+	} else if p.Line == o.Line && p.Column < o.Column {
 		return true
 	}
 	return false
@@ -27,9 +31,9 @@ func (p Position) Before(o Position) bool {
 
 // After reports whether the position p is after o.
 func (p Position) After(o Position) bool {
-	if p.Row > o.Row {
+	if p.Line > o.Line {
 		return true
-	} else if p.Row == o.Row && p.Column > o.Column {
+	} else if p.Line == o.Line && p.Column > o.Column {
 		return true
 	}
 	return false

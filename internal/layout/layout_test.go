@@ -465,7 +465,7 @@ in between
 
 				// GoStringer should render to the same layout as its source document
 				var sb strings.Builder
-				tc.in.Clone().Render(&sb, layout.Default)
+				_ = tc.in.Clone().Render(&sb, layout.Default)
 				want := sb.String()
 
 				assert.EqualValues(t, string(got), want)

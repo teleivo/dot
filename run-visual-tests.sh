@@ -17,9 +17,9 @@ while IFS= read -r -d '' dir; do
     printf "Testing: %s" "$rel_dir"
 
     # Build test command with optional timeout
-    test_cmd="DOTFMT_TEST_DIR=\"$dir\" go test -C cmd/dotfmt -v"
-    if [ -n "${DOTFMT_TEST_TIMEOUT:-}" ]; then
-        test_cmd="$test_cmd -timeout $DOTFMT_TEST_TIMEOUT"
+    test_cmd="DOTX_TEST_DIR=\"$dir\" go test -C cmd/dotx -v"
+    if [ -n "${DOTX_TEST_TIMEOUT:-}" ]; then
+        test_cmd="$test_cmd -timeout $DOTX_TEST_TIMEOUT"
     fi
     test_cmd="$test_cmd -run TestVisualOutput"
 

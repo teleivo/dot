@@ -41,7 +41,7 @@ import (
 )
 
 // Format specifies the output representation for rendering a [Doc].
-type Format = int
+type Format int
 
 const (
 	// Default renders the formatted output as text.
@@ -61,7 +61,7 @@ var formats = map[string]Format{
 	"layout":  Layout,
 }
 
-var validFormats = [3]string{"default", "go", "layout"}
+var validFormats = [...]string{"default", "go", "layout"}
 
 // NewFormat converts a string to a [Format] constant. Valid values are "default", "layout", and
 // "go". Returns an error if the format string is invalid.
@@ -389,7 +389,7 @@ func (d *Doc) String() string {
 	return sb.String()
 }
 
-func stringIter(w io.Writer, iter tagIterator, indent int) {
+func stringIter(w *strings.Builder, iter tagIterator, indent int) {
 	for t, children := range iter {
 		switch tag := t.tag.(type) {
 		case *group:
@@ -432,9 +432,9 @@ func stringIter(w io.Writer, iter tagIterator, indent int) {
 	}
 }
 
-func writeIndent(w io.Writer, columns int) {
+func writeIndent(w *strings.Builder, columns int) {
 	for range columns {
-		fmt.Fprint(w, "\t")
+		w.WriteByte('\t')
 	}
 }
 
@@ -447,12 +447,12 @@ func (d *Doc) GoString() string {
 
 func goString(d *Doc, indent int) string {
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "layout.NewDoc(%d)\n", d.maxColumn)
+	_, _ = fmt.Fprintf(&sb, "layout.NewDoc(%d)\n", d.maxColumn)
 	goStringIter(&sb, d.All(), indent)
 	return sb.String()
 }
 
-func goStringIter(w io.Writer, iter tagIterator, indent int) {
+func goStringIter(w *strings.Builder, iter tagIterator, indent int) {
 	first := true
 	for t, children := range iter {
 		if first {

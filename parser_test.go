@@ -7,2070 +7,2791 @@ import (
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/dot"
-	"github.com/teleivo/dot/ast"
-	"github.com/teleivo/dot/token"
 )
 
 func TestParser(t *testing.T) {
-	t.Run("Header", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want ast.Graph
-			err  error
-		}{
-			"Empty": {
-				in:   "",
-				want: ast.Graph{},
+	tests := map[string]struct {
+		in         string
+		want       string
+		wantScheme string // optional - verify positions via Render(Scheme)
+		wantErrors []string
+	}{
+		// Incremental graph construction - simulating user typing
+		"Empty": {
+			in: "",
+			want: `File
+`,
+			wantScheme: `(File)
+`,
+		},
+		"Strict": {
+			in: "strict",
+			want: `File
+	Graph
+		'strict'
+`,
+			wantErrors: []string{
+				"1:7: expected digraph or graph",
 			},
-			"EmptyDirectedGraph": {
-				in: "digraph {}",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Directed:   true,
-					LeftBrace:  token.Position{Row: 1, Column: 9},
-					RightBrace: token.Position{Row: 1, Column: 10},
-				},
+		},
+		"StrictGraph": {
+			in: "strict graph",
+			want: `File
+	Graph
+		'strict'
+		'graph'
+`,
+			wantErrors: []string{
+				"1:13: expected {",
 			},
-			"GraphWithComments": {
-				in: `/** header explaining
-				the graph */
-graph {
-} // trailing comment`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 3, Column: 1},
-					LeftBrace:  token.Position{Row: 3, Column: 7},
-					RightBrace: token.Position{Row: 4, Column: 1},
-					Comments: []ast.Comment{
-						{
-							Text: `/** header explaining
-				the graph */`,
-							StartPos: token.Position{Row: 1, Column: 1},
-							EndPos:   token.Position{Row: 2, Column: 16},
-						},
-						{
-							Text:     "// trailing comment",
-							StartPos: token.Position{Row: 4, Column: 3},
-							EndPos:   token.Position{Row: 4, Column: 21},
-						},
-					},
-				},
+		},
+		"StrictGraphID": {
+			in: "strict graph fruits",
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+`,
+			wantErrors: []string{
+				"1:20: expected {",
 			},
-			"EmptyUndirectedGraph": {
-				in: "graph {}",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 8},
-				},
+		},
+		"StrictGraphIDLeftBrace": {
+			in: "strict graph fruits {",
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+`,
+			wantErrors: []string{
+				"1:22: expected }",
 			},
-			"StrictDirectedUnnamedGraph": {
-				in: ` strict digraph {}`,
-				want: ast.Graph{
-					StrictStart: &token.Position{Row: 1, Column: 2},
-					GraphStart:  token.Position{Row: 1, Column: 9},
-					Directed:    true,
-					LeftBrace:   token.Position{Row: 1, Column: 17},
-					RightBrace:  token.Position{Row: 1, Column: 18},
-				},
-			},
-			"StrictDirectedNamedGraph": {
-				in: `strict digraph dependencies {}`,
-				want: ast.Graph{
-					StrictStart: &token.Position{Row: 1, Column: 1},
-					GraphStart:  token.Position{Row: 1, Column: 8},
-					Directed:    true,
-					ID: &ast.ID{
-						Literal:  "dependencies",
-						StartPos: token.Position{Row: 1, Column: 16},
-						EndPos:   token.Position{Row: 1, Column: 27},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 29},
-					RightBrace: token.Position{Row: 1, Column: 30},
-				},
-			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.NewParser(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"StrictMustBeFirstKeyword": {
-					in:     "digraph strict {}",
-					errMsg: `got "strict" instead`,
-				},
-				"GraphIDMustComeAfterGraphKeywords": {
-					in:     "dependencies {}",
-					errMsg: `got "dependencies" instead`,
-				},
-				"LeftBraceMustFollow": {
-					in:     "graph dependencies [",
-					errMsg: `got "[" instead`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.NewParser(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
-
-	t.Run("NodeStmt", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want ast.Graph
-			err  error
-		}{
-			"OnlyNode": {
-				in: "graph { foo }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 13},
-				},
-			},
-			"OnlyNodes": {
-				in: `graph { foo ; bar baz
-					trash
-				}`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-						},
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "bar",
-									StartPos: token.Position{Row: 1, Column: 15},
-									EndPos:   token.Position{Row: 1, Column: 17},
-								},
-							},
-						},
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "baz",
-									StartPos: token.Position{Row: 1, Column: 19},
-									EndPos:   token.Position{Row: 1, Column: 21},
-								},
-							},
-						},
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "trash",
-									StartPos: token.Position{Row: 2, Column: 6},
-									EndPos:   token.Position{Row: 2, Column: 10},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 3, Column: 5},
-				},
-			},
-			"NodeWithPortName": {
-				in: "graph { foo:f0 }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-								Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 16},
-				},
-			},
-			"NodeWithPortNameAndCompassPointUnderscore": {
-				in: `graph { foo:"f0":_ }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  `"f0"`,
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointUnderscore,
-										StartPos: token.Position{Row: 1, Column: 18},
-										EndPos:   token.Position{Row: 1, Column: 18},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 20},
-				},
-			},
-			"NodeWithPortNameAndCompassPointNorth": {
-				in: `graph { foo:"f0":n }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  `"f0"`,
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointNorth,
-										StartPos: token.Position{Row: 1, Column: 18},
-										EndPos:   token.Position{Row: 1, Column: 18},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 20},
-				},
-			},
-			"NodeWithPortNameAndCompassPointNorthEast": {
-				in: `graph { foo:f0:ne }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointNorthEast,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 17},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 19},
-				},
-			},
-			"NodeWithPortNameAndCompassPointEast": {
-				in: `graph { foo:f0:e }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointEast,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 18},
-				},
-			},
-			"NodeWithPortNameAndCompassPointSouthEast": {
-				in: `graph { foo:f0:se }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointSouthEast,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 17},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 19},
-				},
-			},
-			"NodeWithPortNameAndCompassPointSouth": {
-				in: `graph { foo:f0:s }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointSouth,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 18},
-				},
-			},
-			"NodeWithPortNameAndCompassPointSouthWest": {
-				in: `graph { foo:f0:sw }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointSouthWest,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 17},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 19},
-				},
-			},
-			"NodeWithPortNameAndCompassPointWest": {
-				in: `graph { foo:f0:w }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointWest,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 18},
-				},
-			},
-			"NodeWithPortNameAndCompassPointNorthWest": {
-				in: `graph { foo:f0:nw }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointNorthWest,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 17},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 19},
-				},
-			},
-			"NodeWithPortNameAndCompassPointCenter": {
-				in: `graph { foo:f0:c }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointCenter,
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 18},
-				},
-			},
-			"NodeWithCompassPointNorth": {
-				in: `graph { foo:n }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointNorth,
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 13},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 15},
-				},
-			},
-			"NodeWithPortNameEqualToACompassPoint": { // https://graphviz.org/docs/attr-types/portPos
-				in: `graph { foo:n:n }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								}, Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "n",
-										StartPos: token.Position{Row: 1, Column: 13},
-										EndPos:   token.Position{Row: 1, Column: 13},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointNorth,
-										StartPos: token.Position{Row: 1, Column: 15},
-										EndPos:   token.Position{Row: 1, Column: 15},
-									},
-								},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 17},
-				},
-			},
-			"OnlyNodeWithEmptyAttributeList": {
-				in: "graph { foo [] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 14},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 16},
-				},
-			},
-			"NodeWithSingleAttributeAndEmptyAttributeList": {
-				in: "graph { foo [] [a=b] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								Next: &ast.AttrList{
-									AList: &ast.AList{
-										Attribute: ast.Attribute{
-											Name:  ast.ID{Literal: "a", StartPos: token.Position{Row: 1, Column: 17}, EndPos: token.Position{Row: 1, Column: 17}},
-											Value: ast.ID{Literal: "b", StartPos: token.Position{Row: 1, Column: 19}, EndPos: token.Position{Row: 1, Column: 19}},
-										},
-									},
-									LeftBracket:  token.Position{Row: 1, Column: 16},
-									RightBracket: token.Position{Row: 1, Column: 20},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 14},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 22},
-				},
-			},
-			"NodeWithSingleAttribute": {
-				in: "graph { foo [a=b] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 14},
-											EndPos:   token.Position{Row: 1, Column: 14},
-										},
-										Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 16},
-											EndPos:   token.Position{Row: 1, Column: 16},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 17},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 19},
-				},
-			},
-			"NodeWithAttributesAndTrailingComma": {
-				in: "graph { foo [a=b,] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								AList:        &ast.AList{Attribute: ast.Attribute{Name: ast.ID{Literal: "a", StartPos: token.Position{Row: 1, Column: 14}, EndPos: token.Position{Row: 1, Column: 14}}, Value: ast.ID{Literal: "b", StartPos: token.Position{Row: 1, Column: 16}, EndPos: token.Position{Row: 1, Column: 16}}}},
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 18},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 20},
-				},
-			},
-			"NodeWithAttributesAndTrailingSemicolon": {
-				in: "graph { foo [a=b;] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 14},
-											EndPos:   token.Position{Row: 1, Column: 14},
-										},
-										Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 16},
-											EndPos:   token.Position{Row: 1, Column: 16},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 18},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 20},
-				},
-			},
-			"NodeWithAttributeOverriding": {
-				in: "graph { foo [a=b;c=d]; foo [a=e] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 14},
-											EndPos:   token.Position{Row: 1, Column: 14},
-										},
-										Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 16},
-											EndPos:   token.Position{Row: 1, Column: 16},
-										},
-									},
-									Next: &ast.AList{
-										Attribute: ast.Attribute{
-											Name: ast.ID{
-												Literal:  "c",
-												StartPos: token.Position{Row: 1, Column: 18},
-												EndPos:   token.Position{Row: 1, Column: 18},
-											},
-											Value: ast.ID{
-												Literal:  "d",
-												StartPos: token.Position{Row: 1, Column: 20},
-												EndPos:   token.Position{Row: 1, Column: 20},
-											},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 21},
-							},
-						},
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 24},
-									EndPos:   token.Position{Row: 1, Column: 26},
-								},
-							},
-							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 29},
-											EndPos:   token.Position{Row: 1, Column: 29},
-										},
-										Value: ast.ID{
-											Literal:  "e",
-											StartPos: token.Position{Row: 1, Column: 31},
-											EndPos:   token.Position{Row: 1, Column: 31},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 28},
-								RightBracket: token.Position{Row: 1, Column: 32},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 34},
-				},
-			},
-			"NodeWithMultipleAttributesInSingleBracketPair": {
-				in: "graph { foo [a=b c=d,e=f;g=h] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 14},
-											EndPos:   token.Position{Row: 1, Column: 14},
-										}, Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 16},
-											EndPos:   token.Position{Row: 1, Column: 16},
-										},
-									},
-									Next: &ast.AList{
-										Attribute: ast.Attribute{
-											Name: ast.ID{
-												Literal:  "c",
-												StartPos: token.Position{Row: 1, Column: 18},
-												EndPos:   token.Position{Row: 1, Column: 18},
-											}, Value: ast.ID{
-												Literal:  "d",
-												StartPos: token.Position{Row: 1, Column: 20},
-												EndPos:   token.Position{Row: 1, Column: 20},
-											},
-										},
-										Next: &ast.AList{
-											Attribute: ast.Attribute{
-												Name: ast.ID{
-													Literal:  "e",
-													StartPos: token.Position{Row: 1, Column: 22},
-													EndPos:   token.Position{Row: 1, Column: 22},
-												}, Value: ast.ID{
-													Literal:  "f",
-													StartPos: token.Position{Row: 1, Column: 24},
-													EndPos:   token.Position{Row: 1, Column: 24},
-												},
-											},
-											Next: &ast.AList{
-												Attribute: ast.Attribute{
-													Name: ast.ID{
-														Literal:  "g",
-														StartPos: token.Position{Row: 1, Column: 26},
-														EndPos:   token.Position{Row: 1, Column: 26},
-													},
-													Value: ast.ID{
-														Literal:  "h",
-														StartPos: token.Position{Row: 1, Column: 28},
-														EndPos:   token.Position{Row: 1, Column: 28},
-													},
-												},
-											},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 29},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 31},
-				},
-			},
-			"NodeWithMultipleAttributesInMultipleBracketPairs": {
-				in: "graph { foo [a=b c=d][e=f;g=h] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.NodeStmt{
-							NodeID: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "foo",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 14},
-											EndPos:   token.Position{Row: 1, Column: 14},
-										},
-										Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 16},
-											EndPos:   token.Position{Row: 1, Column: 16},
-										},
-									},
-									Next: &ast.AList{
-										Attribute: ast.Attribute{
-											Name:  ast.ID{Literal: "c", StartPos: token.Position{Row: 1, Column: 18}, EndPos: token.Position{Row: 1, Column: 18}},
-											Value: ast.ID{Literal: "d", StartPos: token.Position{Row: 1, Column: 20}, EndPos: token.Position{Row: 1, Column: 20}},
-										},
-									},
-								},
-								Next: &ast.AttrList{
-									AList: &ast.AList{
-										Attribute: ast.Attribute{
-											Name:  ast.ID{Literal: "e", StartPos: token.Position{Row: 1, Column: 23}, EndPos: token.Position{Row: 1, Column: 23}},
-											Value: ast.ID{Literal: "f", StartPos: token.Position{Row: 1, Column: 25}, EndPos: token.Position{Row: 1, Column: 25}},
-										},
-										Next: &ast.AList{
-											Attribute: ast.Attribute{
-												Name:  ast.ID{Literal: "g", StartPos: token.Position{Row: 1, Column: 27}, EndPos: token.Position{Row: 1, Column: 27}},
-												Value: ast.ID{Literal: "h", StartPos: token.Position{Row: 1, Column: 29}, EndPos: token.Position{Row: 1, Column: 29}},
-											},
-										},
-									},
-									LeftBracket:  token.Position{Row: 1, Column: 22},
-									RightBracket: token.Position{Row: 1, Column: 30},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 13},
-								RightBracket: token.Position{Row: 1, Column: 21},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 32},
-				},
-			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.NewParser(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"AttributeListWithoutClosingBracket": {
-					in:     "graph { foo [ }",
-					errMsg: `expected next token to be one of ["]" "ID"]`,
-				},
-				"NodeWithPortWithoutName": {
-					in:     "graph { foo: }",
-					errMsg: `expected next token to be "ID"`,
-				},
-				"NodeWithPortWithoutCompassPoint": {
-					in:     "graph { foo:f: }",
-					errMsg: `expected next token to be "ID"`,
-				},
-				"NodeWithPortWithInvalidCompassPoint": {
-					in:     "graph { foo:n:bottom }",
-					errMsg: `expected a compass point [_ n ne`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.NewParser(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
-
-	t.Run("EdgeStmt", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want ast.Graph
-			err  error
-		}{
-			"SingleUndirectedEdge": {
-				in: "graph { 1 -- 2 }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "1",
-									StartPos: token.Position{Row: 1, Column: 9},
-									EndPos:   token.Position{Row: 1, Column: 9},
-								},
-							},
-							Right: ast.EdgeRHS{
-								Right: ast.NodeID{
-									ID: ast.ID{
-										Literal:  "2",
-										StartPos: token.Position{Row: 1, Column: 14},
-										EndPos:   token.Position{Row: 1, Column: 14},
-									},
-								},
-								StartPos: token.Position{Row: 1, Column: 11},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 16},
-				},
-			},
-			"SingleDirectedEdge": {
-				in: "digraph { 1 -> 2 }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Directed:   true,
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "1",
-									StartPos: token.Position{Row: 1, Column: 11},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							Right: ast.EdgeRHS{
-								Directed: true,
-								Right: ast.NodeID{
-									ID: ast.ID{
-										Literal:  "2",
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-								},
-								StartPos: token.Position{Row: 1, Column: 13},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 9},
-					RightBrace: token.Position{Row: 1, Column: 18},
-				},
-			},
-			"MultipleDirectedEdgesWithAttributeList": {
-				in: "digraph { 1 -> 2 -> 3 -> 4 [a=b] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Directed:   true,
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "1",
-									StartPos: token.Position{Row: 1, Column: 11},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							Right: ast.EdgeRHS{
-								Directed: true,
-								Right: ast.NodeID{
-									ID: ast.ID{
-										Literal:  "2",
-										StartPos: token.Position{Row: 1, Column: 16},
-										EndPos:   token.Position{Row: 1, Column: 16},
-									},
-								},
-								Next: &ast.EdgeRHS{
-									Directed: true,
-									Right: ast.NodeID{
-										ID: ast.ID{
-											Literal:  "3",
-											StartPos: token.Position{Row: 1, Column: 21},
-											EndPos:   token.Position{Row: 1, Column: 21},
-										},
-									},
-									Next: &ast.EdgeRHS{
-										Directed: true,
-										Right: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "4",
-												StartPos: token.Position{Row: 1, Column: 26},
-												EndPos:   token.Position{Row: 1, Column: 26},
-											},
-										},
-										StartPos: token.Position{Row: 1, Column: 23},
-									},
-									StartPos: token.Position{Row: 1, Column: 18},
-								},
-								StartPos: token.Position{Row: 1, Column: 13},
-							},
-							AttrList: &ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 29},
-											EndPos:   token.Position{Row: 1, Column: 29},
-										}, Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 31},
-											EndPos:   token.Position{Row: 1, Column: 31},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 28},
-								RightBracket: token.Position{Row: 1, Column: 32},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 9},
-					RightBrace: token.Position{Row: 1, Column: 34},
-				},
-			},
-			"EdgeWithLHSShortSubgraph": {
-				in: "digraph { {A B} -> C }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Directed:   true,
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.Subgraph{
-								Stmts: []ast.Stmt{
-									&ast.NodeStmt{
-										NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "A",
-												StartPos: token.Position{Row: 1, Column: 12},
-												EndPos:   token.Position{Row: 1, Column: 12},
-											},
-										},
-									},
-									&ast.NodeStmt{
-										NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "B",
-												StartPos: token.Position{Row: 1, Column: 14},
-												EndPos:   token.Position{Row: 1, Column: 14},
-											},
-										},
-									},
-								},
-								LeftBrace:  token.Position{Row: 1, Column: 11},
-								RightBrace: token.Position{Row: 1, Column: 15},
-							},
-							Right: ast.EdgeRHS{
-								Directed: true,
-								Right: ast.NodeID{
-									ID: ast.ID{
-										Literal:  "C",
-										StartPos: token.Position{Row: 1, Column: 20},
-										EndPos:   token.Position{Row: 1, Column: 20},
-									},
-								},
-								StartPos: token.Position{Row: 1, Column: 17},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 9},
-					RightBrace: token.Position{Row: 1, Column: 22},
-				},
-			},
-			"EdgeWithRHSShortSubgraph": {
-				in: "digraph { A -> {B C} }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Directed:   true,
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "A",
-									StartPos: token.Position{Row: 1, Column: 11},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							Right: ast.EdgeRHS{
-								Directed: true,
-								Right: ast.Subgraph{
-									Stmts: []ast.Stmt{
-										&ast.NodeStmt{
-											NodeID: ast.NodeID{
-												ID: ast.ID{
-													Literal:  "B",
-													StartPos: token.Position{Row: 1, Column: 17},
-													EndPos:   token.Position{Row: 1, Column: 17},
-												},
-											},
-										},
-										&ast.NodeStmt{
-											NodeID: ast.NodeID{
-												ID: ast.ID{
-													Literal:  "C",
-													StartPos: token.Position{Row: 1, Column: 19},
-													EndPos:   token.Position{Row: 1, Column: 19},
-												},
-											},
-										},
-									},
-									LeftBrace:  token.Position{Row: 1, Column: 16},
-									RightBrace: token.Position{Row: 1, Column: 20},
-								},
-								StartPos: token.Position{Row: 1, Column: 13},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 9},
-					RightBrace: token.Position{Row: 1, Column: 22},
-				},
-			},
-			"EdgeWithNestedSubraphs": {
-				in: "graph { {1 2} -- {3 -- {4 5}} }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.Subgraph{
-								Stmts: []ast.Stmt{
-									&ast.NodeStmt{
-										NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "1",
-												StartPos: token.Position{Row: 1, Column: 10},
-												EndPos:   token.Position{Row: 1, Column: 10},
-											},
-										},
-									},
-									&ast.NodeStmt{
-										NodeID: ast.NodeID{
-											ID: ast.ID{
-												Literal:  "2",
-												StartPos: token.Position{Row: 1, Column: 12},
-												EndPos:   token.Position{Row: 1, Column: 12},
-											},
-										},
-									},
-								},
-								LeftBrace:  token.Position{Row: 1, Column: 9},
-								RightBrace: token.Position{Row: 1, Column: 13},
-							},
-							Right: ast.EdgeRHS{
-								Right: ast.Subgraph{
-									Stmts: []ast.Stmt{
-										&ast.EdgeStmt{
-											Left: ast.NodeID{
-												ID: ast.ID{
-													Literal:  "3",
-													StartPos: token.Position{Row: 1, Column: 19},
-													EndPos:   token.Position{Row: 1, Column: 19},
-												},
-											},
-											Right: ast.EdgeRHS{
-												Right: ast.Subgraph{
-													Stmts: []ast.Stmt{
-														&ast.NodeStmt{
-															NodeID: ast.NodeID{
-																ID: ast.ID{
-																	Literal:  "4",
-																	StartPos: token.Position{Row: 1, Column: 25},
-																	EndPos:   token.Position{Row: 1, Column: 25},
-																},
-															},
-														},
-														&ast.NodeStmt{
-															NodeID: ast.NodeID{
-																ID: ast.ID{
-																	Literal:  "5",
-																	StartPos: token.Position{Row: 1, Column: 27},
-																	EndPos:   token.Position{Row: 1, Column: 27},
-																},
-															},
-														},
-													},
-													LeftBrace:  token.Position{Row: 1, Column: 24},
-													RightBrace: token.Position{Row: 1, Column: 28},
-												},
-												StartPos: token.Position{Row: 1, Column: 21},
-											},
-										},
-									},
-									LeftBrace:  token.Position{Row: 1, Column: 18},
-									RightBrace: token.Position{Row: 1, Column: 29},
-								},
-								StartPos: token.Position{Row: 1, Column: 15},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 31},
-				},
-			},
-			"EdgeWithRHSExplicitSubraph": {
-				in: "digraph { A -> subgraph foo {B C} }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Directed:   true,
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.NodeID{
-								ID: ast.ID{
-									Literal:  "A",
-									StartPos: token.Position{Row: 1, Column: 11},
-									EndPos:   token.Position{Row: 1, Column: 11},
-								},
-							},
-							Right: ast.EdgeRHS{
-								Directed: true,
-								Right: ast.Subgraph{
-									ID: &ast.ID{
-										Literal:  "foo",
-										StartPos: token.Position{Row: 1, Column: 25},
-										EndPos:   token.Position{Row: 1, Column: 27},
-									},
-									Stmts: []ast.Stmt{
-										&ast.NodeStmt{
-											NodeID: ast.NodeID{
-												ID: ast.ID{
-													Literal:  "B",
-													StartPos: token.Position{Row: 1, Column: 30},
-													EndPos:   token.Position{Row: 1, Column: 30},
-												},
-											},
-										},
-										&ast.NodeStmt{
-											NodeID: ast.NodeID{
-												ID: ast.ID{
-													Literal:  "C",
-													StartPos: token.Position{Row: 1, Column: 32},
-													EndPos:   token.Position{Row: 1, Column: 32},
-												},
-											},
-										},
-									},
-									SubgraphStart: &token.Position{Row: 1, Column: 16},
-									LeftBrace:     token.Position{Row: 1, Column: 29},
-									RightBrace:    token.Position{Row: 1, Column: 33},
-								},
-								StartPos: token.Position{Row: 1, Column: 13},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 9},
-					RightBrace: token.Position{Row: 1, Column: 35},
-				},
-			},
-			"EdgeWithPorts": {
-				in: `digraph {
-			"node4":f0:n -> node5:f1;
+		},
+		"StrictGraphIDEmpty": {
+			in: `strict graph fruits {
 }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Directed:   true,
-					Stmts: []ast.Stmt{
-						&ast.EdgeStmt{
-							Left: ast.NodeID{
-								ID: ast.ID{
-									Literal:  `"node4"`,
-									StartPos: token.Position{Row: 2, Column: 4},
-									EndPos:   token.Position{Row: 2, Column: 10},
-								},
-								Port: &ast.Port{
-									Name: &ast.ID{
-										Literal:  "f0",
-										StartPos: token.Position{Row: 2, Column: 12},
-										EndPos:   token.Position{Row: 2, Column: 13},
-									},
-									CompassPoint: &ast.CompassPoint{
-										Type:     ast.CompassPointNorth,
-										StartPos: token.Position{Row: 2, Column: 15},
-										EndPos:   token.Position{Row: 2, Column: 15},
-									},
-								},
-							},
-							Right: ast.EdgeRHS{
-								Directed: true,
-								Right: ast.NodeID{
-									ID: ast.ID{
-										Literal:  "node5",
-										StartPos: token.Position{Row: 2, Column: 20},
-										EndPos:   token.Position{Row: 2, Column: 24},
-									},
-									Port: &ast.Port{
-										Name: &ast.ID{
-											Literal:  "f1",
-											StartPos: token.Position{Row: 2, Column: 26},
-											EndPos:   token.Position{Row: 2, Column: 27},
-										},
-									},
-								},
-								StartPos: token.Position{Row: 2, Column: 17},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 9},
-					RightBrace: token.Position{Row: 3, Column: 1},
-				},
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"StrictGraphIDWithID": {
+			in: `strict graph fruits {
+	rank
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'rank'
+		'}'
+`,
+		},
+		"StrictGraphIDWithIDEquals": {
+			in: `strict graph fruits {
+	rank =
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'rank'
+				'='
+		'}'
+`,
+			wantErrors: []string{
+				"3:1: expected attribute value",
 			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.NewParser(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"UndirectedGraphWithDirectedEdge": {
-					in:     "graph { 1 -> 2 }",
-					errMsg: "undirected graph cannot contain directed edges",
-				},
-				"DirectedGraphWithUndirectedEdge": {
-					in:     "digraph { 1 -- 2  }",
-					errMsg: "directed graph cannot contain undirected edges",
-				},
-				"MissingRHSOperand": {
-					in:     "graph { 1 -- [style=filled] }",
-					errMsg: `expected next token to be one of ["ID" "subgraph" "{"]`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.NewParser(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
-
-	t.Run("AttrStmt", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want ast.Graph
-			err  error
-		}{
-			"OnlyGraph": {
-				in: "graph { graph [] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.AttrStmt{
-							ID: ast.ID{
-								Literal:  "graph",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 13},
-							},
-							AttrList: ast.AttrList{
-								LeftBracket:  token.Position{Row: 1, Column: 15},
-								RightBracket: token.Position{Row: 1, Column: 16},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 18},
-				},
+		},
+		"StrictGraphIDWithAttribute": {
+			in: `strict graph fruits {
+	rank = same
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'rank'
+				'='
+				ID
+					'same'
+		'}'
+`,
+		},
+		"ScannerErrorInvalidCharacter": {
+			in: `digraph { a@b }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			ErrorTree
+				'ERROR'
+		'}'
+`,
+			wantErrors: []string{
+				"1:11: invalid character '@': unquoted IDs can only contain letters, digits, and underscores",
 			},
-			"OnlyNode": {
-				in: "graph { node [] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.AttrStmt{
-							ID: ast.ID{
-								Literal:  "node",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 12},
-							},
-							AttrList: ast.AttrList{
-								LeftBracket:  token.Position{Row: 1, Column: 14},
-								RightBracket: token.Position{Row: 1, Column: 15},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 17},
-				},
+		},
+		"StrictGraphIDWithEdgeIncompleteOperator": {
+			in: `strict graph fruits {
+	A -
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+			ErrorTree
+				'ERROR'
+		'}'
+`,
+			wantErrors: []string{
+				"2:4: invalid character U+000A: ambiguous: quote for ID, or add digit for number like '-.1' or '-0.'",
 			},
-			"OnlyEdge": {
-				in: "graph { edge [] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.AttrStmt{
-							ID: ast.ID{
-								Literal:  "edge",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 12},
-							},
-							AttrList: ast.AttrList{
-								LeftBracket:  token.Position{Row: 1, Column: 14},
-								RightBracket: token.Position{Row: 1, Column: 15},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 17},
-				},
+		},
+		"StrictGraphIDWithEdgeCompleteOperatorMissingRHS": {
+			in: `strict graph fruits {
+	A --
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+		'}'
+`,
+			wantErrors: []string{
+				"3:1: expected node or subgraph as edge operand",
 			},
-			"GraphWithAttribute": {
-				in: "graph { graph [a=b] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.AttrStmt{
-							ID: ast.ID{
-								Literal:  "graph",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 13},
-							},
-							AttrList: ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 16},
-											EndPos:   token.Position{Row: 1, Column: 16},
-										}, Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 18},
-											EndPos:   token.Position{Row: 1, Column: 18},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 15},
-								RightBracket: token.Position{Row: 1, Column: 19},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 21},
-				},
+		},
+		"StrictGraphIDWithEdge": {
+			in: `strict graph fruits {
+	A -- B
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+		'}'
+`,
+		},
+		"StrictGraphIDWithEdgeChainIncomplete": {
+			in: `strict graph fruits {
+	A -- B --
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+		'}'
+`,
+			wantErrors: []string{
+				"3:1: expected node or subgraph as edge operand",
 			},
-			"NodeWithAttribute": {
-				in: "graph { node [a=b] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.AttrStmt{
-							ID: ast.ID{
-								Literal:  "node",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 12},
-							},
-							AttrList: ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 15},
-											EndPos:   token.Position{Row: 1, Column: 15},
-										}, Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 17},
-											EndPos:   token.Position{Row: 1, Column: 17},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 14},
-								RightBracket: token.Position{Row: 1, Column: 18},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 20},
-				},
+		},
+		"StrictGraphIDWithEdgeChain": {
+			in: `strict graph fruits {
+	A -- B -- C
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+		'}'
+`,
+		},
+		"GraphWithNodeAttrStmt": {
+			in: `graph {
+	A -- B -- C
+	node
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+			AttrStmt
+				'node'
+		'}'
+`,
+			wantErrors: []string{
+				"4:1: expected [ to start attribute list",
 			},
-			"EdgeWithAttribute": {
-				in: "graph { edge [a=b] }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						&ast.AttrStmt{
-							ID: ast.ID{
-								Literal:  "edge",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 12},
-							},
-							AttrList: ast.AttrList{
-								AList: &ast.AList{
-									Attribute: ast.Attribute{
-										Name: ast.ID{
-											Literal:  "a",
-											StartPos: token.Position{Row: 1, Column: 15},
-											EndPos:   token.Position{Row: 1, Column: 15},
-										}, Value: ast.ID{
-											Literal:  "b",
-											StartPos: token.Position{Row: 1, Column: 17},
-											EndPos:   token.Position{Row: 1, Column: 17},
-										},
-									},
-								},
-								LeftBracket:  token.Position{Row: 1, Column: 14},
-								RightBracket: token.Position{Row: 1, Column: 18},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 20},
-				},
+		},
+		"GraphWithNodeAttrStmtLeftBracket": {
+			in: `graph {
+	A -- B -- C
+	node [
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+			AttrStmt
+				'node'
+				AttrList
+					'['
+		'}'
+`,
+			wantErrors: []string{
+				"4:1: expected ] to close attribute list",
 			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.NewParser(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"GraphWithoutAttributeList": {
-					in:     "graph { graph }",
-					errMsg: `expected next token to be "["`,
-				},
-				"NodeWithoutAttributeList": {
-					in:     "graph { node }",
-					errMsg: `expected next token to be "["`,
-				},
-				"EdgeWithoutAttributeList": {
-					in:     "graph { edge }",
-					errMsg: `expected next token to be "["`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.NewParser(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
-
-	t.Run("AttributeAssignment", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want ast.Graph
-			err  error
-		}{
-			"Single": {
-				in: "graph { rank = same; }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						ast.Attribute{
-							Name: ast.ID{
-								Literal:  "rank",
-								StartPos: token.Position{Row: 1, Column: 9},
-								EndPos:   token.Position{Row: 1, Column: 12},
-							}, Value: ast.ID{
-								Literal:  "same",
-								StartPos: token.Position{Row: 1, Column: 16},
-								EndPos:   token.Position{Row: 1, Column: 19},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 22},
-				},
+		},
+		"GraphWithNodeAttrStmtEmpty": {
+			in: `graph {
+	A -- B -- C
+	node []
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"GraphWithEdgeAttrStmt": {
+			in: `graph {
+	A -- B -- C
+	edge []
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+			AttrStmt
+				'edge'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"GraphWithGraphAttrStmt": {
+			in: `graph {
+	A -- B -- C
+	graph []
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+			AttrStmt
+				'graph'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"GraphWithNodeAttrStmtWithSemicolon": {
+			in: `graph {
+	A -- B -- C
+	node [];
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					']'
+			';'
+		'}'
+`,
+		},
+		"GraphWithEdgeAttrStmtNoSemicolon": {
+			in: `graph {
+	A -- B -- C
+	edge []
+	graph []
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+			AttrStmt
+				'edge'
+				AttrList
+					'['
+					']'
+			AttrStmt
+				'graph'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"GraphWithAllThreeAttrStmtsSeparatedBySemicolon": {
+			in: `graph {
+	node []; edge []; graph []
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					']'
+			';'
+			AttrStmt
+				'edge'
+				AttrList
+					'['
+					']'
+			';'
+			AttrStmt
+				'graph'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"GraphWithAttrStmtIncompleteAttribute": {
+			in: `graph {
+	node [color]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:13: expected =",
 			},
-			"QuotedAttributeValueSpanningMultipleLines": {
-				in: `graph { 	label="Rainy days
+		},
+		"GraphWithAttrStmtMissingValue": {
+			in: `graph {
+	node [color=]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:14: expected attribute value",
+			},
+		},
+		"GraphWithAttrStmtValidAndIncomplete": {
+			in: `graph {
+	node [color=blue font]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'blue'
+						Attribute
+							ID
+								'font'
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:23: expected =",
+			},
+		},
+		"GraphWithAttrStmtRecoveryOnEdgeKeyword": {
+			in: `graph {
+	node [blue edge [a=b]]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'blue'
+			AttrStmt
+				'edge'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'a'
+							'='
+							ID
+								'b'
+					']'
+			ErrorTree
+				']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:13: expected =",
+				"2:13: expected ] to close attribute list",
+				"2:23: ']' cannot start a statement",
+			},
+		},
+		"GraphWithAttrStmtRecoveryOnNodeKeyword": {
+			in: `graph {
+	edge [color=blue node [shape=box]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'edge'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'blue'
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'shape'
+							'='
+							ID
+								'box'
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:19: expected ] to close attribute list",
+			},
+		},
+		"GraphWithAttrStmtRecoveryOnLeftBracket": {
+			in: `graph {
+	node [color [ font=arial]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+					'['
+					AList
+						Attribute
+							ID
+								'font'
+							'='
+							ID
+								'arial'
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:14: expected =",
+				"2:14: expected ] to close attribute list",
+			},
+		},
+		"GraphWithAttrStmtComplexRecovery": {
+			in: `graph {
+	node [blue font edge [a=b]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'blue'
+							ID
+								'font'
+			AttrStmt
+				'edge'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'a'
+							'='
+							ID
+								'b'
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:13: expected =",
+				"2:18: expected ] to close attribute list",
+			},
+		},
+		"GraphWithAttrStmtMissingClosingBracketWithSubsequentAttrList": {
+			in: `graph {
+	node [a=b[c=d]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'a'
+							'='
+							ID
+								'b'
+					'['
+					AList
+						Attribute
+							ID
+								'c'
+							'='
+							ID
+								'd'
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"2:11: expected ] to close attribute list",
+			},
+		},
+		"StrictGraphIDWithEdgeMixedOperators": {
+			in: `strict graph fruits {
+	A -- B -> C
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				'->'
+				NodeID
+					ID
+						'C'
+		'}'
+`,
+		},
+		"GraphIDWithEdgeGarbageBetween": {
+			in: `graph fruits {
+	A -- = B
+}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				ErrorTree
+					'='
+			NodeStmt
+				NodeID
+					ID
+						'B'
+		'}'
+`,
+			wantErrors: []string{
+				"2:7: '=' is not a valid edge operand",
+			},
+		},
+		"GraphIDWithEdgeSemicolon": {
+			in: `graph fruits {
+	A -- ;
+}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+			';'
+		'}'
+`,
+			wantErrors: []string{
+				"2:7: expected node or subgraph as edge operand",
+			},
+		},
+		"GraphIDWithEdgeComma": {
+			in: `graph fruits {
+	A -- ,
+}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				ErrorTree
+					','
+		'}'
+`,
+			wantErrors: []string{
+				"2:7: ',' is not a valid edge operand",
+			},
+		},
+		"StrictGraphIDWithAttributeTrailingSemicolon": {
+			in: `strict graph fruits {
+	rank = same;
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'rank'
+				'='
+				ID
+					'same'
+			';'
+		'}'
+`,
+		},
+		"StrictGraphIDWithTwoAttributesWithSemicolon": {
+			in: `strict graph fruits {
+	rank = same; ; color = red
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'rank'
+				'='
+				ID
+					'same'
+			';'
+			';'
+			Attribute
+				ID
+					'color'
+				'='
+				ID
+					'red'
+		'}'
+`,
+		},
+		"StrictGraphIDWithTwoAttributesNoSemicolon": {
+			in: `strict graph fruits {
+	rank = same
+	color = red
+}`,
+			want: `File
+	Graph
+		'strict'
+		'graph'
+		ID
+			'fruits'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'rank'
+				'='
+				ID
+					'same'
+			Attribute
+				ID
+					'color'
+				'='
+				ID
+					'red'
+		'}'
+`,
+		},
+		"AttributeRecoveryAtDigraph": {
+			in: `graph { A = digraph { C = D }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'A'
+				'='
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'C'
+				'='
+				ID
+					'D'
+		'}'
+`,
+			wantErrors: []string{
+				"1:13: expected attribute value",
+				"1:13: expected }",
+			},
+		},
+		"EmptyDirectedGraph": {
+			in: "digraph {}",
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantScheme: `(File (@ 1 1 1 10)
+	(Graph (@ 1 1 1 10)
+		('digraph' (@ 1 1 1 7))
+		('{' (@ 1 9 1 9))
+		(StmtList)
+		('}' (@ 1 10 1 10))))
+`,
+		},
+		"TypoInStrict": {
+			in: "stict graph {}",
+			want: `File
+	ErrorTree
+		'stict'
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:1: unexpected token ID 'stict', expected digraph, graph or strict`,
+			},
+		},
+		"TypoInDigraph": {
+			in: "disgraph {}",
+			want: `File
+	ErrorTree
+		'disgraph'
+	ErrorTree
+		'{'
+	ErrorTree
+		'}'
+`,
+			wantErrors: []string{
+				`1:1: unexpected token ID 'disgraph', expected digraph, graph or strict`,
+				`1:10: unexpected token '{', expected digraph, graph or strict`,
+				`1:11: unexpected token '}', expected digraph, graph or strict`,
+			},
+		},
+		"WrongKeywordBeforeGraph": {
+			in: "public graph {}",
+			want: `File
+	ErrorTree
+		'public'
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:1: unexpected token ID 'public', expected digraph, graph or strict`,
+			},
+		},
+		"MultipleWrongKeywordsBeforeGraph": {
+			in: "public def graph {}",
+			want: `File
+	ErrorTree
+		'public'
+	ErrorTree
+		'def'
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantScheme: `(File (@ 1 1 1 19)
+	(ErrorTree (@ 1 1 1 6)
+		('public' (@ 1 1 1 6)))
+	(ErrorTree (@ 1 8 1 10)
+		('def' (@ 1 8 1 10)))
+	(Graph (@ 1 12 1 19)
+		('graph' (@ 1 12 1 16))
+		('{' (@ 1 18 1 18))
+		(StmtList)
+		('}' (@ 1 19 1 19))))
+`,
+			wantErrors: []string{
+				`1:1: unexpected token ID 'public', expected digraph, graph or strict`,
+				`1:8: unexpected token ID 'def', expected digraph, graph or strict`,
+			},
+		},
+		"MultipleGraphsInFile": {
+			in: `graph G1 {}
+digraph G2 {}
+strict graph G3 {}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'G1'
+		'{'
+		StmtList
+		'}'
+	Graph
+		'digraph'
+		ID
+			'G2'
+		'{'
+		StmtList
+		'}'
+	Graph
+		'strict'
+		'graph'
+		ID
+			'G3'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"StrictWithoutGraphKeyword": {
+			in: "strict id {}",
+			want: `File
+	Graph
+		'strict'
+		ErrorTree
+			'id'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:8: expected digraph or graph`,
+				`1:8: unexpected token ID 'id', expected digraph or graph`,
+			},
+		},
+		"StrictWithoutGraphKeywordNoBrace": {
+			in: "strict {}",
+			want: `File
+	Graph
+		'strict'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:8: expected digraph or graph`,
+			},
+		},
+		"StrictWithTypoInGraph": {
+			in: "strict gaph id {}",
+			want: `File
+	Graph
+		'strict'
+		ErrorTree
+			'gaph'
+		ErrorTree
+			'id'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:8: expected digraph or graph`,
+				`1:8: unexpected token ID 'gaph', expected digraph or graph`,
+				`1:13: unexpected token ID 'id', expected digraph or graph`,
+			},
+		},
+		"StrictWithMultipleErrorsBeforeBrace": {
+			in: "strict foo \"weee\" {",
+			want: `File
+	Graph
+		'strict'
+		ErrorTree
+			'foo'
+		ErrorTree
+			'"weee"'
+		'{'
+		StmtList
+`,
+			wantErrors: []string{
+				`1:8: expected digraph or graph`,
+				`1:8: unexpected token ID 'foo', expected digraph or graph`,
+				`1:12: unexpected token ID '"weee"', expected digraph or graph`,
+				`1:20: expected }`,
+			},
+		},
+		"StrictWithRecoveryAtNextGraph": {
+			in: `strict foo graph {}`,
+			want: `File
+	Graph
+		'strict'
+		ErrorTree
+			'foo'
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:8: expected digraph or graph`,
+				`1:8: unexpected token ID 'foo', expected digraph or graph`,
+			},
+		},
+		"GraphMissingBrace": {
+			in: "graph id",
+			want: `File
+	Graph
+		'graph'
+		ID
+			'id'
+`,
+			wantErrors: []string{
+				`1:9: expected {`,
+			},
+		},
+		"GraphAlone": {
+			in: "graph",
+			want: `File
+	Graph
+		'graph'
+`,
+			wantErrors: []string{
+				`1:6: expected {`,
+			},
+		},
+		"DuplicateStrict": {
+			in: "strict strict graph {}",
+			want: `File
+	Graph
+		'strict'
+	Graph
+		'strict'
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:8: expected digraph or graph`,
+			},
+		},
+		"GraphIDWithGarbageBeforeBrace": {
+			in: `graph G foo bar {
+}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'G'
+		ErrorTree
+			'foo'
+		ErrorTree
+			'bar'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:9: unexpected token ID 'foo'`,
+				`1:13: unexpected token ID 'bar'`,
+			},
+		},
+		"GraphWithSemicolonBeforeBrace": {
+			in: `graph G ; {
+}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'G'
+		ErrorTree
+			';'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:9: unexpected token ';'`,
+			},
+		},
+		"GraphMultipleIDs": {
+			in: "graph id1 id2 id3 {}",
+			want: `File
+	Graph
+		'graph'
+		ID
+			'id1'
+		ErrorTree
+			'id2'
+		ErrorTree
+			'id3'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:11: unexpected token ID 'id2'`,
+				`1:15: unexpected token ID 'id3'`,
+			},
+		},
+		"GraphAsID": {
+			in: "graph graph {}",
+			want: `File
+	Graph
+		'graph'
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				`1:7: expected {`,
+			},
+		},
+		"AttributeSingle": {
+			in: "graph { rank = same; }",
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'rank'
+				'='
+				ID
+					'same'
+			';'
+		'}'
+`,
+		},
+		"QuotedAttributeValueSpanningMultipleLines": {
+			in: `graph { 	label="Rainy days
 				in summer"
 }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						ast.Attribute{
-							Name: ast.ID{
-								Literal:  "label",
-								StartPos: token.Position{Row: 1, Column: 10},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, Value: ast.ID{
-								Literal: `"Rainy days
-				in summer"`,
-								StartPos: token.Position{Row: 1, Column: 16},
-								EndPos:   token.Position{Row: 2, Column: 14},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 3, Column: 1},
-				},
-			},
-			// https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
-			"QuotedAttributeValueSpanningMultipleLinesWithBackslashFollowedByNewline": {
-				in: `graph { 	label="Rainy days\
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'label'
+				'='
+				ID
+					'"Rainy days
+				in summer"'
+		'}'
+`,
+		},
+		"QuotedAttributeValueSpanningMultipleLinesWithBackslashFollowedByNewline": {
+			in: `graph { 	label="Rainy days\
 				in summer"
 }`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						ast.Attribute{
-							Name: ast.ID{
-								Literal:  "label",
-								StartPos: token.Position{Row: 1, Column: 10},
-								EndPos:   token.Position{Row: 1, Column: 14},
-							}, Value: ast.ID{
-								Literal: `"Rainy days\
-				in summer"`,
-								StartPos: token.Position{Row: 1, Column: 16},
-								EndPos:   token.Position{Row: 2, Column: 14},
-							},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 3, Column: 1},
-				},
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'label'
+				'='
+				ID
+					'"Rainy days\
+				in summer"'
+		'}'
+`,
+		},
+		"StmtListDisambiguation": {
+			in: `graph {
+	a=1
+	b c
+	d -- e
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Attribute
+				ID
+					'a'
+				'='
+				ID
+					'1'
+			NodeStmt
+				NodeID
+					ID
+						'b'
+			NodeStmt
+				NodeID
+					ID
+						'c'
+			EdgeStmt
+				NodeID
+					ID
+						'd'
+				'--'
+				NodeID
+					ID
+						'e'
+		'}'
+`,
+		},
+		"NodeStmtSingle": {
+			in: `graph { A }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'}'
+`,
+		},
+		"NodeStmtMultiple": {
+			in: `graph { A; B; C }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+			';'
+			NodeStmt
+				NodeID
+					ID
+						'B'
+			';'
+			NodeStmt
+				NodeID
+					ID
+						'C'
+		'}'
+`,
+		},
+		"NodeStmtWithPort": {
+			in: `graph { A:port1 }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'port1'
+		'}'
+`,
+		},
+		"NodeStmtWithPortAndCompassPoint": {
+			in: `graph { A:port1:n }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'port1'
+						':'
+						CompassPoint
+							'n'
+		'}'
+`,
+		},
+		"NodeStmtWithCompassPointOnly": {
+			in: `graph { A:ne }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						CompassPoint
+							'ne'
+		'}'
+`,
+		},
+		"NodeStmtWithEmptyAttrList": {
+			in: `graph { A [] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"NodeStmtWithSingleAttribute": {
+			in: `graph { A [color=red] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'red'
+					']'
+		'}'
+`,
+		},
+		"NodeStmtWithMultipleAttributes": {
+			in: `graph { A [color=red, shape=box] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'red'
+						','
+						Attribute
+							ID
+								'shape'
+							'='
+							ID
+								'box'
+					']'
+		'}'
+`,
+		},
+		"NodeStmtWithMultipleAttrLists": {
+			in: `graph { A [color=red][shape=box] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'red'
+					']'
+					'['
+					AList
+						Attribute
+							ID
+								'shape'
+							'='
+							ID
+								'box'
+					']'
+		'}'
+`,
+		},
+		"NodeIDIncompletePort": {
+			in: `graph { A: }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+		'}'
+`,
+			wantErrors: []string{
+				"1:12: expected ID for port",
 			},
-		}
+		},
+		"NodeIDPortMissingCompassPoint": {
+			in: `graph { A:port1: }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'port1'
+						':'
+		'}'
+`,
+			wantErrors: []string{
+				"1:18: expected compass point (c, e, n, ne, nw, s, se, sw, w, or _)",
+			},
+		},
+		"NodeIDPortNumeric": {
+			in: `graph { A:123 }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'123'
+		'}'
+`,
+		},
+		"NodeIDPortNumericWithCompassPoint": {
+			in: `graph { A:123:sw }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'123'
+						':'
+						CompassPoint
+							'sw'
+		'}'
+`,
+		},
+		"NodeIDPortQuoted": {
+			in: `graph { A:"my port" }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'"my port"'
+		'}'
+`,
+		},
+		"NodeIDPortQuotedWithCompassPoint": {
+			in: `graph { A:"port name":nw }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'"port name"'
+						':'
+						CompassPoint
+							'nw'
+		'}'
+`,
+		},
+		"NodeIDPortAllCompassPoints": {
+			in: `graph { A:c B:w C:e D:s }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						CompassPoint
+							'c'
+			NodeStmt
+				NodeID
+					ID
+						'B'
+					Port
+						':'
+						CompassPoint
+							'w'
+			NodeStmt
+				NodeID
+					ID
+						'C'
+					Port
+						':'
+						CompassPoint
+							'e'
+			NodeStmt
+				NodeID
+					ID
+						'D'
+					Port
+						':'
+						CompassPoint
+							's'
+		'}'
+`,
+		},
+		"NodeIDPortTwoNonCompassIDs": {
+			in: `graph { A:port1:port2 }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'port1'
+						':'
+						ID
+							'port2'
+		'}'
+`,
+			wantErrors: []string{
+				"1:23: expected compass point (c, e, n, ne, nw, s, se, sw, w, or _)",
+			},
+		},
+		"NodeIDPortTwoCompassPoints": {
+			in: `graph { A:n:e }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'n'
+						':'
+						CompassPoint
+							'e'
+		'}'
+`,
+		},
+		"NodeIDPortDoubleColon": {
+			in: `graph { A:: }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						':'
+		'}'
+`,
+			wantErrors: []string{
+				"1:11: expected ID for port",
+				"1:13: expected compass point (c, e, n, ne, nw, s, se, sw, w, or _)",
+			},
+		},
+		"NodeIDPortFollowedByAttrList": {
+			in: `graph { A:[ ] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"1:11: expected ID for port",
+			},
+		},
+		"NodeIDPortColonFollowedByAttrList": {
+			in: `graph { A:port1:[ ] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'port1'
+						':'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+			wantErrors: []string{
+				"1:17: expected compass point (c, e, n, ne, nw, s, se, sw, w, or _)",
+			},
+		},
+		"NodeIDPortFollowedByUnexpectedToken": {
+			in: `graph { A:= }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+			ErrorTree
+				'='
+		'}'
+`,
+			wantErrors: []string{
+				"1:11: expected ID for port",
+				"1:11: '=' cannot start a statement",
+			},
+		},
+		"NodeStmtIncompleteAttrList": {
+			in: `graph { A [ }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+		'}'
+`,
+			wantErrors: []string{
+				"1:13: expected ] to close attribute list",
+			},
+		},
+		"NodeStmtAttrListMissingCloseBracket": {
+			in: `graph { A [color=red }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'red'
+		'}'
+`,
+			wantErrors: []string{
+				"1:22: expected ] to close attribute list",
+			},
+		},
 
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.NewParser(strings.NewReader(test.in))
+		// Subgraph tests - incremental construction
+		"SubgraphKeyword": {
+			in: `graph { subgraph }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+		'}'
+`,
+			wantErrors: []string{
+				"1:18: expected {",
+			},
+		},
+		"SubgraphWithLeftBrace": {
+			in: `graph { subgraph { }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+				'}'
+`,
+			wantErrors: []string{
+				"1:21: expected }",
+			},
+		},
+		"SubgraphEmpty": {
+			in: `graph { subgraph {} }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+				'}'
+		'}'
+`,
+		},
+		"SubgraphWithID": {
+			in: `graph { subgraph foo {} }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				ID
+					'foo'
+				'{'
+				StmtList
+				'}'
+		'}'
+`,
+		},
+		"SubgraphWithoutKeyword": {
+			in: `graph { {} }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'{'
+				StmtList
+				'}'
+		'}'
+`,
+		},
+		// Verifies that { } style subgraphs don't allow an ID - any ID after { is a node statement
+		"SubgraphWithoutKeywordWithID": {
+			in: `graph { { A } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+				'}'
+		'}'
+`,
+		},
+		"SubgraphWithoutKeywordIncomplete": {
+			in: `graph { { }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'{'
+				StmtList
+				'}'
+`,
+			wantErrors: []string{
+				"1:12: expected }",
+			},
+		},
+		"SubgraphWithNodes": {
+			in: `graph { subgraph { A B } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+					NodeStmt
+						NodeID
+							ID
+								'B'
+				'}'
+		'}'
+`,
+		},
+		"SubgraphWithAttribute": {
+			in: `graph { subgraph { rank=same } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+					Attribute
+						ID
+							'rank'
+						'='
+						ID
+							'same'
+				'}'
+		'}'
+`,
+		},
+		"SubgraphNested": {
+			in: `graph { subgraph { subgraph {} } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+					Subgraph
+						'subgraph'
+						'{'
+						StmtList
+						'}'
+				'}'
+		'}'
+`,
+		},
+		"SubgraphMissingCloseBrace": {
+			in: `graph { subgraph { A }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+				'}'
+`,
+			wantErrors: []string{
+				"1:23: expected }",
+			},
+		},
+		"SubgraphMultiple": {
+			in: `graph { subgraph { A } subgraph { B } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+				'}'
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'B'
+				'}'
+		'}'
+`,
+		},
+		"SubgraphRecoveryGarbageTokens": {
+			in: `graph { subgraph foo bar baz { } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				ID
+					'foo'
+				ErrorTree
+					'bar'
+				ErrorTree
+					'baz'
+				'{'
+				StmtList
+				'}'
+		'}'
+`,
+			wantErrors: []string{
+				"1:22: unexpected token ID 'bar'",
+				"1:26: unexpected token ID 'baz'",
+			},
+		},
+		"SubgraphRecoveryOneGarbageToken": {
+			in: `graph { subgraph foo bar { A } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				ID
+					'foo'
+				ErrorTree
+					'bar'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+				'}'
+		'}'
+`,
+			wantErrors: []string{
+				"1:22: unexpected token ID 'bar'",
+			},
+		},
+		"SubgraphRecoveryWithKeywordGarbage": {
+			in: `graph { subgraph foo graph { } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				ID
+					'foo'
+			AttrStmt
+				'graph'
+			Subgraph
+				'{'
+				StmtList
+				'}'
+		'}'
+`,
+			wantErrors: []string{
+				"1:22: expected {",
+				"1:28: expected [ to start attribute list",
+			},
+		},
+		"SubgraphAnonymousNoRecovery": {
+			in: `graph { { foo bar { } } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'foo'
+					NodeStmt
+						NodeID
+							ID
+								'bar'
+					Subgraph
+						'{'
+						StmtList
+						'}'
+				'}'
+		'}'
+`,
+		},
 
-				require.NoErrorf(t, err, "New(%q)", test.in)
+		// Edge statement tests with attribute lists
+		"EdgeWithEmptyAttrList": {
+			in: `graph { A -- B [] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"EdgeWithSingleAttribute": {
+			in: `graph { A -- B [color=red] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'red'
+					']'
+		'}'
+`,
+		},
+		"EdgeWithMultipleAttributes": {
+			in: `digraph { 1 -> 2 -> 3 -> 4 [a=b, c=d] }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'1'
+				'->'
+				NodeID
+					ID
+						'2'
+				'->'
+				NodeID
+					ID
+						'3'
+				'->'
+				NodeID
+					ID
+						'4'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'a'
+							'='
+							ID
+								'b'
+						','
+						Attribute
+							ID
+								'c'
+							'='
+							ID
+								'd'
+					']'
+		'}'
+`,
+		},
+		"EdgeWithMultipleAttrLists": {
+			in: `graph { A -- B [color=red][shape=box] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'red'
+					']'
+					'['
+					AList
+						Attribute
+							ID
+								'shape'
+							'='
+							ID
+								'box'
+					']'
+		'}'
+`,
+		},
 
-				g, err := p.Parse()
+		// Edge statement tests with subgraphs
+		"EdgeWithLHSSubgraph": {
+			in: `digraph { {A B} -> C }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				Subgraph
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'A'
+						NodeStmt
+							NodeID
+								ID
+									'B'
+					'}'
+				'->'
+				NodeID
+					ID
+						'C'
+		'}'
+`,
+		},
+		"EdgeWithRHSSubgraph": {
+			in: `digraph { A -> {B C} }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'->'
+				Subgraph
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'B'
+						NodeStmt
+							NodeID
+								ID
+									'C'
+					'}'
+		'}'
+`,
+		},
+		"EdgeWithBothSubgraphs": {
+			in: `digraph { {A B} -> {C D} }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				Subgraph
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'A'
+						NodeStmt
+							NodeID
+								ID
+									'B'
+					'}'
+				'->'
+				Subgraph
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'C'
+						NodeStmt
+							NodeID
+								ID
+									'D'
+					'}'
+		'}'
+`,
+		},
+		"EdgeWithNestedSubgraphs": {
+			in: `graph { {1 2} -- {3 -- {4 5}} }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				Subgraph
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'1'
+						NodeStmt
+							NodeID
+								ID
+									'2'
+					'}'
+				'--'
+				Subgraph
+					'{'
+					StmtList
+						EdgeStmt
+							NodeID
+								ID
+									'3'
+							'--'
+							Subgraph
+								'{'
+								StmtList
+									NodeStmt
+										NodeID
+											ID
+												'4'
+									NodeStmt
+										NodeID
+											ID
+												'5'
+								'}'
+					'}'
+		'}'
+`,
+		},
+		"EdgeWithExplicitSubgraph": {
+			in: `digraph { A -> subgraph foo {B C} }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'->'
+				Subgraph
+					'subgraph'
+					ID
+						'foo'
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'B'
+						NodeStmt
+							NodeID
+								ID
+									'C'
+					'}'
+		'}'
+`,
+		},
+		"EdgeChainWithSubgraph": {
+			in: `graph { A -- {B} -- C }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				Subgraph
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'B'
+					'}'
+				'--'
+				NodeID
+					ID
+						'C'
+		'}'
+`,
+		},
 
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
-			})
-		}
+		// Edge statement tests with ports
+		"EdgeWithPorts": {
+			in: `digraph { "node4":f0:n -> node5:f1 }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'"node4"'
+					Port
+						':'
+						ID
+							'f0'
+						':'
+						CompassPoint
+							'n'
+				'->'
+				NodeID
+					ID
+						'node5'
+					Port
+						':'
+						ID
+							'f1'
+		'}'
+`,
+		},
+		"EdgeWithPortsAndAttrList": {
+			in: `digraph { A:n -> B:s [color=red] }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						CompassPoint
+							'n'
+				'->'
+				NodeID
+					ID
+						'B'
+					Port
+						':'
+						CompassPoint
+							's'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+							'='
+							ID
+								'red'
+					']'
+		'}'
+`,
+		},
 
-		t.Run("Invalid", func(t *testing.T) {
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"MissingName": {
-					in:     "graph { = b }",
-					errMsg: `expected an "ID" before the '='`,
-				},
-				"MissingValue": {
-					in:     "graph { a = }",
-					errMsg: `expected next token to be "ID"`,
-				},
-			}
+		// Edge statement error recovery tests
+		"EdgeWithIncompleteSubgraphRHS": {
+			in: `graph { A -- { }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				Subgraph
+					'{'
+					StmtList
+					'}'
+`,
+			wantErrors: []string{
+				"1:17: expected }",
+			},
+		},
+		"EdgeWithSubgraphMissingCloseBrace": {
+			in: `graph { A -- { B }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				Subgraph
+					'{'
+					StmtList
+						NodeStmt
+							NodeID
+								ID
+									'B'
+					'}'
+`,
+			wantErrors: []string{
+				"1:19: expected }",
+			},
+		},
+		"EdgeWithSubgraphIncompleteAttr": {
+			in: `graph { A -- B [color }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+				AttrList
+					'['
+					AList
+						Attribute
+							ID
+								'color'
+		'}'
+`,
+			wantErrors: []string{
+				"1:23: expected =",
+				"1:23: expected ] to close attribute list",
+			},
+		},
+	}
 
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.NewParser(strings.NewReader(test.in))
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			p, err := dot.NewParser(strings.NewReader(test.in))
 
-					require.NoErrorf(t, err, "New(%q)", test.in)
+			require.NoErrorf(t, err, "New(%q)", test.in)
 
-					_, err = p.Parse()
+			g, err := p.Parse()
 
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
+			assert.NoErrorf(t, err, "Parse(%q)", test.in)
+			assert.EqualValuesf(t, g.String(), test.want, "Parse(%q)", test.in)
+			assert.EqualValuesf(t, errorStrings(p.Errors()), test.wantErrors, "Parse(%q) errors", test.in)
+
+			// Verify String() matches Render(Default)
+			var buf strings.Builder
+			err = g.Render(&buf, dot.Default)
+			require.NoErrorf(t, err, "Render(%q, Default)", test.in)
+			assert.EqualValuesf(t, g.String(), buf.String(), "String() should match Render(Default)")
+
+			// Verify positions via Render(Scheme) when expected
+			if test.wantScheme != "" {
+				buf.Reset()
+				err = g.Render(&buf, dot.Scheme)
+				require.NoErrorf(t, err, "Render(%q, Scheme)", test.in)
+				assert.EqualValuesf(t, buf.String(), test.wantScheme, "Render(%q, Scheme)", test.in)
 			}
 		})
-	})
-
-	t.Run("Subgraph", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want ast.Graph
-			err  error
-		}{
-			"EmptyWithKeyword": {
-				in: "graph { subgraph {} }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						ast.Subgraph{
-							SubgraphStart: &token.Position{Row: 1, Column: 9},
-							LeftBrace:     token.Position{Row: 1, Column: 18},
-							RightBrace:    token.Position{Row: 1, Column: 19},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 21},
-				},
-			},
-			"EmptyWithoutKeyword": {
-				in: "graph { {} }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						ast.Subgraph{
-							LeftBrace:  token.Position{Row: 1, Column: 9},
-							RightBrace: token.Position{Row: 1, Column: 10},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 12},
-				},
-			},
-			"SubgraphWithID": {
-				in: "graph { subgraph foo {} }",
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						ast.Subgraph{
-							ID: &ast.ID{
-								Literal:  "foo",
-								StartPos: token.Position{Row: 1, Column: 18},
-								EndPos:   token.Position{Row: 1, Column: 20},
-							},
-							SubgraphStart: &token.Position{Row: 1, Column: 9},
-							LeftBrace:     token.Position{Row: 1, Column: 22},
-							RightBrace:    token.Position{Row: 1, Column: 23},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 1, Column: 25},
-				},
-			},
-			"SubgraphWithAttributesAndNodes": {
-				in: `graph {
-					subgraph {
-						rank = same; A; B;
-					}
-				}`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Stmts: []ast.Stmt{
-						ast.Subgraph{
-							Stmts: []ast.Stmt{
-								ast.Attribute{
-									Name: ast.ID{
-										Literal:  "rank",
-										StartPos: token.Position{Row: 3, Column: 7},
-										EndPos:   token.Position{Row: 3, Column: 10},
-									}, Value: ast.ID{
-										Literal:  "same",
-										StartPos: token.Position{Row: 3, Column: 14},
-										EndPos:   token.Position{Row: 3, Column: 17},
-									},
-								},
-								&ast.NodeStmt{
-									NodeID: ast.NodeID{
-										ID: ast.ID{
-											Literal:  "A",
-											StartPos: token.Position{Row: 3, Column: 20},
-											EndPos:   token.Position{Row: 3, Column: 20},
-										},
-									},
-								},
-								&ast.NodeStmt{
-									NodeID: ast.NodeID{
-										ID: ast.ID{
-											Literal:  "B",
-											StartPos: token.Position{Row: 3, Column: 23},
-											EndPos:   token.Position{Row: 3, Column: 23},
-										},
-									},
-								},
-							},
-							SubgraphStart: &token.Position{Row: 2, Column: 6},
-							LeftBrace:     token.Position{Row: 2, Column: 15},
-							RightBrace:    token.Position{Row: 4, Column: 6},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 5, Column: 5},
-				},
-			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.NewParser(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			t.Skip()
-
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"MissingClosingBrace": {
-					in:     "graph { { }",
-					errMsg: `expected next token to be one of ["}" "ID"]`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.NewParser(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
-
-	t.Run("Comment", func(t *testing.T) {
-		tests := map[string]struct {
-			in   string
-			want ast.Graph
-			err  error
-		}{
-			"CPreprocessorStyle": {
-				in: `graph {	 # ok
-				}`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Comments: []ast.Comment{
-						{
-							Text:     "# ok",
-							StartPos: token.Position{Row: 1, Column: 10},
-							EndPos:   token.Position{Row: 1, Column: 13},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 2, Column: 5},
-				},
-			},
-			"Single": {
-				in: `graph { 
-				// ok
-				}`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Comments: []ast.Comment{
-						{
-							Text:     "// ok",
-							StartPos: token.Position{Row: 2, Column: 5},
-							EndPos:   token.Position{Row: 2, Column: 9},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 3, Column: 5},
-				},
-			},
-			"MultiLine": {
-				in: `graph { /* ok
-				then */
-				}`,
-				want: ast.Graph{
-					GraphStart: token.Position{Row: 1, Column: 1},
-					Comments: []ast.Comment{
-						{
-							Text: `/* ok
-				then */`,
-							StartPos: token.Position{Row: 1, Column: 9},
-							EndPos:   token.Position{Row: 2, Column: 11},
-						},
-					},
-					LeftBrace:  token.Position{Row: 1, Column: 7},
-					RightBrace: token.Position{Row: 3, Column: 5},
-				},
-			},
-		}
-
-		for name, test := range tests {
-			t.Run(name, func(t *testing.T) {
-				p, err := dot.NewParser(strings.NewReader(test.in))
-
-				require.NoErrorf(t, err, "New(%q)", test.in)
-
-				g, err := p.Parse()
-
-				assert.NoErrorf(t, err, "Parse(%q)", test.in)
-				assert.EqualValuesf(t, *g, test.want, "Parse(%q)", test.in)
-			})
-		}
-
-		t.Run("Invalid", func(t *testing.T) {
-			t.Skip()
-
-			tests := map[string]struct {
-				in     string
-				errMsg string
-			}{
-				"CPreprocessorStyleEatsClosingBrace": {
-					in:     "graph { # ok }",
-					errMsg: `expected next token to be one of ["}" "ID"]`,
-				},
-			}
-
-			for name, test := range tests {
-				t.Run(name, func(t *testing.T) {
-					p, err := dot.NewParser(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "New(%q)", test.in)
-
-					_, err = p.Parse()
-
-					require.NotNilf(t, err, "Parse(%q)", test.in)
-					assertContains(t, err.Error(), test.errMsg)
-				})
-			}
-		})
-	})
+	}
 }
 
-func assertContains(t *testing.T, got, want string) {
-	if !strings.Contains(got, want) {
-		t.Errorf("got %q which does not contain %q", got, want)
+func errorStrings(errors []dot.Error) []string {
+	if len(errors) == 0 {
+		return nil
 	}
+	result := make([]string, len(errors))
+	for i, err := range errors {
+		result[i] = err.Error()
+	}
+	return result
 }

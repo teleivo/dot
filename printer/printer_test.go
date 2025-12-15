@@ -40,19 +40,6 @@ func TestPrint(t *testing.T) {
 	]
 }`,
 		},
-		// TODO do I want this below instead of the above? if so how to achieve that? this splits the quoted ID using line
-		// continuation
-		// 		"NodeStmtWithAttributeIDPastMaxColumn": {
-		// 			in: `graph {
-		// "Node1234" [label="This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
-		// 		}`,
-		// 			want: `graph {
-		// 	"Node1234" [label="This is a test of a long attribute value that is past the max column which \
-		// should be split on word boundaries several times of course as long as this is necessary it should \
-		// also respect giant URLs \
-		// https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"]
-		// }`,
-		// 		},
 		"NodeStatementsWithPorts": {
 			in: `graph {
 
@@ -195,7 +182,7 @@ graph    [] [ 	label="blue",]
 		},
 		"AttributeStmtWithSingleAttribute": {
 			in: `graph {
-label="blue", minlen=2;
+label="blue"; minlen=2;
  color=grey;
 			}`,
 			want: `graph {
@@ -242,6 +229,16 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		A -- B
 		C -- E
 	}
+}`,
+		},
+		"MultipleGraphs": {
+			in: `graph G1 { A }
+digraph G2 { B -> C }`,
+			want: `graph G1 {
+	A
+}
+digraph G2 {
+	B -> C
 }`,
 		},
 		// 		"CommentsWithOnlyWhitespaceAreDiscarded": {
@@ -381,7 +378,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			var gotFirst bytes.Buffer
-			p := printer.NewPrinter(strings.NewReader(test.in), &gotFirst, layout.Default)
+			p := printer.New(strings.NewReader(test.in), &gotFirst, layout.Default)
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
@@ -392,7 +389,7 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			t.Logf("print again with the previous output as the input to ensure printing is idempotent")
 
 			var gotSecond bytes.Buffer
-			p = printer.NewPrinter(strings.NewReader(gotFirst.String()), &gotSecond, layout.Default)
+			p = printer.New(strings.NewReader(gotFirst.String()), &gotSecond, layout.Default)
 			err = p.Print()
 			require.NoErrorf(t, err, "Print(%q)", gotFirst.String())
 
@@ -407,7 +404,7 @@ func TestPrintErrorReturnsError(t *testing.T) {
 	input := "graph { a = }"
 
 	var output strings.Builder
-	p := printer.NewPrinter(strings.NewReader(input), &output, layout.Default)
+	p := printer.New(strings.NewReader(input), &output, layout.Default)
 
 	err := p.Print()
 

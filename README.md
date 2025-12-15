@@ -4,25 +4,26 @@ Formatter and parser for the [DOT language](https://graphviz.org/doc/info/lang.h
 
 ## Formatter
 
-Format your DOT files with `dotfmt`. `dotfmt` is inspired by [gofmt](https://pkg.go.dev/cmd/gofmt).
-As such it is opinionated and has no options to change its format.
+Format your DOT files with `dotx fmt`. `dotx fmt` is inspired by
+[gofmt](https://pkg.go.dev/cmd/gofmt). As such it is opinionated and has no options to change its
+format.
 
 ### Install
 
 ```sh
-go install github.com/teleivo/dot/cmd/dotfmt@latest
+go install github.com/teleivo/dot/cmd/dotx@latest
 ```
 
 ### Usage
 
 ```sh
-dotfmt < input.dot > output.dot
+dotx fmt < input.dot > output.dot
 ```
 
 Or try it directly:
 
 ```sh
-dotfmt <<EOF
+dotx fmt <<EOF
 digraph data_pipeline{graph[rankdir=TB,bgcolor="#fafafa"]
 node[shape=box,style="rounded,filled",fontname="Arial",fontsize=11]
 edge[fontname="Arial",fontsize=9,arrowsize=0.8]
@@ -62,14 +63,14 @@ EOF
 
 ### Design principles
 
-* **No configuration**: `dotfmt` is opinionated and has no options to change its format.
+* **No configuration**: `dotx fmt` is opinionated and has no options to change its format.
 * **Idempotency**: Formatting the same code multiple times produces identical output.
-* **Only formats valid code**: Parse errors leave the original input unchanged. The formatter does
-not assume or alter user intent when it cannot parse the code.
+* **Only formats valid code**: Parse errors are reported to stderr and no output is produced. The
+  formatter does not output partial or malformed results.
 
 ### Testing
 
-`dotfmt` uses two test strategies:
+`dotx fmt` uses two test strategies:
 
 * Idempotency tests verify formatting is stable
 * Visual tests ensure formatting preserves graph semantics by comparing `dot -Tplain` outputs
@@ -81,7 +82,7 @@ Run visual tests on external graphs:
 ./sync-graphviz-samples.sh
 
 # Run from repository root
-DOTFMT_TEST_DIR=../../samples-graphviz/tests go test -C cmd/dotfmt -v -run TestVisualOutput
+DOTX_TEST_DIR=../../samples-graphviz/tests go test -C cmd/dotx -v -run TestVisualOutput
 
 # For comprehensive testing of all sample directories
 ./run-visual-tests.sh
@@ -89,6 +90,59 @@ DOTFMT_TEST_DIR=../../samples-graphviz/tests go test -C cmd/dotfmt -v -run TestV
 
 Note: Some tests will fail due to [known limitations](#limitations) such as HTML labels and
 comments. These failures are expected and indicate features not yet supported rather than bugs.
+
+## Inspect
+
+`dotx inspect` provides commands for examining DOT source code structure.
+
+### Tree
+
+Print the concrete syntax tree (CST) representation:
+
+```sh
+echo 'digraph { a -> b }' | dotx inspect tree
+```
+
+Output:
+
+```
+File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'a'
+				'->'
+				NodeID
+					ID
+						'b'
+		'}'
+```
+
+Use `-format=scheme` for a scheme-like representation with positions.
+
+### Tokens
+
+Print the token stream:
+
+```sh
+echo 'digraph { a -> b }' | dotx inspect tokens
+```
+
+Output:
+
+```
+POSITION   TYPE     LITERAL  ERROR
+1:1-1:7    digraph  digraph
+1:9        {        {
+1:11       ID       a
+1:13-1:14  ->       ->
+1:16       ID       b
+1:18       }        }
+```
 
 ## Documentation
 
@@ -109,6 +163,20 @@ This opens a browser with [pkg.go.dev-style](https://pkg.go.dev) documentation w
 * Modify the example code (e.g., change `NewDoc(40)` to different column widths)
 * See how the output changes based on your modifications
 
+## Neovim Plugin
+
+The `nvim/` directory contains a Neovim plugin providing `:Dot inspect` for visualizing the CST in a
+split window with live updates and cursor tracking.
+
+### Installation (lazy.nvim)
+
+```lua
+return {
+  dir = vim.env.HOME .. '/code/dot/nvim',
+  ft = 'dot',
+}
+```
+
 ## Limitations
 
 * does not yet support comments
@@ -118,14 +186,19 @@ for my purposes
 operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
 * does not treat records in any special way. Labels will be parsed as strings.
 * attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
-* add test for nested subgraphs adhere to some requirements which are not validated. The values are
-parsed as IDs (unquoted, numeral, quoted) and ultimately stored as strings.
+  adhere to some requirements which are not validated. The values are parsed as IDs (unquoted,
+  numeral, quoted) and ultimately stored as strings.
 
 ## Acknowledgments
 
+The parser uses a homogeneous tree structure and practical error recovery techniques inspired by
+matklad's [Resilient LL Parsing
+Tutorial](https://matklad.github.io/2023/05/21/resilient-ll-parsing-tutorial.html). The full
+event-based two-phase parsing approach was too complex for a simple language like DOT.
+
 The `layout` package is a Go port of [allman](https://github.com/mcy/strings/tree/main/allman) by
-mcyoung. The layout algorithm and design are based on the excellent article ["The Art of
-Formatting Code"](https://mcyoung.xyz/2025/03/11/formatters/).
+mcyoung. The layout algorithm and design are based on the excellent article ["The Art of Formatting
+Code"](https://mcyoung.xyz/2025/03/11/formatters/).
 
 ## Disclaimer
 

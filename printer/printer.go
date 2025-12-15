@@ -25,9 +25,9 @@ type Printer struct {
 	format layout.Format // format in which to print the DOT code
 }
 
-// NewPrinter creates a new printer that reads DOT code from r, formats it, and writes the
+// New creates a new printer that reads DOT code from r, formats it, and writes the
 // formatted output to w. The format parameter controls the output representation.
-func NewPrinter(r io.Reader, w io.Writer, format layout.Format) *Printer {
+func New(r io.Reader, w io.Writer, format layout.Format) *Printer {
 	return &Printer{
 		r:      r,
 		w:      w,
@@ -38,55 +38,61 @@ func NewPrinter(r io.Reader, w io.Writer, format layout.Format) *Printer {
 // Print parses the DOT code from the reader and writes the formatted output to the writer.
 // Returns an error if parsing or formatting fails.
 func (p *Printer) Print() error {
-	// TODO wrap errors in here to give some context?
 	ps, err := dot.NewParser(p.r)
 	if err != nil {
 		return err
 	}
 
-	g, err := ps.Parse()
+	tree, err := ps.Parse()
 	if err != nil {
 		return err
 	}
 
-	doc := layout.NewDoc(maxColumn)
-	p.layoutNode(doc, g)
-	err = doc.Render(p.w, p.format)
-
-	return err
-}
-
-func (p *Printer) layoutNode(doc *layout.Doc, node ast.Node) {
-	switch n := node.(type) {
-	case *ast.Graph:
-		p.layoutGraph(doc, n)
+	if errs := ps.Errors(); len(errs) > 0 {
+		return errs[0]
 	}
+
+	gs := ast.NewGraph(tree)
+	for i, g := range gs {
+		if i > 0 {
+			_, err = p.w.Write([]byte("\n"))
+			if err != nil {
+				return err
+			}
+		}
+		doc := layout.NewDoc(maxColumn)
+		p.layoutGraph(doc, g)
+		err = doc.Render(p.w, p.format)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p *Printer) layoutGraph(doc *layout.Doc, graph *ast.Graph) {
-	// TODO create strict graph id in a group? so ideally on one line but if not break each onto
-	// their own line? or at least the id?
 	if graph.IsStrict() {
 		doc.Text(token.Strict.String()).
 			Space()
 	}
 
-	if graph.Directed {
+	if graph.Directed() {
 		doc.Text(token.Digraph.String())
 	} else {
 		doc.Text(token.Graph.String())
 	}
 	doc.Space()
 
-	if graph.ID != nil {
-		p.layoutID(doc, *graph.ID)
+	if graph.ID() != nil {
+		p.layoutID(doc, *graph.ID())
 		doc.Space()
 	}
 
 	doc.Text(token.LeftBrace.String())
 	doc.Group(func(f *layout.Doc) {
 		doc.Indent(1, func(d *layout.Doc) {
-			p.layoutStmts(doc, graph.Stmts)
+			p.layoutStmts(doc, graph.Stmts())
 		})
 
 		doc.Break(1).
@@ -105,16 +111,16 @@ func (p *Printer) layoutStmts(doc *layout.Doc, stmts []ast.Stmt) {
 //
 // [identifier:] https://graphviz.org/doc/info/lang.html#ids
 func (p *Printer) layoutID(doc *layout.Doc, id ast.ID) {
-	doc.Text(id.Literal)
+	doc.Text(id.Literal())
 }
 
 func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) {
 	switch st := stmt.(type) {
-	case *ast.NodeStmt:
+	case ast.NodeStmt:
 		p.layoutNodeStmt(doc, st)
-	case *ast.EdgeStmt:
+	case ast.EdgeStmt:
 		p.layoutEdgeStmt(doc, st)
-	case *ast.AttrStmt:
+	case ast.AttrStmt:
 		p.layoutAttrStmt(doc, st)
 	case ast.Attribute:
 		doc.Break(1)
@@ -125,95 +131,82 @@ func (p *Printer) layoutStmt(doc *layout.Doc, stmt ast.Stmt) {
 	}
 }
 
-func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt *ast.NodeStmt) {
+func (p *Printer) layoutNodeStmt(doc *layout.Doc, nodeStmt ast.NodeStmt) {
 	doc.Break(1).
 		Group(func(d *layout.Doc) {
-			p.layoutNodeID(doc, nodeStmt.NodeID)
-			p.layoutAttrList(doc, nodeStmt.AttrList)
+			p.layoutNodeID(doc, nodeStmt.NodeID())
+			p.layoutAttrList(doc, nodeStmt.AttrList())
 		})
 }
 
 func (p *Printer) layoutNodeID(doc *layout.Doc, nodeID ast.NodeID) {
-	p.layoutID(doc, nodeID.ID)
+	p.layoutID(doc, nodeID.ID())
 
-	if nodeID.Port == nil {
+	if nodeID.Port() == nil {
 		return
 	}
 
-	if nodeID.Port.Name != nil {
+	if nodeID.Port().Name() != nil {
 		doc.Text(token.Colon.String())
-		p.layoutID(doc, *nodeID.Port.Name)
+		p.layoutID(doc, *nodeID.Port().Name())
 	}
-	if nodeID.Port.CompassPoint != nil && nodeID.Port.CompassPoint.Type != ast.CompassPointUnderscore {
+	if cp := nodeID.Port().CompassPoint(); cp != nil && cp.Type() != ast.CompassPointUnderscore {
 		doc.Text(token.Colon.String())
-		doc.Text(nodeID.Port.CompassPoint.String())
+		doc.Text(cp.String())
 	}
 }
 
-func (p *Printer) layoutAttrList(doc *layout.Doc, attrList *ast.AttrList) {
-	// don't print empty [] in node_stmt or edge_stmt where attr_list is optional
-	if attrList == nil {
+func (p *Printer) layoutAttrList(doc *layout.Doc, attrList ast.AttrList) {
+	lists := attrList.Lists()
+	if len(lists) == 0 {
 		return
 	}
 
 	doc.Space()
 	doc.Group(func(d *layout.Doc) {
-		for cur := attrList; cur != nil; cur = cur.Next {
+		for i, attrs := range lists {
 			doc.Group(func(d *layout.Doc) {
 				doc.Text(token.LeftBracket.String()).
 					BreakIf(1, layout.Broken).
 					Indent(1, func(d *layout.Doc) {
-						p.layoutAList(doc, cur.AList)
+						for j, attr := range attrs {
+							p.layoutAttribute(doc, attr)
+							if j < len(attrs)-1 {
+								doc.TextIf(token.Comma.String(), layout.Flat)
+								doc.BreakIf(1, layout.Broken)
+							}
+						}
 					})
 				doc.BreakIf(1, layout.Broken).
 					Text(token.RightBracket.String())
 			})
-			if cur.Next != nil {
+			if i < len(lists)-1 {
 				doc.Space()
 			}
 		}
 	})
 }
 
-func (p *Printer) layoutAList(doc *layout.Doc, aList *ast.AList) {
-	for cur := aList; cur != nil; cur = cur.Next {
-		p.layoutAttribute(doc, cur.Attribute)
-		if cur.Next != nil {
-			doc.TextIf(token.Comma.String(), layout.Flat)
-			doc.BreakIf(1, layout.Broken)
-		}
-	}
-}
-
-func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt *ast.EdgeStmt) {
+func (p *Printer) layoutEdgeStmt(doc *layout.Doc, edgeStmt ast.EdgeStmt) {
 	doc.Break(1)
 
 	doc.Group(func(d *layout.Doc) {
 		doc.Group(func(d *layout.Doc) {
-			p.layoutEdgeOperand(doc, edgeStmt.Left)
-			doc.Space()
-
-			if edgeStmt.Right.Directed {
-				doc.Text(token.DirectedEdge.String())
-			} else {
-				doc.Text(token.UndirectedEdge.String())
-			}
-			doc.Space()
-
-			p.layoutEdgeOperand(doc, edgeStmt.Right.Right)
-			for cur := edgeStmt.Right.Next; cur != nil; cur = cur.Next {
-				doc.Space()
-				if edgeStmt.Right.Directed {
-					doc.Text(token.DirectedEdge.String())
-				} else {
-					doc.Text(token.UndirectedEdge.String())
+			operands := edgeStmt.Operands()
+			for i, op := range operands {
+				p.layoutEdgeOperand(doc, op)
+				if i < len(operands)-1 {
+					doc.Space()
+					if edgeStmt.Directed() {
+						doc.Text(token.DirectedEdge.String())
+					} else {
+						doc.Text(token.UndirectedEdge.String())
+					}
+					doc.Space()
 				}
-				doc.Space()
-
-				p.layoutEdgeOperand(doc, cur.Right)
 			}
 		})
-		p.layoutAttrList(doc, edgeStmt.AttrList)
+		p.layoutAttrList(doc, edgeStmt.AttrList())
 	})
 }
 
@@ -226,36 +219,36 @@ func (p *Printer) layoutEdgeOperand(doc *layout.Doc, edgeOperand ast.EdgeOperand
 	}
 }
 
-func (p *Printer) layoutAttrStmt(doc *layout.Doc, attrStmt *ast.AttrStmt) {
+func (p *Printer) layoutAttrStmt(doc *layout.Doc, attrStmt ast.AttrStmt) {
 	doc.Break(1).
 		Group(func(d *layout.Doc) {
-			p.layoutID(doc, attrStmt.ID)
+			p.layoutID(doc, attrStmt.Target())
 			doc.Space()
-			p.layoutAttrList(doc, &attrStmt.AttrList)
+			p.layoutAttrList(doc, attrStmt.AttrList())
 		})
 }
 
 func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
-	p.layoutID(doc, attribute.Name)
+	p.layoutID(doc, attribute.Name())
 	doc.Text(token.Equal.String())
-	p.layoutID(doc, attribute.Value)
+	p.layoutID(doc, attribute.Value())
 }
 
 func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
 	doc.Group(func(f *layout.Doc) {
-		if subraph.SubgraphStart != nil {
+		if subraph.HasKeyword() {
 			doc.Text(token.Subgraph.String()).
 				Space()
 		}
-		if subraph.ID != nil {
-			p.layoutID(doc, *subraph.ID)
+		if subraph.ID() != nil {
+			p.layoutID(doc, *subraph.ID())
 			doc.Space()
 		}
 
 		doc.Text(token.LeftBrace.String())
 		doc.Group(func(f *layout.Doc) {
 			doc.Indent(1, func(d *layout.Doc) {
-				p.layoutStmts(doc, subraph.Stmts)
+				p.layoutStmts(doc, subraph.Stmts())
 			})
 
 			doc.Break(1).

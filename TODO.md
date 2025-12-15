@@ -8,9 +8,11 @@
 
 * work on `dotx watch`
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
+  * consider `sync.Pool` for buffer reuse
 
 ## Parser
 
+* add recursion depth limit to prevent stack overflow on deeply nested subgraphs
 * commas: the parser handles commas only in attribute lists (`[a=1, b=2]`) per the official DOT
   grammar. However, Graphviz itself is more permissive and accepts commas as statement/element
   separators elsewhere:

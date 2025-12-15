@@ -172,8 +172,9 @@ split window with live updates and cursor tracking.
 
 ```lua
 return {
-  dir = vim.env.HOME .. '/code/dot/nvim',
+  'teleivo/dot',
   ft = 'dot',
+  opts = {},
 }
 ```
 

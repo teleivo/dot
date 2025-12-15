@@ -160,7 +160,7 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) err
 }
 
 func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (err error) {
-	flags := flag.NewFlagSet("tree", flag.ExitOnError)
+	flags := flag.NewFlagSet("tokens", flag.ExitOnError)
 	flags.SetOutput(wErr)
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")

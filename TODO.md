@@ -2,12 +2,9 @@
 
 ## Now
 
-* thorough code review of every package
-* test the install and the neovim plugin again
+* work through review.md
 * emit an error for `--` or `->` not matching the current graph/digraph - need to track whether in
   directed/undirected context
-* test parser with invalid ID as ID for port - check places where literals convert to ast.ID
-  without parsing the identifier first
 
 * work on `dotx watch`
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve

@@ -2,7 +2,6 @@
 
 ## Now
 
-* work through review.md
 * emit an error for `--` or `->` not matching the current graph/digraph - need to track whether in
   directed/undirected context
 

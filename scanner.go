@@ -58,7 +58,9 @@ func (sc *Scanner) Next() (token.Token, error) {
 	var tok token.Token
 	var err error
 
-	sc.skipWhitespace()
+	if err = sc.skipWhitespace(); err != nil {
+		return tok, err
+	}
 	if sc.cur < 0 {
 		tok.Type = token.EOF
 		pos := sc.pos()
@@ -140,13 +142,14 @@ func (sc *Scanner) pos() token.Position {
 	return token.Position{Line: sc.curLine, Column: sc.curColumn}
 }
 
-func (sc *Scanner) skipWhitespace() {
+func (sc *Scanner) skipWhitespace() error {
 	for sc.cur >= 0 && isWhitespace(sc.cur) {
 		err := sc.next()
 		if err != nil {
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 // isWhitespace determines if the rune is considered whitespace. It does not include non-breaking

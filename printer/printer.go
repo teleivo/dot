@@ -234,21 +234,21 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, attribute ast.Attribute) {
 	p.layoutID(doc, attribute.Value())
 }
 
-func (p *Printer) layoutSubgraph(doc *layout.Doc, subraph ast.Subgraph) {
+func (p *Printer) layoutSubgraph(doc *layout.Doc, subgraph ast.Subgraph) {
 	doc.Group(func(f *layout.Doc) {
-		if subraph.HasKeyword() {
+		if subgraph.HasKeyword() {
 			doc.Text(token.Subgraph.String()).
 				Space()
 		}
-		if subraph.ID() != nil {
-			p.layoutID(doc, *subraph.ID())
+		if subgraph.ID() != nil {
+			p.layoutID(doc, *subgraph.ID())
 			doc.Space()
 		}
 
 		doc.Text(token.LeftBrace.String())
 		doc.Group(func(f *layout.Doc) {
 			doc.Indent(1, func(d *layout.Doc) {
-				p.layoutStmts(doc, subraph.Stmts())
+				p.layoutStmts(doc, subgraph.Stmts())
 			})
 
 			doc.Break(1).

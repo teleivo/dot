@@ -241,6 +241,20 @@ digraph G2 {
 	B -> C
 }`,
 		},
+		"EscapeSequencesInStrings": {
+			in: `graph {
+A [label="line1\nline2"]
+B [label="tab\there"]
+C [label="quote\"here"]
+D [label="backslash\\here"]
+}`,
+			want: `graph {
+	A [label="line1\nline2"]
+	B [label="tab\there"]
+	C [label="quote\"here"]
+	D [label="backslash\\here"]
+}`,
+		},
 		// 		"CommentsWithOnlyWhitespaceAreDiscarded": {
 		// 			in: `graph {
 		// 		#

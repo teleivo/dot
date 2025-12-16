@@ -3,9 +3,9 @@
 ## Now
 
 * why do github.com/teleivo/dot/internal/layout take 1s?
-* work on `dotx watch`
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse
+* work on `dotx watch`
 
 ## Parser
 
@@ -143,6 +143,3 @@ Questions:
 }
 ```
 
-* double-check idempotency with escape sequences in strings: initial testing showed `\n`
-  converting to actual newline on second format, but cannot reproduce now. May have been testing
-  artifact.

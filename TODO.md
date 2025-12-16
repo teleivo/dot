@@ -2,6 +2,7 @@
 
 ## Now
 
+* why do github.com/teleivo/dot/internal/layout take 1s?
 * work on `dotx watch`
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse
@@ -80,8 +81,6 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
 
 ## CLI
 
-* `dotx` improve usage printing and exit on error behavior - not sure the default flag set
-  behavior is good
 * add ability to capture execution traces using flight recorder?
 
 ## Performance
@@ -94,7 +93,6 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
 
 ## Testing
 
-* why do github.com/teleivo/dot/internal/layout take 1s?
 * can I use fuzzing?
 
 ## High Level API
@@ -148,4 +146,3 @@ Questions:
 * double-check idempotency with escape sequences in strings: initial testing showed `\n`
   converting to actual newline on second format, but cannot reproduce now. May have been testing
   artifact.
-* deal with ./maxlen.md

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -17,7 +18,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		usage()
+		usage(os.Stderr)
 		os.Exit(1)
 	}
 
@@ -32,24 +33,38 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 		return fmt.Errorf("usage: dotx <command> [args]\ncommands: fmt, inspect")
 	}
 
+	if args[1] == "-h" || args[1] == "--help" || args[1] == "help" {
+		usage(wErr)
+		return nil
+	}
+
 	switch args[1] {
 	case "fmt":
 		return runFmt(args[2:], r, w, wErr)
 	case "inspect":
 		return runInspect(args[2:], r, w, wErr)
+	case "":
+		return errors.New("no command specified")
 	default:
 		return fmt.Errorf("unknown command: %s", args[1])
 	}
 }
 
-func usage() {
-	fmt.Fprintln(os.Stderr, "usage: dotx <command> [args]")
-	fmt.Fprintln(os.Stderr, "commands: fmt, inspect")
+func usage(w io.Writer) {
+	_, _ = fmt.Fprintln(w, "dotx is a tool for working with DOT (Graphviz) graph files")
+	_, _ = fmt.Fprintln(w, "")
+	_, _ = fmt.Fprintln(w, "usage: dotx <command> [args]")
+	_, _ = fmt.Fprintln(w, "commands: fmt, inspect")
 }
 
 func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 	flags := flag.NewFlagSet("fmt", flag.ExitOnError)
 	flags.SetOutput(wErr)
+	flags.Usage = func() {
+		_, _ = fmt.Fprintln(wErr, "usage: dotx fmt [flags]")
+		_, _ = fmt.Fprintln(wErr, "flags:")
+		flags.PrintDefaults()
+	}
 	format := flags.String("format", "default", "Print the formatted DOT code using 'default', the intermediate representation (IR) used to layout the DOT code using 'layout' or a runnable main.go of the IR using 'go'")
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
@@ -115,6 +130,8 @@ func runInspect(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 		return runInspectTree(args[1:], r, w, wErr)
 	case "tokens":
 		return runInspectTokens(args[1:], r, w, wErr)
+	case "":
+		return errors.New("no inspect subcommand specified")
 	default:
 		return fmt.Errorf("unknown inspect subcommand: %s", args[0])
 	}
@@ -123,6 +140,11 @@ func runInspect(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 	flags := flag.NewFlagSet("tree", flag.ExitOnError)
 	flags.SetOutput(wErr)
+	flags.Usage = func() {
+		_, _ = fmt.Fprintln(wErr, "usage: dotx inspect tree [flags]")
+		_, _ = fmt.Fprintln(wErr, "flags:")
+		flags.PrintDefaults()
+	}
 	format := flags.String("format", "default", "Print the DOT code using its 'default' indented tree representation, or using 'scheme' for a scheme like tree with positions")
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
@@ -162,6 +184,11 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) err
 func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (err error) {
 	flags := flag.NewFlagSet("tokens", flag.ExitOnError)
 	flags.SetOutput(wErr)
+	flags.Usage = func() {
+		_, _ = fmt.Fprintln(wErr, "usage: dotx inspect tokens [flags]")
+		_, _ = fmt.Fprintln(wErr, "flags:")
+		flags.PrintDefaults()
+	}
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
 

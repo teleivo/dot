@@ -2,9 +2,6 @@
 
 ## Now
 
-* emit an error for `--` or `->` not matching the current graph/digraph - need to track whether in
-  directed/undirected context
-
 * work on `dotx watch`
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse
@@ -57,13 +54,8 @@
 * improve error printing - print the line/snippet with ^^^ to highlight where the error is
   * make error messages more user friendly - for example when parsing attr_stmt the attr_list is
     mandatory, instead of saying "expected [" could say that
-* try formatting invalid dot and improve error handling
-  * `2->4` leads to error "2:15: a numeral can only be prefixed with a `-`" - allow that and turn
-    it into `2 -> 4`
-  * LexError return the token.Token.Start token.Position? or return the invalid token?
 * count opening braces and brackets and decrement on closing to validate they match? Or is that
   too simplistic as there are rules as to when you are allowed/have to close them?
-* how to handle error on fmt.Fprint?
 * support parsing/formatting ranges
   * parser should be ok with comments before a graph - how to support that in terms of the parser
     API? right now it returns an ast.Graph but the leading comment comes before the ast.Graph
@@ -94,11 +86,10 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
 * second: formatting
 * third: autocomplete
 
-## Tooling
+## CLI
 
 * `dotx` improve usage printing and exit on error behavior - not sure the default flag set
   behavior is good
-* write cmd/dothot hot-reloading a file passing it to dot and showing its svg in the browser
 * add ability to capture execution traces using flight recorder?
 
 ## Performance
@@ -108,6 +99,11 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
   * can I make use of this in 1.26? https://github.com/golang/go/issues/73794
   * improve layout printing and reduce overhead of fmt especially for writing '\t' or '\n'
 * should I buffer the given w writers in my Render/Print functions?
+
+## Testing
+
+* why do github.com/teleivo/dot/internal/layout take 1s?
+* can I use fuzzing?
 
 ## High Level API
 
@@ -135,10 +131,6 @@ Questions:
 * how to represent an `ast.ID`? If I just use a `string` in `dot.Graph.ID` it would lead to an
   invalid ID in the ast. Validate that before? Or deal with such errors later? Or sanitize myself?
 
-## Testing
-
-* can I use fuzzing?
-
 ## Questions
 
 * ../graphviz/graphs/directed/russian.gv is confusing as it clearly violates "unquoted string
@@ -164,5 +156,4 @@ Questions:
 * double-check idempotency with escape sequences in strings: initial testing showed `\n`
   converting to actual newline on second format, but cannot reproduce now. May have been testing
   artifact.
-* test: why do github.com/teleivo/dot/internal/layout take 1s?
 * deal with ./maxlen.md

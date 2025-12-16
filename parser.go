@@ -61,6 +61,7 @@ type Parser struct {
 	curToken  token.Token
 	peekToken token.Token
 	errors    []Error
+	directed  bool // true if parsing a digraph, false for graph
 }
 
 // NewParser creates a new parser that reads DOT source code from r. Returns an error if reading
@@ -149,6 +150,9 @@ func (p *Parser) parseGraph() (*Tree, error) {
 	if err != nil {
 		return graph, err
 	}
+
+	p.directed = p.curTokenIs(token.Digraph)
+	defer func() { p.directed = false }()
 
 	var okGraph bool
 	if okStrict || p.curTokenIs(token.LeftBrace) {
@@ -324,10 +328,16 @@ func (p *Parser) parseEdgeRHS(stmt *Tree, recoverySet token.Kind) error {
 	assert.That(p.curTokenIs(token.DirectedEdge|token.UndirectedEdge), "current token must be directed or undirected edge, got %s", p.curToken)
 
 	for p.curTokenIs(token.DirectedEdge | token.UndirectedEdge) {
+		if p.directed && p.curTokenIs(token.UndirectedEdge) {
+			p.error("expected '->' for edge in directed graph")
+		} else if !p.directed && p.curTokenIs(token.DirectedEdge) {
+			p.error("expected '--' for edge in undirected graph")
+		}
 		err := p.consume(stmt)
 		if err != nil {
 			return err
 		}
+
 		if p.curTokenIs(token.ID) {
 			operand, err := p.parseNodeID()
 			if err != nil {

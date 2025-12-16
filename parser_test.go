@@ -798,33 +798,6 @@ func TestParser(t *testing.T) {
 				"2:11: expected ] to close attribute list",
 			},
 		},
-		"StrictGraphIDWithEdgeMixedOperators": {
-			in: `strict graph fruits {
-	A -- B -> C
-}`,
-			want: `File
-	Graph
-		'strict'
-		'graph'
-		ID
-			'fruits'
-		'{'
-		StmtList
-			EdgeStmt
-				NodeID
-					ID
-						'A'
-				'--'
-				NodeID
-					ID
-						'B'
-				'->'
-				NodeID
-					ID
-						'C'
-		'}'
-`,
-		},
 		"GraphIDWithEdgeGarbageBetween": {
 			in: `graph fruits {
 	A -- = B
@@ -2752,6 +2725,43 @@ strict graph G3 {}`,
 			wantErrors: []string{
 				"1:23: expected =",
 				"1:23: expected ] to close attribute list",
+			},
+		},
+
+		"EdgeOperatorMismatch": {
+			in: `digraph { A -- B }
+graph { C -> D }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+		'}'
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'C'
+				'->'
+				NodeID
+					ID
+						'D'
+		'}'
+`,
+			wantErrors: []string{
+				"1:13: expected '->' for edge in directed graph",
+				"2:11: expected '--' for edge in undirected graph",
 			},
 		},
 	}

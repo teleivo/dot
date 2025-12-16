@@ -180,10 +180,12 @@ return {
 
 ## Limitations
 
-* does not yet support comments
-* does not support https://graphviz.org/doc/info/lang.html#html-strings as I have not needed them
-for my purposes
-* does not support [double-quoted strings can be concatenated using a '+'
+* the parser and formatter do not yet support comments while the scanner does. I plan to at least
+support line comments
+
+The following are not supported as I do not need them
+* https://graphviz.org/doc/info/lang.html#html-strings
+* [double-quoted strings can be concatenated using a '+'
 operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
 * does not treat records in any special way. Labels will be parsed as strings.
 * attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to

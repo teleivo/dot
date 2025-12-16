@@ -18,10 +18,6 @@
 
   Decision: follow the grammar for now. Consider matching Graphviz's permissive behavior later if
   needed for real-world compatibility.
-* implement isValid and Stringer on token.Position like Go does? the EOF token does not have a
-  valid token.Position. For example when missing closing '}' for a graph it has no valid EndPos.
-  See Go ast.BlockStmt docs. Could help with Nodes like `AttrList` which might be empty. Or make
-  the zero-value valid.
 
 ## fmt
 
@@ -38,12 +34,8 @@
   * implement merging multiple Break() using max(n, m)
   * how to treat newlines? right now they are discarded. Maybe allow users to group/make blocks.
     No more than one empty line though. Need proper token/ast position with row and column.
-* support concatenating strings? I don't intend to use it so I don't care - make sure limitation
-  is clear. https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting
 * lex html string? or at least deal with it gracefully: see ./samples-graphviz/56.dot
-* there should be an off by one error in printID as runeCount does not include the separator \n
-  and I decrement the endColumn to account for prevRune '\'. It does look like it's working
-  though. Editors show different counts for columns which confuse me.
+* layout uses `len(tag.content)` (bytes) not rune count - may miscount width for non-ASCII
 * improve breaking up long lines - only the ID individually is considered right now:
 
 ```dot

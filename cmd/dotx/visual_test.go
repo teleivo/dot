@@ -177,7 +177,8 @@ func formatDot(t *testing.T, dotSource []byte) ([]byte, error) {
 	// run dotx fmt directly in-process
 	done := make(chan error, 1)
 	go func() {
-		done <- run([]string{"dotx", "fmt"}, bytes.NewReader(dotSource), &stdout, &stderr)
+		_, err := run([]string{"dotx", "fmt"}, bytes.NewReader(dotSource), &stdout, &stderr)
+		done <- err
 	}()
 
 	select {

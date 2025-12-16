@@ -16,26 +16,27 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
-func main() {
-	if len(os.Args) < 2 {
-		usage(os.Stderr)
-		os.Exit(1)
-	}
+// errFlagParse is a sentinel error indicating flag parsing failed.
+// The flag package already printed the error, so main should not print again.
+var errFlagParse = errors.New("flag parse error")
 
-	if err := run(os.Args, os.Stdin, os.Stdout, os.Stderr); err != nil {
+func main() {
+	code, err := run(os.Args, os.Stdin, os.Stdout, os.Stderr)
+	if err != nil && err != errFlagParse {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
 	}
+	os.Exit(code)
 }
 
-func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
+func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 	if len(args) < 2 {
-		return fmt.Errorf("usage: dotx <command> [args]\ncommands: fmt, inspect")
+		usage(wErr)
+		return 2, nil
 	}
 
 	if args[1] == "-h" || args[1] == "--help" || args[1] == "help" {
 		usage(wErr)
-		return nil
+		return 0, nil
 	}
 
 	switch args[1] {
@@ -44,9 +45,9 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 	case "inspect":
 		return runInspect(args[2:], r, w, wErr)
 	case "":
-		return errors.New("no command specified")
+		return 2, errors.New("no command specified")
 	default:
-		return fmt.Errorf("unknown command: %s", args[1])
+		return 2, fmt.Errorf("unknown command: %s", args[1])
 	}
 }
 
@@ -57,8 +58,8 @@ func usage(w io.Writer) {
 	_, _ = fmt.Fprintln(w, "commands: fmt, inspect")
 }
 
-func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
-	flags := flag.NewFlagSet("fmt", flag.ExitOnError)
+func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
+	flags := flag.NewFlagSet("fmt", flag.ContinueOnError)
 	flags.SetOutput(wErr)
 	flags.Usage = func() {
 		_, _ = fmt.Fprintln(wErr, "usage: dotx fmt [flags]")
@@ -71,20 +72,27 @@ func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 
 	err := flags.Parse(args)
 	if err != nil {
-		return err
+		if err == flag.ErrHelp {
+			return 0, nil
+		}
+		return 2, errFlagParse
 	}
 	ft, err := layout.NewFormat(*format)
 	if err != nil {
-		return fmt.Errorf("failed to convert -format=%q: %v", *format, err)
+		return 2, fmt.Errorf("failed to convert -format=%q: %v", *format, err)
 	}
 
-	return profile(func() error {
+	err = profile(func() error {
 		p := printer.New(r, w, ft)
 		if err := p.Print(); err != nil {
 			return err
 		}
 		return nil
 	}, *cpuProfile, *memProfile)
+	if err != nil {
+		return 1, err
+	}
+	return 0, nil
 }
 
 func profile(fn func() error, cpuProfile, memProfile string) error {
@@ -120,9 +128,9 @@ func profile(fn func() error, cpuProfile, memProfile string) error {
 	return nil
 }
 
-func runInspect(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
+func runInspect(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: dotx inspect <subcommand>\nsubcommands: tree, tokens")
+		return 2, fmt.Errorf("usage: dotx inspect <subcommand>\nsubcommands: tree, tokens")
 	}
 
 	switch args[0] {
@@ -131,14 +139,14 @@ func runInspect(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
 	case "tokens":
 		return runInspectTokens(args[1:], r, w, wErr)
 	case "":
-		return errors.New("no inspect subcommand specified")
+		return 2, errors.New("no inspect subcommand specified")
 	default:
-		return fmt.Errorf("unknown inspect subcommand: %s", args[0])
+		return 2, fmt.Errorf("unknown inspect subcommand: %s", args[0])
 	}
 }
 
-func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) error {
-	flags := flag.NewFlagSet("tree", flag.ExitOnError)
+func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
+	flags := flag.NewFlagSet("tree", flag.ContinueOnError)
 	flags.SetOutput(wErr)
 	flags.Usage = func() {
 		_, _ = fmt.Fprintln(wErr, "usage: dotx inspect tree [flags]")
@@ -151,14 +159,17 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) err
 
 	err := flags.Parse(args)
 	if err != nil {
-		return err
+		if err == flag.ErrHelp {
+			return 0, nil
+		}
+		return 2, errFlagParse
 	}
 	ft, err := dot.NewFormat(*format)
 	if err != nil {
-		return fmt.Errorf("failed to convert -format=%q: %v", *format, err)
+		return 2, fmt.Errorf("failed to convert -format=%q: %v", *format, err)
 	}
 
-	return profile(func() error {
+	err = profile(func() error {
 		p, err := dot.NewParser(r)
 		if err != nil {
 			return fmt.Errorf("error creating parser: %v", err)
@@ -179,10 +190,14 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) err
 
 		return nil
 	}, *cpuProfile, *memProfile)
+	if err != nil {
+		return 1, err
+	}
+	return 0, nil
 }
 
-func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (err error) {
-	flags := flag.NewFlagSet("tokens", flag.ExitOnError)
+func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (code int, err error) {
+	flags := flag.NewFlagSet("tokens", flag.ContinueOnError)
 	flags.SetOutput(wErr)
 	flags.Usage = func() {
 		_, _ = fmt.Fprintln(wErr, "usage: dotx inspect tokens [flags]")
@@ -194,10 +209,13 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 
 	err = flags.Parse(args)
 	if err != nil {
-		return err
+		if err == flag.ErrHelp {
+			return 0, nil
+		}
+		return 2, errFlagParse
 	}
 
-	return profile(func() error {
+	err = profile(func() error {
 		sc, err := dot.NewScanner(r)
 		if err != nil {
 			return fmt.Errorf("error scanning: %v", err)
@@ -221,6 +239,10 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 
 		return nil
 	}, *cpuProfile, *memProfile)
+	if err != nil {
+		return 1, err
+	}
+	return 0, nil
 }
 
 func tokenPosition(tok token.Token) string {

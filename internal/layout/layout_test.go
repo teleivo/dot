@@ -410,6 +410,8 @@ in between
 	}
 
 	t.Run("RenderDefault", func(t *testing.T) {
+		t.Parallel()
+
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
 				var got strings.Builder
@@ -421,6 +423,8 @@ in between
 		}
 	})
 	t.Run("RenderLayout", func(t *testing.T) {
+		t.Parallel()
+
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
 				var got strings.Builder
@@ -432,28 +436,34 @@ in between
 		}
 	})
 	t.Run("RenderGo", func(t *testing.T) {
+		// GoStringer should produce valid Go code
+		const dir = "testdata/gostringer"
+		err := os.Mkdir(dir, 0o700)
+		if !errors.Is(err, os.ErrExist) {
+			require.NoError(t, err)
+		}
+		t.Cleanup(func() {
+			if t.Failed() {
+				t.Logf("faulty Go code generated using GoStringer is in: %s", dir)
+			} else {
+				if err := os.RemoveAll(dir); err != nil {
+					t.Logf("failed to cleanup test dir %s due to: %v", dir, err)
+				}
+			}
+		})
+
 		for name, tc := range tests {
 			t.Run(name, func(t *testing.T) {
-				// GoStringer should produce valid Go code
-				const dir = "testdata/gostringer"
-				err := os.Mkdir(dir, 0o700)
-				if !errors.Is(err, os.ErrExist) {
-					require.NoError(t, err)
-				}
-				t.Cleanup(func() {
-					if t.Failed() {
-						t.Logf("faulty Go code generated using GoStringer is in: %s", dir)
-					} else {
-						if err := os.RemoveAll(dir); err != nil {
-							t.Logf("failed to cleanup test dir %s due to: %v", dir, err)
-						}
-					}
-				})
+				t.Parallel()
 
+				dir, err := os.MkdirTemp(dir, name)
+				require.NoError(t, err)
 				f, err := os.Create(dir + "/main.go")
 				require.NoError(t, err)
+
 				err = tc.in.Clone().Render(f, layout.Go)
 				require.NoErrorf(t, err, "failed to render Go format")
+				require.NoError(t, f.Close())
 				cmd := exec.CommandContext(t.Context(), "go", "run", f.Name())
 				got, err := cmd.Output()
 				var exitErr *exec.ExitError

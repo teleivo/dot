@@ -1464,6 +1464,17 @@ func TestScanner(t *testing.T) {
 					},
 				},
 				{
+					in: `"a\\"`,
+					want: []token.Token{
+						{
+							Type:    token.ID,
+							Literal: `"a\\"`,
+							Start:   token.Position{Line: 1, Column: 1},
+							End:     token.Position{Line: 1, Column: 5},
+						},
+					},
+				},
+				{
 					in: `"_A"`,
 					want: []token.Token{
 						{
@@ -1645,6 +1656,18 @@ func TestScanner(t *testing.T) {
 							Error:   "invalid character U+0000: quoted IDs cannot contain null bytes",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 15},
+						},
+					},
+				},
+				{
+					in: `"a\"`,
+					want: []token.Token{
+						{
+							Type:    token.ERROR,
+							Literal: `"a\"`,
+							Error:   "invalid character '\"': unclosed ID: missing closing '\"'",
+							Start:   token.Position{Line: 1, Column: 1},
+							End:     token.Position{Line: 1, Column: 4},
 						},
 					},
 				},

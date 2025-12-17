@@ -448,11 +448,12 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 	var err error
 	var nulByteErrMsg string
 	var id []rune
+	var pendingEscape bool
 	var hasClosingQuote bool
 	start := sc.pos()
 	var end token.Position
 
-	for pos, prev := 0, rune(eof); sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
+	for pos := 0; sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
 		end = sc.pos()
 		id = append(id, sc.cur)
 
@@ -460,12 +461,15 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 			nulByteErrMsg = sc.error("quoted IDs cannot contain null bytes")
 		}
 
-		if pos != 0 && sc.cur == '"' && prev != '\\' {
+		if sc.cur == '\\' && !pendingEscape {
+			pendingEscape = true
+		} else if pos != 0 && sc.cur == '"' && !pendingEscape {
 			hasClosingQuote = true
 			err = sc.next() // advance past the closing '"'
 			break
+		} else {
+			pendingEscape = false
 		}
-		prev = sc.cur
 	}
 
 	literal := string(id)

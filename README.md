@@ -1,18 +1,19 @@
 # DOT
 
-Formatter and parser for the [DOT language](https://graphviz.org/doc/info/lang.html) written in Go.
+A toolchain for the [DOT language](https://graphviz.org/doc/info/lang.html). Includes `dotx fmt` for
+formatting, `dotx watch` for live preview, and `dotx inspect` for examining syntax.
+
+## Install
+
+```sh
+go install github.com/teleivo/dot/cmd/dotx@latest
+```
 
 ## Formatter
 
 Format your DOT files with `dotx fmt`. `dotx fmt` is inspired by
 [gofmt](https://pkg.go.dev/cmd/gofmt). As such it is opinionated and has no options to change its
 format.
-
-### Install
-
-```sh
-go install github.com/teleivo/dot/cmd/dotx@latest
-```
 
 ### Usage
 
@@ -144,6 +145,20 @@ POSITION   TYPE     LITERAL  ERROR
 1:18       }        }
 ```
 
+## Watch
+
+Preview DOT files as SVG in your browser with live reload.
+
+Requires the `dot` executable from [Graphviz](https://graphviz.org/download/).
+
+```sh
+dotx watch graph.dot
+```
+
+The file watcher is designed for editors that use atomic writes (rename temp file to target), such
+as Neovim and Vim. Editors that write files in multiple steps may cause brief flashes of errors or
+partial content.
+
 ## Documentation
 
 View the package documentation locally with an interactive example playground:
@@ -165,8 +180,10 @@ This opens a browser with [pkg.go.dev-style](https://pkg.go.dev) documentation w
 
 ## Neovim Plugin
 
-The `nvim/` directory contains a Neovim plugin providing `:Dot inspect` for visualizing the CST in a
-split window with live updates and cursor tracking.
+The `nvim/` directory contains a Neovim plugin with commands:
+
+* `:Dot inspect` - visualize the CST in a split window with live updates and cursor tracking
+* `:Dot watch` - start `dotx watch` and open the browser for live SVG preview
 
 ### Installation (lazy.nvim)
 

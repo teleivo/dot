@@ -4,7 +4,6 @@
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse
-* work on `dotx watch`
 
 ## Parser
 

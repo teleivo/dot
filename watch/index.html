@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOT Graph Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #fdf6e3;
+            overflow: auto;
+        }
+        #graph {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <object id="graph" type="image/svg+xml" data="/graph.svg"></object>
+
+    <script>
+        const evtSource = new EventSource("/events");
+        evtSource.onerror = () => console.log("SSE connection lost, retrying...");
+        evtSource.onmessage = () => {
+            const graph = document.getElementById("graph");
+            // force browser to fetch graph instead of using the cached one
+            graph.data = "/graph.svg?t=" + Date.now();
+        };
+    </script>
+</body>
+</html>

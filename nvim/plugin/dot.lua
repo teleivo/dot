@@ -2,6 +2,7 @@
 -- See https://github.com/teleivo/dot
 
 local inspect = require('dot.inspect')
+local watch = require('dot.watch')
 
 ---@class DotSubCommands
 ---@field impl fun(args:string[], opts: table) the command implementation
@@ -12,6 +13,11 @@ local subcommands = {
   inspect = {
     impl = function()
       inspect.open()
+    end,
+  },
+  watch = {
+    impl = function()
+      watch.toggle()
     end,
   },
 }

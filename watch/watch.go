@@ -14,6 +14,7 @@ import (
 	"net/netip"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -29,10 +30,12 @@ type Config struct {
 // Watcher watches a DOT file for changes and serves the rendered SVG via HTTP.
 // It provides an SSE endpoint that notifies connected browsers when the file changes.
 type Watcher struct {
-	file   string
-	stdout io.Writer
-	server *http.Server
-	logger *slog.Logger
+	file     string
+	stdout   io.Writer
+	logger   *slog.Logger
+	server   *http.Server
+	shutdown chan struct{}
+	clients  sync.WaitGroup
 }
 
 const dotBinary = "dot"
@@ -68,10 +71,11 @@ func New(cfg Config) (*Watcher, error) {
 	}
 	logger := slog.New(slog.NewTextHandler(cfg.Stderr, &slog.HandlerOptions{Level: level}))
 	wa := &Watcher{
-		file:   cfg.File,
-		stdout: cfg.Stdout,
-		server: &server,
-		logger: logger,
+		file:     cfg.File,
+		stdout:   cfg.Stdout,
+		logger:   logger,
+		server:   &server,
+		shutdown: make(chan struct{}),
 	}
 	handler.HandleFunc("GET /", wa.handleIndex)
 	handler.HandleFunc("GET /events", wa.handleEvents)
@@ -91,15 +95,21 @@ func (wa *Watcher) Watch(ctx context.Context) error {
 	_, _ = fmt.Fprintf(wa.stdout, "watching on http://%s\n", ln.Addr())
 
 	go func() {
-		err := wa.server.Serve(ln)
-		if !errors.Is(err, http.ErrServerClosed) {
-			wa.logger.Error("failed to listen and serve", "error", err.Error())
+		<-ctx.Done()
+		close(wa.shutdown)
+		wa.logger.Debug("shutting down, notifying clients")
+		wa.clients.Wait() // no timeout: localhost flushes complete nearly instantly
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+		if err := wa.server.Shutdown(ctxTimeout); err != nil && !errors.Is(err, context.Canceled) {
+			wa.logger.Error("failed to shutdown", "error", err)
 		}
 	}()
-	<-ctx.Done()
-	ctxTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	return wa.server.Shutdown(ctxTimeout)
+
+	if err := wa.server.Serve(ln); !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
 }
 
 func (wa *Watcher) handleIndex(w http.ResponseWriter, _ *http.Request) {
@@ -111,6 +121,9 @@ func (wa *Watcher) handleIndex(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (wa *Watcher) handleEvents(w http.ResponseWriter, r *http.Request) {
+	wa.clients.Add(1)
+	defer wa.clients.Done()
+
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -122,7 +135,6 @@ func (wa *Watcher) handleEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wa.logger.Debug("client connected")
-	defer wa.logger.Debug("client disconnected")
 
 	keepAliveTicker := time.NewTicker(15 * time.Second)
 	defer keepAliveTicker.Stop()
@@ -135,6 +147,12 @@ func (wa *Watcher) handleEvents(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-r.Context().Done():
+			wa.logger.Debug("client disconnected")
+			return
+		case <-wa.shutdown:
+			_, _ = fmt.Fprint(w, "event: close\ndata: shutdown\n\n")
+			flusher.Flush()
+			wa.logger.Debug("closing connection to client")
 			return
 		case <-keepAliveTicker.C:
 			_, _ = w.Write([]byte(": keep-alive\n"))

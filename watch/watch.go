@@ -30,12 +30,17 @@ type Config struct {
 // Watcher watches a DOT file for changes and serves the rendered SVG via HTTP.
 // It provides an SSE endpoint that notifies connected browsers when the file changes.
 type Watcher struct {
-	file     string
-	stdout   io.Writer
-	logger   *slog.Logger
-	server   *http.Server
-	shutdown chan struct{}
-	clients  sync.WaitGroup
+	file string
+	// initialMod/Size prevent a change event on first page load. Reopening a tab will still see one
+	// if the file changed but thats good enough for me. Did not want to add a lock/logic to
+	// generate.
+	initialMod  time.Time
+	initialSize int64
+	stdout      io.Writer
+	logger      *slog.Logger
+	server      *http.Server
+	shutdown    chan struct{}
+	clients     sync.WaitGroup
 }
 
 const dotBinary = "dot"
@@ -45,7 +50,7 @@ var indexHTML []byte
 
 // New creates a Watcher that serves the given DOT file as SVG on the specified port.
 func New(cfg Config) (*Watcher, error) {
-	_, err := os.Stat(cfg.File)
+	stat, err := os.Stat(cfg.File)
 	if err != nil {
 		return nil, fmt.Errorf("file error: %v", err)
 	}
@@ -71,11 +76,13 @@ func New(cfg Config) (*Watcher, error) {
 	}
 	logger := slog.New(slog.NewTextHandler(cfg.Stderr, &slog.HandlerOptions{Level: level}))
 	wa := &Watcher{
-		file:     cfg.File,
-		stdout:   cfg.Stdout,
-		logger:   logger,
-		server:   &server,
-		shutdown: make(chan struct{}),
+		file:        cfg.File,
+		initialMod:  stat.ModTime(),
+		initialSize: stat.Size(),
+		stdout:      cfg.Stdout,
+		logger:      logger,
+		server:      &server,
+		shutdown:    make(chan struct{}),
 	}
 	handler.HandleFunc("GET /", wa.handleIndex)
 	handler.HandleFunc("GET /events", wa.handleEvents)
@@ -141,8 +148,8 @@ func (wa *Watcher) handleEvents(w http.ResponseWriter, r *http.Request) {
 	pollTicker := time.NewTicker(500 * time.Millisecond)
 	defer pollTicker.Stop()
 
-	var lastMod time.Time
-	var lastSize int64
+	lastMod := wa.initialMod
+	lastSize := wa.initialSize
 
 	for {
 		select {

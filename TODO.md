@@ -2,6 +2,11 @@
 
 ## Now
 
+* lsp diagnostics
+  * implement server initialization
+  * how to test?
+  * implement server exit
+
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse
 

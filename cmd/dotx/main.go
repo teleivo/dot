@@ -15,6 +15,7 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
+	"github.com/teleivo/dot/lsp"
 	"github.com/teleivo/dot/printer"
 	"github.com/teleivo/dot/token"
 	"github.com/teleivo/dot/watch"
@@ -48,6 +49,8 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 		return runFmt(args[2:], r, w, wErr)
 	case "inspect":
 		return runInspect(args[2:], r, w, wErr)
+	case "lsp":
+		return runLsp(args[2:], r, w, wErr)
 	case "watch":
 		return runWatch(args[2:], wErr)
 	case "":
@@ -61,7 +64,7 @@ func usage(w io.Writer) {
 	_, _ = fmt.Fprintln(w, "dotx is a tool for working with DOT (Graphviz) graph files")
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "usage: dotx <command> [args]")
-	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, watch")
+	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, lsp, watch")
 }
 
 func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
@@ -263,6 +266,47 @@ func tokenLiteral(tok token.Token) string {
 		return tok.Literal
 	}
 	return tok.Type.String()
+}
+
+func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
+	flags := flag.NewFlagSet("lsp", flag.ContinueOnError)
+	flags.SetOutput(wErr)
+	flags.Usage = func() {
+		_, _ = fmt.Fprintln(wErr, "usage: dotx lsp [flags]")
+		_, _ = fmt.Fprintln(wErr, "flags:")
+		flags.PrintDefaults()
+	}
+	debug := flags.Bool("debug", false, "enable debug logging")
+	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
+	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
+
+	err := flags.Parse(args)
+	if err != nil {
+		if err == flag.ErrHelp {
+			return 0, nil
+		}
+		return 2, errFlagParse
+	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	err = profile(func() error {
+		l, err := lsp.New(lsp.Config{
+			Debug:  *debug,
+			Stdin:  os.Stdin,
+			Stdout: os.Stdout,
+			Stderr: os.Stderr,
+		})
+		if err != nil {
+			return err
+		}
+		return l.Start(ctx)
+	}, *cpuProfile, *memProfile)
+	if err != nil {
+		return 1, err
+	}
+	return 0, nil
 }
 
 func runWatch(args []string, wErr io.Writer) (int, error) {

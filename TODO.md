@@ -6,6 +6,11 @@
   * implement server initialization
   * how to test?
   * implement server exit
+  * scanner
+    * what is the best to turn this into json now?
+      * add `Bytes() []byte` method to avoid string conversion allocation for JSON unmarshaling
+      * use a buffer for the content in scanner
+    * add header line length limit to prevent unbounded memory growth from malicious clients
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse

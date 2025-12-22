@@ -14,6 +14,8 @@ import (
 	"strings"
 )
 
+const maxContentLength = 10 << 20 // 10MB
+
 // Config ...
 type Config struct {
 	Debug  bool      // enable debug logging
@@ -81,81 +83,103 @@ func NewScanner(r io.Reader) *Scanner {
 	}
 }
 
-func (sc *Scanner) Scan() bool {
-	if sc.done {
+func (s *Scanner) Scan() bool {
+	if s.done {
 		return false
 	}
+	s.content = "" // clear previous content
 
-	// TODO extract read header?
-	// TODO headers are case-insensitive
-	line, err := sc.r.ReadString('\n')
-	line = strings.TrimSuffix(line, "\n")
-	line = strings.TrimSuffix(line, "\r")
-	if err != nil {
-		if !errors.Is(err, io.EOF) {
-			sc.err = err
+	var hasLength bool
+	var length int
+	for {
+		line, ok := s.readLine()
+		if !ok {
+			if hasLength {
+				s.err = errors.New("expected empty line before content")
+			}
+			return false
 		}
-		sc.done = true
-		return false
-	}
-
-	header, value, found := strings.Cut(line, ":")
-	if !found {
-		sc.err = errors.New("invalid header, expected Content-Length")
-		sc.done = true
-		return false
-	}
-	header = strings.TrimSpace(header)
-	if !strings.EqualFold(header, "Content-Length") {
-		sc.err = errors.New("expected Content-Length")
-		sc.done = true
-		return false
-	}
-	value = strings.TrimSpace(value)
-	length, err := strconv.Atoi(value)
-	if err != nil {
-		sc.err = err
-		sc.done = true
-		return false
-	}
-
-	// TODO validate potential Content-Type header
-	// TODO expect empty line if Content-Type provided
-	line, err = sc.r.ReadString('\n')
-	line = strings.TrimSuffix(line, "\n")
-	line = strings.TrimSuffix(line, "\r")
-	if err != nil {
-		if !errors.Is(err, io.EOF) {
-			sc.err = err
+		if line == "" && !hasLength {
+			s.err = errors.New("expected content-length header")
+			s.done = true
+			return false
 		}
-		sc.done = true
-		return false
+		if line == "" && hasLength {
+			break
+		}
+
+		header, value, ok := s.readHeader(line)
+		if !ok {
+			return false
+		}
+		if !strings.EqualFold(header, "Content-Length") {
+			continue // skip any other header as they provide no value
+		}
+
+		var err error
+		length, err = strconv.Atoi(value)
+		if err != nil {
+			s.err = fmt.Errorf("invalid content-length: expected number, got %q", value)
+			s.done = true
+			return false
+		}
+		if length < 0 {
+			s.err = fmt.Errorf("invalid content-length: expected positive number, got %q", value)
+			s.done = true
+			return false
+		}
+		if length > maxContentLength {
+			s.err = fmt.Errorf("invalid content-length: exceeds maximum of 10MB, got %d", length)
+			s.done = true
+			return false
+		}
+		hasLength = true
 	}
 
 	m := make([]byte, length)
-	n, err := io.ReadFull(sc.r, m)
-	if n != length {
-		sc.err = fmt.Errorf("failed to read full content, read %d instead of %d", n, length)
-	}
+	n, err := io.ReadFull(s.r, m)
 	if err != nil {
-		// TODO react to ErrUnexpectedEOF?
-		if !errors.Is(err, io.EOF) {
-			sc.err = err
-		}
-		sc.done = true
+		s.err = fmt.Errorf("unexpected EOF: read %d of %d content bytes", n, length)
+		s.done = true
 		return false
 	}
-	sc.content = string(m)
+	s.content = string(m)
 	return true
 }
 
-func (sc *Scanner) Err() error {
-	return sc.err
+func (s *Scanner) readLine() (string, bool) {
+	line, err := s.r.ReadString('\n')
+	if err != nil {
+		if !errors.Is(err, io.EOF) {
+			s.err = err
+		}
+		s.done = true
+		return "", false
+	}
+
+	// be lenient: spec expects \r\n terminated headers but \n is accepted as well
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimSuffix(line, "\r")
+	return line, true
 }
 
-func (sc *Scanner) Next() string {
-	if sc.done {
+func (s *Scanner) readHeader(line string) (string, string, bool) {
+	header, value, found := strings.Cut(line, ":")
+	if !found {
+		s.err = fmt.Errorf("invalid header: expected 'name: value', got %q", line)
+		s.done = true
+		return "", "", false
+	}
+	return strings.TrimSpace(header), strings.TrimSpace(value), true
+}
+
+func (s *Scanner) Err() error {
+	return s.err
+}
+
+func (s *Scanner) Next() string {
+	if s.done {
 		return ""
 	}
-	return sc.content
+	return s.content
 }

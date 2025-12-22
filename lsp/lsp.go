@@ -4,7 +4,6 @@ package lsp
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config ...
@@ -86,45 +86,52 @@ func (sc *Scanner) Scan() bool {
 		return false
 	}
 
-	// TODO this also allows \n which is not spec compliant, so do this differently?
+	// TODO extract read header?
 	// TODO headers are case-insensitive
-	// TODO handle case where isPrefix is true
-	line, _, err := sc.r.ReadLine()
+	line, err := sc.r.ReadString('\n')
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimSuffix(line, "\r")
 	if err != nil {
-		if errors.Is(err, io.EOF) {
-			sc.done = true
-			// TODO if we get io.EOF here should that be an error? or ok as we did not get a header?
-			// or only an error if we get a header and EOF
-		} else {
+		if !errors.Is(err, io.EOF) {
 			sc.err = err
 		}
+		sc.done = true
 		return false
 	}
-	// TODO I assume this must be case-insensitive
-	h, found := bytes.CutPrefix(line, []byte("Content-Length: "))
+
+	header, value, found := strings.Cut(line, ":")
 	if !found {
-		sc.err = errors.New("missing header Content-Length")
+		sc.err = errors.New("invalid header, expected Content-Length")
+		sc.done = true
 		return false
 	}
-	length, err := strconv.Atoi(string(h))
+	header = strings.TrimSpace(header)
+	if !strings.EqualFold(header, "Content-Length") {
+		sc.err = errors.New("expected Content-Length")
+		sc.done = true
+		return false
+	}
+	value = strings.TrimSpace(value)
+	length, err := strconv.Atoi(value)
 	if err != nil {
 		sc.err = err
-		// TODO is that a terminal error or could I continue? but how would I know what to skip
+		sc.done = true
 		return false
 	}
+
 	// TODO validate potential Content-Type header
 	// TODO expect empty line if Content-Type provided
-	line, _, err = sc.r.ReadLine()
+	line, err = sc.r.ReadString('\n')
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimSuffix(line, "\r")
 	if err != nil {
-		if errors.Is(err, io.EOF) {
-			// TODO if we get io.EOF here should that be an error? or ok as we did not get a header?
-			// or only an error if we get a header and EOF
-			sc.done = true
-		} else {
+		if !errors.Is(err, io.EOF) {
 			sc.err = err
 		}
+		sc.done = true
 		return false
 	}
+
 	m := make([]byte, length)
 	n, err := io.ReadFull(sc.r, m)
 	if n != length {
@@ -132,11 +139,10 @@ func (sc *Scanner) Scan() bool {
 	}
 	if err != nil {
 		// TODO react to ErrUnexpectedEOF?
-		if errors.Is(err, io.EOF) {
-			sc.done = true
-		} else {
+		if !errors.Is(err, io.EOF) {
 			sc.err = err
 		}
+		sc.done = true
 		return false
 	}
 	sc.content = string(m)

@@ -30,18 +30,24 @@ func TestScanner(t *testing.T) {
 		s := NewScanner(&w)
 
 		msg1 := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":null}`
-		writeMessage(t, &w, msg1)
+		write(t, &w, "Content-Length: %d\r\n", len(msg1))
+		write(t, &w, "\r\n")
+		write(t, &w, "%s", msg1)
 
 		assert.Truef(t, s.Scan(), "want true as msg1 is unread")
-		assert.EqualValuesf(t, s.Next(), msg1, "failed to read msg1")
-		assert.NoErrorf(t, s.Err(), "want no errors reading all msgs")
+		require.EqualValuesf(t, s.Next(), msg1, "failed to read msg1")
+		require.NoErrorf(t, s.Err(), "want no errors reading msg1")
 
-		msg2 := `{"jsonrpc":"2.0","method":"initialized","id":2,"params":null}`
-		writeMessage(t, &w, msg2)
+		msg2 := `{"jsonrpc":"2.0","method":"initialized","id":2}`
+		write(t, &w, "content-Length: %d\n", len(msg2))
+		write(t, &w, "\n")
+		write(t, &w, "%s", msg2)
+
+		// TODO add content-type as well
 
 		assert.Truef(t, s.Scan(), "want true as msg2 is unread")
-		assert.EqualValuesf(t, s.Next(), msg2, "failed to read msg2")
-		assert.NoErrorf(t, s.Err(), "want no errors reading all msgs")
+		require.EqualValuesf(t, s.Next(), msg2, "failed to read msg2")
+		require.NoErrorf(t, s.Err(), "want no errors reading msg2")
 
 		assert.Falsef(t, s.Scan(), "want false as all msgs are read")
 		assert.EqualValuesf(t, s.Next(), "", "should be empty")
@@ -53,14 +59,8 @@ func TestScanner(t *testing.T) {
 	})
 }
 
-// func writeHeader(t *testing.T, w io.Writer, header string) {
-// 	t.Helper()
-// 	_, err := fmt.Fprintf(w, "%s\r\n", header)
-// 	require.NoErrorf(t, err, "failed to write message")
-// }
-
-func writeMessage(t *testing.T, w io.Writer, content string) {
+func write(t *testing.T, w io.Writer, format string, args ...any) {
 	t.Helper()
-	_, err := fmt.Fprintf(w, "Content-Length: %d\r\n\r\n%s", len(content), content)
+	_, err := fmt.Fprintf(w, format, args...)
 	require.NoErrorf(t, err, "failed to write message")
 }

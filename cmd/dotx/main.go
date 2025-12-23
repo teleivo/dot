@@ -294,9 +294,9 @@ func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 	err = profile(func() error {
 		l, err := lsp.New(lsp.Config{
 			Debug:  *debug,
-			Stdin:  os.Stdin,
-			Stdout: os.Stdout,
-			Stderr: os.Stderr,
+			In:  os.Stdin,
+			Out: os.Stdout,
+			Err: os.Stderr,
 		})
 		if err != nil {
 			return err

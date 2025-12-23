@@ -5,6 +5,23 @@ import (
 	"fmt"
 )
 
+// TODO should I create a type ErrorCode int64 type? with these as there consts
+// TODO do I need all of them? if so when do they make sense
+const (
+	ParseError     int64 = -32700
+	InvalidRequest int64 = -32600
+	MethodNotFound int64 = -32601
+	InvalidParams  int64 = -32602
+	InternalError  int64 = -32603
+)
+
+// Error code indicating that a server received a notification or request before the server received
+// the `initialize` request.
+const (
+	ServerNotInitialized int64 = -32002
+	UnknownErrorCode     int64 = -32001
+)
+
 // Message has all the fields of request, response and notification. Presence/absence of fields is
 // used to discriminate which one it is. Unmarshaling of those discriminatory fields is deferred
 // until we know which it is.

@@ -4,6 +4,8 @@ package rpc
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/teleivo/dot/internal/version"
 )
 
 // ErrorCode represents a JSON-RPC error code.
@@ -85,4 +87,23 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	return json.Unmarshal(data, &id.name)
+}
+
+func InitializeResult() *json.RawMessage {
+	// result := json.RawMessage(`{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"0.1.0"}}`)
+	init := map[string]any{
+		"capabilities": map[string]any{
+			"textDocumentSync": 1,
+		},
+		"serverInfo": map[string]any{
+			"name":    "dotls",
+			"version": version.Version(),
+		},
+	}
+	b, err := json.Marshal(init)
+	if err != nil {
+		panic(err)
+	}
+	result := json.RawMessage(b)
+	return &result
 }

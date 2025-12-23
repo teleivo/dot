@@ -82,8 +82,7 @@ func (srv *Server) Start(ctx context.Context) error {
 					// TODO do I need to wait on the initialized notification to set the state? or
 					// can I just ignore if it is sent or not
 					srv.state = initialized
-					result := json.RawMessage(`{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"0.1.0"}}`)
-					response = rpc.Message{ID: message.ID, Result: &result}
+					response = rpc.Message{ID: message.ID, Result: rpc.InitializeResult()}
 					content, _ := json.Marshal(response)
 					srv.writeMessage(content)
 				} else {

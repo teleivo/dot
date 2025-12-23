@@ -3,10 +3,9 @@
 ## Now
 
 * lsp diagnostics
-  * implement server initialization
+  * implement server exit
   * how to debug the rpc communication between neovim/dotls I need to be able to see their back and
     forth
-  * implement server exit
   * scanner
     * are errors always terminal in the scanner? should the loop always check s.Err()?
     * use a buffer for the content in scanner for the ReadAll

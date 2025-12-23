@@ -70,33 +70,40 @@ func (srv *Server) Start(ctx context.Context) error {
 			var message rpc.Message
 			err := json.Unmarshal(s.Bytes(), &message)
 			// TODO what to do in case of err? what can I respond with according to the spec?
+			// TODO error handling in general
 			if err != nil {
 				break
 			}
 
-			var response string
+			var response rpc.Message
 			// TODO create rpc.Writer and respond with the id from the request
 			if srv.state == uninitialized {
 				if message.Method == "initialize" {
-					response = `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"0.1.0"}}}`
 					// TODO do I need to wait on the initialized notification to set the state? or
 					// can I just ignore if it is sent or not
 					srv.state = initialized
+					result := json.RawMessage(`{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"0.1.0"}}`)
+					response = rpc.Message{ID: message.ID, Result: &result}
+					content, _ := json.Marshal(response)
+					srv.writeMessage(content)
 				} else {
-					responseMsg := rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.ServerNotInitialized, Message: "server not initialized"}}
+					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.ServerNotInitialized, Message: "server not initialized"}} // TODO use responseMsg
+					content, _ := json.Marshal(response)
+					srv.writeMessage(content)
 				}
 			} else {
 				switch message.Method {
 				case "initialize":
-					response = `{"jsonrpc":"2.0","id":2,"error":{"code":-32600,"message":"server already initialized"}}`
+					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}} // TODO use responseMsg
+					content, _ := json.Marshal(response)
+					srv.writeMessage(content)
 				case "shutdown":
-					response = `{"jsonrpc":"2.0","id":2,"result":null}`
+					response = rpc.Message{ID: message.ID} // TODO does the "result" need to be set to null explicitly?
+					content, _ := json.Marshal(response)
+					srv.writeMessage(content)
 				case "textDocument/didOpen":
 					// TODO implement
 				}
-			}
-			if response != "" {
-				srv.writeMessage(response)
 			}
 			srv.logger.Debug("received", "msg", s.Text())
 		}
@@ -107,7 +114,7 @@ func (srv *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func (srv *Server) writeMessage(content string) error {
+func (srv *Server) writeMessage(content []byte) error {
 	// TODO user bufio and its API
 	// TODO do I need to flush?
 	_, err := fmt.Fprintf(srv.out, "Content-Length:  %d \r\n", len(content))
@@ -118,7 +125,7 @@ func (srv *Server) writeMessage(content string) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(srv.out, "%s", content)
+	_, err = srv.out.Write(content)
 	if err != nil {
 		return err
 	}

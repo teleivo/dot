@@ -15,6 +15,7 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
+	"github.com/teleivo/dot/internal/version"
 	"github.com/teleivo/dot/lsp"
 	"github.com/teleivo/dot/printer"
 	"github.com/teleivo/dot/token"
@@ -51,6 +52,9 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 		return runInspect(args[2:], r, w, wErr)
 	case "lsp":
 		return runLsp(args[2:], r, w, wErr)
+	case "version":
+		fmt.Fprintln(w, version.Version())
+		return 0, nil
 	case "watch":
 		return runWatch(args[2:], wErr)
 	case "":
@@ -64,7 +68,7 @@ func usage(w io.Writer) {
 	_, _ = fmt.Fprintln(w, "dotx is a tool for working with DOT (Graphviz) graph files")
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "usage: dotx <command> [args]")
-	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, lsp, watch")
+	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, lsp, version, watch")
 }
 
 func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {

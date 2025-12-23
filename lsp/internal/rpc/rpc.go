@@ -1,3 +1,4 @@
+// Package rpc implements JSON-RPC 2.0 message types for the Language Server Protocol.
 package rpc
 
 import (
@@ -5,21 +6,22 @@ import (
 	"fmt"
 )
 
-// TODO should I create a type ErrorCode int64 type? with these as there consts
-// TODO do I need all of them? if so when do they make sense
+// ErrorCode represents a JSON-RPC error code.
+type ErrorCode int64
+
+// JSON-RPC 2.0 standard error codes.
 const (
-	ParseError     int64 = -32700
-	InvalidRequest int64 = -32600
-	MethodNotFound int64 = -32601
-	InvalidParams  int64 = -32602
-	InternalError  int64 = -32603
+	ParseError     ErrorCode = -32700
+	InvalidRequest ErrorCode = -32600
+	MethodNotFound ErrorCode = -32601
+	InvalidParams  ErrorCode = -32602
+	InternalError  ErrorCode = -32603
 )
 
-// Error code indicating that a server received a notification or request before the server received
-// the `initialize` request.
+// LSP-specific error codes.
 const (
-	ServerNotInitialized int64 = -32002
-	UnknownErrorCode     int64 = -32001
+	ServerNotInitialized ErrorCode = -32002
+	UnknownErrorCode     ErrorCode = -32001
 )
 
 // Message has all the fields of request, response and notification. Presence/absence of fields is
@@ -38,7 +40,7 @@ type Message struct {
 // Error represents a structured error in a response.
 type Error struct {
 	// Code indicating the type of error.
-	Code int64 `json:"code"`
+	Code ErrorCode `json:"code"`
 	// Message is a short description of the error.
 	Message string `json:"message"`
 	// Data is optional structured data containing additional information about the error.

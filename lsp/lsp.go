@@ -5,6 +5,7 @@ package lsp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -144,10 +145,25 @@ func (srv *Server) Start(ctx context.Context) error {
 						responseParams := rpc.PublishDiagnosticsParams{
 							URI: requestParams.TextDocument.URI,
 						}
-						responseParams.Diagnostics = []rpc.Diagnostic{{Message: "test"}}
-						if errs := ps.Errors(); len(errs) > 0 {
-							// TODO map to lsp
-							// return errs[0]
+						// TODO make clean
+						sev := rpc.SeverityError
+						for _, err := range ps.Errors() {
+							var perr dot.Error
+							errors.As(err, &perr)
+							responseParams.Diagnostics = append(responseParams.Diagnostics, rpc.Diagnostic{
+								Range: rpc.Range{
+									Start: rpc.Position{
+										Line:      uint32(err.Pos.Line) - 1,
+										Character: uint32(err.Pos.Column) - 1,
+									},
+									End: rpc.Position{
+										Line:      uint32(err.Pos.Line) - 1,
+										Character: uint32(err.Pos.Column) - 1,
+									},
+								},
+								Severity: &sev,
+								Message:  perr.Msg,
+							})
 						}
 						puf, err := json.Marshal(responseParams)
 						if err != nil {

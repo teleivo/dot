@@ -147,6 +147,46 @@ type TextDocumentItem struct {
 	Text string `json:"text"`
 }
 
+// DidChangeTextDocumentParams contains the parameters for the textDocument/didChange notification.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#didChangeTextDocumentParams
+type DidChangeTextDocumentParams struct {
+	// TextDocument identifies the document that changed. The version number points to the version
+	// after all provided content changes have been applied.
+	TextDocument VersionedTextDocumentIdentifier `json:"textDocument"`
+	// ContentChanges contains the actual content changes. With TextDocumentSyncKind.Full,
+	// this array contains a single element with the entire document content.
+	ContentChanges []TextDocumentContentChangeEvent `json:"contentChanges"`
+}
+
+// VersionedTextDocumentIdentifier identifies a specific version of a text document.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#versionedTextDocumentIdentifier
+type VersionedTextDocumentIdentifier struct {
+	TextDocumentIdentifier
+	// Version is the version number of this document. The version number increases after each
+	// change, including undo/redo.
+	Version int32 `json:"version"`
+}
+
+// TextDocumentIdentifier identifies a text document using a URI.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentIdentifier
+type TextDocumentIdentifier struct {
+	// URI is the text document's URI.
+	URI DocumentURI `json:"uri"`
+}
+
+// TextDocumentContentChangeEvent describes a change to a text document.
+// When TextDocumentSyncKind.Full is used, only the Text field is set and it contains the full
+// content of the document.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentContentChangeEvent
+type TextDocumentContentChangeEvent struct {
+	// Range is the range of the document that changed. Only present for incremental sync.
+	Range *Range `json:"range,omitempty"`
+	// RangeLength is the optional length of the range that got replaced. Deprecated: use Range.
+	RangeLength *uint32 `json:"rangeLength,omitempty"`
+	// Text is the new text for the provided range, or the full document content when Range is nil.
+	Text string `json:"text"`
+}
+
 // PublishDiagnosticsParams is sent from the server to the client to signal results of validation.
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
 type PublishDiagnosticsParams struct {

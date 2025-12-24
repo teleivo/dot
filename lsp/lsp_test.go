@@ -119,9 +119,10 @@ func TestServer(t *testing.T) {
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 	})
 
-	// textDocument/didOpen triggers diagnostics via textDocument/publishDiagnostics notification
+	// textDocument/didOpen and textDocument/didChange trigger diagnostics via
+	// textDocument/publishDiagnostics notification.
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_publishDiagnostics
-	t.Run("PublishDiagnosticsOnDidOpen", func(t *testing.T) {
+	t.Run("PublishDiagnostics", func(t *testing.T) {
 		s, in := setup(t)
 
 		// Initialize handshake
@@ -146,8 +147,36 @@ func TestServer(t *testing.T) {
 		// Diagnostics use point ranges (start == end) for error positions
 		// Severity 1 = Error
 		want := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///test.dot","diagnostics":[{"range":{"start":{"line":1,"character":11},"end":{"line":1,"character":11}},"severity":1,"message":"expected attribute value"},{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
-		require.EqualValuesf(t, s.Text(), want, "unexpected diagnostics")
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didOpen")
+		require.EqualValuesf(t, s.Text(), want, "unexpected diagnostics for didOpen")
+
+		// Fix the errors by sending didChange with valid content
+		// With TextDocumentSyncKind.Full (1), contentChanges contains a single element with full text
+		fixedContent := `digraph {\n  a [label=\"hello\"]\n  b -> c\n}`
+		didChangeMsg := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"text":"` + fixedContent + `"}]}}`
+		writeMessage(t, in, didChangeMsg)
+
+		// Server publishes empty diagnostics array to clear previous errors
+		wantEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///test.dot","diagnostics":[]}}`
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didChange")
+		require.EqualValuesf(t, s.Text(), wantEmpty, "unexpected diagnostics for didChange")
+
+		// Send didSave and didClose notifications - server should ignore them (no response)
+		// These are sent by editors on save and when closing a buffer
+		didSaveMsg := `{"jsonrpc":"2.0","method":"textDocument/didSave","params":{"textDocument":{"uri":"file:///test.dot"}}}`
+		writeMessage(t, in, didSaveMsg)
+
+		didCloseMsg := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///test.dot"}}}`
+		writeMessage(t, in, didCloseMsg)
+
+		// Send a request after the notifications to verify server is still responsive
+		// and didn't block on the ignored notifications
+		shutdownMsg := `{"jsonrpc":"2.0","method":"shutdown","id":2}`
+		writeMessage(t, in, shutdownMsg)
+
+		wantShutdown := `{"jsonrpc":"2.0","id":2,"result":null}`
+		assert.Truef(t, s.Scan(), "expecting shutdown response after ignored notifications")
+		require.EqualValuesf(t, s.Text(), wantShutdown, "unexpected shutdown response")
 	})
 }
 

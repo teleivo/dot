@@ -119,54 +119,31 @@ func (srv *Server) Start(ctx context.Context) error {
 					if message.Params == nil {
 						panic("TODO handle")
 					}
-					// TODO implement
 					var requestParams rpc.DidOpenTextDocumentParams
 					err := json.Unmarshal(*message.Params, &requestParams)
 					if err != nil {
 						panic("TODO handle")
 					} else {
-						r := strings.NewReader(requestParams.TextDocument.Text)
-
-						ps, err := dot.NewParser(r)
+						response, err = diagnostics(requestParams.TextDocument.URI, requestParams.TextDocument.Text)
 						if err != nil {
 							panic("TODO handle")
 						}
-
-						_, err = ps.Parse()
+						content, _ := json.Marshal(response)
+						srv.writeMessage(content)
+					}
+				case "textDocument/didChange":
+					if message.Params == nil {
+						panic("TODO handle")
+					}
+					var requestParams rpc.DidChangeTextDocumentParams
+					err := json.Unmarshal(*message.Params, &requestParams)
+					if err != nil {
+						panic("TODO handle")
+					} else {
+						response, err = diagnostics(requestParams.TextDocument.URI, requestParams.ContentChanges[0].Text)
 						if err != nil {
 							panic("TODO handle")
 						}
-
-						response.Method = "textDocument/publishDiagnostics"
-						responseParams := rpc.PublishDiagnosticsParams{
-							URI: requestParams.TextDocument.URI,
-						}
-						// TODO make clean
-						sev := rpc.SeverityError
-						for _, err := range ps.Errors() {
-							var perr dot.Error
-							errors.As(err, &perr)
-							responseParams.Diagnostics = append(responseParams.Diagnostics, rpc.Diagnostic{
-								Range: rpc.Range{
-									Start: rpc.Position{
-										Line:      uint32(err.Pos.Line) - 1,
-										Character: uint32(err.Pos.Column) - 1,
-									},
-									End: rpc.Position{
-										Line:      uint32(err.Pos.Line) - 1,
-										Character: uint32(err.Pos.Column) - 1,
-									},
-								},
-								Severity: &sev,
-								Message:  perr.Msg,
-							})
-						}
-						puf, err := json.Marshal(responseParams)
-						if err != nil {
-							panic("TODO handle")
-						}
-						rm := json.RawMessage(puf)
-						response.Params = &rm
 						content, _ := json.Marshal(response)
 						srv.writeMessage(content)
 					}
@@ -198,6 +175,58 @@ func (srv *Server) Start(ctx context.Context) error {
 	srv.logger.Debug("shutting down")
 	_ = srv.logFile.Close()
 	return nil
+}
+
+func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
+	var response rpc.Message
+	r := strings.NewReader(text)
+
+	ps, err := dot.NewParser(r)
+	if err != nil {
+		return response, err
+	}
+
+	_, err = ps.Parse()
+	if err != nil {
+		return response, err
+	}
+
+	response.Method = "textDocument/publishDiagnostics"
+	responseParams := rpc.PublishDiagnosticsParams{
+		URI: uri,
+	}
+	// TODO make clean, is every error in ps.Errors() one with a position? so a dot.Error
+	// responseParams.Diagnostics = make([]rpc.Diagnostic, len(ps.Errors()))
+	sev := rpc.SeverityError
+	for _, err := range ps.Errors() {
+		var perr dot.Error
+		errors.As(err, &perr)
+		responseParams.Diagnostics = append(responseParams.Diagnostics, rpc.Diagnostic{
+			Range: rpc.Range{
+				Start: rpc.Position{
+					Line:      uint32(err.Pos.Line) - 1,
+					Character: uint32(err.Pos.Column) - 1,
+				},
+				End: rpc.Position{
+					Line:      uint32(err.Pos.Line) - 1,
+					Character: uint32(err.Pos.Column) - 1,
+				},
+			},
+			Severity: &sev,
+			Message:  perr.Msg,
+		})
+	}
+	if len(ps.Errors()) == 0 {
+		responseParams.Diagnostics = []rpc.Diagnostic{}
+	}
+	puf, err := json.Marshal(responseParams)
+	if err != nil {
+		return response, err
+	}
+	rm := json.RawMessage(puf)
+	response.Params = &rm
+
+	return response, nil
 }
 
 func (srv *Server) writeMessage(content []byte) error {

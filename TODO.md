@@ -3,18 +3,24 @@
 ## Now
 
 * lsp diagnostics
-  * implement server exit
   * how to debug the rpc communication between neovim/dotls I need to be able to see their back and
     forth
+  * handle errors properly
+  * make my internal APIs clean for creating responses/errors, sending responses
+  * how to implement partial in addition to full sync of docs?
+  * how should I handle doc versions?
+  * allow lsp to handle multiple docs
+
+  * implement formatting
+
   * scanner
     * are errors always terminal in the scanner? should the loop always check s.Err()?
     * use a buffer for the content in scanner for the ReadAll
     * add header line length limit to prevent unbounded memory growth from malicious clients
-  * how to implement partial in addition to full sync of docs?
   * review API naming/godoc/linting
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
-  * consider `sync.Pool` for buffer reuse
+  * consider `sync.Pool` for buffer reuse or unique?
 
 ## Parser
 

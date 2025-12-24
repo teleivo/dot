@@ -11,6 +11,11 @@ import (
 
 const maxContentLength = 10 << 20 // 10MB
 
+// Scanner reads JSON-RPC messages from an [io.Reader] using the base protocol framing.
+// The base protocol consists of a header and content part, where the header is separated
+// from the content by an empty line (\r\n).
+//
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#baseProtocol
 type Scanner struct {
 	r       *bufio.Reader
 	content []byte
@@ -18,12 +23,17 @@ type Scanner struct {
 	err     error
 }
 
+// NewScanner returns a new Scanner that reads from r.
 func NewScanner(r io.Reader) *Scanner {
 	return &Scanner{
 		r: bufio.NewReader(r),
 	}
 }
 
+// Scan reads the next message from the input.
+// It returns true if a message was successfully read, or false if an error occurred
+// or EOF was reached. After Scan returns false, the [Scanner.Err] method will return
+// any error that occurred during scanning, except for [io.EOF], which is not reported.
 func (s *Scanner) Scan() bool {
 	if s.done {
 		return false
@@ -114,6 +124,7 @@ func (s *Scanner) readHeader(line []byte) ([]byte, []byte, bool) {
 	return bytes.TrimSpace(header), bytes.TrimSpace(value), true
 }
 
+// Err returns the first non-EOF error encountered by the Scanner.
 func (s *Scanner) Err() error {
 	return s.err
 }

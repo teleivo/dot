@@ -21,11 +21,11 @@ func TestServer(t *testing.T) {
 		s, in := setup(t)
 
 		// Send shutdown request before initialize
-		msg := `{"jsonrpc":"2.0","method":"shutdown","id":1}`
+		msg := `{"jsonrpc":"2.0","method":"shutdown","id":3}`
 		writeMessage(t, in, msg)
 
 		// Server must respond with ServerNotInitialized error (shutdown is a request)
-		want := `{"jsonrpc":"2.0","id":1,"error":{"code":-32002,"message":"server not initialized"}}`
+		want := `{"jsonrpc":"2.0","id":3,"error":{"code":-32002,"message":"server not initialized"}}`
 		assert.Truef(t, s.Scan(), "expecting response from server")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 	})
@@ -68,13 +68,28 @@ func TestServer(t *testing.T) {
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
 
-		// Step 3: shutdown should succeed
+		// Step 3: shutdown request - server should respond but NOT exit yet
+		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
 		shutdownMsg := `{"jsonrpc":"2.0","method":"shutdown","id":2}`
 		writeMessage(t, in, shutdownMsg)
 
 		want := `{"jsonrpc":"2.0","id":2,"result":null}`
 		assert.Truef(t, s.Scan(), "expecting shutdown response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+
+		// Step 4: requests after shutdown should error with InvalidRequest (-32600)
+		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
+		postShutdownMsg := `{"jsonrpc":"2.0","method":"textDocument/hover","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":0}}}`
+		writeMessage(t, in, postShutdownMsg)
+
+		wantErr := `{"jsonrpc":"2.0","id":3,"error":{"code":-32600,"message":"server is shutting down"}}`
+		assert.Truef(t, s.Scan(), "expecting error response after shutdown")
+		require.EqualValuesf(t, s.Text(), wantErr, "unexpected response after shutdown")
+
+		// Step 5: exit notification - server should exit (no response expected)
+		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#exit
+		exitMsg := `{"jsonrpc":"2.0","method":"exit"}`
+		writeMessage(t, in, exitMsg)
 	})
 
 	// textDocument/didOpen triggers diagnostics via textDocument/publishDiagnostics notification
@@ -96,7 +111,7 @@ func TestServer(t *testing.T) {
 		//
 		// Parser reports (1-based): 2:12 and 4:1
 		// LSP positions are 0-based: line 1 char 11, line 3 char 0
-		docContent := "digraph {\n  a [label=]\n  b ->\n}"
+		docContent := `digraph {\n  a [label=]\n  b ->\n}`
 		didOpenMsg := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpenMsg)
 

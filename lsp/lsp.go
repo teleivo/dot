@@ -102,10 +102,12 @@ func (srv *Server) Start(ctx context.Context) error {
 			case initialized:
 				switch message.Method {
 				case "initialize":
+					// TODO expect this to be a method so it must have an id
 					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}}
 					content, _ := json.Marshal(response)
 					srv.writeMessage(content)
 				case "shutdown":
+					// TODO expect this to be a method so it must have an id
 					// TODO what if sending response errors? still move to shuttingDown state?
 					srv.state = shuttingDown
 					nullResult := json.RawMessage("null")
@@ -168,6 +170,13 @@ func (srv *Server) Start(ctx context.Context) error {
 						content, _ := json.Marshal(response)
 						srv.writeMessage(content)
 					}
+				default:
+					if message.ID == nil { // notifications are ignored
+						continue
+					}
+					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.MethodNotFound, Message: "method not found"}}
+					content, _ := json.Marshal(response)
+					srv.writeMessage(content)
 				}
 			case shuttingDown:
 				switch message.Method {

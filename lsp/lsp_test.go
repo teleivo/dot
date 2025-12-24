@@ -92,6 +92,33 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, exitMsg)
 	})
 
+	// Per JSON-RPC 2.0 and LSP spec: unknown request methods should return MethodNotFound (-32601).
+	// Unknown notifications are silently dropped (no response since notifications have no id).
+	t.Run("MethodNotFound", func(t *testing.T) {
+		s, in := setup(t)
+
+		// Initialize handshake
+		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
+		writeMessage(t, in, initMsg)
+		assert.Truef(t, s.Scan(), "expecting initialize response")
+
+		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
+		writeMessage(t, in, initializedMsg)
+
+		// Send an unknown notification - should be silently ignored (no response)
+		unknownNotification := `{"jsonrpc":"2.0","method":"$/unknownNotification","params":{}}`
+		writeMessage(t, in, unknownNotification)
+
+		// Send an unknown request method - should get MethodNotFound error
+		unknownRequest := `{"jsonrpc":"2.0","method":"textDocument/unknown","id":2,"params":{}}`
+		writeMessage(t, in, unknownRequest)
+
+		// Only the request should get a response; notification was dropped
+		want := `{"jsonrpc":"2.0","id":2,"error":{"code":-32601,"message":"method not found"}}`
+		assert.Truef(t, s.Scan(), "expecting MethodNotFound error response")
+		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+	})
+
 	// textDocument/didOpen triggers diagnostics via textDocument/publishDiagnostics notification
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_publishDiagnostics
 	t.Run("PublishDiagnosticsOnDidOpen", func(t *testing.T) {

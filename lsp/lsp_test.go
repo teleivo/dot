@@ -60,7 +60,7 @@ func TestServer(t *testing.T) {
 
 		// Server responds with capabilities
 		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeResult
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"0.1.0"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 

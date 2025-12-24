@@ -68,11 +68,6 @@ func (srv *Server) Start(ctx context.Context) error {
 	// TODO setup state with type for statemachine states
 	// unitialized/initialized/shutdown/terminated or so
 	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				fmt.Println(err)
-			}
-		}()
 		r := io.TeeReader(srv.in, srv.logFile)
 
 		s := rpc.NewScanner(r)
@@ -83,7 +78,7 @@ func (srv *Server) Start(ctx context.Context) error {
 			// TODO what to do in case of err? what can I respond with according to the spec?
 			// TODO error handling in general
 			if err != nil {
-				fmt.Printf("DEBUG: json.Unmarshal failed: %v\nbytes: %q\n", err, s.Bytes())
+				// fmt.Printf("DEBUG: json.Unmarshal failed: %v\nbytes: %q\n", err, s.Bytes())
 				break
 			}
 
@@ -91,7 +86,6 @@ func (srv *Server) Start(ctx context.Context) error {
 			// TODO create rpc.Writer and respond with the id from the request
 			switch srv.state {
 			case uninitialized:
-				fmt.Println("uninitialized case")
 				if message.Method == "initialize" {
 					// TODO do I need to wait on the initialized notification to set the state? or
 					// can I just ignore if it is sent or not
@@ -106,7 +100,6 @@ func (srv *Server) Start(ctx context.Context) error {
 					srv.writeMessage(content)
 				}
 			case initialized:
-				fmt.Println("initialized case")
 				switch message.Method {
 				case "initialize":
 					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}}
@@ -115,7 +108,8 @@ func (srv *Server) Start(ctx context.Context) error {
 				case "shutdown":
 					// TODO what if sending response errors? still move to shuttingDown state?
 					srv.state = shuttingDown
-					response = rpc.Message{ID: message.ID} // TODO does the "result" need to be set to null explicitly?
+					nullResult := json.RawMessage("null")
+					response = rpc.Message{ID: message.ID, Result: &nullResult}
 					content, _ := json.Marshal(response)
 					srv.writeMessage(content)
 					srv.logger.Debug("shutdown message received")
@@ -188,7 +182,7 @@ func (srv *Server) Start(ctx context.Context) error {
 			}
 			srv.logger.Debug("received", "msg", s.Text())
 		}
-		fmt.Printf("DEBUG: loop exited, scanner err: %v\n", s.Err())
+		// fmt.Printf("DEBUG: loop exited, scanner err: %v\n", s.Err())
 	}()
 
 	<-ctx.Done()
@@ -200,7 +194,7 @@ func (srv *Server) Start(ctx context.Context) error {
 func (srv *Server) writeMessage(content []byte) error {
 	// TODO user bufio and its API
 	// TODO do I need to flush?
-	_, err := fmt.Fprintf(srv.out, "Content-Length:  %d \r\n", len(content))
+	_, err := fmt.Fprintf(srv.out, "Content-Length: %d\r\n", len(content))
 	if err != nil {
 		return err
 	}

@@ -44,7 +44,7 @@ const (
 type Message struct {
 	Version Version          `json:"jsonrpc"`
 	ID      *ID              `json:"id,omitempty"`
-	Method  string           `json:"method"`
+	Method  string           `json:"method,omitempty"`
 	Params  *json.RawMessage `json:"params,omitempty"`
 	Result  *json.RawMessage `json:"result,omitempty"`
 	Error   *Error           `json:"error,omitempty"`

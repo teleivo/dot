@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"strings"
 
 	"github.com/teleivo/dot"
@@ -18,18 +17,18 @@ import (
 
 // Config ...
 type Config struct {
+	In    io.Reader // input for LSP messages
+	Out   io.Writer // output for LSP messages
 	Debug bool      // enable debug logging
-	In    io.Reader // input for ...
-	Out   io.Writer // output for ...
-	Err   io.Writer // output for error logging
+	Log   io.Writer // output for logging
+	Trace io.Writer // output for JSON-RPC message traffic (nil to disable)
 }
 
 type Server struct {
-	in      io.Reader
-	out     io.Writer
-	logger  *slog.Logger
-	logFile *os.File
-	state   state
+	in     io.Reader
+	out    io.Writer
+	logger *slog.Logger
+	state  state
 }
 
 // New creates a ...
@@ -38,17 +37,19 @@ func New(cfg Config) (*Server, error) {
 	if cfg.Debug {
 		level = slog.LevelDebug
 	}
-	f, err := os.Create("/tmp/dotls.log")
-	if err != nil {
-		return nil, err
+	logger := slog.New(slog.NewTextHandler(cfg.Log, &slog.HandlerOptions{Level: level}))
+
+	in := cfg.In
+	out := cfg.Out
+	if cfg.Trace != nil {
+		in = io.TeeReader(cfg.In, cfg.Trace)
+		out = io.MultiWriter(cfg.Out, cfg.Trace)
 	}
-	// logger := slog.New(slog.NewTextHandler(f, &slog.HandlerOptions{Level: level}))
-	logger := slog.New(slog.NewTextHandler(cfg.Err, &slog.HandlerOptions{Level: level}))
+
 	srv := &Server{
-		in:      cfg.In,
-		out:     cfg.Out,
-		logger:  logger,
-		logFile: f,
+		in:     in,
+		out:    out,
+		logger: logger,
 	}
 	return srv, nil
 }
@@ -64,13 +65,8 @@ const (
 // Start starts the ...
 func (srv *Server) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
-	// TODO log to file with -debug for now
-	// TODO setup state with type for statemachine states
-	// unitialized/initialized/shutdown/terminated or so
 	go func() {
-		r := io.TeeReader(srv.in, srv.logFile)
-
-		s := rpc.NewScanner(r)
+		s := rpc.NewScanner(srv.in)
 		for s.Scan() {
 			// TODO should the scanner alread do the Unmarshal?
 			var message rpc.Message
@@ -173,7 +169,6 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	<-ctx.Done()
 	srv.logger.Debug("shutting down")
-	_ = srv.logFile.Close()
 	return nil
 }
 

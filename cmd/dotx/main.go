@@ -281,6 +281,7 @@ func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 		flags.PrintDefaults()
 	}
 	debug := flags.Bool("debug", false, "enable debug logging")
+	tracePath := flags.String("tracefile", "", "write JSON-RPC messages to `file`")
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
 
@@ -292,15 +293,26 @@ func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 		return 2, errFlagParse
 	}
 
+	var traceWriter io.Writer
+	if *tracePath != "" {
+		f, err := os.OpenFile(*tracePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err != nil {
+			return 1, fmt.Errorf("failed to open tracefile: %v", err)
+		}
+		defer func() { _ = f.Close() }()
+		traceWriter = f
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	err = profile(func() error {
 		l, err := lsp.New(lsp.Config{
-			Debug:  *debug,
-			In:  os.Stdin,
-			Out: os.Stdout,
-			Err: os.Stderr,
+			In:    os.Stdin,
+			Out:   os.Stdout,
+			Debug: *debug,
+			Log:   os.Stderr,
+			Trace: traceWriter,
 		})
 		if err != nil {
 			return err

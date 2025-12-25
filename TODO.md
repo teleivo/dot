@@ -3,8 +3,6 @@
 ## Now
 
 * lsp diagnostics
-  * how to debug the rpc communication between neovim/dotls I need to be able to see their back and
-    forth
   * handle errors properly
   * make my internal APIs clean for creating responses/errors, sending responses
   * how to implement partial in addition to full sync of docs?

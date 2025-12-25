@@ -28,3 +28,4 @@ samples-graphviz/
 noname.gv.svg
 visual-test-error.log
 _research/
+*.log

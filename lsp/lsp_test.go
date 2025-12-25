@@ -92,6 +92,26 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, exitMsg)
 	})
 
+	// Per JSON-RPC 2.0 spec: invalid JSON should return ParseError (-32700) with id null.
+	// The server should continue processing subsequent messages.
+	t.Run("ParseError", func(t *testing.T) {
+		s, in := setup(t)
+
+		// Send invalid JSON
+		writeMessage(t, in, `{not valid json}`)
+
+		// Server should respond with ParseError and null id
+		want := `{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"invalid JSON"}}`
+		assert.Truef(t, s.Scan(), "expecting ParseError response")
+		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+
+		// Server should still be alive - send valid initialize
+		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
+		writeMessage(t, in, initMsg)
+
+		assert.Truef(t, s.Scan(), "expecting initialize response after parse error")
+	})
+
 	// Per JSON-RPC 2.0 and LSP spec: unknown request methods should return MethodNotFound (-32601).
 	// Unknown notifications are silently dropped (no response since notifications have no id).
 	t.Run("MethodNotFound", func(t *testing.T) {

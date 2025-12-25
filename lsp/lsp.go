@@ -1,4 +1,7 @@
-// Package lsp ...
+// Package lsp implements a Language Server Protocol server for the DOT graph language.
+//
+// The server provides diagnostics for DOT files, reporting parse errors to the client.
+// It implements the LSP 3.17 specification:
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 package lsp
 
@@ -6,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"strings"
@@ -15,7 +17,7 @@ import (
 	"github.com/teleivo/dot/lsp/internal/rpc"
 )
 
-// Config ...
+// Config holds the configuration for creating an LSP server.
 type Config struct {
 	In    io.Reader // input for LSP messages
 	Out   io.Writer // output for LSP messages
@@ -25,13 +27,13 @@ type Config struct {
 }
 
 type Server struct {
-	in     io.Reader
-	out    io.Writer
+	in     *rpc.Scanner
+	out    *rpc.Writer
 	logger *slog.Logger
 	state  state
 }
 
-// New creates a ...
+// New creates an LSP server with the given configuration.
 func New(cfg Config) (*Server, error) {
 	level := slog.LevelInfo
 	if cfg.Debug {
@@ -47,8 +49,8 @@ func New(cfg Config) (*Server, error) {
 	}
 
 	srv := &Server{
-		in:     in,
-		out:    out,
+		in:     rpc.NewScanner(in),
+		out:    rpc.NewWriter(out),
 		logger: logger,
 	}
 	return srv, nil
@@ -62,54 +64,39 @@ const (
 	shuttingDown
 )
 
-// Start starts the ...
+// Start runs the server's main loop, processing LSP messages until the context is cancelled.
 func (srv *Server) Start(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancelCause(ctx)
 	go func() {
-		s := rpc.NewScanner(srv.in)
-		for s.Scan() {
-			// TODO should the scanner alread do the Unmarshal?
+		for srv.in.Scan() {
 			var message rpc.Message
-			err := json.Unmarshal(s.Bytes(), &message)
-			// TODO what to do in case of err? what can I respond with according to the spec?
-			// TODO error handling in general
-			if err != nil {
-				// fmt.Printf("DEBUG: json.Unmarshal failed: %v\nbytes: %q\n", err, s.Bytes())
-				break
+			if err := json.Unmarshal(srv.in.Bytes(), &message); err != nil {
+				srv.write(cancel, rpc.Message{
+					Error: &rpc.Error{Code: rpc.ParseError, Message: "invalid JSON"},
+				})
+				continue
 			}
 
-			var response rpc.Message
-			// TODO create rpc.Writer and respond with the id from the request
 			switch srv.state {
 			case uninitialized:
 				if message.Method == "initialize" {
 					// TODO do I need to wait on the initialized notification to set the state? or
 					// can I just ignore if it is sent or not
-					// TODO what if sending response errors? still move to initialized state?
 					srv.state = initialized
-					response = rpc.Message{ID: message.ID, Result: rpc.InitializeResult()}
-					content, _ := json.Marshal(response)
-					srv.writeMessage(content)
+					srv.write(cancel, rpc.Message{ID: message.ID, Result: rpc.InitializeResult()})
 				} else {
-					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.ServerNotInitialized, Message: "server not initialized"}}
-					content, _ := json.Marshal(response)
-					srv.writeMessage(content)
+					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.ServerNotInitialized, Message: "server not initialized"}})
 				}
 			case initialized:
 				switch message.Method {
 				case "initialize":
 					// TODO expect this to be a method so it must have an id
-					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}}
-					content, _ := json.Marshal(response)
-					srv.writeMessage(content)
+					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}})
 				case "shutdown":
 					// TODO expect this to be a method so it must have an id
-					// TODO what if sending response errors? still move to shuttingDown state?
 					srv.state = shuttingDown
 					nullResult := json.RawMessage("null")
-					response = rpc.Message{ID: message.ID, Result: &nullResult}
-					content, _ := json.Marshal(response)
-					srv.writeMessage(content)
+					srv.write(cancel, rpc.Message{ID: message.ID, Result: &nullResult})
 					srv.logger.Debug("shutdown message received")
 				case "textDocument/didOpen":
 					if message.Params == nil {
@@ -120,12 +107,11 @@ func (srv *Server) Start(ctx context.Context) error {
 					if err != nil {
 						panic("TODO handle")
 					} else {
-						response, err = diagnostics(requestParams.TextDocument.URI, requestParams.TextDocument.Text)
+						response, err := diagnostics(requestParams.TextDocument.URI, requestParams.TextDocument.Text)
 						if err != nil {
 							panic("TODO handle")
 						}
-						content, _ := json.Marshal(response)
-						srv.writeMessage(content)
+						srv.write(cancel, response)
 					}
 				case "textDocument/didChange":
 					if message.Params == nil {
@@ -136,40 +122,44 @@ func (srv *Server) Start(ctx context.Context) error {
 					if err != nil {
 						panic("TODO handle")
 					} else {
-						response, err = diagnostics(requestParams.TextDocument.URI, requestParams.ContentChanges[0].Text)
+						response, err := diagnostics(requestParams.TextDocument.URI, requestParams.ContentChanges[0].Text)
 						if err != nil {
 							panic("TODO handle")
 						}
-						content, _ := json.Marshal(response)
-						srv.writeMessage(content)
+						srv.write(cancel, response)
 					}
 				default:
 					if message.ID == nil { // notifications are ignored
 						continue
 					}
-					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.MethodNotFound, Message: "method not found"}}
-					content, _ := json.Marshal(response)
-					srv.writeMessage(content)
+					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.MethodNotFound, Message: "method not found"}})
 				}
 			case shuttingDown:
 				switch message.Method {
 				case "exit":
 					srv.logger.Debug("exit notification received")
-					cancel()
+					cancel(nil)
 				default:
-					response = rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server is shutting down"}}
-					content, _ := json.Marshal(response)
-					srv.writeMessage(content)
+					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server is shutting down"}})
 				}
 			}
-			srv.logger.Debug("received", "msg", s.Text())
 		}
-		// fmt.Printf("DEBUG: loop exited, scanner err: %v\n", s.Err())
 	}()
 
 	<-ctx.Done()
 	srv.logger.Debug("shutting down")
 	return nil
+}
+
+func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
+	content, err := json.Marshal(msg)
+	if err != nil {
+		srv.logger.Error("marshal failed", "err", err)
+		return
+	}
+	if err := srv.out.Write(content); err != nil {
+		cancel(err)
+	}
 }
 
 func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
@@ -222,22 +212,4 @@ func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
 	response.Params = &rm
 
 	return response, nil
-}
-
-func (srv *Server) writeMessage(content []byte) error {
-	// TODO user bufio and its API
-	// TODO do I need to flush?
-	_, err := fmt.Fprintf(srv.out, "Content-Length: %d\r\n", len(content))
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintf(srv.out, "\r\n")
-	if err != nil {
-		return err
-	}
-	_, err = srv.out.Write(content)
-	if err != nil {
-		return err
-	}
-	return nil
 }

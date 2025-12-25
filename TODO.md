@@ -5,6 +5,7 @@
 * lsp diagnostics
   * handle errors properly
   * make my internal APIs clean for creating responses/errors, sending responses
+
   * how to implement partial in addition to full sync of docs?
   * how should I handle doc versions?
   * allow lsp to handle multiple docs

@@ -4,7 +4,6 @@
 
 * lsp diagnostics
   * scanner
-    * use a buffer for the content in scanner for the ReadAll
     * add header line length limit to prevent unbounded memory growth from malicious clients
 
   * how to implement partial in addition to full sync of docs?

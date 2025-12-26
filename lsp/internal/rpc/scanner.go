@@ -18,6 +18,7 @@ const maxContentLength = 10 << 20 // 10MB
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#baseProtocol
 type Scanner struct {
 	r       *bufio.Reader
+	buf     []byte
 	content []byte
 	done    bool
 	err     error
@@ -87,14 +88,16 @@ func (s *Scanner) Scan() bool {
 		hasLength = true
 	}
 
-	m := make([]byte, length)
-	n, err := io.ReadFull(s.r, m)
+	if length > cap(s.buf) {
+		s.buf = make([]byte, length)
+	}
+	n, err := io.ReadFull(s.r, s.buf[:length])
 	if err != nil {
 		s.err = fmt.Errorf("unexpected EOF: read %d of %d content bytes", n, length)
 		s.done = true
 		return false
 	}
-	s.content = m
+	s.content = s.buf[:length]
 	return true
 }
 

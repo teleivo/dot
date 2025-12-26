@@ -1,13 +1,27 @@
 # DOT
 
-A toolchain for the [DOT language](https://graphviz.org/doc/info/lang.html). Includes `dotx fmt` for
-formatting, `dotx watch` for live preview, and `dotx inspect` for examining syntax.
+A toolchain for the [DOT language](https://graphviz.org/doc/info/lang.html). Includes `dotx lsp` for
+editor integration, `dotx fmt` for formatting, `dotx watch` for live preview and `dotx inspect` for
+examining syntax.
 
 ## Install
 
 ```sh
 go install github.com/teleivo/dot/cmd/dotx@latest
 ```
+
+## LSP
+
+`dotx lsp` starts a Language Server Protocol server for DOT files, providing diagnostics as you
+type.
+
+### LSP Limitations
+
+The server only supports UTF-8 position encoding. According to the LSP specification, servers must
+support UTF-16 as the default encoding. However, `dotx lsp` always uses UTF-8 regardless of what the
+client offers. This works correctly with clients that support UTF-8 (such as Neovim) but may cause
+incorrect character positions with clients that only support UTF-16, particularly when editing
+strings containing multi-byte characters like emojis or non-ASCII text.
 
 ## Formatter
 
@@ -178,14 +192,16 @@ This opens a browser with [pkg.go.dev-style](https://pkg.go.dev) documentation w
 * Modify the example code (e.g., change `NewDoc(40)` to different column widths)
 * See how the output changes based on your modifications
 
-## Neovim Plugin
+## Neovim
+
+### Plugin
 
 The `nvim/` directory contains a Neovim plugin with commands:
 
 * `:Dot inspect` - visualize the CST in a split window with live updates and cursor tracking
 * `:Dot watch` - start `dotx watch` and open the browser for live SVG preview
 
-### Installation (lazy.nvim)
+Installation with lazy.nvim:
 
 ```lua
 return {
@@ -193,6 +209,23 @@ return {
   ft = 'dot',
   opts = {},
 }
+```
+
+### LSP Configuration
+
+Neovim 0.11+ with `lsp/` directory (see `:help lsp-config`):
+
+```lua
+-- ~/.config/nvim/lsp/dotls.lua
+return {
+  cmd = { 'dotx', 'lsp' },
+  filetypes = { 'dot' },
+}
+```
+
+```lua
+-- ~/.config/nvim/init.lua
+vim.lsp.enable('dotls')
 ```
 
 ## Limitations

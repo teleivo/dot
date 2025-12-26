@@ -109,7 +109,8 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 func InitializeResult() *json.RawMessage {
 	init := map[string]any{
 		"capabilities": map[string]any{
-			"textDocumentSync": 1,
+			"positionEncoding": EncodingUTF8,
+			"textDocumentSync": SyncIncremental,
 		},
 		"serverInfo": map[string]any{
 			"name":    "dotls",
@@ -123,6 +124,37 @@ func InitializeResult() *json.RawMessage {
 	result := json.RawMessage(b)
 	return &result
 }
+
+// TextDocumentSyncKind defines how the host (editor) should sync document changes to the
+// language server.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentSyncKind
+type TextDocumentSyncKind int
+
+const (
+	// SyncNone means documents should not be synced at all.
+	SyncNone TextDocumentSyncKind = 0
+	// SyncFull means documents are synced by always sending the full content of the document.
+	SyncFull TextDocumentSyncKind = 1
+	// SyncIncremental means documents are synced by sending the full content on open, then only
+	// incremental updates describing the changed range and replacement text.
+	SyncIncremental TextDocumentSyncKind = 2
+)
+
+// PositionEncodingKind defines how character offsets are interpreted in positions.
+// The encoding is negotiated during initialization: the client offers supported encodings,
+// and the server picks one to use for the session.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#positionEncodingKind
+type PositionEncodingKind string
+
+const (
+	// EncodingUTF8 means character offsets count UTF-8 code units (bytes).
+	EncodingUTF8 PositionEncodingKind = "utf-8"
+	// EncodingUTF16 means character offsets count UTF-16 code units.
+	// This is the default and must always be supported by servers.
+	EncodingUTF16 PositionEncodingKind = "utf-16"
+	// EncodingUTF32 means character offsets count UTF-32 code units (Unicode code points).
+	EncodingUTF32 PositionEncodingKind = "utf-32"
+)
 
 // DocumentURI represents a URI identifying a text document.
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#documentUri

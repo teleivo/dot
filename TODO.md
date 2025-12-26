@@ -3,9 +3,6 @@
 ## Now
 
 * lsp diagnostics
-  * scanner
-    * add header line length limit to prevent unbounded memory growth from malicious clients
-
   * how to implement partial in addition to full sync of docs?
   * how should I handle doc versions?
   * allow lsp to handle multiple docs

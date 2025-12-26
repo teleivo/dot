@@ -205,6 +205,20 @@ func TestScanner(t *testing.T) {
 			require.NotNilf(t, s.Err(), "expect error")
 			assert.Truef(t, strings.Contains(s.Err().Error(), "connection reset"), "error should contain underlying cause")
 		})
+		t.Run("HeaderLineTooLong", func(t *testing.T) {
+			t.Parallel()
+			var w bytes.Buffer
+			s := NewScanner(&w)
+
+			// Write a header line that exceeds bufio's default 4KB buffer
+			longHeader := "Content-Length: " + strings.Repeat("9", 5000) + "\r\n"
+			write(t, &w, "%s", longHeader)
+
+			assert.Falsef(t, s.Scan(), "want false as header line exceeds buffer")
+			require.NotNilf(t, s.Err(), "expect error")
+			assert.Truef(t, strings.Contains(s.Err().Error(), "exceeds"), "error should mention 'exceeds'")
+			assert.EqualValuesf(t, s.Text(), "", "no content on error")
+		})
 	})
 }
 

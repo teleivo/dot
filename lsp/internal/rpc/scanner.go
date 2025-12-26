@@ -9,7 +9,10 @@ import (
 	"strconv"
 )
 
-const maxContentLength = 10 << 20 // 10MB
+const (
+	maxHeaderLineLength = 4096
+	maxContentLength    = 10 << 20 // 10MB
+)
 
 // Scanner reads JSON-RPC messages from an [io.Reader] using the base protocol framing.
 // The base protocol consists of a header and content part, where the header is separated
@@ -27,7 +30,7 @@ type Scanner struct {
 // NewScanner returns a new Scanner that reads from r.
 func NewScanner(r io.Reader) *Scanner {
 	return &Scanner{
-		r: bufio.NewReader(r),
+		r: bufio.NewReaderSize(r, maxHeaderLineLength),
 	}
 }
 
@@ -102,9 +105,11 @@ func (s *Scanner) Scan() bool {
 }
 
 func (s *Scanner) readLine() ([]byte, bool) {
-	line, err := s.r.ReadBytes('\n')
+	line, err := s.r.ReadSlice('\n')
 	if err != nil {
-		if !errors.Is(err, io.EOF) {
+		if errors.Is(err, bufio.ErrBufferFull) {
+			s.err = errors.New("header line too long: exceeds maximum of 4KB")
+		} else if !errors.Is(err, io.EOF) {
 			s.err = err
 		}
 		s.done = true

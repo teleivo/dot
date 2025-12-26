@@ -100,8 +100,8 @@ func TestServer(t *testing.T) {
 		// Send invalid JSON
 		writeMessage(t, in, `{not valid json}`)
 
-		// Server should respond with ParseError and null id
-		want := `{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"invalid JSON"}}`
+		// Server should respond with ParseError (id omitted when unknown)
+		want := `{"jsonrpc":"2.0","error":{"code":-32700,"message":"invalid JSON"}}`
 		assert.Truef(t, s.Scan(), "expecting ParseError response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 

@@ -71,7 +71,9 @@ func (srv *Server) Start(ctx context.Context) error {
 		for srv.in.Scan() {
 			var message rpc.Message
 			if err := json.Unmarshal(srv.in.Bytes(), &message); err != nil {
+				// nullResult := json.RawMessage("null")
 				srv.write(cancel, rpc.Message{
+					// ID:    &nullResult,
 					Error: &rpc.Error{Code: rpc.ParseError, Message: "invalid JSON"},
 				})
 				continue

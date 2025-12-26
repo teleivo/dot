@@ -65,15 +65,22 @@ const (
 )
 
 // Start runs the server's main loop, processing LSP messages until the context is cancelled.
+// Note: If the context is cancelled externally (e.g., via SIGTERM), the goroutine reading from
+// input will remain blocked on Scan() until the process exits. This is acceptable since the
+// process terminates shortly after. For clean shutdown, use the LSP shutdown/exit sequence.
 func (srv *Server) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancelCause(ctx)
 	go func() {
 		for srv.in.Scan() {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			var message rpc.Message
 			if err := json.Unmarshal(srv.in.Bytes(), &message); err != nil {
-				// nullResult := json.RawMessage("null")
 				srv.write(cancel, rpc.Message{
-					// ID:    &nullResult,
 					Error: &rpc.Error{Code: rpc.ParseError, Message: "invalid JSON"},
 				})
 				continue
@@ -82,54 +89,68 @@ func (srv *Server) Start(ctx context.Context) error {
 			switch srv.state {
 			case uninitialized:
 				if message.Method == "initialize" {
-					// TODO do I need to wait on the initialized notification to set the state? or
-					// can I just ignore if it is sent or not
+					if message.ID == nil {
+						srv.logger.Error("initialize: missing request id")
+						continue
+					}
 					srv.state = initialized
 					srv.write(cancel, rpc.Message{ID: message.ID, Result: rpc.InitializeResult()})
-				} else {
+				} else if message.ID != nil {
 					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.ServerNotInitialized, Message: "server not initialized"}})
 				}
 			case initialized:
 				switch message.Method {
 				case "initialize":
-					// TODO expect this to be a method so it must have an id
+					if message.ID == nil {
+						srv.logger.Error("initialize: missing request id")
+						continue
+					}
 					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}})
 				case "shutdown":
-					// TODO expect this to be a method so it must have an id
+					if message.ID == nil {
+						srv.logger.Error("shutdown: missing request id")
+						continue
+					}
 					srv.state = shuttingDown
 					nullResult := json.RawMessage("null")
 					srv.write(cancel, rpc.Message{ID: message.ID, Result: &nullResult})
 					srv.logger.Debug("shutdown message received")
 				case "textDocument/didOpen":
 					if message.Params == nil {
-						panic("TODO handle")
+						srv.logger.Error("didOpen: missing params")
+						continue
 					}
-					var requestParams rpc.DidOpenTextDocumentParams
-					err := json.Unmarshal(*message.Params, &requestParams)
+					var params rpc.DidOpenTextDocumentParams
+					if err := json.Unmarshal(*message.Params, &params); err != nil {
+						srv.logger.Error("didOpen: invalid params", "err", err)
+						continue
+					}
+					response, err := diagnostics(params.TextDocument.URI, params.TextDocument.Text)
 					if err != nil {
-						panic("TODO handle")
-					} else {
-						response, err := diagnostics(requestParams.TextDocument.URI, requestParams.TextDocument.Text)
-						if err != nil {
-							panic("TODO handle")
-						}
-						srv.write(cancel, response)
+						srv.logger.Error("didOpen: diagnostics failed", "err", err)
+						continue
 					}
+					srv.write(cancel, response)
 				case "textDocument/didChange":
 					if message.Params == nil {
-						panic("TODO handle")
+						srv.logger.Error("didChange: missing params")
+						continue
 					}
-					var requestParams rpc.DidChangeTextDocumentParams
-					err := json.Unmarshal(*message.Params, &requestParams)
+					var params rpc.DidChangeTextDocumentParams
+					if err := json.Unmarshal(*message.Params, &params); err != nil {
+						srv.logger.Error("didChange: invalid params", "err", err)
+						continue
+					}
+					if len(params.ContentChanges) == 0 {
+						srv.logger.Error("didChange: no content changes")
+						continue
+					}
+					response, err := diagnostics(params.TextDocument.URI, params.ContentChanges[0].Text)
 					if err != nil {
-						panic("TODO handle")
-					} else {
-						response, err := diagnostics(requestParams.TextDocument.URI, requestParams.ContentChanges[0].Text)
-						if err != nil {
-							panic("TODO handle")
-						}
-						srv.write(cancel, response)
+						srv.logger.Error("didChange: diagnostics failed", "err", err)
+						continue
 					}
+					srv.write(cancel, response)
 				default:
 					if message.ID == nil { // notifications are ignored
 						continue
@@ -146,10 +167,18 @@ func (srv *Server) Start(ctx context.Context) error {
 				}
 			}
 		}
+		if err := srv.in.Err(); err != nil {
+			cancel(err)
+		} else {
+			cancel(nil)
+		}
 	}()
 
 	<-ctx.Done()
 	srv.logger.Debug("shutting down")
+	if err := context.Cause(ctx); !errors.Is(err, context.Canceled) {
+		return err
+	}
 	return nil
 }
 
@@ -182,13 +211,11 @@ func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
 	responseParams := rpc.PublishDiagnosticsParams{
 		URI: uri,
 	}
-	// TODO make clean, is every error in ps.Errors() one with a position? so a dot.Error
-	// responseParams.Diagnostics = make([]rpc.Diagnostic, len(ps.Errors()))
 	sev := rpc.SeverityError
-	for _, err := range ps.Errors() {
-		var perr dot.Error
-		errors.As(err, &perr)
-		responseParams.Diagnostics = append(responseParams.Diagnostics, rpc.Diagnostic{
+	errs := ps.Errors()
+	responseParams.Diagnostics = make([]rpc.Diagnostic, len(errs))
+	for i, err := range errs {
+		responseParams.Diagnostics[i] = rpc.Diagnostic{
 			Range: rpc.Range{
 				Start: rpc.Position{
 					Line:      uint32(err.Pos.Line) - 1,
@@ -200,11 +227,8 @@ func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
 				},
 			},
 			Severity: &sev,
-			Message:  perr.Msg,
-		})
-	}
-	if len(ps.Errors()) == 0 {
-		responseParams.Diagnostics = []rpc.Diagnostic{}
+			Message:  err.Msg,
+		}
 	}
 	puf, err := json.Marshal(responseParams)
 	if err != nil {

@@ -3,8 +3,8 @@
 ## Now
 
 * lsp diagnostics
-  * handle errors properly
-  * make my internal APIs clean for creating responses/errors, sending responses
+  * scanner
+    * use a buffer for the content in scanner for the ReadAll
 
   * how to implement partial in addition to full sync of docs?
   * how should I handle doc versions?

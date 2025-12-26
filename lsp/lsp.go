@@ -90,7 +90,7 @@ func (srv *Server) Start(ctx context.Context) error {
 			case uninitialized:
 				if message.Method == "initialize" {
 					if message.ID == nil {
-						srv.logger.Error("initialize: missing request id")
+						srv.logger.Error("missing request id", "method", message.Method)
 						continue
 					}
 					srv.state = initialized
@@ -102,13 +102,13 @@ func (srv *Server) Start(ctx context.Context) error {
 				switch message.Method {
 				case "initialize":
 					if message.ID == nil {
-						srv.logger.Error("initialize: missing request id")
+						srv.logger.Error("missing request id", "method", message.Method)
 						continue
 					}
 					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}})
 				case "shutdown":
 					if message.ID == nil {
-						srv.logger.Error("shutdown: missing request id")
+						srv.logger.Error("missing request id", "method", message.Method)
 						continue
 					}
 					srv.state = shuttingDown
@@ -117,37 +117,37 @@ func (srv *Server) Start(ctx context.Context) error {
 					srv.logger.Debug("shutdown message received")
 				case "textDocument/didOpen":
 					if message.Params == nil {
-						srv.logger.Error("didOpen: missing params")
+						srv.logger.Error("missing params", "method", message.Method)
 						continue
 					}
 					var params rpc.DidOpenTextDocumentParams
 					if err := json.Unmarshal(*message.Params, &params); err != nil {
-						srv.logger.Error("didOpen: invalid params", "err", err)
+						srv.logger.Error("invalid params", "method", message.Method, "err", err)
 						continue
 					}
 					response, err := diagnostics(params.TextDocument.URI, params.TextDocument.Text)
 					if err != nil {
-						srv.logger.Error("didOpen: diagnostics failed", "err", err)
+						srv.logger.Error("diagnostics failed", "method", message.Method, "err", err)
 						continue
 					}
 					srv.write(cancel, response)
 				case "textDocument/didChange":
 					if message.Params == nil {
-						srv.logger.Error("didChange: missing params")
+						srv.logger.Error("missing params", "method", message.Method)
 						continue
 					}
 					var params rpc.DidChangeTextDocumentParams
 					if err := json.Unmarshal(*message.Params, &params); err != nil {
-						srv.logger.Error("didChange: invalid params", "err", err)
+						srv.logger.Error("invalid params", "method", message.Method, "err", err)
 						continue
 					}
 					if len(params.ContentChanges) == 0 {
-						srv.logger.Error("didChange: no content changes")
+						srv.logger.Error("no content changes", "method", message.Method)
 						continue
 					}
 					response, err := diagnostics(params.TextDocument.URI, params.ContentChanges[0].Text)
 					if err != nil {
-						srv.logger.Error("didChange: diagnostics failed", "err", err)
+						srv.logger.Error("diagnostics failed", "method", message.Method, "err", err)
 						continue
 					}
 					srv.write(cancel, response)
@@ -185,7 +185,7 @@ func (srv *Server) Start(ctx context.Context) error {
 func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
 	content, err := json.Marshal(msg)
 	if err != nil {
-		srv.logger.Error("marshal failed", "err", err)
+		srv.logger.Error("failed to marshal response", "err", err)
 		return
 	}
 	if err := srv.out.Write(content); err != nil {

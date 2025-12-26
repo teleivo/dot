@@ -1,9 +1,11 @@
 package lsp
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"testing"
+	"testing/iotest"
 
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
@@ -198,6 +200,19 @@ func TestServer(t *testing.T) {
 		assert.Truef(t, s.Scan(), "expecting shutdown response after ignored notifications")
 		require.EqualValuesf(t, s.Text(), wantShutdown, "unexpected shutdown response")
 	})
+}
+
+func TestStartReturnsReaderError(t *testing.T) {
+	readErr := errors.New("input/output error")
+	srv, err := New(Config{
+		In:  iotest.ErrReader(readErr),
+		Out: io.Discard,
+	})
+	require.NoError(t, err)
+
+	err = srv.Start(t.Context())
+
+	require.Truef(t, errors.Is(err, readErr), "want %v, got %v", readErr, err)
 }
 
 func setup(t *testing.T) (*rpc.Scanner, io.Writer) {

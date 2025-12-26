@@ -5,6 +5,7 @@
 * lsp diagnostics
   * scanner
     * use a buffer for the content in scanner for the ReadAll
+    * add header line length limit to prevent unbounded memory growth from malicious clients
 
   * how to implement partial in addition to full sync of docs?
   * how should I handle doc versions?
@@ -12,10 +13,6 @@
 
   * implement formatting
 
-  * scanner
-    * are errors always terminal in the scanner? should the loop always check s.Err()?
-    * use a buffer for the content in scanner for the ReadAll
-    * add header line length limit to prevent unbounded memory growth from malicious clients
   * review API naming/godoc/linting
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve

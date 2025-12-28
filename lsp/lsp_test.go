@@ -60,9 +60,11 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		// Server responds with capabilities
+		// Server responds with capabilities:
+		// - positionEncoding: "utf-8" (negotiated encoding for character offsets)
+		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeResult
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -147,10 +149,14 @@ func TestServer(t *testing.T) {
 	t.Run("PublishDiagnostics", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Initialize handshake
+		// Initialize handshake - server advertises:
+		// - positionEncoding: "utf-8" (character offsets count bytes)
+		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
+		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -159,45 +165,81 @@ func TestServer(t *testing.T) {
 		// Line 2: "a [label=]" - missing attribute value
 		// Line 3: "b ->" - missing edge target
 		//
+		// Document content (with actual newlines for clarity):
+		// digraph {
+		//   a [label=]
+		//   b ->
+		// }
+		//
 		// Parser reports (1-based): 2:12 and 4:1
 		// LSP positions are 0-based: line 1 char 11, line 3 char 0
-		docContent := `digraph {\n  a [label=]\n  b ->\n}`
-		didOpenMsg := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
-		writeMessage(t, in, didOpenMsg)
+		firstDocContent := `digraph {\n  a [label=]\n  b ->\n}`
+		didOpenFirst := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///first.dot","languageId":"dot","version":1,"text":"` + firstDocContent + `"}}}`
+		writeMessage(t, in, didOpenFirst)
 
 		// Server sends publishDiagnostics notification (no id field)
 		// Diagnostics use point ranges (start == end) for error positions
 		// Severity 1 = Error
-		want := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///test.dot","diagnostics":[{"range":{"start":{"line":1,"character":11},"end":{"line":1,"character":11}},"severity":1,"message":"expected attribute value"},{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
+		want := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","diagnostics":[{"range":{"start":{"line":1,"character":11},"end":{"line":1,"character":11}},"severity":1,"message":"expected attribute value"},{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didOpen")
 		require.EqualValuesf(t, s.Text(), want, "unexpected diagnostics for didOpen")
 
-		// Fix the errors by sending didChange with valid content
-		// With TextDocumentSyncKind.Full (1), contentChanges contains a single element with full text
-		fixedContent := `digraph {\n  a [label=\"hello\"]\n  b -> c\n}`
-		didChangeMsg := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"text":"` + fixedContent + `"}]}}`
-		writeMessage(t, in, didChangeMsg)
+		// Fix the first error using incremental sync (TextDocumentSyncKind.Incremental = 2)
+		// Replace "label=" with "label=\"hello\"" on line 2 (0-based: line 1)
+		// Range: start {line: 1, character: 5} to end {line: 1, character: 11}
+		// This changes "a [label=]" to "a [label=\"hello\"]"
+		didChangeMsg1 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///first.dot","version":2},"contentChanges":[{"range":{"start":{"line":1,"character":5},"end":{"line":1,"character":11}},"text":"label=\"hello\""}]}}`
+		writeMessage(t, in, didChangeMsg1)
 
-		// Server publishes empty diagnostics array to clear previous errors
-		wantEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///test.dot","diagnostics":[]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didChange")
-		require.EqualValuesf(t, s.Text(), wantEmpty, "unexpected diagnostics for didChange")
+		// Now only one error remains: the missing edge target on line 3
+		wantOneError := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","diagnostics":[{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after first incremental change")
+		require.EqualValuesf(t, s.Text(), wantOneError, "unexpected diagnostics after first fix")
 
-		// Send didSave and didClose notifications - server should ignore them (no response)
-		// These are sent by editors on save and when closing a buffer
-		didSaveMsg := `{"jsonrpc":"2.0","method":"textDocument/didSave","params":{"textDocument":{"uri":"file:///test.dot"}}}`
+		// Open a second document (valid DOT, no errors)
+		secondDocContent := `graph { x -- y }`
+		didOpenSecond := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///second.dot","languageId":"dot","version":1,"text":"` + secondDocContent + `"}}}`
+		writeMessage(t, in, didOpenSecond)
+
+		wantSecondEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","diagnostics":[]}}`
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for second document")
+		require.EqualValuesf(t, s.Text(), wantSecondEmpty, "unexpected diagnostics for second document")
+
+		// Fix the second error in first document
+		// Replace "b ->" with "b -> c" on line 3 (0-based: line 2)
+		// Range: start {line: 2, character: 2} to end {line: 2, character: 6}
+		didChangeMsg2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///first.dot","version":3},"contentChanges":[{"range":{"start":{"line":2,"character":2},"end":{"line":2,"character":6}},"text":"b -> c"}]}}`
+		writeMessage(t, in, didChangeMsg2)
+
+		wantFirstEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","diagnostics":[]}}`
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after second incremental change")
+		require.EqualValuesf(t, s.Text(), wantFirstEmpty, "unexpected diagnostics after all fixes")
+
+		// Change second document: insert " -- z" at end before "}"
+		// "graph { x -- y }" -> "graph { x -- y -- z }"
+		didChangeSecond := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///second.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":14},"end":{"line":0,"character":14}},"text":" -- z"}]}}`
+		writeMessage(t, in, didChangeSecond)
+
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after changing second document")
+		require.EqualValuesf(t, s.Text(), wantSecondEmpty, "unexpected diagnostics after changing second document")
+
+		// Close second document
+		didCloseSecond := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///second.dot"}}}`
+		writeMessage(t, in, didCloseSecond)
+
+		// Send didSave and didClose for first document
+		didSaveMsg := `{"jsonrpc":"2.0","method":"textDocument/didSave","params":{"textDocument":{"uri":"file:///first.dot"}}}`
 		writeMessage(t, in, didSaveMsg)
 
-		didCloseMsg := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///test.dot"}}}`
-		writeMessage(t, in, didCloseMsg)
+		didCloseFirst := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///first.dot"}}}`
+		writeMessage(t, in, didCloseFirst)
 
-		// Send a request after the notifications to verify server is still responsive
-		// and didn't block on the ignored notifications
+		// Verify server is still responsive after closing both documents
 		shutdownMsg := `{"jsonrpc":"2.0","method":"shutdown","id":2}`
 		writeMessage(t, in, shutdownMsg)
 
 		wantShutdown := `{"jsonrpc":"2.0","id":2,"result":null}`
-		assert.Truef(t, s.Scan(), "expecting shutdown response after ignored notifications")
+		assert.Truef(t, s.Scan(), "expecting shutdown response")
 		require.EqualValuesf(t, s.Text(), wantShutdown, "unexpected shutdown response")
 	})
 }
@@ -249,4 +291,191 @@ func write(t *testing.T, w io.Writer, format string, args ...any) {
 	t.Helper()
 	_, err := fmt.Fprintf(w, format, args...)
 	require.NoErrorf(t, err, "failed to write message")
+}
+
+func TestDocumentChange(t *testing.T) {
+	type test struct {
+		initial string
+		changes []rpc.TextDocumentContentChangeEvent
+		want    string
+	}
+
+	tests := map[string]test{
+		"InsertAtStart": {
+			initial: "hello",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 0}, End: rpc.Position{Line: 0, Character: 0}}, Text: "say "},
+			},
+			want: "say hello",
+		},
+		"InsertInMiddle": {
+			initial: "helo",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 2}, End: rpc.Position{Line: 0, Character: 2}}, Text: "l"},
+			},
+			want: "hello",
+		},
+		"InsertAtEnd": {
+			initial: "hello",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 5}, End: rpc.Position{Line: 0, Character: 5}}, Text: " world"},
+			},
+			want: "hello world",
+		},
+		"DeleteAtStart": {
+			initial: "say hello",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 0}, End: rpc.Position{Line: 0, Character: 4}}, Text: ""},
+			},
+			want: "hello",
+		},
+		"DeleteInMiddle": {
+			initial: "helllo",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 3}, End: rpc.Position{Line: 0, Character: 4}}, Text: ""},
+			},
+			want: "hello",
+		},
+		"DeleteAtEnd": {
+			initial: "hello world",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 5}, End: rpc.Position{Line: 0, Character: 11}}, Text: ""},
+			},
+			want: "hello",
+		},
+		"ReplaceShorter": {
+			initial: "hello world",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 6}, End: rpc.Position{Line: 0, Character: 11}}, Text: "go"},
+			},
+			want: "hello go",
+		},
+		"ReplaceLonger": {
+			initial: "hello go",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 6}, End: rpc.Position{Line: 0, Character: 8}}, Text: "world"},
+			},
+			want: "hello world",
+		},
+		"ReplaceSameLength": {
+			initial: "hello world",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 6}, End: rpc.Position{Line: 0, Character: 11}}, Text: "there"},
+			},
+			want: "hello there",
+		},
+		"InsertNewline": {
+			initial: "ab",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 1}, End: rpc.Position{Line: 0, Character: 1}}, Text: "\n"},
+			},
+			want: "a\nb",
+		},
+		"DeleteAcrossLines": {
+			initial: "hello\nworld",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 3}, End: rpc.Position{Line: 1, Character: 2}}, Text: ""},
+			},
+			want: "helrld",
+		},
+		"ReplaceAcrossLines": {
+			initial: "aaa\nbbb\nccc",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 1}, End: rpc.Position{Line: 2, Character: 2}}, Text: "X"},
+			},
+			want: "aXc",
+		},
+		"InsertMultipleLines": {
+			initial: "ac",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 1}, End: rpc.Position{Line: 0, Character: 1}}, Text: "\nb\n"},
+			},
+			want: "a\nb\nc",
+		},
+		"EditOnSecondLine": {
+			initial: "first\nsecond",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 1, Character: 0}, End: rpc.Position{Line: 1, Character: 6}}, Text: "2nd"},
+			},
+			want: "first\n2nd",
+		},
+		"EditOnThirdLine": {
+			initial: "a\nb\nc",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 2, Character: 0}, End: rpc.Position{Line: 2, Character: 1}}, Text: "C"},
+			},
+			want: "a\nb\nC",
+		},
+		"ChainedInserts": {
+			initial: "ac",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 1}, End: rpc.Position{Line: 0, Character: 1}}, Text: "b"},
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 3}, End: rpc.Position{Line: 0, Character: 3}}, Text: "d"},
+			},
+			want: "abcd",
+		},
+		"ChainedDeleteThenInsert": {
+			initial: "hello world",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 5}, End: rpc.Position{Line: 0, Character: 11}}, Text: ""},
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 5}, End: rpc.Position{Line: 0, Character: 5}}, Text: "!"},
+			},
+			want: "hello!",
+		},
+		"EmptyDocumentInsert": {
+			initial: "",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 0}, End: rpc.Position{Line: 0, Character: 0}}, Text: "hello"},
+			},
+			want: "hello",
+		},
+		"DeleteEntireDocument": {
+			initial: "hello",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 0}, End: rpc.Position{Line: 0, Character: 5}}, Text: ""},
+			},
+			want: "",
+		},
+		"DeleteEntireMultiLineDocument": {
+			initial: "a\nb\nc",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 0}, End: rpc.Position{Line: 2, Character: 1}}, Text: ""},
+			},
+			want: "",
+		},
+		"InsertAtEndOfLineBeforeNewline": {
+			initial: "a\nb",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 1}, End: rpc.Position{Line: 0, Character: 1}}, Text: "X"},
+			},
+			want: "aX\nb",
+		},
+		"DeleteNewlineJoiningLines": {
+			initial: "hello\nworld",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 5}, End: rpc.Position{Line: 1, Character: 0}}, Text: ""},
+			},
+			want: "helloworld",
+		},
+		"ReplaceNewlineWithSpace": {
+			initial: "hello\nworld",
+			changes: []rpc.TextDocumentContentChangeEvent{
+				{Range: &rpc.Range{Start: rpc.Position{Line: 0, Character: 5}, End: rpc.Position{Line: 1, Character: 0}}, Text: " "},
+			},
+			want: "hello world",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			doc := newDocument(rpc.TextDocumentItem{Text: tt.initial})
+
+			for _, change := range tt.changes {
+				err := doc.change(change)
+				require.NoErrorf(t, err, "unexpected error applying change")
+			}
+
+			assert.EqualValuesf(t, string(doc.src), tt.want, "unexpected document content")
+		})
+	}
 }

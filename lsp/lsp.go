@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 
@@ -30,6 +31,7 @@ type Server struct {
 	out    *rpc.Writer
 	logger *slog.Logger
 	state  state
+	docs   map[rpc.DocumentURI]*document
 }
 
 // New creates an LSP server with the given configuration.
@@ -51,6 +53,7 @@ func New(cfg Config) (*Server, error) {
 		in:     rpc.NewScanner(in),
 		out:    rpc.NewWriter(out),
 		logger: logger,
+		docs:   make(map[rpc.DocumentURI]*document),
 	}
 	return srv, nil
 }
@@ -62,6 +65,64 @@ const (
 	initialized
 	shuttingDown
 )
+
+type document struct {
+	uri   rpc.DocumentURI
+	src   []byte
+	lines []int
+}
+
+func newDocument(item rpc.TextDocumentItem) *document {
+	src := []byte(item.Text)
+	lines := buildLines(src)
+	return &document{uri: item.URI, src: src, lines: lines}
+}
+
+func buildLines(src []byte) []int {
+	lines := []int{0: 0}
+	for i, r := range src {
+		if r == '\n' {
+			lines = append(lines, i+1) // start of the next line
+		}
+	}
+	return lines
+}
+
+func (d *document) offset(pos rpc.Position) (int, error) {
+	if int(pos.Line) >= len(d.lines) {
+		return 0, fmt.Errorf("line %d not in document (%d lines)", pos.Line, len(d.lines))
+	}
+	lineStart := d.lines[pos.Line]
+	offset := lineStart + int(pos.Character)
+	if offset > len(d.src) {
+		return 0, fmt.Errorf("offset %d beyond document length %d", offset, len(d.src))
+	}
+	return offset, nil
+}
+
+func (d *document) change(change rpc.TextDocumentContentChangeEvent) error {
+	start, err := d.offset(change.Range.Start)
+	if err != nil {
+		return fmt.Errorf("invalid start position: %v", err)
+	}
+	end, err := d.offset(change.Range.End)
+	if err != nil {
+		return fmt.Errorf("invalid end position: %v", err)
+	}
+	if start > end {
+		return fmt.Errorf("start offset %d > end offset %d", start, end)
+	}
+
+	text := change.Text
+	newSrc := make([]byte, start+len(text)+len(d.src)-end)
+	copy(newSrc, d.src[:start])
+	copy(newSrc[start:], text)
+	copy(newSrc[start+len(text):], d.src[end:])
+
+	d.src = newSrc
+	d.lines = buildLines(d.src)
+	return nil
+}
 
 // Start runs the server's main loop, processing LSP messages until the context is cancelled.
 // Note: If the context is cancelled externally (e.g., via SIGTERM), the goroutine reading from
@@ -87,7 +148,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 			switch srv.state {
 			case uninitialized:
-				if message.Method == "initialize" {
+				if message.Method == rpc.MethodInitialize {
 					if message.ID == nil {
 						srv.logger.Error("missing request id", "method", message.Method)
 						continue
@@ -99,13 +160,13 @@ func (srv *Server) Start(ctx context.Context) error {
 				}
 			case initialized:
 				switch message.Method {
-				case "initialize":
+				case rpc.MethodInitialize:
 					if message.ID == nil {
 						srv.logger.Error("missing request id", "method", message.Method)
 						continue
 					}
 					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server already initialized"}})
-				case "shutdown":
+				case rpc.MethodShutdown:
 					if message.ID == nil {
 						srv.logger.Error("missing request id", "method", message.Method)
 						continue
@@ -113,8 +174,8 @@ func (srv *Server) Start(ctx context.Context) error {
 					srv.state = shuttingDown
 					nullResult := json.RawMessage("null")
 					srv.write(cancel, rpc.Message{ID: message.ID, Result: &nullResult})
-					srv.logger.Debug("shutdown message received")
-				case "textDocument/didOpen":
+					srv.logger.Debug("shutdown", "id", *message.ID)
+				case rpc.MethodDidOpen:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
 						continue
@@ -124,13 +185,15 @@ func (srv *Server) Start(ctx context.Context) error {
 						srv.logger.Error("invalid params", "method", message.Method, "err", err)
 						continue
 					}
-					response, err := diagnostics(params.TextDocument.URI, params.TextDocument.Text)
+					doc := newDocument(params.TextDocument)
+					srv.docs[params.TextDocument.URI] = doc
+					response, err := diagnostics(doc)
 					if err != nil {
-						srv.logger.Error("diagnostics failed", "method", message.Method, "err", err)
+						srv.logger.Error("diagnostics failed", "method", message.Method, "uri", doc.uri, "err", err)
 						continue
 					}
 					srv.write(cancel, response)
-				case "textDocument/didChange":
+				case rpc.MethodDidChange:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
 						continue
@@ -141,15 +204,47 @@ func (srv *Server) Start(ctx context.Context) error {
 						continue
 					}
 					if len(params.ContentChanges) == 0 {
-						srv.logger.Error("no content changes", "method", message.Method)
+						srv.logger.Error("no content changes", "method", message.Method, "uri", params.TextDocument.URI)
 						continue
 					}
-					response, err := diagnostics(params.TextDocument.URI, params.ContentChanges[0].Text)
+
+					doc, ok := srv.docs[params.TextDocument.URI]
+					if !ok {
+						srv.logger.Error("unknown document", "uri", params.TextDocument.URI)
+						continue
+					}
+					for _, change := range params.ContentChanges {
+						// change positions depend on each other so we exit on first error to avoid
+						// cascading errors
+						if err := doc.change(change); err != nil {
+							srv.logger.Error("invalid change",
+								"uri", params.TextDocument.URI, "err", err)
+							break
+						}
+					}
+
+					response, err := diagnostics(doc)
 					if err != nil {
-						srv.logger.Error("diagnostics failed", "method", message.Method, "err", err)
+						srv.logger.Error("diagnostics failed", "method", message.Method, "uri", doc.uri, "err", err)
 						continue
 					}
 					srv.write(cancel, response)
+				case rpc.MethodDidClose:
+					if message.Params == nil {
+						srv.logger.Error("missing params", "method", message.Method)
+						continue
+					}
+					var params rpc.DidCloseTextDocumentParams
+					if err := json.Unmarshal(*message.Params, &params); err != nil {
+						srv.logger.Error("invalid params", "method", message.Method, "err", err)
+						continue
+					}
+					_, ok := srv.docs[params.TextDocument.URI]
+					if !ok {
+						srv.logger.Error("unknown document", "uri", params.TextDocument.URI)
+						continue
+					}
+					delete(srv.docs, params.TextDocument.URI)
 				default:
 					if message.ID == nil { // notifications are ignored
 						continue
@@ -158,7 +253,7 @@ func (srv *Server) Start(ctx context.Context) error {
 				}
 			case shuttingDown:
 				switch message.Method {
-				case "exit":
+				case rpc.MethodExit:
 					srv.logger.Debug("exit notification received")
 					cancel(nil)
 				default:
@@ -188,19 +283,20 @@ func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
 		return
 	}
 	if err := srv.out.Write(content); err != nil {
+		srv.logger.Error("failed to write response", "err", err)
 		cancel(err)
 	}
 }
 
-func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
+func diagnostics(doc *document) (rpc.Message, error) {
 	var response rpc.Message
 
-	ps := dot.NewParser([]byte(text))
+	ps := dot.NewParser(doc.src)
 	ps.Parse()
 
-	response.Method = "textDocument/publishDiagnostics"
+	response.Method = rpc.MethodPublishDiagnostics
 	responseParams := rpc.PublishDiagnosticsParams{
-		URI: uri,
+		URI: doc.uri,
 	}
 	sev := rpc.SeverityError
 	errs := ps.Errors()
@@ -221,11 +317,11 @@ func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
 			Message:  err.Msg,
 		}
 	}
-	puf, err := json.Marshal(responseParams)
+	rawParams, err := json.Marshal(responseParams)
 	if err != nil {
 		return response, err
 	}
-	rm := json.RawMessage(puf)
+	rm := json.RawMessage(rawParams)
 	response.Params = &rm
 
 	return response, nil

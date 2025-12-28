@@ -161,8 +161,8 @@ func TestScanner(t *testing.T) {
 			var w bytes.Buffer
 			s := NewScanner(&w)
 
-			// 1 byte over maxContentLength (10MB)
-			write(t, &w, "Content-Length: %d\r\n", 10<<20+1)
+			// 1 byte over maxContentLength (20MB)
+			write(t, &w, "Content-Length: %d\r\n", 20<<20+1)
 			write(t, &w, "\r\n")
 
 			assert.Falsef(t, s.Scan(), "want false as content-length exceeds max")

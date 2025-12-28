@@ -2,19 +2,11 @@
 
 ## Now
 
-* lsp diagnostics
-  * implement partial in addition to full sync of docs: cherry-pick prepare commit
-  * how should I handle doc versions?
-  * allow lsp to handle multiple docs
-
-  * lsp: implement formatting
-
-  * review API naming/godoc/linting
-  * update README: simplify the formatter example as the code is taking too much space
-  relate
-  * merge
-
-  * implement auto-complete for attribute keys
+* lsp: should I handle doc versions?
+* update README: simplify the formatter example as the code is taking too much space
+relate
+* lsp: formatting
+* lsp: auto-complete for attribute keys
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse or unique?

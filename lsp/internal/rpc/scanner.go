@@ -11,7 +11,7 @@ import (
 
 const (
 	maxHeaderLineLength = 4096
-	maxContentLength    = 10 << 20 // 10MB
+	maxContentLength    = 20 << 20 // 20MB
 )
 
 // Scanner reads JSON-RPC messages from an [io.Reader] using the base protocol framing.
@@ -84,7 +84,7 @@ func (s *Scanner) Scan() bool {
 			return false
 		}
 		if length > maxContentLength {
-			s.err = fmt.Errorf("invalid content-length: exceeds maximum of 10MB, got %d", length)
+			s.err = fmt.Errorf("invalid content-length: exceeds maximum of 20MB, got %d", length)
 			s.done = true
 			return false
 		}

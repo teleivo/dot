@@ -60,9 +60,11 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		// Server responds with capabilities
+		// Server responds with capabilities:
+		// - positionEncoding: "utf-8" (negotiated encoding for character offsets)
+		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeResult
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"textDocumentSync":1},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -147,10 +149,14 @@ func TestServer(t *testing.T) {
 	t.Run("PublishDiagnostics", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Initialize handshake
+		// Initialize handshake - server advertises:
+		// - positionEncoding: "utf-8" (character offsets count bytes)
+		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
+		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -158,6 +164,12 @@ func TestServer(t *testing.T) {
 		// Open a document with 2 parse errors:
 		// Line 2: "a [label=]" - missing attribute value
 		// Line 3: "b ->" - missing edge target
+		//
+		// Document content (with actual newlines for clarity):
+		// digraph {
+		//   a [label=]
+		//   b ->
+		// }
 		//
 		// Parser reports (1-based): 2:12 and 4:1
 		// LSP positions are 0-based: line 1 char 11, line 3 char 0
@@ -172,16 +184,28 @@ func TestServer(t *testing.T) {
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didOpen")
 		require.EqualValuesf(t, s.Text(), want, "unexpected diagnostics for didOpen")
 
-		// Fix the errors by sending didChange with valid content
-		// With TextDocumentSyncKind.Full (1), contentChanges contains a single element with full text
-		fixedContent := `digraph {\n  a [label=\"hello\"]\n  b -> c\n}`
-		didChangeMsg := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"text":"` + fixedContent + `"}]}}`
-		writeMessage(t, in, didChangeMsg)
+		// Fix the first error using incremental sync (TextDocumentSyncKind.Incremental = 2)
+		// Replace "label=" with "label=\"hello\"" on line 2 (0-based: line 1)
+		// Range: start {line: 1, character: 5} to end {line: 1, character: 11}
+		// This changes "a [label=]" to "a [label=\"hello\"]"
+		didChangeMsg1 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"range":{"start":{"line":1,"character":5},"end":{"line":1,"character":11}},"text":"label=\"hello\""}]}}`
+		writeMessage(t, in, didChangeMsg1)
+
+		// Now only one error remains: the missing edge target on line 3
+		wantOneError := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///test.dot","diagnostics":[{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after first incremental change")
+		require.EqualValuesf(t, s.Text(), wantOneError, "unexpected diagnostics after first fix")
+
+		// Fix the second error using incremental sync
+		// Replace "b ->" with "b -> c" on line 3 (0-based: line 2)
+		// Range: start {line: 2, character: 2} to end {line: 2, character: 6}
+		didChangeMsg2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":3},"contentChanges":[{"range":{"start":{"line":2,"character":2},"end":{"line":2,"character":6}},"text":"b -> c"}]}}`
+		writeMessage(t, in, didChangeMsg2)
 
 		// Server publishes empty diagnostics array to clear previous errors
 		wantEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///test.dot","diagnostics":[]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didChange")
-		require.EqualValuesf(t, s.Text(), wantEmpty, "unexpected diagnostics for didChange")
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after second incremental change")
+		require.EqualValuesf(t, s.Text(), wantEmpty, "unexpected diagnostics after all fixes")
 
 		// Send didSave and didClose notifications - server should ignore them (no response)
 		// These are sent by editors on save and when closing a buffer

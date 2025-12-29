@@ -2,6 +2,13 @@
 
 ## Now
 
+* pass in entire source to parser/scanner
+  * ReadAll in printer.New() or in Print()?
+* make position utf-8 byte offsets
+* add to limitations that we assume utf-8 encoded files
+* add to limitation that formatter uses unicode code points (runes) for width/columns which will not
+  align with visible character width in cases like ...
+
 * lsp diagnostics
   * how to implement partial in addition to full sync of docs?
   * how should I handle doc versions?
@@ -10,6 +17,9 @@
   * implement formatting
 
   * review API naming/godoc/linting
+  * update README
+  * merge
+  * implement auto-complete for attribute keys
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse or unique?

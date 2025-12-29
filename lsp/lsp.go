@@ -11,7 +11,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"strings"
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/lsp/internal/rpc"
@@ -195,17 +194,9 @@ func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
 
 func diagnostics(uri rpc.DocumentURI, text string) (rpc.Message, error) {
 	var response rpc.Message
-	r := strings.NewReader(text)
 
-	ps, err := dot.NewParser(r)
-	if err != nil {
-		return response, err
-	}
-
-	_, err = ps.Parse()
-	if err != nil {
-		return response, err
-	}
+	ps := dot.NewParser([]byte(text))
+	ps.Parse()
 
 	response.Method = "textDocument/publishDiagnostics"
 	responseParams := rpc.PublishDiagnosticsParams{

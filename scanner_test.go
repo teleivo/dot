@@ -1,9 +1,7 @@
 package dot
 
 import (
-	"errors"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/teleivo/assertive/assert"
@@ -920,10 +918,7 @@ func TestScanner(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			scanner, err := NewScanner(strings.NewReader(test.in))
-
-			require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+			scanner := NewScanner([]byte(test.in))
 			assertTokens(t, scanner, test.want)
 		})
 	}
@@ -994,10 +989,7 @@ func TestScanner(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertTokens(t, scanner, test.want)
 				})
 			}
@@ -1104,13 +1096,35 @@ func TestScanner(t *testing.T) {
 						},
 					},
 				},
+				{
+					in: "a\x80b", // invalid UTF-8 byte (0x80 is a continuation byte without a start byte)
+					want: []token.Token{
+						{
+							Type:    token.ERROR,
+							Literal: "a\ufffdb", // ERROR consumes until separator
+							Error:   "invalid character U+FFFD '�': unquoted IDs can only contain letters, digits, and underscores",
+							Start:   token.Position{Line: 1, Column: 1},
+							End:     token.Position{Line: 1, Column: 3},
+						},
+					},
+				},
+				{
+					in: "\xfe\xff", // UTF-16 BOM (invalid UTF-8)
+					want: []token.Token{
+						{
+							Type:    token.ERROR,
+							Literal: "\ufffd\ufffd",
+							Error:   "invalid character U+FFFD '�': unquoted IDs must start with a letter or underscore",
+							Start:   token.Position{Line: 1, Column: 1},
+							End:     token.Position{Line: 1, Column: 2},
+						},
+					},
+				},
 			}
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertNext(t, scanner, test.want, test.in)
 				})
 			}
@@ -1139,9 +1153,7 @@ func TestScanner(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertNext(t, scanner, test.want, test.in)
 				})
 			}
@@ -1248,10 +1260,7 @@ func TestScanner(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertTokens(t, scanner, []token.Token{test.want})
 				})
 			}
@@ -1398,9 +1407,7 @@ func TestScanner(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertNext(t, scanner, test.want, test.in)
 				})
 			}
@@ -1607,10 +1614,7 @@ func TestScanner(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertTokens(t, scanner, test.want)
 				})
 			}
@@ -1675,9 +1679,7 @@ func TestScanner(t *testing.T) {
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertNext(t, scanner, test.want, test.in)
 				})
 			}
@@ -1766,10 +1768,7 @@ spacious
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertTokens(t, scanner, []token.Token{test.want})
 				})
 			}
@@ -1873,35 +1872,11 @@ spacious
 
 			for i, test := range tests {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					scanner, err := NewScanner(strings.NewReader(test.in))
-					require.NoErrorf(t, err, "NewScanner(%q)", test.in)
-
+					scanner := NewScanner([]byte(test.in))
 					assertNext(t, scanner, test.want, test.in)
 				})
 			}
 		})
-	})
-}
-
-type errorReader struct {
-	err error
-}
-
-func (r *errorReader) Read(p []byte) (n int, err error) {
-	return 0, r.err
-}
-
-func TestNewScanner(t *testing.T) {
-	t.Run("ReaderError", func(t *testing.T) {
-		expectedErr := errors.New("disk read failure")
-		reader := &errorReader{err: expectedErr}
-
-		scanner, err := NewScanner(reader)
-
-		require.Nil(t, scanner)
-		require.NotNil(t, err)
-		assert.True(t, strings.Contains(err.Error(), "failed to read character"))
-		assert.Truef(t, strings.Contains(err.Error(), expectedErr.Error()), "error message should include underlying error, got: %v", err)
 	})
 }
 
@@ -1917,18 +1892,14 @@ func assertTokens(t *testing.T, scanner *Scanner, want []token.Token) {
 func assertNextTokenf(t *testing.T, scanner *Scanner, wantToken token.Token, format string, args ...any) {
 	t.Helper()
 
-	tok, err := scanner.Next()
-
-	require.NoErrorf(t, err, format, args...)
+	tok := scanner.Next()
 	require.EqualValuesf(t, tok, wantToken, format, args)
 }
 
 func assertEOF(t *testing.T, scanner *Scanner) {
 	t.Helper()
 
-	tok, err := scanner.Next()
-
-	assert.NoErrorf(t, err, "Next()")
+	tok := scanner.Next()
 	assert.EqualValuesf(t, token.EOF, tok.Type, "Next()")
 }
 
@@ -1936,15 +1907,12 @@ func assertNext(t *testing.T, scanner *Scanner, want []token.Token, input string
 	t.Helper()
 
 	for i, wantToken := range want {
-		gotToken, gotErr := scanner.Next()
-
-		assert.NoErrorf(t, gotErr, "Next() at index %d for input %q should not return a terminal error", i, input)
+		gotToken := scanner.Next()
 		assert.EqualValuesf(t, gotToken, wantToken, "token at index %d for input %q", i, input)
 	}
 
 	// Verify EOF after all expected tokens
-	eofToken, eofErr := scanner.Next()
-	assert.NoErrorf(t, eofErr, "EOF for input %q", input)
+	eofToken := scanner.Next()
 	assert.EqualValuesf(t, token.EOF, eofToken.Type, "EOF for input %q", input)
 }
 

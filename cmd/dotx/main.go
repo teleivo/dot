@@ -53,7 +53,7 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 	case "lsp":
 		return runLsp(args[2:], r, w, wErr)
 	case "version":
-		fmt.Fprintln(w, version.Version())
+		_, _ = fmt.Fprintln(w, version.Version())
 		return 0, nil
 	case "watch":
 		return runWatch(args[2:], wErr)
@@ -96,11 +96,11 @@ func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 	}
 
 	err = profile(func() error {
-		p := printer.New(r, w, ft)
-		if err := p.Print(); err != nil {
+		p, err := printer.New(r, w, ft)
+		if err != nil {
 			return err
 		}
-		return nil
+		return p.Print()
 	}, *cpuProfile, *memProfile)
 	if err != nil {
 		return 1, err
@@ -183,15 +183,13 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) (in
 	}
 
 	err = profile(func() error {
-		p, err := dot.NewParser(r)
+		src, err := io.ReadAll(r)
 		if err != nil {
-			return fmt.Errorf("error creating parser: %v", err)
+			return fmt.Errorf("error reading input: %v", err)
 		}
 
-		t, err := p.Parse()
-		if err != nil {
-			return fmt.Errorf("error parsing: %v", err)
-		}
+		p := dot.NewParser(src)
+		t := p.Parse()
 
 		for _, parseErr := range p.Errors() {
 			_, _ = fmt.Fprintln(wErr, parseErr)
@@ -229,11 +227,12 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 	}
 
 	err = profile(func() error {
-		sc, err := dot.NewScanner(r)
+		src, err := io.ReadAll(r)
 		if err != nil {
-			return fmt.Errorf("error scanning: %v", err)
+			return fmt.Errorf("error reading input: %v", err)
 		}
 
+		sc := dot.NewScanner(src)
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 		defer func() {
 			if ferr := tw.Flush(); ferr != nil && err == nil {
@@ -243,10 +242,7 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 
 		_, _ = fmt.Fprintf(tw, "POSITION\tTYPE\tLITERAL\tERROR\n")
 
-		for tok, err := sc.Next(); tok.Type != token.EOF; tok, err = sc.Next() {
-			if err != nil {
-				return fmt.Errorf("error scanning: %v", err)
-			}
+		for tok := sc.Next(); tok.Type != token.EOF; tok = sc.Next() {
 			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", tokenPosition(tok), tok.Type.String(), tokenLiteral(tok), tok.Error)
 		}
 
@@ -308,8 +304,8 @@ func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 
 	err = profile(func() error {
 		l, err := lsp.New(lsp.Config{
-			In:    os.Stdin,
-			Out:   os.Stdout,
+			In:    r,
+			Out:   w,
 			Debug: *debug,
 			Log:   os.Stderr,
 			Trace: traceWriter,

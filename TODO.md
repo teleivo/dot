@@ -2,12 +2,7 @@
 
 ## Now
 
-* pass in entire source to parser/scanner
-  * ReadAll in printer.New() or in Print()?
 * make position utf-8 byte offsets
-* add to limitations that we assume utf-8 encoded files
-* add to limitation that formatter uses unicode code points (runes) for width/columns which will not
-  align with visible character width in cases like ...
 
 * lsp diagnostics
   * how to implement partial in addition to full sync of docs?
@@ -17,8 +12,10 @@
   * implement formatting
 
   * review API naming/godoc/linting
-  * update README
+  * update README: simplify the formatter example as the code is taking too much space
+  relate
   * merge
+
   * implement auto-complete for attribute keys
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve

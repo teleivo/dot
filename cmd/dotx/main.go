@@ -96,10 +96,11 @@ func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 	}
 
 	err = profile(func() error {
-		p, err := printer.New(r, w, ft)
+		src, err := io.ReadAll(r)
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading input: %v", err)
 		}
+		p := printer.New(src, w, ft)
 		return p.Print()
 	}, *cpuProfile, *memProfile)
 	if err != nil {

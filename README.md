@@ -15,14 +15,6 @@ go install github.com/teleivo/dot/cmd/dotx@latest
 `dotx lsp` starts a Language Server Protocol server for DOT files, providing diagnostics as you
 type.
 
-### LSP Limitations
-
-The server only supports UTF-8 position encoding. According to the LSP specification, servers must
-support UTF-16 as the default encoding. However, `dotx lsp` always uses UTF-8 regardless of what the
-client offers. This works correctly with clients that support UTF-8 (such as Neovim) but may cause
-incorrect character positions with clients that only support UTF-16, particularly when editing
-strings containing multi-byte characters like emojis or non-ASCII text.
-
 ## Formatter
 
 Format your DOT files with `dotx fmt`. `dotx fmt` is inspired by
@@ -230,15 +222,27 @@ vim.lsp.enable('dotls')
 
 ## Limitations
 
-* the parser and formatter do not yet support comments while the scanner does. I plan to at least
-support line comments
+* The scanner assumes UTF-8 encoded input. Invalid UTF-8 byte sequences are replaced with the
+  Unicode replacement character (U+FFFD) and reported as errors. Files in other encodings (UTF-16,
+  Latin-1, etc.) must be converted to UTF-8 first.
+* The LSP server only supports UTF-8 position encoding. According to the LSP specification, servers
+  must support UTF-16 as the default. However, `dotx lsp` always uses UTF-8 regardless of what the
+  client offers. This works correctly with clients that support UTF-8 (such as Neovim) but may cause
+  incorrect character positions with clients that only support UTF-16.
+* The formatter uses Unicode code points (runes) for measuring text width and line length. This does
+  not account for grapheme clusters or display width, so characters like emojis (which may render as
+  double-width) or combining characters will cause the formatter's column calculations to differ
+  from visual appearance in editors.
+* The parser and formatter do not yet support comments while the scanner does. I plan to at least
+  support line comments.
 
-The following are not supported as I do not need them
+The following are not supported as I do not need them:
+
 * https://graphviz.org/doc/info/lang.html#html-strings
-* [double-quoted strings can be concatenated using a '+'
-operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
-* does not treat records in any special way. Labels will be parsed as strings.
-* attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
+* [Double-quoted strings can be concatenated using a '+'
+  operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
+* Does not treat records in any special way. Labels will be parsed as strings.
+* Attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
   adhere to some requirements which are not validated. The values are parsed as IDs (unquoted,
   numeral, quoted) and ultimately stored as strings.
 

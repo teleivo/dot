@@ -25,18 +25,14 @@ type Printer struct {
 	format layout.Format // format in which to print the DOT code
 }
 
-// New creates a new printer that reads DOT code from r, formats it, and writes the
-// formatted output to w. The format parameter controls the output representation.
-func New(r io.Reader, w io.Writer, format layout.Format) (*Printer, error) {
-	src, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
+// New creates a new printer that formats DOT source code and writes the formatted output to w.
+// The format parameter controls the output representation.
+func New(src []byte, w io.Writer, format layout.Format) *Printer {
 	return &Printer{
 		src:    src,
 		w:      w,
 		format: format,
-	}, nil
+	}
 }
 
 // Print parses the DOT code and writes the formatted output to the writer.

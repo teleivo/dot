@@ -8,7 +8,7 @@ import (
 // A Position is valid if the line number is > 0.
 type Position struct {
 	Line   int // line number, starting at 1
-	Column int // column number, starting at 1 (rune count)
+	Column int // column number, starting at 1 (byte offset)
 }
 
 // IsValid reports whether the position is valid.

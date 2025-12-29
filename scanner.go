@@ -18,9 +18,11 @@ type Scanner struct {
 	src       []byte
 	offset    int
 	cur       rune
+	curSize   int // byte size of cur
 	curLine   int
 	curColumn int
 	peek      rune
+	peekSize  int // byte size of peek
 	eof       bool
 }
 
@@ -96,26 +98,30 @@ func (sc *Scanner) next() {
 		sc.curLine++
 		sc.curColumn = 1
 	} else if sc.cur >= 0 {
-		sc.curColumn++
+		sc.curColumn += sc.curSize
 	}
 
 	// already at EOF
 	if sc.eof {
 		sc.cur = eof
+		sc.curSize = 0
 		return
 	}
 
 	sc.cur = sc.peek
+	sc.curSize = sc.peekSize
 
 	if sc.offset < len(sc.src) {
 		r, size := utf8.DecodeRune(sc.src[sc.offset:])
 		sc.offset += size
 		sc.peek = r
+		sc.peekSize = size
 		// RuneError with size 1 means invalid UTF-8 byte sequence
 		// continue scanning and let tokenization produce an ERROR token
 	} else {
 		sc.eof = true
 		sc.peek = eof
+		sc.peekSize = 0
 	}
 }
 

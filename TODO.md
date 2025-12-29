@@ -2,14 +2,12 @@
 
 ## Now
 
-* make position utf-8 byte offsets
-
 * lsp diagnostics
-  * how to implement partial in addition to full sync of docs?
+  * implement partial in addition to full sync of docs: cherry-pick prepare commit
   * how should I handle doc versions?
   * allow lsp to handle multiple docs
 
-  * implement formatting
+  * lsp: implement formatting
 
   * review API naming/godoc/linting
   * update README: simplify the formatter example as the code is taking too much space

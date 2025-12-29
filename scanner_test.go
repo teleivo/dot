@@ -970,7 +970,7 @@ func TestScanner(t *testing.T) {
 							Type:    token.ID,
 							Literal: "\u0080ÿ",
 							Start:   token.Position{Line: 1, Column: 1},
-							End:     token.Position{Line: 1, Column: 2},
+							End:     token.Position{Line: 1, Column: 3}, // last char ÿ starts at byte offset 2 (1-based: 3)
 						},
 					},
 				},
@@ -981,7 +981,7 @@ func TestScanner(t *testing.T) {
 							Type:    token.ID,
 							Literal: "Контрагенты",
 							Start:   token.Position{Line: 1, Column: 1},
-							End:     token.Position{Line: 1, Column: 11},
+							End:     token.Position{Line: 1, Column: 21}, // last char starts at byte 20 (1-based: 21)
 						},
 					},
 				},
@@ -1345,7 +1345,7 @@ func TestScanner(t *testing.T) {
 							Literal: "100\u00A0200",
 							Error:   "invalid character U+00A0 '\u00a0': invalid character in number: valid forms are '1', '-1', '1.2', '-.1', '.1'",
 							Start:   token.Position{Line: 1, Column: 1},
-							End:     token.Position{Line: 1, Column: 7},
+							End:     token.Position{Line: 1, Column: 8}, // 100 (3) + \u00A0 (2 bytes) + 200 (3) = 8
 						},
 					},
 				},
@@ -1595,7 +1595,7 @@ func TestScanner(t *testing.T) {
 							Type:    token.ID,
 							Literal: `"emoji 🎉 test"`,
 							Start:   token.Position{Line: 1, Column: 1},
-							End:     token.Position{Line: 1, Column: 14},
+							End:     token.Position{Line: 1, Column: 17}, // " (1) + emoji (5) + space (1) + 🎉 (4) + space (1) + test (4) + " (1) = 17
 						},
 					},
 				},
@@ -1606,7 +1606,7 @@ func TestScanner(t *testing.T) {
 							Type:    token.ID,
 							Literal: `"unicode: éñ中文"`,
 							Start:   token.Position{Line: 1, Column: 1},
-							End:     token.Position{Line: 1, Column: 15},
+							End:     token.Position{Line: 1, Column: 21}, // " (1) + unicode: (9) + space (1) + é (2) + ñ (2) + 中 (3) + 文 (3) + " (1) = 21? Let me recalc
 						},
 					},
 				},

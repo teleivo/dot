@@ -67,15 +67,16 @@ const (
 )
 
 type document struct {
-	uri   rpc.DocumentURI
-	src   []byte
-	lines []int
+	uri     rpc.DocumentURI
+	version int32
+	src     []byte
+	lines   []int
 }
 
 func newDocument(item rpc.TextDocumentItem) *document {
 	src := []byte(item.Text)
 	lines := buildLines(src)
-	return &document{uri: item.URI, src: src, lines: lines}
+	return &document{uri: item.URI, version: item.Version, src: src, lines: lines}
 }
 
 func buildLines(src []byte) []int {
@@ -223,6 +224,7 @@ func (srv *Server) Start(ctx context.Context) error {
 						}
 					}
 
+					doc.version = params.TextDocument.Version
 					response, err := diagnostics(doc)
 					if err != nil {
 						srv.logger.Error("diagnostics failed", "method", message.Method, "uri", doc.uri, "err", err)
@@ -296,7 +298,8 @@ func diagnostics(doc *document) (rpc.Message, error) {
 
 	response.Method = rpc.MethodPublishDiagnostics
 	responseParams := rpc.PublishDiagnosticsParams{
-		URI: doc.uri,
+		URI:     doc.uri,
+		Version: &doc.version,
 	}
 	sev := rpc.SeverityError
 	errs := ps.Errors()

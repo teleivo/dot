@@ -180,7 +180,8 @@ func TestServer(t *testing.T) {
 		// Server sends publishDiagnostics notification (no id field)
 		// Diagnostics use point ranges (start == end) for error positions
 		// Severity 1 = Error
-		want := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","diagnostics":[{"range":{"start":{"line":1,"character":11},"end":{"line":1,"character":11}},"severity":1,"message":"expected attribute value"},{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
+		// Version matches the document version from didOpen (version: 1)
+		want := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":1,"diagnostics":[{"range":{"start":{"line":1,"character":11},"end":{"line":1,"character":11}},"severity":1,"message":"expected attribute value"},{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didOpen")
 		require.EqualValuesf(t, s.Text(), want, "unexpected diagnostics for didOpen")
 
@@ -192,7 +193,8 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, didChangeMsg1)
 
 		// Now only one error remains: the missing edge target on line 3
-		wantOneError := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","diagnostics":[{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
+		// Version matches the document version from didChange (version: 2)
+		wantOneError := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":2,"diagnostics":[{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after first incremental change")
 		require.EqualValuesf(t, s.Text(), wantOneError, "unexpected diagnostics after first fix")
 
@@ -201,7 +203,8 @@ func TestServer(t *testing.T) {
 		didOpenSecond := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///second.dot","languageId":"dot","version":1,"text":"` + secondDocContent + `"}}}`
 		writeMessage(t, in, didOpenSecond)
 
-		wantSecondEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","diagnostics":[]}}`
+		// Version matches the document version from didOpen (version: 1)
+		wantSecondEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","version":1,"diagnostics":[]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for second document")
 		require.EqualValuesf(t, s.Text(), wantSecondEmpty, "unexpected diagnostics for second document")
 
@@ -211,7 +214,8 @@ func TestServer(t *testing.T) {
 		didChangeMsg2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///first.dot","version":3},"contentChanges":[{"range":{"start":{"line":2,"character":2},"end":{"line":2,"character":6}},"text":"b -> c"}]}}`
 		writeMessage(t, in, didChangeMsg2)
 
-		wantFirstEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","diagnostics":[]}}`
+		// Version matches the document version from didChange (version: 3)
+		wantFirstEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":3,"diagnostics":[]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after second incremental change")
 		require.EqualValuesf(t, s.Text(), wantFirstEmpty, "unexpected diagnostics after all fixes")
 
@@ -220,8 +224,10 @@ func TestServer(t *testing.T) {
 		didChangeSecond := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///second.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":14},"end":{"line":0,"character":14}},"text":" -- z"}]}}`
 		writeMessage(t, in, didChangeSecond)
 
+		// Version matches the document version from didChange (version: 2)
+		wantSecondEmptyV2 := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","version":2,"diagnostics":[]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after changing second document")
-		require.EqualValuesf(t, s.Text(), wantSecondEmpty, "unexpected diagnostics after changing second document")
+		require.EqualValuesf(t, s.Text(), wantSecondEmptyV2, "unexpected diagnostics after changing second document")
 
 		// Close second document
 		didCloseSecond := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///second.dot"}}}`

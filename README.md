@@ -31,40 +31,7 @@ Or try it directly:
 
 ```sh
 dotx fmt <<EOF
-digraph data_pipeline{graph[rankdir=TB,bgcolor="#fafafa"]
-node[shape=box,style="rounded,filled",fontname="Arial",fontsize=11]
-edge[fontname="Arial",fontsize=9,arrowsize=0.8]
-
-subgraph cluster_sources{label="Data Sources"
-style="filled,rounded"fillcolor="#e3f2fd"color="#1976d2"penwidth=2
-raw_logs[label="Raw Logs",shape=note,fillcolor="#bbdefb",color="#1565c0"]
-api_data[label="API Data"shape=note,fillcolor="#bbdefb",color="#1565c0"]}
-
-subgraph cluster_processing {label="Processing Layer"
-style="filled,rounded"
-fillcolor="#f3e5f5"color="#7b1fa2"
-penwidth=2
-parser [ label="Parser",shape=component,
-fillcolor="#ce93d8",color="#6a1b9a"]validate[label="Validator",shape=component,fillcolor="#ce93d8",color="#6a1b9a"]
-transform[label="Transformer",shape=component,fillcolor="#ce93d8",color="#6a1b9a"]}
-
-subgraph cluster_storage{
-label="Storage"style="filled,rounded"fillcolor="#e8f5e9"
-color="#388e3c"penwidth=2
-cache[label="Cache",shape=cylinder,fillcolor="#a5d6a7",color="#2e7d32"]
-warehouse[label="Data Warehouse",shape=cylinder,fillcolor="#a5d6a7",color="#2e7d32"]}
-
-analytics[label="Analytics Dashboard",shape=tab,fillcolor="#fff9c4",color="#f57f17",style="filled,bold"]
-alerts[label="Alert System",shape=octagon,fillcolor="#ffccbc",color="#d84315",style="filled,bold"]
-
-raw_logs->parser[label="ingest",color="#1976d2",penwidth=1.5]
-api_data->parser[label="fetch",color="#1976d2",penwidth=1.5]
-parser->validate[label="parse",color="#7b1fa2",penwidth=2]validate->transform[label="clean",color="#7b1fa2",penwidth=2]
-transform->cache[label="store",color="#388e3c",style=dashed]
-transform->warehouse[label="batch write",color="#388e3c",penwidth=2]
-cache->analytics[label="query",color="#f57f17"]
-warehouse->analytics[label="aggregate",color="#f57f17",penwidth=1.5]
-warehouse->alerts[label="monitor",color="#d84315",style=dotted]}
+digraph git{node[shape=rect]"22a1e48"->"abd0f59"->"e83ea81"[label="main"]"22a1e48"->"b4ec655"[label="lsp"]"b4ec655"->"c4a3242"->"e38f243"->"02314ea" "02314ea"->"6504ef3"[label="partial sync"]}
 EOF
 ```
 
@@ -181,8 +148,8 @@ This opens a browser with [pkg.go.dev-style](https://pkg.go.dev) documentation w
 
 * Read the full package documentation
 * View and run the interactive example
-* Modify the example code (e.g., change `NewDoc(40)` to different column widths)
-* See how the output changes based on your modifications
+* Modify the example code (e.g., change `NewDoc(40)` to different column widths to see how the
+  layout algorithm reflows text to fit within the specified maximum)
 
 ## Neovim
 

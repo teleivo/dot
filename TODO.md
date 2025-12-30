@@ -2,9 +2,6 @@
 
 ## Now
 
-* update README
-  * simplify the formatter example as the code is taking too much space relate
-  * I mention the NewDoc but not the layouting algorithm. improve that on why you would want that
 * live preview: show parser errors in html
 * lsp: formatting
 * lsp: auto-complete for attribute keys

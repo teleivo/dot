@@ -12,9 +12,12 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 
 	"github.com/teleivo/dot"
+	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/lsp/internal/rpc"
+	"github.com/teleivo/dot/printer"
 )
 
 // Config holds the configuration for creating an LSP server.
@@ -119,10 +122,28 @@ func (d *document) change(change rpc.TextDocumentContentChangeEvent) error {
 	copy(newSrc, d.src[:start])
 	copy(newSrc[start:], text)
 	copy(newSrc[start+len(text):], d.src[end:])
+	d.setSrc(newSrc)
 
-	d.src = newSrc
-	d.lines = buildLines(d.src)
 	return nil
+}
+
+func (d *document) setSrc(src []byte) {
+	d.src = src
+	d.lines = buildLines(d.src)
+}
+
+func (d *document) startPos() rpc.Position {
+	return rpc.Position{
+		Line:      0,
+		Character: 0,
+	}
+}
+
+func (d *document) endPos() rpc.Position {
+	return rpc.Position{
+		Line:      uint32(len(d.lines)) - 1,
+		Character: uint32(len(d.src) - d.lines[len(d.lines)-1]),
+	}
 }
 
 // Start runs the server's main loop, processing LSP messages until the context is cancelled.
@@ -231,6 +252,52 @@ func (srv *Server) Start(ctx context.Context) error {
 						continue
 					}
 					srv.write(cancel, response)
+				case rpc.MethodFormatting:
+					if message.Params == nil {
+						srv.logger.Error("missing params", "method", message.Method)
+						continue
+					}
+					var params rpc.DocumentFormattingParams
+					if err := json.Unmarshal(*message.Params, &params); err != nil {
+						srv.logger.Error("invalid params", "method", message.Method, "err", err)
+						continue
+					}
+
+					doc, ok := srv.docs[params.TextDocument.URI]
+					if !ok {
+						srv.logger.Error("unknown document", "uri", params.TextDocument.URI)
+						continue
+					}
+					var text strings.Builder
+					p := printer.New(doc.src, &text, layout.Default)
+					if err := p.Print(); err != nil {
+						srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InternalError, Message: fmt.Sprintf("formatting failed: %v", err)}})
+						continue
+					}
+					start := doc.startPos()
+					end := doc.endPos()
+
+					response := rpc.Message{
+						ID: message.ID,
+					}
+					edits := []rpc.TextEdit{
+						{
+							Range: rpc.Range{
+								Start: start,
+								End:   end,
+							},
+							NewText: text.String(),
+						},
+					}
+					rp, err := json.Marshal(edits)
+					if err != nil {
+						srv.logger.Error("formatting failed due to marshaling edits", "method", message.Method, "err", err)
+						continue
+					}
+					rm := json.RawMessage(rp)
+					response.Result = &rm
+
+					srv.write(cancel, response)
 				case rpc.MethodDidClose:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
@@ -291,12 +358,12 @@ func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
 }
 
 func diagnostics(doc *document) (rpc.Message, error) {
-	var response rpc.Message
-
 	ps := dot.NewParser(doc.src)
 	ps.Parse()
 
-	response.Method = rpc.MethodPublishDiagnostics
+	response := rpc.Message{
+		Method: rpc.MethodPublishDiagnostics,
+	}
 	responseParams := rpc.PublishDiagnosticsParams{
 		URI:     doc.uri,
 		Version: &doc.version,
@@ -320,11 +387,11 @@ func diagnostics(doc *document) (rpc.Message, error) {
 			Message:  err.Msg,
 		}
 	}
-	rawParams, err := json.Marshal(responseParams)
+	rp, err := json.Marshal(responseParams)
 	if err != nil {
 		return response, err
 	}
-	rm := json.RawMessage(rawParams)
+	rm := json.RawMessage(rp)
 	response.Params = &rm
 
 	return response, nil

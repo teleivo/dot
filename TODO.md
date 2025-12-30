@@ -2,8 +2,21 @@
 
 ## Now
 
-* lsp: formatting
 * lsp: auto-complete for attribute keys
+* improve tests, use t.Log instead of comments in lsp_test.go
+* simplify lsp main loop, responding with error is more common now. how to simplify the
+json.RawMessage
+* lsp: look into debouncing diagnostics. delay publishing by ~100ms, cancel if another change
+arrives. joining } of subgraph onto line above it causes brief flashes of errors as neovim sends an
+insert and then a delete as separate changes
+
+```dot
+graph foo {
+	subgraph cluster_faa {
+		1 -- 18
+	}
+}
+```
 
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
   * consider `sync.Pool` for buffer reuse or unique?
@@ -75,10 +88,6 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
     try with `digraph {}`.
 
 ## LSP
-
-* first goal: diagnostics
-* second: formatting
-* third: autocomplete
 
 ## CLI
 

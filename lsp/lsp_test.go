@@ -64,7 +64,7 @@ func TestServer(t *testing.T) {
 		// - positionEncoding: "utf-8" (negotiated encoding for character offsets)
 		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeResult
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -154,7 +154,7 @@ func TestServer(t *testing.T) {
 		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -248,6 +248,49 @@ func TestServer(t *testing.T) {
 		assert.Truef(t, s.Scan(), "expecting shutdown response")
 		require.EqualValuesf(t, s.Text(), wantShutdown, "unexpected shutdown response")
 	})
+
+	t.Run("Formatting", func(t *testing.T) {
+		s, in := setup(t)
+
+		// Initialize
+		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
+		writeMessage(t, in, initMsg)
+		assert.Truef(t, s.Scan(), "expecting initialize response")
+
+		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
+		writeMessage(t, in, initializedMsg)
+
+		// Open document with parse error
+		invalidContent := `digraph { a -> }`
+		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + invalidContent + `"}}}`
+		writeMessage(t, in, didOpen)
+
+		// Receive diagnostics for invalid document
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for invalid document")
+
+		// Format invalid document - should return error
+		formatInvalid := `{"jsonrpc":"2.0","method":"textDocument/formatting","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"options":{"tabSize":2,"insertSpaces":false}}}`
+		writeMessage(t, in, formatInvalid)
+
+		wantError := `{"jsonrpc":"2.0","id":2,"error":{"code":-32603,"message":"formatting failed: 1:16: expected node or subgraph as edge operand"}}`
+		assert.Truef(t, s.Scan(), "expecting error response for invalid document")
+		require.EqualValuesf(t, s.Text(), wantError, "unexpected error response")
+
+		// Fix document: "digraph { a -> }" -> "digraph { a -> b }"
+		didChange := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":14},"end":{"line":0,"character":14}},"text":"b "}]}}`
+		writeMessage(t, in, didChange)
+
+		// Receive diagnostics for fixed document
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for fixed document")
+
+		// Format valid document - should succeed
+		formatValid := `{"jsonrpc":"2.0","method":"textDocument/formatting","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"options":{"tabSize":2,"insertSpaces":false}}}`
+		writeMessage(t, in, formatValid)
+
+		wantFormatting := `{"jsonrpc":"2.0","id":3,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":18}},"newText":"digraph {\n\ta -\u003e b\n}"}]}`
+		assert.Truef(t, s.Scan(), "expecting formatting response")
+		require.EqualValuesf(t, s.Text(), wantFormatting, "unexpected formatting response")
+	})
 }
 
 func TestStartReturnsReaderError(t *testing.T) {
@@ -272,6 +315,7 @@ func setup(t *testing.T) (*rpc.Scanner, io.Writer) {
 	srv, err := New(Config{
 		In:  inR,
 		Out: outW,
+		Log: io.Discard,
 	})
 	require.NoErrorf(t, err, "want no errors creating server")
 	go func() {

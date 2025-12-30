@@ -12,8 +12,12 @@ go install github.com/teleivo/dot/cmd/dotx@latest
 
 ## LSP
 
-`dotx lsp` starts a Language Server Protocol server for DOT files, providing diagnostics as you
-type.
+`dotx lsp` starts a Language Server Protocol server for DOT files.
+
+Features:
+
+* Diagnostics (syntax errors as you type)
+* Formatting
 
 ## Formatter
 

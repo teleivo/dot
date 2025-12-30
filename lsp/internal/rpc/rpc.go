@@ -48,6 +48,7 @@ const (
 	MethodDidClose  = "textDocument/didClose"
 
 	MethodPublishDiagnostics = "textDocument/publishDiagnostics"
+	MethodFormatting         = "textDocument/formatting"
 )
 
 // Message has all the fields of request, response and notification. Presence/absence of fields is
@@ -121,8 +122,9 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 var initializeResult = func() json.RawMessage {
 	result := map[string]any{
 		"capabilities": map[string]any{
-			"positionEncoding": EncodingUTF8,
-			"textDocumentSync": SyncIncremental,
+			"documentFormattingProvider": true,
+			"positionEncoding":           EncodingUTF8,
+			"textDocumentSync":           SyncIncremental,
 		},
 		"serverInfo": map[string]any{
 			"name":    "dotls",
@@ -228,6 +230,33 @@ type TextDocumentIdentifier struct {
 type DidCloseTextDocumentParams struct {
 	// TextDocument is the document that was closed.
 	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
+// DocumentFormattingParams contains the parameters for the textDocument/formatting request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#documentFormattingParams
+type DocumentFormattingParams struct {
+	// TextDocument is the document to format.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	// Options are the format options.
+	Options FormattingOptions `json:"options"`
+}
+
+// FormattingOptions contains value-pairs describing format options.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions
+type FormattingOptions struct {
+	// TabSize is the size of a tab in spaces.
+	TabSize uint32 `json:"tabSize"`
+	// InsertSpaces indicates whether to prefer spaces over tabs.
+	InsertSpaces bool `json:"insertSpaces"`
+}
+
+// TextEdit represents a textual edit applicable to a text document.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textEdit
+type TextEdit struct {
+	// Range is the range of the text document to be manipulated.
+	Range Range `json:"range"`
+	// NewText is the string to be inserted. For delete operations use an empty string.
+	NewText string `json:"newText"`
 }
 
 // TextDocumentContentChangeEvent describes a change to a text document.

@@ -20,33 +20,26 @@ const (
 
 // Printer formats DOT code.
 type Printer struct {
-	r      io.Reader     // r reader to parse dot code from
+	src    []byte        // src is the DOT source code to format
 	w      io.Writer     // w writer to output formatted DOT code to
 	format layout.Format // format in which to print the DOT code
 }
 
-// New creates a new printer that reads DOT code from r, formats it, and writes the
-// formatted output to w. The format parameter controls the output representation.
-func New(r io.Reader, w io.Writer, format layout.Format) *Printer {
+// New creates a new printer that formats DOT source code and writes the formatted output to w.
+// The format parameter controls the output representation.
+func New(src []byte, w io.Writer, format layout.Format) *Printer {
 	return &Printer{
-		r:      r,
+		src:    src,
 		w:      w,
 		format: format,
 	}
 }
 
-// Print parses the DOT code from the reader and writes the formatted output to the writer.
+// Print parses the DOT code and writes the formatted output to the writer.
 // Returns an error if parsing or formatting fails.
 func (p *Printer) Print() error {
-	ps, err := dot.NewParser(p.r)
-	if err != nil {
-		return err
-	}
-
-	tree, err := ps.Parse()
-	if err != nil {
-		return err
-	}
+	ps := dot.NewParser(p.src)
+	tree := ps.Parse()
 
 	if errs := ps.Errors(); len(errs) > 0 {
 		return errs[0]
@@ -55,15 +48,13 @@ func (p *Printer) Print() error {
 	gs := ast.NewGraph(tree)
 	for i, g := range gs {
 		if i > 0 {
-			_, err = p.w.Write([]byte("\n"))
-			if err != nil {
+			if _, err := p.w.Write([]byte("\n")); err != nil {
 				return err
 			}
 		}
 		doc := layout.NewDoc(maxColumn)
 		p.layoutGraph(doc, g)
-		err = doc.Render(p.w, p.format)
-		if err != nil {
+		if err := doc.Render(p.w, p.format); err != nil {
 			return err
 		}
 	}

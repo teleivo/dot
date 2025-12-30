@@ -1,13 +1,19 @@
 # DOT
 
-A toolchain for the [DOT language](https://graphviz.org/doc/info/lang.html). Includes `dotx fmt` for
-formatting, `dotx watch` for live preview, and `dotx inspect` for examining syntax.
+A toolchain for the [DOT language](https://graphviz.org/doc/info/lang.html). Includes `dotx lsp` for
+editor integration, `dotx fmt` for formatting, `dotx watch` for live preview and `dotx inspect` for
+examining syntax.
 
 ## Install
 
 ```sh
 go install github.com/teleivo/dot/cmd/dotx@latest
 ```
+
+## LSP
+
+`dotx lsp` starts a Language Server Protocol server for DOT files, providing diagnostics as you
+type.
 
 ## Formatter
 
@@ -178,14 +184,16 @@ This opens a browser with [pkg.go.dev-style](https://pkg.go.dev) documentation w
 * Modify the example code (e.g., change `NewDoc(40)` to different column widths)
 * See how the output changes based on your modifications
 
-## Neovim Plugin
+## Neovim
+
+### Plugin
 
 The `nvim/` directory contains a Neovim plugin with commands:
 
 * `:Dot inspect` - visualize the CST in a split window with live updates and cursor tracking
 * `:Dot watch` - start `dotx watch` and open the browser for live SVG preview
 
-### Installation (lazy.nvim)
+Installation with lazy.nvim:
 
 ```lua
 return {
@@ -195,17 +203,46 @@ return {
 }
 ```
 
+### LSP Configuration
+
+Neovim 0.11+ with `lsp/` directory (see `:help lsp-config`):
+
+```lua
+-- ~/.config/nvim/lsp/dotls.lua
+return {
+  cmd = { 'dotx', 'lsp' },
+  filetypes = { 'dot' },
+}
+```
+
+```lua
+-- ~/.config/nvim/init.lua
+vim.lsp.enable('dotls')
+```
+
 ## Limitations
 
-* the parser and formatter do not yet support comments while the scanner does. I plan to at least
-support line comments
+* The scanner assumes UTF-8 encoded input. Invalid UTF-8 byte sequences are replaced with the
+  Unicode replacement character (U+FFFD) and reported as errors. Files in other encodings (UTF-16,
+  Latin-1, etc.) must be converted to UTF-8 first.
+* The LSP server only supports UTF-8 position encoding. According to the LSP specification, servers
+  must support UTF-16 as the default. However, `dotx lsp` always uses UTF-8 regardless of what the
+  client offers. This works correctly with clients that support UTF-8 (such as Neovim) but may cause
+  incorrect character positions with clients that only support UTF-16.
+* The formatter uses Unicode code points (runes) for measuring text width and line length. This does
+  not account for grapheme clusters or display width, so characters like emojis (which may render as
+  double-width) or combining characters will cause the formatter's column calculations to differ
+  from visual appearance in editors.
+* The parser and formatter do not yet support comments while the scanner does. I plan to at least
+  support line comments.
 
-The following are not supported as I do not need them
+The following are not supported as I do not need them:
+
 * https://graphviz.org/doc/info/lang.html#html-strings
-* [double-quoted strings can be concatenated using a '+'
-operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
-* does not treat records in any special way. Labels will be parsed as strings.
-* attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
+* [Double-quoted strings can be concatenated using a '+'
+  operator](https://graphviz.org/doc/info/lang.html#comments-and-optional-formatting)
+* Does not treat records in any special way. Labels will be parsed as strings.
+* Attributes are not validated. For example the color `color="0.650 0.700 0.700"` value has to
   adhere to some requirements which are not validated. The values are parsed as IDs (unquoted,
   numeral, quoted) and ultimately stored as strings.
 

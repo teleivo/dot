@@ -15,6 +15,8 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
+	"github.com/teleivo/dot/internal/version"
+	"github.com/teleivo/dot/lsp"
 	"github.com/teleivo/dot/printer"
 	"github.com/teleivo/dot/token"
 	"github.com/teleivo/dot/watch"
@@ -48,6 +50,11 @@ func run(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 		return runFmt(args[2:], r, w, wErr)
 	case "inspect":
 		return runInspect(args[2:], r, w, wErr)
+	case "lsp":
+		return runLsp(args[2:], r, w, wErr)
+	case "version":
+		_, _ = fmt.Fprintln(w, version.Version())
+		return 0, nil
 	case "watch":
 		return runWatch(args[2:], wErr)
 	case "":
@@ -61,7 +68,7 @@ func usage(w io.Writer) {
 	_, _ = fmt.Fprintln(w, "dotx is a tool for working with DOT (Graphviz) graph files")
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "usage: dotx <command> [args]")
-	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, watch")
+	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, lsp, version, watch")
 }
 
 func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
@@ -89,11 +96,12 @@ func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 	}
 
 	err = profile(func() error {
-		p := printer.New(r, w, ft)
-		if err := p.Print(); err != nil {
-			return err
+		src, err := io.ReadAll(r)
+		if err != nil {
+			return fmt.Errorf("error reading input: %v", err)
 		}
-		return nil
+		p := printer.New(src, w, ft)
+		return p.Print()
 	}, *cpuProfile, *memProfile)
 	if err != nil {
 		return 1, err
@@ -176,15 +184,13 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) (in
 	}
 
 	err = profile(func() error {
-		p, err := dot.NewParser(r)
+		src, err := io.ReadAll(r)
 		if err != nil {
-			return fmt.Errorf("error creating parser: %v", err)
+			return fmt.Errorf("error reading input: %v", err)
 		}
 
-		t, err := p.Parse()
-		if err != nil {
-			return fmt.Errorf("error parsing: %v", err)
-		}
+		p := dot.NewParser(src)
+		t := p.Parse()
 
 		for _, parseErr := range p.Errors() {
 			_, _ = fmt.Fprintln(wErr, parseErr)
@@ -222,11 +228,12 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 	}
 
 	err = profile(func() error {
-		sc, err := dot.NewScanner(r)
+		src, err := io.ReadAll(r)
 		if err != nil {
-			return fmt.Errorf("error scanning: %v", err)
+			return fmt.Errorf("error reading input: %v", err)
 		}
 
+		sc := dot.NewScanner(src)
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 		defer func() {
 			if ferr := tw.Flush(); ferr != nil && err == nil {
@@ -236,10 +243,7 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 
 		_, _ = fmt.Fprintf(tw, "POSITION\tTYPE\tLITERAL\tERROR\n")
 
-		for tok, err := sc.Next(); tok.Type != token.EOF; tok, err = sc.Next() {
-			if err != nil {
-				return fmt.Errorf("error scanning: %v", err)
-			}
+		for tok := sc.Next(); tok.Type != token.EOF; tok = sc.Next() {
 			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", tokenPosition(tok), tok.Type.String(), tokenLiteral(tok), tok.Error)
 		}
 
@@ -263,6 +267,59 @@ func tokenLiteral(tok token.Token) string {
 		return tok.Literal
 	}
 	return tok.Type.String()
+}
+
+func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
+	flags := flag.NewFlagSet("lsp", flag.ContinueOnError)
+	flags.SetOutput(wErr)
+	flags.Usage = func() {
+		_, _ = fmt.Fprintln(wErr, "usage: dotx lsp [flags]")
+		_, _ = fmt.Fprintln(wErr, "flags:")
+		flags.PrintDefaults()
+	}
+	debug := flags.Bool("debug", false, "enable debug logging")
+	tracePath := flags.String("tracefile", "", "write JSON-RPC messages to `file`")
+	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
+	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
+
+	err := flags.Parse(args)
+	if err != nil {
+		if err == flag.ErrHelp {
+			return 0, nil
+		}
+		return 2, errFlagParse
+	}
+
+	var traceWriter io.Writer
+	if *tracePath != "" {
+		f, err := os.OpenFile(*tracePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		if err != nil {
+			return 1, fmt.Errorf("failed to open tracefile: %v", err)
+		}
+		defer func() { _ = f.Close() }()
+		traceWriter = f
+	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	err = profile(func() error {
+		l, err := lsp.New(lsp.Config{
+			In:    r,
+			Out:   w,
+			Debug: *debug,
+			Log:   os.Stderr,
+			Trace: traceWriter,
+		})
+		if err != nil {
+			return err
+		}
+		return l.Start(ctx)
+	}, *cpuProfile, *memProfile)
+	if err != nil {
+		return 1, err
+	}
+	return 0, nil
 }
 
 func runWatch(args []string, wErr io.Writer) (int, error) {

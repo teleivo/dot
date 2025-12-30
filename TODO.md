@@ -2,8 +2,14 @@
 
 ## Now
 
+* lsp: should I handle doc versions?
+* update README: simplify the formatter example as the code is taking too much space
+relate
+* lsp: formatting
+* lsp: auto-complete for attribute keys
+
 * profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
-  * consider `sync.Pool` for buffer reuse
+  * consider `sync.Pool` for buffer reuse or unique?
 
 ## Parser
 

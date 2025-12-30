@@ -1,11 +1,9 @@
 package dot
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
-	"io"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/teleivo/dot/internal/assert"
 	"github.com/teleivo/dot/token"
@@ -17,124 +15,114 @@ const (
 
 // Scanner tokenizes DOT language source code into a stream of tokens.
 type Scanner struct {
-	r         *bufio.Reader
+	src       []byte
+	offset    int
 	cur       rune
+	curSize   int // byte size of cur
 	curLine   int
 	curColumn int
 	peek      rune
+	peekSize  int // byte size of peek
 	eof       bool
 }
 
-// NewScanner creates a new scanner that reads DOT source code from r. Returns an error if the
-// scanner cannot be initialized.
-func NewScanner(r io.Reader) (*Scanner, error) {
+// NewScanner creates a new scanner that tokenizes the given DOT source code.
+func NewScanner(src []byte) *Scanner {
 	sc := Scanner{
-		r:       bufio.NewReader(r),
+		src:     src,
 		cur:     eof,
 		peek:    eof,
 		curLine: 1,
 	}
 
 	// initialize current and peek runes
-	err := sc.next()
-	if err != nil {
-		return nil, err
-	}
-	err = sc.next()
-	if err != nil {
-		return nil, err
-	}
+	sc.next()
+	sc.next()
 	sc.curColumn = 1
 
-	return &sc, nil
+	return &sc
 }
 
 // Next advances the scanners position by one token and returns it. When encountering invalid input,
 // the scanner continues scanning. Invalid input results in a token of type [token.ERROR] with the
 // error message in [token.Token.Error] that greedily consumes characters until a separator is encountered.
-// I/O errors (other than [io.EOF]) stop scanning immediately. A token of type [token.EOF] is returned
-// once the underlying reader returns [io.EOF] and the peek token has been consumed.
-func (sc *Scanner) Next() (token.Token, error) {
+// A token of type [token.EOF] is returned once the end of input is reached.
+func (sc *Scanner) Next() token.Token {
 	var tok token.Token
-	var err error
 
-	if err = sc.skipWhitespace(); err != nil {
-		return tok, err
-	}
+	sc.skipWhitespace()
 	if sc.cur < 0 {
 		tok.Type = token.EOF
 		pos := sc.pos()
 		tok.Start = pos
 		tok.End = pos
-		return tok, nil
+		return tok
 	}
 
 	switch sc.cur {
 	case '{':
-		tok, err = sc.tokenizeRuneAs(token.LeftBrace)
+		tok = sc.tokenizeRuneAs(token.LeftBrace)
 	case '}':
-		tok, err = sc.tokenizeRuneAs(token.RightBrace)
+		tok = sc.tokenizeRuneAs(token.RightBrace)
 	case '[':
-		tok, err = sc.tokenizeRuneAs(token.LeftBracket)
+		tok = sc.tokenizeRuneAs(token.LeftBracket)
 	case ']':
-		tok, err = sc.tokenizeRuneAs(token.RightBracket)
+		tok = sc.tokenizeRuneAs(token.RightBracket)
 	case ':':
-		tok, err = sc.tokenizeRuneAs(token.Colon)
+		tok = sc.tokenizeRuneAs(token.Colon)
 	case ',':
-		tok, err = sc.tokenizeRuneAs(token.Comma)
+		tok = sc.tokenizeRuneAs(token.Comma)
 	case ';':
-		tok, err = sc.tokenizeRuneAs(token.Semicolon)
+		tok = sc.tokenizeRuneAs(token.Semicolon)
 	case '=':
-		tok, err = sc.tokenizeRuneAs(token.Equal)
+		tok = sc.tokenizeRuneAs(token.Equal)
 	case '#', '/':
-		tok, err = sc.tokenizeComment()
+		tok = sc.tokenizeComment()
 	default:
 		if isEdgeOperator(sc.cur, sc.peek) {
-			tok, err = sc.tokenizeEdgeOperator()
+			tok = sc.tokenizeEdgeOperator()
 		} else {
-			tok, err = sc.tokenizeIdentifier()
+			tok = sc.tokenizeIdentifier()
 		}
 	}
 
 	assert.That(tok.Type != token.ERROR || tok.Error != "", "ERROR token must have an error message")
 
-	return tok, err
+	return tok
 }
 
 // next reads one rune and advances the scanner's position markers depending on the read rune.
-// It returns an error only for non-EOF I/O errors (such as disk read failures or network errors).
-// Any non-EOF error is considered terminal and will cause scanning to stop. [io.EOF] is not considered
-// an error and causes the scanner to enter EOF state (sc.cur = eof). After any error, subsequent
-// calls to next are no-ops.
-func (sc *Scanner) next() error {
+func (sc *Scanner) next() {
 	// advance position based on current rune
 	if sc.cur == '\n' {
 		sc.curLine++
 		sc.curColumn = 1
 	} else if sc.cur >= 0 {
-		sc.curColumn++
+		sc.curColumn += sc.curSize
 	}
 
 	// already at EOF
 	if sc.eof {
 		sc.cur = eof
-		return nil
-	}
-
-	r, _, err := sc.r.ReadRune()
-	if err != nil {
-		sc.eof = true
-		sc.cur = sc.peek
-		sc.peek = eof
-		if errors.Is(err, io.EOF) {
-			return nil
-		}
-		return fmt.Errorf("failed to read character: %v", err)
+		sc.curSize = 0
+		return
 	}
 
 	sc.cur = sc.peek
-	sc.peek = r
-	return nil
+	sc.curSize = sc.peekSize
+
+	if sc.offset < len(sc.src) {
+		r, size := utf8.DecodeRune(sc.src[sc.offset:])
+		sc.offset += size
+		sc.peek = r
+		sc.peekSize = size
+		// RuneError with size 1 means invalid UTF-8 byte sequence
+		// continue scanning and let tokenization produce an ERROR token
+	} else {
+		sc.eof = true
+		sc.peek = eof
+		sc.peekSize = 0
+	}
 }
 
 // pos returns the current position as a token.Position.
@@ -142,14 +130,10 @@ func (sc *Scanner) pos() token.Position {
 	return token.Position{Line: sc.curLine, Column: sc.curColumn}
 }
 
-func (sc *Scanner) skipWhitespace() error {
+func (sc *Scanner) skipWhitespace() {
 	for sc.cur >= 0 && isWhitespace(sc.cur) {
-		err := sc.next()
-		if err != nil {
-			return err
-		}
+		sc.next()
 	}
-	return nil
 }
 
 // isWhitespace determines if the rune is considered whitespace. It does not include non-breaking
@@ -162,50 +146,45 @@ func isWhitespace(r rune) bool {
 	return false
 }
 
-func (sc *Scanner) tokenizeRuneAs(tokenType token.Kind) (token.Token, error) {
+func (sc *Scanner) tokenizeRuneAs(tokenType token.Kind) token.Token {
 	pos := sc.pos()
 	tok := token.Token{Type: tokenType, Literal: string(sc.cur), Start: pos, End: pos}
-	err := sc.next()
-	return tok, err
+	sc.next()
+	return tok
 }
 
-func (sc *Scanner) tokenizeComment() (token.Token, error) {
-	var tok token.Token
-
+func (sc *Scanner) tokenizeComment() token.Token {
 	if sc.cur == '/' && (sc.peek < 0 || (sc.peek != '/' && sc.peek != '*')) {
 		pos := sc.pos()
-		tok = token.Token{
+		tok := token.Token{
 			Type:    token.ERROR,
 			Literal: string(sc.cur),
 			Error:   sc.error("use '//' (line) or '/*...*/' (block) for comments"),
 			Start:   pos,
 			End:     pos,
 		}
-		if advanceErr := sc.next(); advanceErr != nil {
-			return tok, advanceErr
-		}
-		return tok, nil
+		sc.next()
+		return tok
 	}
 
 	start := sc.pos()
 	isMultiLine := sc.cur == '/' && sc.peek == '*'
-	var err error
 	var end token.Position
 	var comment []rune
 	var hasClosingMarker bool
-	for prev := rune(eof); sc.cur >= 0 && err == nil && (isMultiLine || sc.cur != '\n'); err = sc.next() {
+	for prev := rune(eof); sc.cur >= 0 && (isMultiLine || sc.cur != '\n'); sc.next() {
 		end = sc.pos()
 		comment = append(comment, sc.cur)
 
 		if isMultiLine && prev == '*' && sc.cur == '/' {
 			hasClosingMarker = true
-			err = sc.next() // advance past the closing '/'
+			sc.next() // advance past the closing '/'
 			break
 		}
 		prev = sc.cur
 	}
 
-	tok = token.Token{
+	tok := token.Token{
 		Type:    token.Comment,
 		Literal: string(comment),
 		Start:   start,
@@ -216,20 +195,17 @@ func (sc *Scanner) tokenizeComment() (token.Token, error) {
 		tok.Error = "invalid character '/': unclosed comment: missing '*/'"
 	}
 
-	return tok, err
+	return tok
 }
 
 func isEdgeOperator(first, second rune) bool {
 	return first == '-' && (second == '>' || second == '-')
 }
 
-func (sc *Scanner) tokenizeEdgeOperator() (token.Token, error) {
+func (sc *Scanner) tokenizeEdgeOperator() token.Token {
 	var tok token.Token
 	start := sc.pos()
-	err := sc.next()
-	if err != nil {
-		return tok, err
-	}
+	sc.next()
 
 	end := sc.pos()
 	if sc.cur == '-' {
@@ -247,8 +223,8 @@ func (sc *Scanner) tokenizeEdgeOperator() (token.Token, error) {
 			End:     end,
 		}
 	}
-	err = sc.next()
-	return tok, err
+	sc.next()
+	return tok
 }
 
 func isStartOfUnquotedString(r rune) bool {
@@ -274,7 +250,7 @@ func isStartOfQuotedString(r rune) bool {
 	return r == '"'
 }
 
-func (sc *Scanner) tokenizeIdentifier() (token.Token, error) {
+func (sc *Scanner) tokenizeIdentifier() token.Token {
 	if isStartOfNumeral(sc.cur) {
 		return sc.tokenizeNumeral()
 	} else if isStartOfQuotedString(sc.cur) {
@@ -299,14 +275,13 @@ func (sc *Scanner) error(reason string) string {
 
 // tokenizeUnquotedID considers the current rune(s) as an identifier that might be a DOT
 // keyword.
-func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
+func (sc *Scanner) tokenizeUnquotedID() token.Token {
 	var firstErrMsg string
-	var err error
 	var id []rune
 	start := sc.pos()
 	var end token.Position
 
-	for ; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err = sc.next() {
+	for ; sc.cur >= 0 && !sc.isTokenSeparator(); sc.next() {
 		if firstErrMsg == "" && !isLegalInUnquotedID(sc.cur) {
 			switch sc.cur {
 			case 0:
@@ -328,17 +303,6 @@ func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
 
 	literal := string(id)
 
-	// Prioritize terminal I/O errors from sc.next()
-	if err != nil {
-		return token.Token{
-			Type:    token.ERROR,
-			Literal: literal,
-			Error:   firstErrMsg,
-			Start:   start,
-			End:     end,
-		}, err
-	}
-
 	if firstErrMsg != "" {
 		return token.Token{
 			Type:    token.ERROR,
@@ -346,7 +310,7 @@ func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
 			Error:   firstErrMsg,
 			Start:   start,
 			End:     end,
-		}, nil
+		}
 	}
 
 	return token.Token{
@@ -354,7 +318,7 @@ func (sc *Scanner) tokenizeUnquotedID() (token.Token, error) {
 		Literal: literal,
 		Start:   start,
 		End:     end,
-	}, nil
+	}
 }
 
 // isTerminal determines if the rune is considered a terminal token in the dot language. This does
@@ -369,18 +333,17 @@ func isTerminal(r rune) bool {
 }
 
 func isLegalInUnquotedID(r rune) bool {
-	return isStartOfUnquotedString(r) || unicode.IsDigit(r)
+	return r != utf8.RuneError && (isStartOfUnquotedString(r) || unicode.IsDigit(r))
 }
 
-func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
+func (sc *Scanner) tokenizeNumeral() token.Token {
 	var firstErrMsg string
-	var err error
 	var id []rune
 	var hasDigit bool
 	start := sc.pos()
 	var end token.Position
 
-	for pos, prev, hasDot := 0, rune(eof), false; sc.cur >= 0 && err == nil && !sc.isTokenSeparator(); err, pos = sc.next(), pos+1 {
+	for pos, prev, hasDot := 0, rune(eof), false; sc.cur >= 0 && !sc.isTokenSeparator(); sc.next() {
 		end = sc.pos()
 		if firstErrMsg == "" && sc.cur == '-' && pos != 0 {
 			firstErrMsg = sc.error("ambiguous: quote for ID containing '-', use space for separate IDs, or '--'/'->' for edges")
@@ -402,20 +365,10 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 
 		id = append(id, sc.cur)
 		prev = sc.cur
+		pos++
 	}
 
 	literal := string(id)
-
-	// prioritize terminal I/O errors from sc.next()
-	if err != nil {
-		return token.Token{
-			Type:    token.ERROR,
-			Literal: literal,
-			Error:   firstErrMsg,
-			Start:   start,
-			End:     end,
-		}, err
-	}
 
 	if firstErrMsg == "" && !hasDigit {
 		firstErrMsg = sc.error("ambiguous: quote for ID, or add digit for number like '-.1' or '-0.'")
@@ -428,7 +381,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 			Error:   firstErrMsg,
 			Start:   start,
 			End:     end,
-		}, nil
+		}
 	}
 
 	return token.Token{
@@ -436,7 +389,7 @@ func (sc *Scanner) tokenizeNumeral() (token.Token, error) {
 		Literal: literal,
 		Start:   start,
 		End:     end,
-	}, nil
+	}
 }
 
 // isTokenSeparator determines if the rune separates tokens.
@@ -444,8 +397,7 @@ func (sc *Scanner) isTokenSeparator() bool {
 	return isTerminal(sc.cur) || isWhitespace(sc.cur) || isEdgeOperator(sc.cur, sc.peek) || sc.cur == '/' || sc.cur == '#' || sc.cur == '"'
 }
 
-func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
-	var err error
+func (sc *Scanner) tokenizeQuotedID() token.Token {
 	var nulByteErrMsg string
 	var id []rune
 	var pendingEscape bool
@@ -453,7 +405,7 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 	start := sc.pos()
 	var end token.Position
 
-	for pos := 0; sc.cur >= 0 && err == nil; err, pos = sc.next(), pos+1 {
+	for pos := 0; sc.cur >= 0; sc.next() {
 		end = sc.pos()
 		id = append(id, sc.cur)
 
@@ -465,25 +417,15 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 			pendingEscape = true
 		} else if pos != 0 && sc.cur == '"' && !pendingEscape {
 			hasClosingQuote = true
-			err = sc.next() // advance past the closing '"'
+			sc.next() // advance past the closing '"'
 			break
 		} else {
 			pendingEscape = false
 		}
+		pos++
 	}
 
 	literal := string(id)
-
-	// prioritize terminal I/O errors from sc.next()
-	if err != nil {
-		return token.Token{
-			Type:    token.ERROR,
-			Literal: literal,
-			Error:   nulByteErrMsg,
-			Start:   start,
-			End:     end,
-		}, err
-	}
 
 	tok := token.Token{
 		Type:    token.ID,
@@ -499,5 +441,5 @@ func (sc *Scanner) tokenizeQuotedID() (token.Token, error) {
 		tok.Error = `invalid character '"': unclosed ID: missing closing '"'`
 	}
 
-	return tok, nil
+	return tok
 }

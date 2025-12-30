@@ -2,7 +2,6 @@ package printer_test
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/teleivo/assertive/require"
@@ -392,7 +391,7 @@ D [label="backslash\\here"]
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			var gotFirst bytes.Buffer
-			p := printer.New(strings.NewReader(test.in), &gotFirst, layout.Default)
+			p := printer.New([]byte(test.in), &gotFirst, layout.Default)
 			err := p.Print()
 			require.NoErrorf(t, err, "Print(%q)", test.in)
 
@@ -403,7 +402,7 @@ D [label="backslash\\here"]
 			t.Logf("print again with the previous output as the input to ensure printing is idempotent")
 
 			var gotSecond bytes.Buffer
-			p = printer.New(strings.NewReader(gotFirst.String()), &gotSecond, layout.Default)
+			p = printer.New(gotFirst.Bytes(), &gotSecond, layout.Default)
 			err = p.Print()
 			require.NoErrorf(t, err, "Print(%q)", gotFirst.String())
 
@@ -417,8 +416,8 @@ D [label="backslash\\here"]
 func TestPrintErrorReturnsError(t *testing.T) {
 	input := "graph { a = }"
 
-	var output strings.Builder
-	p := printer.New(strings.NewReader(input), &output, layout.Default)
+	var output bytes.Buffer
+	p := printer.New([]byte(input), &output, layout.Default)
 
 	err := p.Print()
 

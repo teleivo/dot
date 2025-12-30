@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+	<foreignObject width="100%" height="100%">
+		<pre xmlns="http://www.w3.org/1999/xhtml" style="color:#dc322f;font-family:monospace;font-size:20px;padding:20px;margin:0;white-space:pre-wrap">{{.}}</pre>
+	</foreignObject>
+</svg>

@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"log/slog"
 	"net"
@@ -47,6 +48,10 @@ const dotBinary = "dot"
 
 //go:embed index.html
 var indexHTML []byte
+
+//go:embed error.svg
+var errorSVG string
+var errorTmpl = template.Must(template.New("error").Parse(errorSVG))
 
 // New creates a Watcher that serves the given DOT file as SVG on the specified port.
 func New(cfg Config) (*Watcher, error) {
@@ -109,7 +114,7 @@ func (wa *Watcher) Watch(ctx context.Context) error {
 		ctxTimeout, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
 		if err := wa.server.Shutdown(ctxTimeout); err != nil && !errors.Is(err, context.Canceled) {
-			wa.logger.Error("failed to shutdown", "error", err)
+			wa.logger.Error("failed to shutdown", "err", err)
 		}
 	}()
 
@@ -123,7 +128,7 @@ func (wa *Watcher) handleIndex(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	_, err := w.Write(indexHTML)
 	if err != nil {
-		wa.logger.Error("failed to write index.html", "error", err)
+		wa.logger.Error("failed to write index.html", "err", err)
 	}
 }
 
@@ -168,7 +173,7 @@ func (wa *Watcher) handleEvents(w http.ResponseWriter, r *http.Request) {
 		case <-pollTicker.C:
 			stat, err := os.Stat(wa.file)
 			if err != nil {
-				wa.logger.Error("stat failed", "error", err)
+				wa.logger.Error("stat failed", "err", err)
 				return
 			}
 			if !stat.ModTime().Equal(lastMod) || stat.Size() != lastSize {
@@ -186,9 +191,10 @@ func (wa *Watcher) handleGenerate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/svg+xml")
 	err := wa.generate(r.Context(), w)
 	if err != nil {
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = fmt.Fprint(w, err.Error())
+		err = errorTmpl.Execute(w, err)
+		if err != nil {
+			wa.logger.Error("failed to write error svg", "err", err)
+		}
 		return
 	}
 }

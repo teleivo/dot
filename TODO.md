@@ -2,7 +2,6 @@
 
 ## Now
 
-* live preview: show parser errors in html
 * lsp: formatting
 * lsp: auto-complete for attribute keys
 

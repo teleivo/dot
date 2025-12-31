@@ -477,17 +477,17 @@ func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext)
 	}
 
 	switch tree.Type {
-	case dot.KindNodeStmt:
-		ctx = Node
-	case dot.KindEdgeStmt:
-		ctx = Edge
 	case dot.KindSubgraph:
 		ctx = Subgraph
 		// TODO cluster is a subgraph with ID cluster_ prefix? add that has a method on the
 		// subgraph? or as part of ast package somehow?
+	case dot.KindNodeStmt:
+		ctx = Node
+	case dot.KindEdgeStmt:
+		ctx = Edge
 	}
 
-	for _, child := range tree.Children {
+	for i, child := range tree.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
@@ -495,9 +495,23 @@ func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext)
 				return completionContext(c.Tree, pos, ctx)
 			}
 		case dot.TokenChild:
+			if i == 0 && tree.Type == dot.KindAttrStmt {
+				switch c.Type {
+				case token.Graph: // graph [name=value]
+					ctx = Graph
+				case token.Node: // node [name=value]
+					ctx = Node
+				case token.Edge: // edge [name=value]
+					ctx = Edge
+				}
+			}
+
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
-				return c.String(), ctx
+				if c.Type == token.ID {
+					return c.String(), ctx
+				}
+				return "", ctx
 			}
 		}
 	}

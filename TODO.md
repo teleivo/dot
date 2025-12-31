@@ -3,8 +3,8 @@
 ## Now
 
 * lsp: auto-complete for attribute keys
-  * fix tests
   * add = after attribute name
+
   * support cluster subgraph specific attributes
   * make finding candidates less naive
   * make this clean

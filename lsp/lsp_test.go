@@ -9,7 +9,9 @@ import (
 
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
+	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/lsp/internal/rpc"
+	"github.com/teleivo/dot/token"
 )
 
 func TestServer(t *testing.T) {
@@ -61,10 +63,11 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, initMsg)
 
 		// Server responds with capabilities:
+		// - completionProvider: completion with trigger characters
 		// - positionEncoding: "utf-8" (negotiated encoding for character offsets)
 		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeResult
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{"]},"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -150,11 +153,12 @@ func TestServer(t *testing.T) {
 		s, in := setup(t)
 
 		// Initialize handshake - server advertises:
+		// - completionProvider: completion with trigger characters
 		// - positionEncoding: "utf-8" (character offsets count bytes)
 		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{"]},"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -247,6 +251,77 @@ func TestServer(t *testing.T) {
 		wantShutdown := `{"jsonrpc":"2.0","id":2,"result":null}`
 		assert.Truef(t, s.Scan(), "expecting shutdown response")
 		require.EqualValuesf(t, s.Text(), wantShutdown, "unexpected shutdown response")
+	})
+
+	// textDocument/completion returns attribute completions filtered by prefix.
+	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
+	t.Run("Completion", func(t *testing.T) {
+		s, in := setup(t)
+
+		// Initialize handshake
+		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
+		writeMessage(t, in, initMsg)
+		assert.Truef(t, s.Scan(), "expecting initialize response")
+
+		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
+		writeMessage(t, in, initializedMsg)
+
+		// Open a document with a node that has an attribute list
+		// Document: digraph { a [lab] }
+		// The cursor will be positioned after "lab" to test prefix filtering
+		docContent := `digraph { a [lab] }`
+		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
+		writeMessage(t, in, didOpen)
+
+		// Receive diagnostics (document is valid)
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics")
+
+		// Request completion at position after "lab" (line 0, character 16)
+		// This should return all attributes starting with "lab": label, labelangle, etc.
+		completionReq := `{"jsonrpc":"2.0","method":"textDocument/completion","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":16}}}`
+		writeMessage(t, in, completionReq)
+
+		// Expect completions filtered to attributes starting with "lab"
+		// All "lab*" attributes are edge-only except: label (E,N,G,C), labelloc (N,G,C)
+		// Since we're in a node context [lab], we expect node-applicable attributes
+		wantCompletion := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10},{"label":"labelloc","kind":10}]}}`
+		assert.Truef(t, s.Scan(), "expecting completion response")
+		require.EqualValuesf(t, s.Text(), wantCompletion, "unexpected completion response")
+
+		// Now test narrowing: user continues typing "label"
+		// Change document: "digraph { a [lab] }" -> "digraph { a [label] }"
+		didChange := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":16},"end":{"line":0,"character":16}},"text":"el"}]}}`
+		writeMessage(t, in, didChange)
+
+		// Receive diagnostics
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after change")
+
+		// Request completion at position after "label" (line 0, character 18)
+		completionReq2 := `{"jsonrpc":"2.0","method":"textDocument/completion","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":18}}}`
+		writeMessage(t, in, completionReq2)
+
+		// Now only "label" and "labelloc" match (both apply to nodes)
+		wantCompletion2 := `{"jsonrpc":"2.0","id":3,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10},{"label":"labelloc","kind":10}]}}`
+		assert.Truef(t, s.Scan(), "expecting narrowed completion response")
+		require.EqualValuesf(t, s.Text(), wantCompletion2, "unexpected narrowed completion response")
+
+		// Test edge context: completions should include edge-specific attributes
+		// Change document to have an edge with attributes
+		// "digraph { a [label] }" -> "digraph { a -> b [arr] }"
+		didChange2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":3},"contentChanges":[{"range":{"start":{"line":0,"character":10},"end":{"line":0,"character":20}},"text":"a -> b [arr"}]}}`
+		writeMessage(t, in, didChange2)
+
+		// Receive diagnostics
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after edge change")
+
+		// Request completion at position after "arr" (line 0, character 21)
+		completionReq3 := `{"jsonrpc":"2.0","method":"textDocument/completion","id":4,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":21}}}`
+		writeMessage(t, in, completionReq3)
+
+		// Expect edge attributes starting with "arr": arrowhead, arrowsize, arrowtail
+		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10},{"label":"arrowsize","kind":10},{"label":"arrowtail","kind":10}]}}`
+		assert.Truef(t, s.Scan(), "expecting edge completion response")
+		require.EqualValuesf(t, s.Text(), wantCompletion3, "unexpected edge completion response")
 	})
 
 	t.Run("Formatting", func(t *testing.T) {
@@ -526,6 +601,39 @@ func TestDocumentChange(t *testing.T) {
 			}
 
 			assert.EqualValuesf(t, string(doc.src), tt.want, "unexpected document content")
+		})
+	}
+}
+
+func TestCompletionContext(t *testing.T) {
+	tests := map[string]struct {
+		src        string
+		position   token.Position // 1-based line and column
+		wantPrefix string
+		wantCtx    attributeContext
+	}{
+		// Cursor inside node's attr_list after typing "lab"
+		// Input: `graph { A [lab] }`
+		//                       ^-- cursor at line 1, col 15 (after "lab")
+		// Tree structure:
+		//   NodeStmt > AttrList > AList > Attribute > ID > 'lab'
+		"NodeAttrListPartialAttribute": {
+			src:        `graph { A [lab] }`,
+			position:   token.Position{Line: 1, Column: 15},
+			wantPrefix: "lab",
+			wantCtx:    Node,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ps := dot.NewParser([]byte(tt.src))
+			tree := ps.Parse()
+
+			prefix, ctx := completionContext(tree, tt.position, Graph)
+
+			assert.EqualValuesf(t, prefix, tt.wantPrefix, "unexpected prefix")
+			assert.EqualValuesf(t, ctx, tt.wantCtx, "unexpected context")
 		})
 	}
 }

@@ -49,6 +49,7 @@ const (
 
 	MethodPublishDiagnostics = "textDocument/publishDiagnostics"
 	MethodFormatting         = "textDocument/formatting"
+	MethodCompletion         = "textDocument/completion"
 )
 
 // Message has all the fields of request, response and notification. Presence/absence of fields is
@@ -122,6 +123,9 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 var initializeResult = func() json.RawMessage {
 	result := map[string]any{
 		"capabilities": map[string]any{
+			"completionProvider": map[string]any{
+				"triggerCharacters": []string{"[", ",", ";", "{"},
+			},
 			"documentFormattingProvider": true,
 			"positionEncoding":           EncodingUTF8,
 			"textDocumentSync":           SyncIncremental,
@@ -313,3 +317,101 @@ type Position struct {
 	Line      uint32 `json:"line"`
 	Character uint32 `json:"character"`
 }
+
+// CompletionParams contains the parameters for the textDocument/completion request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionParams
+type CompletionParams struct {
+	// TextDocument is the text document.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	// Position is the position inside the text document.
+	Position Position `json:"position"`
+	// Context is the completion context. Only available if the client specifies contextSupport.
+	Context *CompletionContext `json:"context,omitempty"`
+}
+
+// CompletionContext contains additional information about the context in which a completion
+// request is triggered.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionContext
+type CompletionContext struct {
+	// TriggerKind describes how the completion was triggered.
+	TriggerKind CompletionTriggerKind `json:"triggerKind"`
+	// TriggerCharacter is the trigger character that has trigger code complete.
+	// Only set if TriggerKind is TriggerCharacter.
+	TriggerCharacter *string `json:"triggerCharacter,omitempty"`
+}
+
+// CompletionTriggerKind describes how a completion was triggered.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionTriggerKind
+type CompletionTriggerKind int
+
+const (
+	// TriggerInvoked means completion was triggered by typing an identifier, manual invocation
+	// (e.g. Ctrl+Space) or via API.
+	TriggerInvoked CompletionTriggerKind = 1
+	// TriggerCharacter means completion was triggered by a trigger character specified by the
+	// triggerCharacters property of the CompletionOptions.
+	TriggerCharacter CompletionTriggerKind = 2
+	// TriggerForIncompleteCompletions means completion was re-triggered as the current completion
+	// list is incomplete.
+	TriggerForIncompleteCompletions CompletionTriggerKind = 3
+)
+
+// CompletionList represents a collection of completion items to be presented in the editor.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionList
+type CompletionList struct {
+	// IsIncomplete indicates this list is not complete. Further typing should result in
+	// recomputing this list.
+	IsIncomplete bool `json:"isIncomplete"`
+	// Items are the completion items.
+	Items []CompletionItem `json:"items"`
+}
+
+// CompletionItem represents a completion item to be presented in the editor.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionItem
+type CompletionItem struct {
+	// Label is the label of this completion item. Also the text that is inserted when selecting
+	// this completion unless insertText is provided.
+	Label string `json:"label"`
+	// Kind is the kind of this completion item. Based on the kind an icon is chosen by the editor.
+	Kind *CompletionItemKind `json:"kind,omitempty"`
+	// Detail is a human-readable string with additional information about this item,
+	// like type or symbol information.
+	Detail *string `json:"detail,omitempty"`
+	// Documentation is a human-readable string that represents a doc-comment.
+	Documentation *string `json:"documentation,omitempty"`
+	// InsertText is a string that should be inserted into a document when selecting this
+	// completion. When omitted the label is used.
+	InsertText *string `json:"insertText,omitempty"`
+}
+
+// CompletionItemKind is the kind of a completion entry.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionItemKind
+type CompletionItemKind int
+
+const (
+	CompletionItemKindText          CompletionItemKind = 1
+	CompletionItemKindMethod        CompletionItemKind = 2
+	CompletionItemKindFunction      CompletionItemKind = 3
+	CompletionItemKindConstructor   CompletionItemKind = 4
+	CompletionItemKindField         CompletionItemKind = 5
+	CompletionItemKindVariable      CompletionItemKind = 6
+	CompletionItemKindClass         CompletionItemKind = 7
+	CompletionItemKindInterface     CompletionItemKind = 8
+	CompletionItemKindModule        CompletionItemKind = 9
+	CompletionItemKindProperty      CompletionItemKind = 10
+	CompletionItemKindUnit          CompletionItemKind = 11
+	CompletionItemKindValue         CompletionItemKind = 12
+	CompletionItemKindEnum          CompletionItemKind = 13
+	CompletionItemKindKeyword       CompletionItemKind = 14
+	CompletionItemKindSnippet       CompletionItemKind = 15
+	CompletionItemKindColor         CompletionItemKind = 16
+	CompletionItemKindFile          CompletionItemKind = 17
+	CompletionItemKindReference     CompletionItemKind = 18
+	CompletionItemKindFolder        CompletionItemKind = 19
+	CompletionItemKindEnumMember    CompletionItemKind = 20
+	CompletionItemKindConstant      CompletionItemKind = 21
+	CompletionItemKindStruct        CompletionItemKind = 22
+	CompletionItemKindEvent         CompletionItemKind = 23
+	CompletionItemKindOperator      CompletionItemKind = 24
+	CompletionItemKindTypeParameter CompletionItemKind = 25
+)

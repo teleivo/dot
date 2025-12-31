@@ -18,6 +18,7 @@ import (
 	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/lsp/internal/rpc"
 	"github.com/teleivo/dot/printer"
+	"github.com/teleivo/dot/token"
 )
 
 // Config holds the configuration for creating an LSP server.
@@ -122,14 +123,10 @@ func (d *document) change(change rpc.TextDocumentContentChangeEvent) error {
 	copy(newSrc, d.src[:start])
 	copy(newSrc[start:], text)
 	copy(newSrc[start+len(text):], d.src[end:])
-	d.setSrc(newSrc)
+	d.src = newSrc
+	d.lines = buildLines(d.src)
 
 	return nil
-}
-
-func (d *document) setSrc(src []byte) {
-	d.src = src
-	d.lines = buildLines(d.src)
 }
 
 func (d *document) startPos() rpc.Position {
@@ -143,6 +140,13 @@ func (d *document) endPos() rpc.Position {
 	return rpc.Position{
 		Line:      uint32(len(d.lines)) - 1,
 		Character: uint32(len(d.src) - d.lines[len(d.lines)-1]),
+	}
+}
+
+func tokenPosition(pos rpc.Position) token.Position {
+	return token.Position{
+		Line:   int(pos.Line) + 1,
+		Column: int(pos.Character) + 1,
 	}
 }
 
@@ -298,6 +302,60 @@ func (srv *Server) Start(ctx context.Context) error {
 					response.Result = &rm
 
 					srv.write(cancel, response)
+				case rpc.MethodCompletion:
+					if message.Params == nil {
+						srv.logger.Error("missing params", "method", message.Method)
+						continue
+					}
+					var params rpc.CompletionParams
+					if err := json.Unmarshal(*message.Params, &params); err != nil {
+						srv.logger.Error("invalid params", "method", message.Method, "err", err)
+						continue
+					}
+					doc, ok := srv.docs[params.TextDocument.URI]
+					if !ok {
+						srv.logger.Error("unknown document", "uri", params.TextDocument.URI)
+						continue
+					}
+
+					// TODO cache the tree and errors in the document once it works
+					ps := dot.NewParser(doc.src)
+					t := ps.Parse()
+					pos := tokenPosition(params.Position)
+					prefix, attrCtx := completionContext(t, pos, Graph)
+
+					// TODO find first prefix
+					// i, ok := slices.BinarySearchFunc(attributes, prefix, func(attr attribute, prefix string) int {
+					// })
+
+					// TODO do naive at first then binary search?
+					var candidates []attribute
+					for _, attr := range attributes {
+						if strings.HasPrefix(attr.name, prefix) && attr.usedBy&attrCtx != 0 {
+							candidates = append(candidates, attr)
+						}
+					}
+
+					items := make([]rpc.CompletionItem, len(candidates))
+					for i, candidate := range candidates {
+						items[i] = completionItem(candidate)
+					}
+
+					response := rpc.Message{
+						ID: message.ID,
+					}
+					completions := rpc.CompletionList{
+						Items: items,
+					}
+					rp, err := json.Marshal(completions)
+					if err != nil {
+						srv.logger.Error("formatting failed due to marshaling edits", "method", message.Method, "err", err)
+						continue
+					}
+					rm := json.RawMessage(rp)
+					response.Result = &rm
+
+					srv.write(cancel, response)
 				case rpc.MethodDidClose:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
@@ -395,4 +453,76 @@ func diagnostics(doc *document) (rpc.Message, error) {
 	response.Params = &rm
 
 	return response, nil
+}
+
+func completionItem(attr attribute) rpc.CompletionItem {
+	// TODO add details/docs
+	kind := rpc.CompletionItemKindProperty
+	return rpc.CompletionItem{
+		Label: attr.name,
+		Kind:  &kind,
+	}
+}
+
+// completionContext finds the prefix text at the cursor position and determines the attribute context.
+// Returns the prefix string (text before cursor within the current token) and the context
+// for filtering attributes (Node, Edge, Graph, etc.). Falls back to empty prefix and Graph context
+// if unable to determine a more specific context.
+func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext) (string, attributeContext) {
+	if tree == nil {
+		return "", ctx
+	}
+
+	switch tree.Type {
+	case dot.KindNodeStmt:
+		ctx = Node
+	case dot.KindEdgeStmt:
+		ctx = Edge
+	case dot.KindSubgraph:
+		ctx = Subgraph
+		// TODO cluster is a subgraph with ID cluster_ prefix? add that has a method on the
+		// subgraph? or as part of ast package somehow?
+	}
+
+	// TODO correct? if a tree contains pos I don't need to check another sibling
+	for _, child := range tree.Children {
+		switch c := child.(type) {
+		case dot.TreeChild:
+			if inside(c.Tree, pos) {
+				fmt.Println("tree child", c.String())
+				return completionContext(c.Tree, pos, ctx)
+			}
+		case dot.TokenChild:
+			if insideToken(c.Token, pos) {
+				fmt.Println("token child", c.String())
+				return c.String(), ctx
+			}
+		}
+	}
+
+	return "", ctx
+}
+
+func inside(tree *dot.Tree, pos token.Position) bool {
+	if tree == nil {
+		return false
+	}
+	// TODO fix multi-line?
+	if pos.Line < tree.Start.Line || pos.Column < tree.Start.Column {
+		return false
+	}
+	if pos.Line > tree.End.Line || pos.Column > tree.End.Column+1 {
+		return false
+	}
+	return true
+}
+
+func insideToken(tok token.Token, pos token.Position) bool {
+	if pos.Line < tok.Start.Line || pos.Column < tok.Start.Column {
+		return false
+	}
+	if pos.Line > tok.End.Line || pos.Column > tok.End.Column+1 {
+		return false
+	}
+	return true
 }

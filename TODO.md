@@ -3,6 +3,14 @@
 ## Now
 
 * lsp: auto-complete for attribute keys
+  * start as simple as possible
+  * add custom attributes?
+  * add hover support?
+  * how fast/slow does this feel so far? profile and see if I should already use different ds for
+  the completion items or for finding things in the tree
+  * add types to attributes with validation of values? if I would do that I think it should live in
+    the parser. so maybe attributes would move over there
+
 * improve tests, use t.Log instead of comments in lsp_test.go
 * simplify lsp main loop, responding with error is more common now. how to simplify the
 json.RawMessage

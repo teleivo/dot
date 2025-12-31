@@ -3,7 +3,13 @@
 ## Now
 
 * lsp: auto-complete for attribute keys
-  * start as simple as possible
+  * fix tests
+  * add = after attribute name
+  * support cluster subgraph specific attributes
+  * make finding candidates less naive
+  * make this clean
+  * merge?
+
   * add custom attributes?
   * add hover support?
   * how fast/slow does this feel so far? profile and see if I should already use different ds for

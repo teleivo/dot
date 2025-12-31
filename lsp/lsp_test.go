@@ -282,9 +282,9 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, completionReq)
 
 		// Expect completions filtered to attributes starting with "lab"
-		// All "lab*" attributes are edge-only except: label (E,N,G,C), labelloc (N,G,C)
+		// All "lab*" attributes are edge-only except: label (G,C,N,E), labelloc (G,C,N)
 		// Since we're in a node context [lab], we expect node-applicable attributes
-		wantCompletion := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10},{"label":"labelloc","kind":10}]}}`
+		wantCompletion := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":"Text label attached to objects"},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":"Vertical placement of labels"}]}}`
 		assert.Truef(t, s.Scan(), "expecting completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion, "unexpected completion response")
 
@@ -301,7 +301,7 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, completionReq2)
 
 		// Now only "label" and "labelloc" match (both apply to nodes)
-		wantCompletion2 := `{"jsonrpc":"2.0","id":3,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10},{"label":"labelloc","kind":10}]}}`
+		wantCompletion2 := `{"jsonrpc":"2.0","id":3,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":"Text label attached to objects"},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":"Vertical placement of labels"}]}}`
 		assert.Truef(t, s.Scan(), "expecting narrowed completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion2, "unexpected narrowed completion response")
 
@@ -319,7 +319,7 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, completionReq3)
 
 		// Expect edge attributes starting with "arr": arrowhead, arrowsize, arrowtail
-		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10},{"label":"arrowsize","kind":10},{"label":"arrowtail","kind":10}]}}`
+		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10,"detail":"Edge","documentation":"Style of arrowhead on edge head node"},{"label":"arrowsize","kind":10,"detail":"Edge","documentation":"Multiplicative scale factor for arrowheads"},{"label":"arrowtail","kind":10,"detail":"Edge","documentation":"Style of arrowhead on edge tail node"}]}}`
 		assert.Truef(t, s.Scan(), "expecting edge completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion3, "unexpected edge completion response")
 	})
@@ -622,6 +622,112 @@ func TestCompletionContext(t *testing.T) {
 			position:   token.Position{Line: 1, Column: 15},
 			wantPrefix: "lab",
 			wantCtx:    Node,
+		},
+		// Multi-line: cursor on line 2 should still be inside a node that starts on line 1
+		// Input:
+		//   graph {
+		//     A [lab]
+		//   }
+		// Tree: 'lab' (@ 2 6 2 8), ']' (@ 2 9 2 9)
+		// Cursor at line 2, col 9 (after "lab", on "]")
+		"MultiLineNodeAttr": {
+			src:        "graph {\n  A [lab]\n}",
+			position:   token.Position{Line: 2, Column: 9},
+			wantPrefix: "lab",
+			wantCtx:    Node,
+		},
+		// Bug case: naive column check fails when pos.Line > start.Line but pos.Column < start.Column
+		// Input (note leading spaces on line 1):
+		//   "  graph {\nA\n}"
+		// Tree: Graph (@ 1 3 ...), 'A' (@ 2 1 2 1)
+		// Cursor at line 2, col 2 (after "A")
+		// Naive check: pos.Column (2) < Graph.Start.Column (3) → incorrectly returns "not inside"
+		"MultiLineColumnBug": {
+			src:        "  graph {\nA\n}",
+			position:   token.Position{Line: 2, Column: 2},
+			wantPrefix: "A",
+			wantCtx:    Node,
+		},
+		// Edge attributes: cursor after "arr" in edge attr list
+		// Input: `digraph { a -> b [arr] }`
+		// Tree: EdgeStmt > AttrList > AList > Attribute > ID > 'arr' (@ 1 19 1 21)
+		// Cursor at line 1, col 22 (after "arr", on "]")
+		"EdgeAttrList": {
+			src:        `digraph { a -> b [arr] }`,
+			position:   token.Position{Line: 1, Column: 22},
+			wantPrefix: "arr",
+			wantCtx:    Edge,
+		},
+		// Empty prefix: cursor right after "[" with nothing typed yet
+		// Input: `graph { a [ }` (malformed but parser recovers)
+		// Tree: AttrList '[' (@ 1 11 1 11), no AList children
+		// Cursor at line 1, col 12 (after "[")
+		// Should return empty prefix, Node context
+		"EmptyPrefixAfterBracket": {
+			src:        `graph { a [ }`,
+			position:   token.Position{Line: 1, Column: 12},
+			wantPrefix: "",
+			wantCtx:    Node,
+		},
+		// Cursor after comma in attr list - ready for next attribute
+		// Input: `graph { a [label=red,] }`
+		// Tree: ',' (@ 1 21 1 21), ']' (@ 1 22 1 22)
+		// Cursor at line 1, col 22 (after ",", on "]")
+		"AfterCommaInAttrList": {
+			src:        `graph { a [label=red,] }`,
+			position:   token.Position{Line: 1, Column: 22},
+			wantPrefix: "",
+			wantCtx:    Node,
+		},
+		// AttrStmt with "node" keyword - sets default node attributes
+		// Input: `graph { node [lab] }`
+		// Tree: AttrStmt > 'node' > AttrList > AList > Attribute > ID > 'lab' (@ 1 15 1 17)
+		// Cursor at line 1, col 18 (after "lab")
+		// Context should be Node (from AttrStmt with "node" keyword)
+		"AttrStmtNode": {
+			src:        `graph { node [lab] }`,
+			position:   token.Position{Line: 1, Column: 18},
+			wantPrefix: "lab",
+			wantCtx:    Node,
+		},
+		// AttrStmt with "edge" keyword - sets default edge attributes
+		// Input: `graph { edge [lab] }`
+		// Tree: AttrStmt > 'edge' > AttrList > AList > Attribute > ID > 'lab' (@ 1 15 1 17)
+		// Cursor at line 1, col 18 (after "lab")
+		// Context should be Edge (from AttrStmt with "edge" keyword)
+		"AttrStmtEdge": {
+			src:        `graph { edge [lab] }`,
+			position:   token.Position{Line: 1, Column: 18},
+			wantPrefix: "lab",
+			wantCtx:    Edge,
+		},
+		// AttrStmt with "graph" keyword - sets graph attributes
+		// Input: `graph { graph [lab] }`
+		// Tree: AttrStmt > 'graph' > AttrList > AList > Attribute > ID > 'lab' (@ 1 16 1 18)
+		// Cursor at line 1, col 19 (after "lab")
+		// Context should be Graph (from AttrStmt with "graph" keyword)
+		"AttrStmtGraph": {
+			src:        `graph { graph [lab] }`,
+			position:   token.Position{Line: 1, Column: 19},
+			wantPrefix: "lab",
+			wantCtx:    Graph,
+		},
+		// Subgraph: node inside subgraph still gets Node context
+		// Input: `graph { subgraph { a [lab] } }`
+		// Tree: Subgraph > StmtList > NodeStmt > AttrList > AList > Attribute > ID > 'lab' (@ 1 23 1 25)
+		// Cursor at line 1, col 26 (after "lab")
+		"NodeInSubgraph": {
+			src:        `graph { subgraph { a [lab] } }`,
+			position:   token.Position{Line: 1, Column: 26},
+			wantPrefix: "lab",
+			wantCtx:    Node,
+		},
+		// Nil tree: should return empty prefix and Graph context
+		"NilTree": {
+			src:        ``,
+			position:   token.Position{Line: 1, Column: 1},
+			wantPrefix: "",
+			wantCtx:    Graph,
 		},
 	}
 

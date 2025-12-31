@@ -456,11 +456,14 @@ func diagnostics(doc *document) (rpc.Message, error) {
 }
 
 func completionItem(attr attribute) rpc.CompletionItem {
-	// TODO add details/docs
+	// TODO add InsertText with added " =" for nice UX
 	kind := rpc.CompletionItemKindProperty
+	detail := attr.usedBy.String()
 	return rpc.CompletionItem{
-		Label: attr.name,
-		Kind:  &kind,
+		Label:         attr.name,
+		Kind:          &kind,
+		Detail:        &detail,
+		Documentation: &attr.documentation,
 	}
 }
 
@@ -484,45 +487,20 @@ func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext)
 		// subgraph? or as part of ast package somehow?
 	}
 
-	// TODO correct? if a tree contains pos I don't need to check another sibling
 	for _, child := range tree.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
-			if inside(c.Tree, pos) {
-				fmt.Println("tree child", c.String())
+			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
+			if !pos.Before(c.Start) && !pos.After(end) {
 				return completionContext(c.Tree, pos, ctx)
 			}
 		case dot.TokenChild:
-			if insideToken(c.Token, pos) {
-				fmt.Println("token child", c.String())
+			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
+			if !pos.Before(c.Start) && !pos.After(end) {
 				return c.String(), ctx
 			}
 		}
 	}
 
 	return "", ctx
-}
-
-func inside(tree *dot.Tree, pos token.Position) bool {
-	if tree == nil {
-		return false
-	}
-	// TODO fix multi-line?
-	if pos.Line < tree.Start.Line || pos.Column < tree.Start.Column {
-		return false
-	}
-	if pos.Line > tree.End.Line || pos.Column > tree.End.Column+1 {
-		return false
-	}
-	return true
-}
-
-func insideToken(tok token.Token, pos token.Position) bool {
-	if pos.Line < tok.Start.Line || pos.Column < tok.Start.Column {
-		return false
-	}
-	if pos.Line > tok.End.Line || pos.Column > tok.End.Column+1 {
-		return false
-	}
-	return true
 }

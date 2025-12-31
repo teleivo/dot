@@ -3,18 +3,55 @@ package lsp
 import (
 	"cmp"
 	"slices"
+	"strings"
 )
 
 // attributeContext represents which DOT elements an attribute can be used with.
 type attributeContext uint
 
 const (
-	Edge attributeContext = 1 << iota
-	Graph
-	Node
+	Graph attributeContext = 1 << iota
 	Subgraph
 	Cluster
+	Node
+	Edge
 )
+
+// String returns the string representation of the attribute context.
+// For combined contexts (bitmask), it returns a comma-separated list.
+func (c attributeContext) String() string {
+	if c == 0 {
+		return ""
+	}
+
+	// Pre-allocate for all context kinds
+	contexts := make([]attributeContext, 0, 5)
+	for remaining := c; remaining != 0; {
+		bit := remaining & -remaining
+		contexts = append(contexts, bit)
+		remaining &^= bit
+	}
+
+	var result strings.Builder
+	for i, ctx := range contexts {
+		if i > 0 {
+			result.WriteString(", ")
+		}
+		switch ctx {
+		case Graph:
+			result.WriteString("Graph")
+		case Subgraph:
+			result.WriteString("Subgraph")
+		case Cluster:
+			result.WriteString("Cluster")
+		case Node:
+			result.WriteString("Node")
+		case Edge:
+			result.WriteString("Edge")
+		}
+	}
+	return result.String()
+}
 
 // attribute represents a Graphviz attribute with its applicable targets and documentation.
 type attribute struct {

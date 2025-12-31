@@ -1,0 +1,10 @@
+graph foo {
+	node [labelloc=""]
+	subgraph cluster_faa {
+		1 -- 18 []
+	}
+	subgraph cluster_fee {
+		edge [aa=foo,boo=afsdf,cee=asdf]
+		3 -- 4
+	}
+}

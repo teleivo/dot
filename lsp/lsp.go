@@ -456,11 +456,12 @@ func diagnostics(doc *document) (rpc.Message, error) {
 }
 
 func completionItem(attr attribute) rpc.CompletionItem {
-	// TODO add InsertText with added " =" for nice UX
 	kind := rpc.CompletionItemKindProperty
 	detail := attr.usedBy.String()
+	text := attr.name + "="
 	return rpc.CompletionItem{
 		Label:         attr.name,
+		InsertText:    &text,
 		Kind:          &kind,
 		Detail:        &detail,
 		Documentation: &attr.documentation,
@@ -508,7 +509,7 @@ func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext)
 
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
-				if c.Type == token.ID {
+				if c.Type == token.ID { // only IDs are potential attribute name prefixes
 					return c.String(), ctx
 				}
 				return "", ctx

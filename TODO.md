@@ -3,15 +3,15 @@
 ## Now
 
 * lsp: auto-complete for attribute keys
-  * add = after attribute name
-
   * support cluster subgraph specific attributes
   * make finding candidates less naive
-  * make this clean
-  * merge?
+  * make my completion impl clean: review
+  * merge
 
-  * add custom attributes?
-  * add hover support?
+  * add custom attributes to attributes?
+  * implement completion for IDs in general?
+
+  * add hover support for attribute names?
   * how fast/slow does this feel so far? profile and see if I should already use different ds for
   the completion items or for finding things in the tree
   * add types to attributes with validation of values? if I would do that I think it should live in

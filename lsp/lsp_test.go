@@ -284,7 +284,7 @@ func TestServer(t *testing.T) {
 		// Expect completions filtered to attributes starting with "lab"
 		// All "lab*" attributes are edge-only except: label (G,C,N,E), labelloc (G,C,N)
 		// Since we're in a node context [lab], we expect node-applicable attributes
-		wantCompletion := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":"Text label attached to objects"},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":"Vertical placement of labels"}]}}`
+		wantCompletion := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":"Text label attached to objects","insertText":"label="},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":"Vertical placement of labels","insertText":"labelloc="}]}}`
 		assert.Truef(t, s.Scan(), "expecting completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion, "unexpected completion response")
 
@@ -301,7 +301,7 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, completionReq2)
 
 		// Now only "label" and "labelloc" match (both apply to nodes)
-		wantCompletion2 := `{"jsonrpc":"2.0","id":3,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":"Text label attached to objects"},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":"Vertical placement of labels"}]}}`
+		wantCompletion2 := `{"jsonrpc":"2.0","id":3,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":"Text label attached to objects","insertText":"label="},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":"Vertical placement of labels","insertText":"labelloc="}]}}`
 		assert.Truef(t, s.Scan(), "expecting narrowed completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion2, "unexpected narrowed completion response")
 
@@ -319,7 +319,7 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, completionReq3)
 
 		// Expect edge attributes starting with "arr": arrowhead, arrowsize, arrowtail
-		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10,"detail":"Edge","documentation":"Style of arrowhead on edge head node"},{"label":"arrowsize","kind":10,"detail":"Edge","documentation":"Multiplicative scale factor for arrowheads"},{"label":"arrowtail","kind":10,"detail":"Edge","documentation":"Style of arrowhead on edge tail node"}]}}`
+		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10,"detail":"Edge","documentation":"Style of arrowhead on edge head node","insertText":"arrowhead="},{"label":"arrowsize","kind":10,"detail":"Edge","documentation":"Multiplicative scale factor for arrowheads","insertText":"arrowsize="},{"label":"arrowtail","kind":10,"detail":"Edge","documentation":"Style of arrowhead on edge tail node","insertText":"arrowtail="}]}}`
 		assert.Truef(t, s.Scan(), "expecting edge completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion3, "unexpected edge completion response")
 	})

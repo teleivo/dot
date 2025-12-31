@@ -6,7 +6,15 @@ import (
 	"strings"
 )
 
-// attributeContext represents which DOT elements an attribute can be used with.
+// attributeContext represents which DOT elements an attribute can be applied to.
+// These correspond to the "Used By" column in the [Graphviz attribute documentation]:
+//   - Graph (G): graph-level attributes, e.g., graph [rankdir=LR]
+//   - Subgraph (S): subgraph attributes
+//   - Cluster (C): cluster subgraph attributes (subgraph with ID starting with "cluster_")
+//   - Node (N): node attributes, e.g., a [shape=box]
+//   - Edge (E): edge attributes, e.g., a -> b [style=dashed]
+//
+// [Graphviz attribute documentation]: https://graphviz.org/doc/info/attrs.html
 type attributeContext uint
 
 const (
@@ -55,12 +63,18 @@ func (c attributeContext) String() string {
 
 // attribute represents a Graphviz attribute with its applicable targets and documentation.
 type attribute struct {
-	name          string
+	name string
+	// usedBy indicates which DOT elements this attribute can be applied to.
+	// Matches the "Used By" column from the [Graphviz attribute documentation].
+	//
+	// [Graphviz attribute documentation]: https://graphviz.org/doc/info/attrs.html
 	usedBy        attributeContext
 	documentation string
 }
 
-// attributes contains all Graphviz attributes from https://graphviz.org/doc/info/attrs.html
+// attributes contains all Graphviz attributes from the [Graphviz attribute documentation].
+//
+// [Graphviz attribute documentation]: https://graphviz.org/doc/info/attrs.html
 var attributes []attribute = func() []attribute {
 	attributes := []attribute{
 		{"_background", Graph, "Specifies arbitrary background using xdot format strings"},

@@ -480,8 +480,6 @@ func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext)
 	switch tree.Type {
 	case dot.KindSubgraph:
 		ctx = Subgraph
-		// TODO cluster is a subgraph with ID cluster_ prefix? add that has a method on the
-		// subgraph? or as part of ast package somehow?
 	case dot.KindNodeStmt:
 		ctx = Node
 	case dot.KindEdgeStmt:
@@ -491,6 +489,14 @@ func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext)
 	for i, child := range tree.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
+			if tree.Type == dot.KindSubgraph && i == 1 && c.Type == dot.KindID {
+				if len(c.Children) > 0 {
+					if id, ok := c.Children[0].(dot.TokenChild); ok && strings.HasPrefix(id.Literal, "cluster_") {
+						ctx = Cluster
+					}
+				}
+			}
+
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
 				return completionContext(c.Tree, pos, ctx)
@@ -499,7 +505,9 @@ func completionContext(tree *dot.Tree, pos token.Position, ctx attributeContext)
 			if i == 0 && tree.Type == dot.KindAttrStmt {
 				switch c.Type {
 				case token.Graph: // graph [name=value]
-					ctx = Graph
+					if ctx != Cluster {
+						ctx = Graph
+					}
 				case token.Node: // node [name=value]
 					ctx = Node
 				case token.Edge: // edge [name=value]

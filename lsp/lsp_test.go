@@ -729,6 +729,48 @@ func TestCompletionContext(t *testing.T) {
 			wantPrefix: "",
 			wantCtx:    Graph,
 		},
+		// Anonymous subgraph: node attributes inside anonymous subgraph get Node context
+		// Input: `graph { subgraph { a [pen] } }`
+		// Tree: Subgraph > StmtList > NodeStmt > AttrList > AList > Attribute > ID > 'pen' (@ 1 23 1 25)
+		// Cursor at line 1, col 26 (after "pen")
+		"AnonymousSubgraphNodeAttr": {
+			src:        `graph { subgraph { a [pen] } }`,
+			position:   token.Position{Line: 1, Column: 26},
+			wantPrefix: "pen",
+			wantCtx:    Node,
+		},
+		// Named subgraph (non-cluster): node attributes inside named subgraph get Node context
+		// Input: `graph { subgraph foo { a [pen] } }`
+		// Tree: Subgraph > ID('foo') > StmtList > NodeStmt > AttrList > AList > Attribute > ID > 'pen' (@ 1 27 1 29)
+		// Cursor at line 1, col 30 (after "pen")
+		"NamedSubgraphNodeAttr": {
+			src:        `graph { subgraph foo { a [pen] } }`,
+			position:   token.Position{Line: 1, Column: 30},
+			wantPrefix: "pen",
+			wantCtx:    Node,
+		},
+		// Cluster subgraph: node attributes inside cluster subgraph still get Node context
+		// Input: `graph { subgraph cluster_foo { a [pen] } }`
+		// Tree: Subgraph > ID('cluster_foo') > StmtList > NodeStmt > AttrList > AList > Attribute > ID > 'pen' (@ 1 35 1 37)
+		// Cursor at line 1, col 38 (after "pen")
+		// Context should be Node because we're on a NodeStmt, not the cluster itself
+		"ClusterSubgraphNodeAttr": {
+			src:        `graph { subgraph cluster_foo { a [pen] } }`,
+			position:   token.Position{Line: 1, Column: 38},
+			wantPrefix: "pen",
+			wantCtx:    Node,
+		},
+		// Cluster subgraph: graph attributes inside cluster get Cluster context
+		// Input: `graph { subgraph cluster_foo { graph [pen] } }`
+		// Tree: Subgraph > ID('cluster_foo') > StmtList > AttrStmt('graph') > AttrList > AList > Attribute > ID > 'pen' (@ 1 39 1 41)
+		// Cursor at line 1, col 42 (after "pen")
+		// Context should be Cluster because AttrStmt 'graph' inside a cluster_ subgraph
+		"ClusterSubgraphGraphAttr": {
+			src:        `graph { subgraph cluster_foo { graph [pen] } }`,
+			position:   token.Position{Line: 1, Column: 42},
+			wantPrefix: "pen",
+			wantCtx:    Cluster,
+		},
 	}
 
 	for name, tt := range tests {

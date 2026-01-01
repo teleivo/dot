@@ -1,4 +1,4 @@
-package lsp
+package completion
 
 import (
 	"cmp"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// attributeContext represents which DOT elements an attribute can be applied to.
+// AttributeContext represents which DOT elements an attribute can be applied to.
 // These correspond to the "Used By" column in the [Graphviz attribute documentation]:
 //   - Graph (G): graph-level attributes, e.g., graph [rankdir=LR]
 //   - Subgraph (S): subgraph attributes
@@ -15,25 +15,25 @@ import (
 //   - Edge (E): edge attributes, e.g., a -> b [style=dashed]
 //
 // [Graphviz attribute documentation]: https://graphviz.org/doc/info/attrs.html
-type attributeContext uint
+type AttributeContext uint
 
 const (
-	Graph attributeContext = 1 << iota
-	Subgraph
-	Cluster
-	Node
-	Edge
+	Graph    AttributeContext = 1 << iota // Graph-level attributes (e.g., rankdir, splines)
+	Subgraph                              // Subgraph attributes (e.g., rank)
+	Cluster                               // Cluster subgraph attributes (subgraph with "cluster_" prefix)
+	Node                                  // Node attributes (e.g., shape, label)
+	Edge                                  // Edge attributes (e.g., arrowhead, style)
 )
 
 // String returns the string representation of the attribute context.
 // For combined contexts (bitmask), it returns a comma-separated list.
-func (c attributeContext) String() string {
+func (c AttributeContext) String() string {
 	if c == 0 {
 		return ""
 	}
 
 	// Pre-allocate for all context kinds
-	contexts := make([]attributeContext, 0, 5)
+	contexts := make([]AttributeContext, 0, 5)
 	for remaining := c; remaining != 0; {
 		bit := remaining & -remaining
 		contexts = append(contexts, bit)
@@ -61,22 +61,25 @@ func (c attributeContext) String() string {
 	return result.String()
 }
 
-// attribute represents a Graphviz attribute with its applicable targets and documentation.
-type attribute struct {
-	name string
-	// usedBy indicates which DOT elements this attribute can be applied to.
+// Attribute represents a Graphviz attribute with its applicable contexts and documentation.
+type Attribute struct {
+	// Name is the attribute name as used in DOT syntax (e.g., "shape", "label").
+	Name string
+	// UsedBy indicates which DOT elements this attribute can be applied to.
 	// Matches the "Used By" column from the [Graphviz attribute documentation].
 	//
 	// [Graphviz attribute documentation]: https://graphviz.org/doc/info/attrs.html
-	usedBy        attributeContext
-	documentation string
+	UsedBy AttributeContext
+	// Documentation is a brief description of what the attribute does.
+	Documentation string
 }
 
-// attributes contains all Graphviz attributes from the [Graphviz attribute documentation].
+// Attributes contains all Graphviz attributes sorted by name.
+// See the [Graphviz attribute documentation] for the full reference.
 //
 // [Graphviz attribute documentation]: https://graphviz.org/doc/info/attrs.html
-var attributes []attribute = func() []attribute {
-	attributes := []attribute{
+var Attributes = func() []Attribute {
+	attributes := []Attribute{
 		{"_background", Graph, "Specifies arbitrary background using xdot format strings"},
 		{"area", Node | Cluster, "referred area for node or empty cluster (patchwork layout)"},
 		{"arrowhead", Edge, "Style of arrowhead on edge head node"},
@@ -255,8 +258,8 @@ var attributes []attribute = func() []attribute {
 		{"xlp", Node | Edge, "Position of exterior label (write-only)"},
 		{"z", Node, "Z-coordinate for 3D layouts"},
 	}
-	slices.SortFunc(attributes, func(a, b attribute) int {
-		return cmp.Compare(a.name, b.name)
+	slices.SortFunc(attributes, func(a, b Attribute) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	return attributes

@@ -1,4 +1,4 @@
-package lsp
+package completion
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 
 func TestAttributeContextString(t *testing.T) {
 	tests := []struct {
-		ctx  attributeContext
+		ctx  AttributeContext
 		want string
 	}{
 		{0, ""},

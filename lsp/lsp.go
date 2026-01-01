@@ -16,6 +16,7 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
+	"github.com/teleivo/dot/lsp/internal/completion"
 	"github.com/teleivo/dot/lsp/internal/rpc"
 	"github.com/teleivo/dot/printer"
 	"github.com/teleivo/dot/token"
@@ -318,28 +319,10 @@ func (srv *Server) Start(ctx context.Context) error {
 						continue
 					}
 
-					// TODO cache the tree and errors in the document once it works
+					// TODO cache the tree in the document
 					ps := dot.NewParser(doc.src)
-					t := ps.Parse()
-					pos := tokenPosition(params.Position)
-					completion := completionContext(t, pos)
-
-					// TODO find first prefix
-					// i, ok := slices.BinarySearchFunc(attributes, prefix, func(attr attribute, prefix string) int {
-					// })
-
-					// TODO do naive at first then binary search?
-					var candidates []attribute
-					for _, attr := range attributes {
-						if strings.HasPrefix(attr.name, completion.Prefix) && attr.usedBy&completion.AttrCtx != 0 {
-							candidates = append(candidates, attr)
-						}
-					}
-
-					items := make([]rpc.CompletionItem, len(candidates))
-					for i, candidate := range candidates {
-						items[i] = completionItem(candidate)
-					}
+					tree := ps.Parse()
+					items := completion.Items(tree, tokenPosition(params.Position))
 
 					response := rpc.Message{
 						ID: message.ID,
@@ -453,103 +436,4 @@ func diagnostics(doc *document) (rpc.Message, error) {
 	response.Params = &rm
 
 	return response, nil
-}
-
-func completionItem(attr attribute) rpc.CompletionItem {
-	kind := rpc.CompletionItemKindProperty
-	detail := attr.usedBy.String()
-	text := attr.name + "="
-	return rpc.CompletionItem{
-		Label:         attr.name,
-		InsertText:    &text,
-		Kind:          &kind,
-		Detail:        &detail,
-		Documentation: &attr.documentation,
-	}
-}
-
-// completionResult accumulates context as we traverse the tree.
-type completionResult struct {
-	Prefix   string           // text typed so far (for filtering)
-	AttrCtx  attributeContext // element context (Node, Edge, Graph, etc.)
-	AttrName string           // when non-empty, cursor is in value position for this attribute
-}
-
-// completionContext finds the prefix text at the cursor position and determines the attribute context.
-// Returns the prefix string (text before cursor within the current token), the context
-// for filtering attributes (Node, Edge, Graph, etc.), and the attribute name when in value position.
-// Falls back to empty prefix and Graph context if unable to determine a more specific context.
-func completionContext(tree *dot.Tree, pos token.Position) completionResult {
-	result := &completionResult{AttrCtx: Graph}
-	completionContextRec(tree, pos, result)
-	return *result
-}
-
-func completionContextRec(tree *dot.Tree, pos token.Position, result *completionResult) {
-	if tree == nil {
-		return
-	}
-
-	switch tree.Type {
-	case dot.KindSubgraph:
-		result.AttrCtx = Subgraph
-	case dot.KindNodeStmt:
-		result.AttrCtx = Node
-	case dot.KindEdgeStmt:
-		result.AttrCtx = Edge
-	}
-
-	if tree.Type == dot.KindAttribute && len(tree.Children) >= 2 {
-		nameTree, okTree := tree.Children[0].(dot.TreeChild)
-		equal, okEqual := tree.Children[1].(dot.TokenChild)
-		if okTree && nameTree.Type == dot.KindID && len(nameTree.Children) > 0 {
-			if id, okID := nameTree.Children[0].(dot.TokenChild); okID && okEqual && equal.Type == token.Equal && !pos.Before(equal.End) {
-				result.AttrName = id.Literal
-			}
-		}
-	}
-	for i, child := range tree.Children {
-		switch c := child.(type) {
-		case dot.TreeChild:
-			if tree.Type == dot.KindSubgraph && i == 1 && c.Type == dot.KindID && len(c.Children) > 0 {
-				if id, ok := c.Children[0].(dot.TokenChild); ok && strings.HasPrefix(id.Literal, "cluster_") {
-					result.AttrCtx = Cluster
-				}
-			}
-
-			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
-			if !pos.Before(c.Start) && !pos.After(end) {
-				completionContextRec(c.Tree, pos, result)
-				return
-			}
-		case dot.TokenChild:
-			if i == 0 && tree.Type == dot.KindAttrStmt {
-				switch c.Type {
-				case token.Graph: // graph [name=value]
-					if result.AttrCtx != Cluster {
-						result.AttrCtx = Graph
-					}
-				case token.Node: // node [name=value]
-					result.AttrCtx = Node
-				case token.Edge: // edge [name=value]
-					result.AttrCtx = Edge
-				}
-			}
-
-			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
-			if !pos.Before(c.Start) && !pos.After(end) {
-				if c.Type == token.ID {
-					// If AttrName is set and Prefix equals AttrName, we're on the name ID in value position - clear Prefix
-					if result.AttrName != "" && c.String() == result.AttrName {
-						return
-					}
-					result.Prefix = c.String()
-				}
-				// Don't return on '=' - continue to find value ID
-				if c.Type != token.Equal {
-					return
-				}
-			}
-		}
-	}
 }

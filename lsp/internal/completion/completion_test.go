@@ -19,7 +19,7 @@ func TestAttributeMarkdownDoc(t *testing.T) {
 	got := attr.markdownDoc()
 	want := `Edge type for drawing arrowheads
 
-**Type:** [dirType](https://graphviz.org/docs/attr-types/dirType/): ` + "`forward` | `back` | `both` | `none`" + `
+**Type:** [dirType](https://graphviz.org/docs/attr-types/dirType/): ` + "`back` | `both` | `forward` | `none`" + `
 
 [Docs](https://graphviz.org/docs/attrs/dir/)`
 

@@ -31,8 +31,8 @@ var attrTypeInfo = [...]struct {
 }{
 	TypeUnknown:   {"", nil, ""},
 	TypeArrowType: {"arrowType", []string{"box", "crow", "curve", "diamond", "dot", "icurve", "inv", "none", "normal", "tee", "vee"}, "Arrow shape"},
-	TypeDirType:   {"dirType", []string{"forward", "back", "both", "none"}, "Edge arrow direction"},
-	TypeLayout:    {"layout", []string{"dot", "neato", "twopi", "circo", "fdp", "sfdp", "patchwork", "osage"}, "Layout engine name"},
+	TypeDirType:   {"dirType", []string{"back", "both", "forward", "none"}, "Edge arrow direction"},
+	TypeLayout:    {"layout", []string{"circo", "dot", "fdp", "neato", "osage", "patchwork", "sfdp", "twopi"}, "Layout engine name"},
 }
 
 // String returns the type name (e.g., "dirType").

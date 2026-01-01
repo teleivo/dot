@@ -317,7 +317,8 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, completionReq3)
 
 		// Expect edge attributes starting with "arr": arrowhead, arrowsize, arrowtail
-		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Style of arrowhead on edge head node\n\n[Docs](https://graphviz.org/docs/attrs/arrowhead/)"},"insertText":"arrowhead="},{"label":"arrowsize","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Multiplicative scale factor for arrowheads\n\n[Docs](https://graphviz.org/docs/attrs/arrowsize/)"},"insertText":"arrowsize="},{"label":"arrowtail","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Style of arrowhead on edge tail node\n\n[Docs](https://graphviz.org/docs/attrs/arrowtail/)"},"insertText":"arrowtail="}]}}`
+		// arrowhead and arrowtail have TypeArrowType, arrowsize has no type
+		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Style of arrowhead on edge head node\n\n**Type:** [arrowType](https://graphviz.org/docs/attr-types/arrowType/): ` + "`box` | `crow` | `curve` | `diamond` | `dot` | `icurve` | `inv` | `none` | `normal` | `tee` | `vee`" + `\n\n[Docs](https://graphviz.org/docs/attrs/arrowhead/)"},"insertText":"arrowhead="},{"label":"arrowsize","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Multiplicative scale factor for arrowheads\n\n[Docs](https://graphviz.org/docs/attrs/arrowsize/)"},"insertText":"arrowsize="},{"label":"arrowtail","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Style of arrowhead on edge tail node\n\n**Type:** [arrowType](https://graphviz.org/docs/attr-types/arrowType/): ` + "`box` | `crow` | `curve` | `diamond` | `dot` | `icurve` | `inv` | `none` | `normal` | `tee` | `vee`" + `\n\n[Docs](https://graphviz.org/docs/attrs/arrowtail/)"},"insertText":"arrowtail="}]}}`
 		assert.Truef(t, s.Scan(), "expecting edge completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion3, "unexpected edge completion response")
 	})
@@ -630,10 +631,9 @@ func TestCompletion(t *testing.T) {
 		completionReq := `{"jsonrpc":"2.0","method":"textDocument/completion","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":21}}}`
 		writeMessage(t, in, completionReq)
 
-		// Expect completion items for dirType values: forward, back, both, none
+		// Expect completion items for dirType values: back, both, forward, none (alphabetical)
 		// CompletionItemKind 12 = Value
-		// The items should be sorted alphabetically
-		want := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"back","kind":12,"detail":"dirType","documentation":"Arrow at tail end only"},{"label":"both","kind":12,"detail":"dirType","documentation":"Arrows at both ends"},{"label":"forward","kind":12,"detail":"dirType","documentation":"Arrow at head end only (default for digraph)"},{"label":"none","kind":12,"detail":"dirType","documentation":"No arrows (default for graph)"}]}}`
+		want := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"back","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"both","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"forward","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"none","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}}]}}`
 		assert.Truef(t, s.Scan(), "expecting completion response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected completion response")
 	})

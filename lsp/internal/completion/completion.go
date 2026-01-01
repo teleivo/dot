@@ -14,21 +14,34 @@ func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
 	attrCtx := result{AttrCtx: Graph}
 	context(tree, pos, &attrCtx)
 
-	var candidates []Attribute
-	for _, attr := range Attributes {
-		if strings.HasPrefix(attr.Name, attrCtx.Prefix) && attr.UsedBy&attrCtx.AttrCtx != 0 {
-			candidates = append(candidates, attr)
+	// TODO simplify this
+	var items []rpc.CompletionItem
+	if attrCtx.AttrName == "" { // attribute name completion
+		for _, attr := range Attributes {
+			if strings.HasPrefix(attr.Name, attrCtx.Prefix) && attr.UsedBy&attrCtx.AttrCtx != 0 {
+				items = append(items, attributeNameItem(attr))
+			}
 		}
-	}
-
-	items := make([]rpc.CompletionItem, len(candidates))
-	for i, candidate := range candidates {
-		items[i] = completionItem(candidate)
+	} else { // attribute value completion
+		var at *Attribute
+		for _, attr := range Attributes {
+			// TODO does context still matter?
+			if attr.Name == attrCtx.AttrName && attr.UsedBy&attrCtx.AttrCtx != 0 {
+				at = &attr
+				break
+			}
+		}
+		if at != nil {
+			items = make([]rpc.CompletionItem, len(at.Type.Values()))
+			for i, v := range at.Type.Values() {
+				items[i] = attributeValueItem(v, at.Type)
+			}
+		}
 	}
 	return items
 }
 
-func completionItem(attr Attribute) rpc.CompletionItem {
+func attributeNameItem(attr Attribute) rpc.CompletionItem {
 	kind := rpc.CompletionItemKindProperty
 	detail := attr.UsedBy.String()
 	text := attr.Name + "="
@@ -40,6 +53,20 @@ func completionItem(attr Attribute) rpc.CompletionItem {
 		Documentation: &rpc.MarkupContent{
 			Kind:  "markdown",
 			Value: attr.MarkdownDoc,
+		},
+	}
+}
+
+func attributeValueItem(value string, attrType AttrType) rpc.CompletionItem {
+	kind := rpc.CompletionItemKindValue
+	detail := attrType.String()
+	return rpc.CompletionItem{
+		Label:  value,
+		Kind:   &kind,
+		Detail: &detail,
+		Documentation: &rpc.MarkupContent{
+			Kind:  "markdown",
+			Value: "[" + attrType.String() + "](" + attrType.URL() + ")",
 		},
 	}
 }

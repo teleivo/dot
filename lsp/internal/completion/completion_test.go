@@ -197,7 +197,7 @@ func TestItems(t *testing.T) {
 		"StyleValuesForEdge": {
 			src:      `digraph { a -> b [style=] }`,
 			position: token.Position{Line: 1, Column: 25},
-			want:     []string{"solid", "dashed", "dotted", "bold", "invis", "filled", "tapered"},
+			want:     []string{"solid", "dashed", "dotted", "bold", "invis", "tapered"},
 		},
 		"StyleValuesForCluster": {
 			src:      `graph { subgraph cluster_a { graph [style=] } }`,

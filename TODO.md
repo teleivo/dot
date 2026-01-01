@@ -6,12 +6,14 @@ lsp
 * auto-complete for attribute keys
   * review c6a9d552f560b23589fb8686e3afe7fdb96b2466 completion.go
   * fix: in Graph context I don't get layout, why?
+
+  * add signature help on attr names/values?
+
   * fix: don't add another = when trying to change the name=
   * fix: support completing values like styles that have to be quoted to use multiple ones and the
   quote is missing?
   	a [area=50,style="dashed,]
 
-  * add docs to values? so layout engines can have an explanation for example
   * completion test: add more completion.Items tests instead of lower level context tests?
 
   * make finding candidates less naive
@@ -22,8 +24,6 @@ lsp
 
 * simplify lsp main loop, responding with error is more common now. how to simplify the
 json.RawMessage
-* add hover support for attribute names?
-* add signature help on attr names/values?
 * add custom attributes to attributes?
 * how fast/slow does this feel so far? profile and see if I should already use different ds for
 the completion items or for finding things in the tree

@@ -44,7 +44,7 @@ func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
 
 func attributeNameItem(attr Attribute) rpc.CompletionItem {
 	kind := rpc.CompletionItemKindProperty
-	detail := attr.UsedBy.String()
+	detail := attr.Type.String()
 	text := attr.Name + "="
 	return rpc.CompletionItem{
 		Label:      attr.Name,

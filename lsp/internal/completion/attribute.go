@@ -82,21 +82,21 @@ var attrTypeInfo = [...]struct {
 	Doc string
 }{
 	TypeUnknown:     {"", nil, ""},
-	TypeAddDouble:   {"addDouble", nil, "Format: `\"[+]number\"` (absolute value or `+` prefix to add to default)"},
-	TypeAddPoint:    {"addPoint", nil, "Format: `\"[+]x,y\"` (absolute point or `+` prefix for vector addition)"},
-	TypeArrowType:   {"arrowType", av("box", "crow", "curve", "diamond", "dot", "icurve", "inv", "none", "normal", "tee", "vee"), "Arrow shape"},
+	TypeAddDouble:   {"addDouble", nil, "Double with optional + prefix to add to default. Format: [+]number"},
+	TypeAddPoint:    {"addPoint", nil, "Point with optional + prefix for vector addition. Format: [+]x,y[,z][!]"},
+	TypeArrowType:   {"arrowType", av("box", "crow", "curve", "diamond", "dot", "icurve", "inv", "none", "normal", "tee", "vee"), "Edge arrowhead shape"},
 	TypeBool:        {"bool", av("false", "no", "true", "yes"), "Boolean value"},
 	TypeClusterMode: {"clusterMode", av("global", "local", "none"), "Cluster handling mode"},
-	TypeColor:       {"color", nil, "Format: `\"#rrggbb\"`, `\"#rgb\"`, `\"#rrggbbaa\"`, `\"H,S,V\"` (0-1), or color name"},
-	TypeColorList:   {"colorList", nil, "Format: `\"color[:color]*\"` or `\"color;weight[:color;weight]*\"`"},
+	TypeColor:       {"color", nil, "Color value. Format: #rrggbb, #rrggbbaa, H,S,V, or name"},
+	TypeColorList:   {"colorList", nil, "Weighted color list for gradients. Format: color[:color]* or color;weight[:...]"},
 	TypeDirType:     {"dirType", av("back", "both", "forward", "none"), "Edge arrow direction"},
-	TypeDouble:      {"double", nil, "Floating point number"},
-	TypeDoubleList:  {"doubleList", nil, "Format: `\"num[:num]*\"` (colon-separated list of doubles)"},
-	TypeEscString:   {"escString", nil, "Escapes: `\\N` node, `\\G` graph, `\\E` edge, `\\n` `\\l` `\\r` line breaks"},
+	TypeDouble:      {"double", nil, "Double-precision floating point number"},
+	TypeDoubleList:  {"doubleList", nil, "Colon-separated list of doubles. Format: num[:num]*"},
+	TypeEscString:   {"escString", nil, "String with escape sequences. Escapes: \\N \\G \\E \\T \\H \\L \\n \\l \\r"},
 	TypeInt:         {"int", nil, "Integer"},
-	TypeLayerList:   {"layerList", nil, "List of layer names separated by `layersep` (default `:`)"},
-	TypeLayerRange:  {"layerRange", nil, "Format: `layer` or `\"layer1:layer2\"`"},
-	TypeLblString:   {"lblString", nil, "Label string (escString or HTML-like `<...>`)"},
+	TypeLayerList:   {"layerList", nil, "List of layer names. Separator: layersep (default :)"},
+	TypeLayerRange:  {"layerRange", nil, "Layer range specification. Format: layer or layer1:layer2"},
+	TypeLblString:   {"lblString", nil, "Label: escString or HTML-like <table>...</table>"},
 	TypeLayout: {"layout", []AttrValue{
 		{Value: "circo", UsedBy: All, Doc: "Circular layout for cyclic structures"},
 		{Value: "dot", UsedBy: All, Doc: "Hierarchical layout for directed graphs"},
@@ -106,17 +106,17 @@ var attrTypeInfo = [...]struct {
 		{Value: "patchwork", UsedBy: All, Doc: "Squarified treemap layout"},
 		{Value: "sfdp", UsedBy: All, Doc: "Scalable force-directed layout for large graphs"},
 		{Value: "twopi", UsedBy: All, Doc: "Radial layout with root at center"},
-	}, "Layout engine name"},
-	TypeOutputMode: {"outputMode", av("breadthfirst", "edgesfirst", "nodesfirst"), "Node/edge drawing order"},
-	TypePackMode:   {"packMode", av("cluster", "graph", "node"), "Component packing mode"},
-	TypePagedir:    {"pagedir", av("BL", "BR", "LB", "LT", "RB", "RT", "TL", "TR"), "Page direction"},
-	TypePoint:       {"point", nil, "Format: `\"x,y[,z][!]\"` (optional `!` to fix position)"},
-	TypePointList:   {"pointList", nil, "Format: `\"x,y x,y ...\"` (space-separated points)"},
-	TypePortPos:     {"portPos", nil, "Format: `portname[:compass]` where compass is n|ne|e|se|s|sw|w|nw|c"},
-	TypeQuadType: {"quadType", av("fast", "none", "normal"), "Quadtree scheme"},
+	}, "Layout engine"},
+	TypeOutputMode: {"outputMode", av("breadthfirst", "edgesfirst", "nodesfirst"), "Order in which nodes and edges are drawn"},
+	TypePackMode:   {"packMode", av("cluster", "graph", "node"), "How closely to pack graph components"},
+	TypePagedir:    {"pagedir", av("BL", "BR", "LB", "LT", "RB", "RT", "TL", "TR"), "Page traversal order for multi-page output"},
+	TypePoint:       {"point", nil, "2D/3D point. Format: x,y[,z][!] (! fixes position)"},
+	TypePointList:   {"pointList", nil, "Space-separated list of points. Format: x,y x,y ..."},
+	TypePortPos:     {"portPos", nil, "Port position on node. Format: portname[:compass]"},
+	TypeQuadType: {"quadType", av("fast", "none", "normal"), "Quadtree scheme for force-directed layout"},
 	TypeRankdir:  {"rankdir", av("BT", "LR", "RL", "TB"), "Graph layout direction"},
-	TypeRankType: {"rankType", av("max", "min", "same", "sink", "source"), "Rank constraint"},
-	TypeRect:        {"rect", nil, "Format: `\"llx,lly,urx,ury\"` (lower-left and upper-right corners)"},
+	TypeRankType: {"rankType", av("max", "min", "same", "sink", "source"), "Rank constraint on subgraph nodes"},
+	TypeRect:        {"rect", nil, "Rectangle. Format: llx,lly,urx,ury"},
 	TypeShape: {"shape", av(
 		"Mcircle", "Mdiamond", "Mrecord", "Msquare",
 		"assembly", "box", "box3d", "cds", "circle", "component", "cylinder",
@@ -136,17 +136,17 @@ var attrTypeInfo = [...]struct {
 		"tab", "terminator", "threepoverhang", "trapezium", "triangle", "tripleoctagon",
 		"underline", "utr",
 	), "Node shape"},
-	TypeSmoothType: {"smoothType", av("avg_dist", "graph_dist", "none", "power_dist", "rng", "spring", "triangle"), "Smoothing method"},
-	TypeSplineType:  {"splineType", nil, "Format: `\"spline\"` or `\"e,x,y s,x,y x,y x,y x,y\"` (end, start, control points)"},
-	TypeStartType:   {"startType", nil, "Format: `style[seed]` where style is regular|self|random"},
-	TypeString:      {"string", nil, "Text string (quote if contains special characters)"},
+	TypeSmoothType: {"smoothType", av("avg_dist", "graph_dist", "none", "power_dist", "rng", "spring", "triangle"), "Post-processing smoothing for sfdp"},
+	TypeSplineType:  {"splineType", nil, "Spline control points. Format: [e,x,y] [s,x,y] point (point point point)+"},
+	TypeStartType:   {"startType", nil, "Initial node placement. Format: [style][seed]"},
+	TypeString:      {"string", nil, "Text string"},
 	TypeStyle: {"style", []AttrValue{
 		{Value: "solid", UsedBy: Node | Edge},
 		{Value: "dashed", UsedBy: Node | Edge},
 		{Value: "dotted", UsedBy: Node | Edge},
 		{Value: "bold", UsedBy: Node | Edge},
 		{Value: "invis", UsedBy: Node | Edge},
-		{Value: "filled", UsedBy: Node | Edge | Cluster},
+		{Value: "filled", UsedBy: Node | Cluster},
 		{Value: "striped", UsedBy: Node | Cluster},
 		{Value: "wedged", UsedBy: Node},
 		{Value: "diagonals", UsedBy: Node},
@@ -154,7 +154,7 @@ var attrTypeInfo = [...]struct {
 		{Value: "tapered", UsedBy: Edge},
 		{Value: "radial", UsedBy: Node | Cluster | Graph},
 	}, "Drawing style"},
-	TypeViewPort: {"viewPort", nil, "Format: `\"W,H,Z,x,y\"` or `\"W,H,Z,'nodename'\"` (width, height, zoom, center)"},
+	TypeViewPort: {"viewPort", nil, "Clipping window. Format: W,H[,Z[,x,y]] or W,H,Z,'node'"},
 }
 
 // av is a helper to create []AttrValue from strings where UsedBy is All.
@@ -193,6 +193,33 @@ func (t AttrType) URL() string {
 		return ""
 	}
 	return "https://graphviz.org/docs/attr-types/" + t.String() + "/"
+}
+
+// markdownDoc generates the markdown documentation for this type.
+func (t AttrType) markdownDoc() string {
+	if t == TypeUnknown {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString("[")
+	sb.WriteString(t.String())
+	sb.WriteString("](")
+	sb.WriteString(t.URL())
+	sb.WriteString(")")
+
+	if values := t.Values(); len(values) > 0 {
+		sb.WriteString(": `")
+		sb.WriteString(values[0].Value)
+		for _, v := range values[1:] {
+			sb.WriteString("` | `")
+			sb.WriteString(v.Value)
+		}
+		sb.WriteString("`")
+	} else if doc := t.Doc(); doc != "" {
+		sb.WriteString("\n\n")
+		sb.WriteString(doc)
+	}
+	return sb.String()
 }
 
 // AttributeContext represents which DOT elements an attribute can be applied to.
@@ -280,25 +307,9 @@ func (a Attribute) markdownDoc() string {
 	sb.WriteString(a.Doc)
 	sb.WriteString("\n\n")
 
-	if a.Type != TypeUnknown {
-		sb.WriteString("**Type:** [")
-		sb.WriteString(a.Type.String())
-		sb.WriteString("](")
-		sb.WriteString(a.Type.URL())
-		sb.WriteString(")")
-
-		if values := a.Type.Values(); len(values) > 0 {
-			sb.WriteString(": `")
-			sb.WriteString(values[0].Value)
-			for _, v := range values[1:] {
-				sb.WriteString("` | `")
-				sb.WriteString(v.Value)
-			}
-			sb.WriteString("`")
-		} else if doc := a.Type.Doc(); doc != "" {
-			sb.WriteString("\n\n")
-			sb.WriteString(doc)
-		}
+	if typeDoc := a.Type.markdownDoc(); typeDoc != "" {
+		sb.WriteString("**Type:** ")
+		sb.WriteString(typeDoc)
 		sb.WriteString("\n\n")
 	}
 
@@ -315,7 +326,7 @@ func (a Attribute) markdownDoc() string {
 var Attributes = func() []Attribute {
 	attributes := []Attribute{
 		{Name: "_background", UsedBy: Graph, Doc: "Specifies arbitrary background using xdot format strings"},
-		{Name: "area", Type: TypeDouble, UsedBy: Node | Cluster, Doc: "referred area for node or empty cluster (patchwork layout)"},
+		{Name: "area", Type: TypeDouble, UsedBy: Node | Cluster, Doc: "Preferred area for node or empty cluster (patchwork layout)"},
 		{Name: "arrowhead", Type: TypeArrowType, UsedBy: Edge, Doc: "Style of arrowhead on edge head node"},
 		{Name: "arrowsize", Type: TypeDouble, UsedBy: Edge, Doc: "Multiplicative scale factor for arrowheads"},
 		{Name: "arrowtail", Type: TypeArrowType, UsedBy: Edge, Doc: "Style of arrowhead on edge tail node"},

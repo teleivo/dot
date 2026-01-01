@@ -8,6 +8,24 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
+func TestAttributeMarkdownDoc(t *testing.T) {
+	attr := Attribute{
+		Name:          "dir",
+		Type:          TypeDirType,
+		UsedBy:        Edge,
+		Documentation: "Edge type for drawing arrowheads",
+	}
+
+	got := attr.markdownDoc()
+	want := `Edge type for drawing arrowheads
+
+**Type:** [dirType](https://graphviz.org/docs/attr-types/dirType/): ` + "`forward` | `back` | `both` | `none`" + `
+
+[Docs](https://graphviz.org/docs/attrs/dir/)`
+
+	assert.EqualValuesf(t, got, want, "unexpected markdown")
+}
+
 func TestContext(t *testing.T) {
 	tests := map[string]struct {
 		src          string

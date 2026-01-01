@@ -377,11 +377,20 @@ type CompletionItem struct {
 	// Detail is a human-readable string with additional information about this item,
 	// like type or symbol information.
 	Detail *string `json:"detail,omitempty"`
-	// Documentation is a human-readable string that represents a doc-comment.
-	Documentation *string `json:"documentation,omitempty"`
+	// Documentation is a human-readable string or MarkupContent that represents a doc-comment.
+	Documentation *MarkupContent `json:"documentation,omitempty"`
 	// InsertText is a string that should be inserted into a document when selecting this
 	// completion. When omitted the label is used.
 	InsertText *string `json:"insertText,omitempty"`
+}
+
+// MarkupContent represents a string value with a specific format (plaintext or markdown).
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#markupContent
+type MarkupContent struct {
+	// Kind is the format of the content ("plaintext" or "markdown").
+	Kind string `json:"kind"`
+	// Value is the content itself.
+	Value string `json:"value"`
 }
 
 // CompletionItemKind is the kind of a completion entry.

@@ -33,11 +33,14 @@ func completionItem(attr Attribute) rpc.CompletionItem {
 	detail := attr.UsedBy.String()
 	text := attr.Name + "="
 	return rpc.CompletionItem{
-		Label:         attr.Name,
-		InsertText:    &text,
-		Kind:          &kind,
-		Detail:        &detail,
-		Documentation: &attr.Documentation,
+		Label:      attr.Name,
+		InsertText: &text,
+		Kind:       &kind,
+		Detail:     &detail,
+		Documentation: &rpc.MarkupContent{
+			Kind:  "markdown",
+			Value: attr.MarkdownDoc,
+		},
 	}
 }
 

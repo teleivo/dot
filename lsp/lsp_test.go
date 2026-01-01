@@ -13,68 +13,55 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	// Per LSP 3.17 spec: "If the server receives a request or notification before the
-	// `initialize` request it should act as follows:
-	// - For a request the response should be an error with `code: -32002`
-	//   (ServerNotInitialized). The message can be picked by the server.
-	// - Notifications should be dropped, except for the exit notification."
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialize
 	t.Run("ShutdownBeforeInitialize", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Send shutdown request before initialize
+		t.Log("shutdown before initialize returns ServerNotInitialized error (-32002)")
 		msg := `{"jsonrpc":"2.0","method":"shutdown","id":3}`
 		writeMessage(t, in, msg)
 
-		// Server must respond with ServerNotInitialized error (shutdown is a request)
 		want := `{"jsonrpc":"2.0","id":3,"error":{"code":-32002,"message":"server not initialized"}}`
 		assert.Truef(t, s.Scan(), "expecting response from server")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 	})
 
-	// Per LSP 3.17 spec: "The initialize request may only be sent once."
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialize
 	t.Run("InitializeTwice", func(t *testing.T) {
 		s, in := setup(t)
 
+		t.Log("first initialize succeeds")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		// First initialize should succeed
 		assert.Truef(t, s.Scan(), "expecting first initialize response")
 
-		// Send initialize again
+		t.Log("second initialize returns InvalidRequest error (-32600)")
 		initMsg2 := `{"jsonrpc":"2.0","method":"initialize","id":2,"params":{}}`
 		writeMessage(t, in, initMsg2)
 
-		// Second initialize should fail with InvalidRequest error (-32600)
 		want := `{"jsonrpc":"2.0","id":2,"error":{"code":-32600,"message":"server already initialized"}}`
 		assert.Truef(t, s.Scan(), "expecting error response for second initialize")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 	})
 
+	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
 	t.Run("ShutdownAfterInitialize", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Step 1: initialize request
+		t.Log("initialize and get capabilities")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		// Server responds with capabilities:
-		// - completionProvider: completion with trigger characters
-		// - positionEncoding: "utf-8" (negotiated encoding for character offsets)
-		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
-		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initializeResult
 		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
-		// Step 2: initialized notification (no id, no response expected)
+		t.Log("send initialized notification")
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
 
-		// Step 3: shutdown request - server should respond but NOT exit yet
-		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
+		t.Log("shutdown returns null result")
 		shutdownMsg := `{"jsonrpc":"2.0","method":"shutdown","id":2}`
 		writeMessage(t, in, shutdownMsg)
 
@@ -82,8 +69,7 @@ func TestServer(t *testing.T) {
 		assert.Truef(t, s.Scan(), "expecting shutdown response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 
-		// Step 4: requests after shutdown should error with InvalidRequest (-32600)
-		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
+		t.Log("requests after shutdown return InvalidRequest error (-32600)")
 		postShutdownMsg := `{"jsonrpc":"2.0","method":"textDocument/hover","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":0}}}`
 		writeMessage(t, in, postShutdownMsg)
 
@@ -91,38 +77,34 @@ func TestServer(t *testing.T) {
 		assert.Truef(t, s.Scan(), "expecting error response after shutdown")
 		require.EqualValuesf(t, s.Text(), wantErr, "unexpected response after shutdown")
 
-		// Step 5: exit notification - server should exit (no response expected)
-		// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#exit
+		t.Log("exit notification terminates server")
 		exitMsg := `{"jsonrpc":"2.0","method":"exit"}`
 		writeMessage(t, in, exitMsg)
 	})
 
-	// Per JSON-RPC 2.0 spec: invalid JSON should return ParseError (-32700) with id null.
-	// The server should continue processing subsequent messages.
+	// https://www.jsonrpc.org/specification#error_object
 	t.Run("ParseError", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Send invalid JSON
+		t.Log("invalid JSON returns ParseError (-32700)")
 		writeMessage(t, in, `{not valid json}`)
 
-		// Server should respond with ParseError (id omitted when unknown)
 		want := `{"jsonrpc":"2.0","error":{"code":-32700,"message":"invalid JSON"}}`
 		assert.Truef(t, s.Scan(), "expecting ParseError response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 
-		// Server should still be alive - send valid initialize
+		t.Log("server continues processing after parse error")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
 		assert.Truef(t, s.Scan(), "expecting initialize response after parse error")
 	})
 
-	// Per JSON-RPC 2.0 and LSP spec: unknown request methods should return MethodNotFound (-32601).
-	// Unknown notifications are silently dropped (no response since notifications have no id).
+	// https://www.jsonrpc.org/specification#error_object
 	t.Run("MethodNotFound", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Initialize handshake
+		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 		assert.Truef(t, s.Scan(), "expecting initialize response")
@@ -130,32 +112,27 @@ func TestServer(t *testing.T) {
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
 
-		// Send an unknown notification - should be silently ignored (no response)
+		t.Log("unknown notification is silently dropped")
 		unknownNotification := `{"jsonrpc":"2.0","method":"$/unknownNotification","params":{}}`
 		writeMessage(t, in, unknownNotification)
 
-		// Send an unknown request method - should get MethodNotFound error
+		t.Log("unknown request returns MethodNotFound error (-32601)")
 		unknownRequest := `{"jsonrpc":"2.0","method":"textDocument/unknown","id":2,"params":{}}`
 		writeMessage(t, in, unknownRequest)
 
-		// Only the request should get a response; notification was dropped
 		want := `{"jsonrpc":"2.0","id":2,"error":{"code":-32601,"message":"method not found"}}`
 		assert.Truef(t, s.Scan(), "expecting MethodNotFound error response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected response")
 	})
 
-	// textDocument/didOpen and textDocument/didChange trigger diagnostics via
-	// textDocument/publishDiagnostics notification.
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_publishDiagnostics
 	t.Run("PublishDiagnostics", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Initialize handshake - server advertises:
-		// - completionProvider: completion with trigger characters
-		// - positionEncoding: "utf-8" (character offsets count bytes)
-		// - textDocumentSync: 2 (TextDocumentSyncKind.Incremental)
+		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
+
 		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
@@ -163,86 +140,58 @@ func TestServer(t *testing.T) {
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
 
-		// Open a document with 2 parse errors:
-		// Line 2: "a [label=]" - missing attribute value
-		// Line 3: "b ->" - missing edge target
-		//
-		// Document content (with actual newlines for clarity):
-		// digraph {
-		//   a [label=]
-		//   b ->
-		// }
-		//
-		// Parser reports (1-based): 2:12 and 4:1
-		// LSP positions are 0-based: line 1 char 11, line 3 char 0
+		t.Log("open document with 2 parse errors publishes diagnostics")
 		firstDocContent := `digraph {\n  a [label=]\n  b ->\n}`
 		didOpenFirst := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///first.dot","languageId":"dot","version":1,"text":"` + firstDocContent + `"}}}`
 		writeMessage(t, in, didOpenFirst)
 
-		// Server sends publishDiagnostics notification (no id field)
-		// Diagnostics use point ranges (start == end) for error positions
-		// Severity 1 = Error
-		// Version matches the document version from didOpen (version: 1)
 		want := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":1,"diagnostics":[{"range":{"start":{"line":1,"character":11},"end":{"line":1,"character":11}},"severity":1,"message":"expected attribute value"},{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didOpen")
 		require.EqualValuesf(t, s.Text(), want, "unexpected diagnostics for didOpen")
 
-		// Fix the first error using incremental sync (TextDocumentSyncKind.Incremental = 2)
-		// Replace "label=" with "label=\"hello\"" on line 2 (0-based: line 1)
-		// Range: start {line: 1, character: 5} to end {line: 1, character: 11}
-		// This changes "a [label=]" to "a [label=\"hello\"]"
+		t.Log("fix first error via incremental change, one error remains")
 		didChangeMsg1 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///first.dot","version":2},"contentChanges":[{"range":{"start":{"line":1,"character":5},"end":{"line":1,"character":11}},"text":"label=\"hello\""}]}}`
 		writeMessage(t, in, didChangeMsg1)
 
-		// Now only one error remains: the missing edge target on line 3
-		// Version matches the document version from didChange (version: 2)
 		wantOneError := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":2,"diagnostics":[{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after first incremental change")
 		require.EqualValuesf(t, s.Text(), wantOneError, "unexpected diagnostics after first fix")
 
-		// Open a second document (valid DOT, no errors)
+		t.Log("open second valid document, empty diagnostics")
 		secondDocContent := `graph { x -- y }`
 		didOpenSecond := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///second.dot","languageId":"dot","version":1,"text":"` + secondDocContent + `"}}}`
 		writeMessage(t, in, didOpenSecond)
 
-		// Version matches the document version from didOpen (version: 1)
 		wantSecondEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","version":1,"diagnostics":[]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for second document")
 		require.EqualValuesf(t, s.Text(), wantSecondEmpty, "unexpected diagnostics for second document")
 
-		// Fix the second error in first document
-		// Replace "b ->" with "b -> c" on line 3 (0-based: line 2)
-		// Range: start {line: 2, character: 2} to end {line: 2, character: 6}
+		t.Log("fix second error in first document, no errors remain")
 		didChangeMsg2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///first.dot","version":3},"contentChanges":[{"range":{"start":{"line":2,"character":2},"end":{"line":2,"character":6}},"text":"b -> c"}]}}`
 		writeMessage(t, in, didChangeMsg2)
 
-		// Version matches the document version from didChange (version: 3)
 		wantFirstEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":3,"diagnostics":[]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after second incremental change")
 		require.EqualValuesf(t, s.Text(), wantFirstEmpty, "unexpected diagnostics after all fixes")
 
-		// Change second document: insert " -- z" at end before "}"
-		// "graph { x -- y }" -> "graph { x -- y -- z }"
+		t.Log("change second document, still valid")
 		didChangeSecond := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///second.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":14},"end":{"line":0,"character":14}},"text":" -- z"}]}}`
 		writeMessage(t, in, didChangeSecond)
 
-		// Version matches the document version from didChange (version: 2)
 		wantSecondEmptyV2 := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","version":2,"diagnostics":[]}}`
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after changing second document")
 		require.EqualValuesf(t, s.Text(), wantSecondEmptyV2, "unexpected diagnostics after changing second document")
 
-		// Close second document
+		t.Log("close documents and verify server still responsive")
 		didCloseSecond := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///second.dot"}}}`
 		writeMessage(t, in, didCloseSecond)
 
-		// Send didSave and didClose for first document
 		didSaveMsg := `{"jsonrpc":"2.0","method":"textDocument/didSave","params":{"textDocument":{"uri":"file:///first.dot"}}}`
 		writeMessage(t, in, didSaveMsg)
 
 		didCloseFirst := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///first.dot"}}}`
 		writeMessage(t, in, didCloseFirst)
 
-		// Verify server is still responsive after closing both documents
 		shutdownMsg := `{"jsonrpc":"2.0","method":"shutdown","id":2}`
 		writeMessage(t, in, shutdownMsg)
 
@@ -251,12 +200,11 @@ func TestServer(t *testing.T) {
 		require.EqualValuesf(t, s.Text(), wantShutdown, "unexpected shutdown response")
 	})
 
-	// textDocument/completion returns attribute completions filtered by prefix.
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
 	t.Run("Completion", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Initialize handshake
+		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 		assert.Truef(t, s.Scan(), "expecting initialize response")
@@ -264,69 +212,53 @@ func TestServer(t *testing.T) {
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
 
-		// Open a document with a node that has an attribute list
-		// Document: digraph { a [lab] }
-		// The cursor will be positioned after "lab" to test prefix filtering
+		t.Log("open document with node attribute list")
 		docContent := `digraph { a [lab] }`
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		// Receive diagnostics (document is valid)
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics")
 
-		// Request completion at position after "lab" (line 0, character 16)
-		// This should return all attributes starting with "lab": label, labelangle, etc.
+		t.Log("complete 'lab' in node context returns node-applicable attributes")
 		completionReq := `{"jsonrpc":"2.0","method":"textDocument/completion","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":16}}}`
 		writeMessage(t, in, completionReq)
 
-		// Expect completions filtered to attributes starting with "lab"
-		// All "lab*" attributes are edge-only except: label (G,C,N,E), labelloc (G,C,N)
-		// Since we're in a node context [lab], we expect node-applicable attributes
 		wantCompletion := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":{"kind":"markdown","value":"Text label attached to objects\n\n[Docs](https://graphviz.org/docs/attrs/label/)"},"insertText":"label="},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":{"kind":"markdown","value":"Vertical placement of labels\n\n[Docs](https://graphviz.org/docs/attrs/labelloc/)"},"insertText":"labelloc="}]}}`
 		assert.Truef(t, s.Scan(), "expecting completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion, "unexpected completion response")
 
-		// Now test narrowing: user continues typing "label"
-		// Change document: "digraph { a [lab] }" -> "digraph { a [label] }"
+		t.Log("continue typing narrows completions")
 		didChange := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":16},"end":{"line":0,"character":16}},"text":"el"}]}}`
 		writeMessage(t, in, didChange)
 
-		// Receive diagnostics
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after change")
 
-		// Request completion at position after "label" (line 0, character 18)
 		completionReq2 := `{"jsonrpc":"2.0","method":"textDocument/completion","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":18}}}`
 		writeMessage(t, in, completionReq2)
 
-		// Now only "label" and "labelloc" match (both apply to nodes)
 		wantCompletion2 := `{"jsonrpc":"2.0","id":3,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"Graph, Cluster, Node, Edge","documentation":{"kind":"markdown","value":"Text label attached to objects\n\n[Docs](https://graphviz.org/docs/attrs/label/)"},"insertText":"label="},{"label":"labelloc","kind":10,"detail":"Graph, Cluster, Node","documentation":{"kind":"markdown","value":"Vertical placement of labels\n\n[Docs](https://graphviz.org/docs/attrs/labelloc/)"},"insertText":"labelloc="}]}}`
 		assert.Truef(t, s.Scan(), "expecting narrowed completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion2, "unexpected narrowed completion response")
 
-		// Test edge context: completions should include edge-specific attributes
-		// Change document to have an edge with attributes
-		// "digraph { a [label] }" -> "digraph { a -> b [arr] }"
+		t.Log("complete 'arr' in edge context returns edge-specific attributes")
 		didChange2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":3},"contentChanges":[{"range":{"start":{"line":0,"character":10},"end":{"line":0,"character":20}},"text":"a -> b [arr"}]}}`
 		writeMessage(t, in, didChange2)
 
-		// Receive diagnostics
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after edge change")
 
-		// Request completion at position after "arr" (line 0, character 21)
 		completionReq3 := `{"jsonrpc":"2.0","method":"textDocument/completion","id":4,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":21}}}`
 		writeMessage(t, in, completionReq3)
 
-		// Expect edge attributes starting with "arr": arrowhead, arrowsize, arrowtail
-		// arrowhead and arrowtail have TypeArrowType, arrowsize has no type
 		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Style of arrowhead on edge head node\n\n**Type:** [arrowType](https://graphviz.org/docs/attr-types/arrowType/): ` + "`box` | `crow` | `curve` | `diamond` | `dot` | `icurve` | `inv` | `none` | `normal` | `tee` | `vee`" + `\n\n[Docs](https://graphviz.org/docs/attrs/arrowhead/)"},"insertText":"arrowhead="},{"label":"arrowsize","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Multiplicative scale factor for arrowheads\n\n[Docs](https://graphviz.org/docs/attrs/arrowsize/)"},"insertText":"arrowsize="},{"label":"arrowtail","kind":10,"detail":"Edge","documentation":{"kind":"markdown","value":"Style of arrowhead on edge tail node\n\n**Type:** [arrowType](https://graphviz.org/docs/attr-types/arrowType/): ` + "`box` | `crow` | `curve` | `diamond` | `dot` | `icurve` | `inv` | `none` | `normal` | `tee` | `vee`" + `\n\n[Docs](https://graphviz.org/docs/attrs/arrowtail/)"},"insertText":"arrowtail="}]}}`
 		assert.Truef(t, s.Scan(), "expecting edge completion response")
 		require.EqualValuesf(t, s.Text(), wantCompletion3, "unexpected edge completion response")
 	})
 
+	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_formatting
 	t.Run("Formatting", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Initialize
+		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 		assert.Truef(t, s.Scan(), "expecting initialize response")
@@ -334,15 +266,14 @@ func TestServer(t *testing.T) {
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
 
-		// Open document with parse error
+		t.Log("open document with parse error")
 		invalidContent := `digraph { a -> }`
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + invalidContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		// Receive diagnostics for invalid document
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for invalid document")
 
-		// Format invalid document - should return error
+		t.Log("formatting invalid document returns error")
 		formatInvalid := `{"jsonrpc":"2.0","method":"textDocument/formatting","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"options":{"tabSize":2,"insertSpaces":false}}}`
 		writeMessage(t, in, formatInvalid)
 
@@ -350,14 +281,12 @@ func TestServer(t *testing.T) {
 		assert.Truef(t, s.Scan(), "expecting error response for invalid document")
 		require.EqualValuesf(t, s.Text(), wantError, "unexpected error response")
 
-		// Fix document: "digraph { a -> }" -> "digraph { a -> b }"
+		t.Log("fix document and format successfully")
 		didChange := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":14},"end":{"line":0,"character":14}},"text":"b "}]}}`
 		writeMessage(t, in, didChange)
 
-		// Receive diagnostics for fixed document
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for fixed document")
 
-		// Format valid document - should succeed
 		formatValid := `{"jsonrpc":"2.0","method":"textDocument/formatting","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"options":{"tabSize":2,"insertSpaces":false}}}`
 		writeMessage(t, in, formatValid)
 
@@ -608,7 +537,7 @@ func TestCompletion(t *testing.T) {
 	t.Run("DirAttributeValues", func(t *testing.T) {
 		s, in := setup(t)
 
-		// Initialize handshake
+		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 		assert.Truef(t, s.Scan(), "expecting initialize response")
@@ -616,23 +545,17 @@ func TestCompletion(t *testing.T) {
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
 
-		// Open a document with cursor after "dir="
-		// digraph { a -> b [dir=] }
-		//                      ^ cursor at line 0, character 21 (after "=")
+		t.Log("open document with cursor after 'dir='")
 		docContent := `digraph { a -> b [dir=] }`
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		// Consume the diagnostics notification
 		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
 
-		// Request completion at position after "dir="
-		// Line 0, character 21 (0-based) is right after the "="
+		t.Log("complete after '=' returns dirType values")
 		completionReq := `{"jsonrpc":"2.0","method":"textDocument/completion","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":21}}}`
 		writeMessage(t, in, completionReq)
 
-		// Expect completion items for dirType values: back, both, forward, none (alphabetical)
-		// CompletionItemKind 12 = Value
 		want := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"back","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"both","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"forward","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"none","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"[dirType](https://graphviz.org/docs/attr-types/dirType/)"}}]}}`
 		assert.Truef(t, s.Scan(), "expecting completion response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected completion response")

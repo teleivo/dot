@@ -2,21 +2,23 @@
 
 ## Now
 
-* lsp: auto-complete for attribute keys
+lsp
+* auto-complete for attribute keys
+  * review c6a9d552f560b23589fb8686e3afe7fdb96b2466 completion.go
   * fix: in Graph context I don't get layout, why?
 
   * make finding candidates less naive
   * make my completion impl clean: review
-  * improve tests, use t.Log instead of comments in lsp_test.go, reduce this comment noise
   * merge
-
-  * add hover support for attribute names?
-  * add custom attributes to attributes?
-  * how fast/slow does this feel so far? profile and see if I should already use different ds for
-  the completion items or for finding things in the tree
 
 * simplify lsp main loop, responding with error is more common now. how to simplify the
 json.RawMessage
+* add hover support for attribute names?
+* add signature help on attr names/values?
+* add custom attributes to attributes?
+* how fast/slow does this feel so far? profile and see if I should already use different ds for
+the completion items or for finding things in the tree
+
 * lsp: look into debouncing diagnostics. delay publishing by ~100ms, cancel if another change
 arrives. joining } of subgraph onto line above it causes brief flashes of errors as neovim sends an
 insert and then a delete as separate changes

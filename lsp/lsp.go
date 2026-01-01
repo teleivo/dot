@@ -476,9 +476,9 @@ type completionResult struct {
 }
 
 // completionContext finds the prefix text at the cursor position and determines the attribute context.
-// Returns the prefix string (text before cursor within the current token) and the context
-// for filtering attributes (Node, Edge, Graph, etc.). Falls back to empty prefix and Graph context
-// if unable to determine a more specific context.
+// Returns the prefix string (text before cursor within the current token), the context
+// for filtering attributes (Node, Edge, Graph, etc.), and the attribute name when in value position.
+// Falls back to empty prefix and Graph context if unable to determine a more specific context.
 func completionContext(tree *dot.Tree, pos token.Position) completionResult {
 	result := &completionResult{AttrCtx: Graph}
 	completionContextRec(tree, pos, result)
@@ -486,67 +486,6 @@ func completionContext(tree *dot.Tree, pos token.Position) completionResult {
 }
 
 func completionContextRec(tree *dot.Tree, pos token.Position, result *completionResult) {
-	if tree == nil {
-		return
-	}
-
-	switch tree.Type {
-	case dot.KindSubgraph:
-		result.AttrCtx = Subgraph
-	case dot.KindNodeStmt:
-		result.AttrCtx = Node
-	case dot.KindEdgeStmt:
-		result.AttrCtx = Edge
-	}
-
-	for i, child := range tree.Children {
-		switch c := child.(type) {
-		case dot.TreeChild:
-			if tree.Type == dot.KindSubgraph && i == 1 && c.Type == dot.KindID {
-				if len(c.Children) > 0 {
-					if id, ok := c.Children[0].(dot.TokenChild); ok && strings.HasPrefix(id.Literal, "cluster_") {
-						result.AttrCtx = Cluster
-					}
-				}
-			}
-
-			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
-			if !pos.Before(c.Start) && !pos.After(end) {
-				completionContextRec(c.Tree, pos, result)
-				return
-			}
-		case dot.TokenChild:
-			if i == 0 && tree.Type == dot.KindAttrStmt {
-				switch c.Type {
-				case token.Graph: // graph [name=value]
-					if result.AttrCtx != Cluster {
-						result.AttrCtx = Graph
-					}
-				case token.Node: // node [name=value]
-					result.AttrCtx = Node
-				case token.Edge: // edge [name=value]
-					result.AttrCtx = Edge
-				}
-			}
-
-			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
-			if !pos.Before(c.Start) && !pos.After(end) {
-				if c.Type == token.ID { // only IDs are potential attribute name prefixes
-					result.Prefix = c.String()
-				}
-				return
-			}
-		}
-	}
-}
-
-func completionContextExt(tree *dot.Tree, pos token.Position) completionResult {
-	result := &completionResult{AttrCtx: Graph}
-	completionContextExtRec(tree, pos, result)
-	return *result
-}
-
-func completionContextExtRec(tree *dot.Tree, pos token.Position, result *completionResult) {
 	if tree == nil {
 		return
 	}
@@ -580,7 +519,7 @@ func completionContextExtRec(tree *dot.Tree, pos token.Position, result *complet
 
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
-				completionContextExtRec(c.Tree, pos, result)
+				completionContextRec(c.Tree, pos, result)
 				return
 			}
 		case dot.TokenChild:

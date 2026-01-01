@@ -10,11 +10,11 @@ import (
 
 // Items returns completion items for the given tree at the given position.
 func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
-	ctx := context(tree, pos)
+	attrCtx := context(tree, pos)
 
 	var candidates []Attribute
 	for _, attr := range Attributes {
-		if strings.HasPrefix(attr.Name, ctx.Prefix) && attr.UsedBy&ctx.AttrCtx != 0 {
+		if strings.HasPrefix(attr.Name, attrCtx.Prefix) && attr.UsedBy&attrCtx.AttrCtx != 0 {
 			candidates = append(candidates, attr)
 		}
 	}
@@ -111,7 +111,8 @@ func contextRec(tree *dot.Tree, pos token.Position, result *result) {
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
 				if c.Type == token.ID {
-					// If AttrName is set and Prefix equals AttrName, we're on the name ID in value position - clear Prefix
+					// if AttrName is set and prefix equals AttrName, we're on the name ID in value
+					// position so we clear the prefix
 					if result.AttrName != "" && c.String() == result.AttrName {
 						return
 					}

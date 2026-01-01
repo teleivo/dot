@@ -204,6 +204,11 @@ func TestItems(t *testing.T) {
 			position: token.Position{Line: 1, Column: 43},
 			want:     []string{"filled", "striped", "rounded", "radial"},
 		},
+		"NoValuesForColor": {
+			src:      `graph { a [color=] }`,
+			position: token.Position{Line: 1, Column: 18},
+			want:     []string{},
+		},
 	}
 
 	for name, tt := range tests {

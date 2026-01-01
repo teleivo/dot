@@ -64,6 +64,8 @@ const (
 	KindAttrList
 	KindAList
 	KindAttribute
+	KindAttrName
+	KindAttrValue
 
 	KindID
 )
@@ -99,6 +101,10 @@ func (tk TreeKind) String() string {
 		return "AList"
 	case KindAttribute:
 		return "Attribute"
+	case KindAttrName:
+		return "AttrName"
+	case KindAttrValue:
+		return "AttrValue"
 	case KindID:
 		return "ID"
 	default:

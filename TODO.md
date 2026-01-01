@@ -4,8 +4,6 @@
 
 * lsp: auto-complete for attribute keys
   * fix: in Graph context I don't get layout, why?
-  * how much would it simplify my code if Attribute would have Name/Value which have IDs? so all of
-    this moves into the parser. Then move the attribute types in the parser as well?
 
   * make finding candidates less naive
   * make my completion impl clean: review

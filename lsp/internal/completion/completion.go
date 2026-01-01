@@ -78,6 +78,37 @@ type result struct {
 	AttrName string           // when non-empty, cursor is in value position for this attribute
 }
 
+// hasEqualToken checks if the tree has an = token child.
+func hasEqualToken(tree *dot.Tree) bool {
+	for _, child := range tree.Children {
+		if tok, ok := child.(dot.TokenChild); ok && tok.Type == token.Equal {
+			return true
+		}
+	}
+	return false
+}
+
+// attrNameFrom extracts the attribute name from an Attribute node.
+func attrNameFrom(attr *dot.Tree) string {
+	// Attribute: AttrName '=' AttrValue
+	if len(attr.Children) == 0 {
+		return ""
+	}
+	nameTree, ok := attr.Children[0].(dot.TreeChild)
+	if !ok || nameTree.Type != dot.KindAttrName || len(nameTree.Children) == 0 {
+		return ""
+	}
+	idTree, ok := nameTree.Children[0].(dot.TreeChild)
+	if !ok || idTree.Type != dot.KindID || len(idTree.Children) == 0 {
+		return ""
+	}
+	tok, ok := idTree.Children[0].(dot.TokenChild)
+	if !ok {
+		return ""
+	}
+	return tok.Literal
+}
+
 // context finds the prefix text at the cursor position and determines the attribute context.
 // Returns the prefix string (text before cursor within the current token), the context
 // for filtering attributes (Node, Edge, Graph, etc.), and the attribute name when in value position.
@@ -95,16 +126,6 @@ func context(tree *dot.Tree, pos token.Position, result *result) {
 		result.AttrCtx = Edge
 	}
 
-	// capture attribute name if pos is on or past =
-	if tree.Type == dot.KindAttribute && len(tree.Children) >= 2 {
-		nameTree, okTree := tree.Children[0].(dot.TreeChild)
-		equal, okEqual := tree.Children[1].(dot.TokenChild)
-		if okTree && nameTree.Type == dot.KindID && len(nameTree.Children) > 0 {
-			if id, okID := nameTree.Children[0].(dot.TokenChild); okID && okEqual && equal.Type == token.Equal && !pos.Before(equal.End) {
-				result.AttrName = id.Literal
-			}
-		}
-	}
 	for i, child := range tree.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
@@ -116,6 +137,15 @@ func context(tree *dot.Tree, pos token.Position, result *result) {
 
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
+				// skip AttrName if cursor is past its actual end AND there's a = token
+				// (meaning we're in value position, not still typing the name)
+				if c.Type == dot.KindAttrName && pos.After(c.End) && hasEqualToken(tree) {
+					continue
+				}
+				// when entering AttrValue, capture the attribute name from parent Attribute
+				if c.Type == dot.KindAttrValue && tree.Type == dot.KindAttribute {
+					result.AttrName = attrNameFrom(tree)
+				}
 				context(c.Tree, pos, result)
 				return
 			}
@@ -135,18 +165,18 @@ func context(tree *dot.Tree, pos token.Position, result *result) {
 
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
-				if c.Type == token.ID {
-					// if AttrName is set and prefix equals AttrName, we're on the name ID in value
-					// position so we clear the prefix
-					if result.AttrName != "" && c.String() == result.AttrName {
-						return
+				// cursor on or after = in Attribute means value position
+				if c.Type == token.Equal && tree.Type == dot.KindAttribute {
+					result.AttrName = attrNameFrom(tree)
+					if pos.After(c.End) {
+						continue // cursor is past =, continue to find AttrValue for prefix
 					}
-					result.Prefix = c.String()
-				}
-				// continue to find the value ID
-				if c.Type != token.Equal {
 					return
 				}
+				if c.Type == token.ID {
+					result.Prefix = c.String()
+				}
+				return
 			}
 		}
 	}

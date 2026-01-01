@@ -602,3 +602,39 @@ func TestDocumentChange(t *testing.T) {
 		})
 	}
 }
+
+func TestCompletion(t *testing.T) {
+	t.Run("DirAttributeValues", func(t *testing.T) {
+		s, in := setup(t)
+
+		// Initialize handshake
+		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
+		writeMessage(t, in, initMsg)
+		assert.Truef(t, s.Scan(), "expecting initialize response")
+
+		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
+		writeMessage(t, in, initializedMsg)
+
+		// Open a document with cursor after "dir="
+		// digraph { a -> b [dir=] }
+		//                      ^ cursor at line 0, character 21 (after "=")
+		docContent := `digraph { a -> b [dir=] }`
+		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
+		writeMessage(t, in, didOpen)
+
+		// Consume the diagnostics notification
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+
+		// Request completion at position after "dir="
+		// Line 0, character 21 (0-based) is right after the "="
+		completionReq := `{"jsonrpc":"2.0","method":"textDocument/completion","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":21}}}`
+		writeMessage(t, in, completionReq)
+
+		// Expect completion items for dirType values: forward, back, both, none
+		// CompletionItemKind 12 = Value
+		// The items should be sorted alphabetically
+		want := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"back","kind":12,"detail":"dirType","documentation":"Arrow at tail end only"},{"label":"both","kind":12,"detail":"dirType","documentation":"Arrows at both ends"},{"label":"forward","kind":12,"detail":"dirType","documentation":"Arrow at head end only (default for digraph)"},{"label":"none","kind":12,"detail":"dirType","documentation":"No arrows (default for graph)"}]}}`
+		assert.Truef(t, s.Scan(), "expecting completion response")
+		require.EqualValuesf(t, s.Text(), want, "unexpected completion response")
+	})
+}

@@ -1,3 +1,4 @@
+// Package completion provides autocompletion for DOT graph attributes.
 package completion
 
 import (
@@ -10,7 +11,8 @@ import (
 
 // Items returns completion items for the given tree at the given position.
 func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
-	attrCtx := context(tree, pos)
+	attrCtx := result{AttrCtx: Graph}
+	context(tree, pos, &attrCtx)
 
 	var candidates []Attribute
 	for _, attr := range Attributes {
@@ -49,14 +51,7 @@ type result struct {
 // context finds the prefix text at the cursor position and determines the attribute context.
 // Returns the prefix string (text before cursor within the current token), the context
 // for filtering attributes (Node, Edge, Graph, etc.), and the attribute name when in value position.
-// Falls back to empty prefix and Graph context if unable to determine a more specific context.
-func context(tree *dot.Tree, pos token.Position) result {
-	r := result{AttrCtx: Graph}
-	contextRec(tree, pos, &r)
-	return r
-}
-
-func contextRec(tree *dot.Tree, pos token.Position, result *result) {
+func context(tree *dot.Tree, pos token.Position, result *result) {
 	if tree == nil {
 		return
 	}
@@ -91,7 +86,7 @@ func contextRec(tree *dot.Tree, pos token.Position, result *result) {
 
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
-				contextRec(c.Tree, pos, result)
+				context(c.Tree, pos, result)
 				return
 			}
 		case dot.TokenChild:

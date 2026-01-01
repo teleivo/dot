@@ -280,7 +280,8 @@ func TestContext(t *testing.T) {
 			ps := dot.NewParser([]byte(tt.src))
 			tree := ps.Parse()
 
-			got := context(tree, tt.position)
+			got := result{AttrCtx: Graph}
+			context(tree, tt.position, &got)
 			want := result{Prefix: tt.wantPrefix, AttrCtx: tt.wantAttrCtx, AttrName: tt.wantAttrName}
 
 			assert.EqualValuesf(t, got, want, "for %q at %s", tt.src, tt.position)

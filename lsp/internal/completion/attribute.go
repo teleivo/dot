@@ -15,7 +15,23 @@ type AttrType int
 // AttrValue represents a valid value for an attribute type with its applicable contexts.
 type AttrValue struct {
 	Value  string           // The value string (e.g., "dashed", "filled")
-	UsedBy AttributeContext // Which contexts this value is valid for (0 means all)
+	UsedBy AttributeContext // Which contexts this value is valid for
+	Doc    string           // Brief description of what the value does
+}
+
+// markdownDoc generates the markdown documentation for this value.
+func (v AttrValue) markdownDoc(attrType AttrType) string {
+	var sb strings.Builder
+	if v.Doc != "" {
+		sb.WriteString(v.Doc)
+		sb.WriteString("\n\n")
+	}
+	sb.WriteString("[")
+	sb.WriteString(attrType.String())
+	sb.WriteString("](")
+	sb.WriteString(attrType.URL())
+	sb.WriteString(")")
+	return sb.String()
 }
 
 const (
@@ -41,7 +57,16 @@ var attrTypeInfo = [...]struct {
 	TypeArrowType: {"arrowType", av("box", "crow", "curve", "diamond", "dot", "icurve", "inv", "none", "normal", "tee", "vee"), "Arrow shape"},
 	TypeBool:      {"bool", av("true", "false", "yes", "no"), "Boolean value"},
 	TypeDirType:   {"dirType", av("back", "both", "forward", "none"), "Edge arrow direction"},
-	TypeLayout:    {"layout", av("circo", "dot", "fdp", "neato", "osage", "patchwork", "sfdp", "twopi"), "Layout engine name"},
+	TypeLayout: {"layout", []AttrValue{
+		{Value: "circo", UsedBy: All, Doc: "Circular layout for cyclic structures"},
+		{Value: "dot", UsedBy: All, Doc: "Hierarchical layout for directed graphs"},
+		{Value: "fdp", UsedBy: All, Doc: "Force-directed layout using springs"},
+		{Value: "neato", UsedBy: All, Doc: "Force-directed layout using stress majorization"},
+		{Value: "osage", UsedBy: All, Doc: "Array-based layout for clustered graphs"},
+		{Value: "patchwork", UsedBy: All, Doc: "Squarified treemap layout"},
+		{Value: "sfdp", UsedBy: All, Doc: "Scalable force-directed layout for large graphs"},
+		{Value: "twopi", UsedBy: All, Doc: "Radial layout with root at center"},
+	}, "Layout engine name"},
 	TypeStyle: {"style", []AttrValue{
 		{Value: "solid", UsedBy: Node | Edge},
 		{Value: "dashed", UsedBy: Node | Edge},

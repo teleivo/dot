@@ -7,7 +7,10 @@ lsp
   * review c6a9d552f560b23589fb8686e3afe7fdb96b2466 completion.go
   * fix: in Graph context I don't get layout, why?
   * fix: don't add another = when trying to change the name=
-  * fix: support completing values like styles that have to be quoted to use multiple ones
+  * fix: support completing values like styles that have to be quoted to use multiple ones and the
+  quote is missing?
+  	a [area=50,style="dashed,]
+
   * add docs to values? so layout engines can have an explanation for example
   * completion test: add more completion.Items tests instead of lower level context tests?
 

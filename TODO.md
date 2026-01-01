@@ -3,14 +3,16 @@
 ## Now
 
 * lsp: auto-complete for attribute keys
+  * implement completion for attribute values
+    * do I need to add types onto the attributes?
+    * with default value and possible ones at least for the enum like types
+  * improve documentation of item: make it markdown? add link to attributes page and to the
+  attribute type page, mention the value type
   * make finding candidates less naive
   * make my completion impl clean: review
   * merge
 
   * add custom attributes to attributes?
-  * implement completion for attribute values
-    * do I need to add types onto the attributes?
-    * with default value and possible ones at least for the enum like types
 
   * add hover support for attribute names?
   * how fast/slow does this feel so far? profile and see if I should already use different ds for

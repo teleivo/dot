@@ -778,10 +778,129 @@ func TestCompletionContext(t *testing.T) {
 			ps := dot.NewParser([]byte(tt.src))
 			tree := ps.Parse()
 
-			prefix, ctx := completionContext(tree, tt.position, Graph)
+			result := completionContext(tree, tt.position)
+			prefix, attrCtx := result.Prefix, result.AttrCtx
 
 			assert.EqualValuesf(t, prefix, tt.wantPrefix, "unexpected prefix")
-			assert.EqualValuesf(t, ctx, tt.wantCtx, "unexpected context")
+			assert.EqualValuesf(t, attrCtx, tt.wantCtx, "unexpected context")
+		})
+	}
+}
+
+func TestCompletionContextValue(t *testing.T) {
+	tests := map[string]struct {
+		src          string
+		position     token.Position // 1-based line and column
+		wantPrefix   string
+		wantCtx      attributeContext
+		wantAttrName string // empty means we're completing a name, non-empty means value
+	}{
+		// Cursor right after "=" - ready to type value
+		// Input: `graph { a [shape=] }`
+		// Cursor at line 1, col 18 (after "=")
+		"AfterEquals": {
+			src:          `graph { a [shape=] }`,
+			position:     token.Position{Line: 1, Column: 18},
+			wantPrefix:   "",
+			wantCtx:      Node,
+			wantAttrName: "shape",
+		},
+		// Cursor after partial value
+		// Input: `graph { a [shape=bo] }`
+		// Cursor at line 1, col 20 (after "bo")
+		"PartialValue": {
+			src:          `graph { a [shape=bo] }`,
+			position:     token.Position{Line: 1, Column: 20},
+			wantPrefix:   "bo",
+			wantCtx:      Node,
+			wantAttrName: "shape",
+		},
+		// Edge with dir attribute
+		// Input: `digraph { a -> b [dir=] }`
+		// Cursor at line 1, col 22 (after "=")
+		"EdgeDirValue": {
+			src:          `digraph { a -> b [dir=] }`,
+			position:     token.Position{Line: 1, Column: 22},
+			wantPrefix:   "",
+			wantCtx:      Edge,
+			wantAttrName: "dir",
+		},
+		// Partial dir value
+		// Input: `digraph { a -> b [dir=ba] }`
+		// Cursor at line 1, col 24 (after "ba")
+		"EdgeDirPartialValue": {
+			src:          `digraph { a -> b [dir=ba] }`,
+			position:     token.Position{Line: 1, Column: 24},
+			wantPrefix:   "ba",
+			wantCtx:      Edge,
+			wantAttrName: "dir",
+		},
+		// Second attribute value after comma
+		// Input: `graph { a [label=foo, shape=] }`
+		// Cursor at line 1, col 28 (after second "=")
+		"SecondAttrValue": {
+			src:          `graph { a [label=foo, shape=] }`,
+			position:     token.Position{Line: 1, Column: 28},
+			wantPrefix:   "",
+			wantCtx:      Node,
+			wantAttrName: "shape",
+		},
+		// Graph-level rankdir
+		// Input: `digraph { rankdir=L }`
+		// Cursor at line 1, col 19 (after "L")
+		"GraphRankdirValue": {
+			src:          `digraph { rankdir=L }`,
+			position:     token.Position{Line: 1, Column: 19},
+			wantPrefix:   "L",
+			wantCtx:      Graph,
+			wantAttrName: "rankdir",
+		},
+		// Still completing name (no = yet)
+		// Input: `graph { a [sha] }`
+		// Cursor at line 1, col 15 (after "sha")
+		"StillCompletingName": {
+			src:          `graph { a [sha] }`,
+			position:     token.Position{Line: 1, Column: 15},
+			wantPrefix:   "sha",
+			wantCtx:      Node,
+			wantAttrName: "", // empty = completing name
+		},
+		// Quoted value - unclosed quote creates error node outside Attribute,
+		// can't determine we're in value position
+		// Input: `graph { a [shape="bo] }`
+		// Cursor at line 1, col 21 (inside ErrorTree, not Attribute)
+		"QuotedPartialValue": {
+			src:          `graph { a [shape="bo] }`,
+			position:     token.Position{Line: 1, Column: 21},
+			wantPrefix:   "",
+			wantCtx:      Node,
+			wantAttrName: "",
+		},
+		// Multi-line: value on next line
+		// Input:
+		//   graph {
+		//     a [shape=
+		//       box]
+		//   }
+		// Cursor at line 3, col 6 (after "bo")
+		"MultiLineValue": {
+			src:          "graph {\n  a [shape=\n    bo]\n}",
+			position:     token.Position{Line: 3, Column: 6},
+			wantPrefix:   "bo",
+			wantCtx:      Node,
+			wantAttrName: "shape",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ps := dot.NewParser([]byte(tt.src))
+			tree := ps.Parse()
+
+			got := completionContextExt(tree, tt.position)
+			want := completionResult{Prefix: tt.wantPrefix, AttrCtx: tt.wantCtx, AttrName: tt.wantAttrName}
+
+			assert.EqualValuesf(t, got, want, "for %q at %s", tt.src, tt.position)
 		})
 	}
 }

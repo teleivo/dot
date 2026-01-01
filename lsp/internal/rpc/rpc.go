@@ -124,7 +124,7 @@ var initializeResult = func() json.RawMessage {
 	result := map[string]any{
 		"capabilities": map[string]any{
 			"completionProvider": map[string]any{
-				"triggerCharacters": []string{"[", ",", ";", "{"},
+				"triggerCharacters": []string{"[", ",", ";", "{", "="},
 			},
 			"documentFormattingProvider": true,
 			"positionEncoding":           EncodingUTF8,

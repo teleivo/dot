@@ -10,10 +10,10 @@ import (
 
 func TestAttributeMarkdownDoc(t *testing.T) {
 	attr := Attribute{
-		Name:          "dir",
-		Type:          TypeDirType,
-		UsedBy:        Edge,
-		Documentation: "Edge type for drawing arrowheads",
+		Name:   "dir",
+		Type:   TypeDirType,
+		UsedBy: Edge,
+		Doc:    "Edge type for drawing arrowheads",
 	}
 
 	got := attr.markdownDoc()
@@ -197,6 +197,45 @@ func TestContext(t *testing.T) {
 			want := result{Prefix: tt.wantPrefix, AttrCtx: tt.wantAttrCtx, AttrName: tt.wantAttrName}
 
 			assert.EqualValuesf(t, got, want, "for %q at %s", tt.src, tt.position)
+		})
+	}
+}
+
+func TestItems(t *testing.T) {
+	tests := map[string]struct {
+		src      string
+		position token.Position
+		want     []string
+	}{
+		"StyleValuesForNode": {
+			src:      `graph { a [style=] }`,
+			position: token.Position{Line: 1, Column: 18},
+			want:     []string{"solid", "dashed", "dotted", "bold", "invis", "filled", "striped", "wedged", "diagonals", "rounded", "radial"},
+		},
+		"StyleValuesForEdge": {
+			src:      `digraph { a -> b [style=] }`,
+			position: token.Position{Line: 1, Column: 25},
+			want:     []string{"solid", "dashed", "dotted", "bold", "invis", "filled", "tapered"},
+		},
+		"StyleValuesForCluster": {
+			src:      `graph { subgraph cluster_a { graph [style=] } }`,
+			position: token.Position{Line: 1, Column: 43},
+			want:     []string{"filled", "striped", "rounded", "radial"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ps := dot.NewParser([]byte(tt.src))
+			tree := ps.Parse()
+
+			items := Items(tree, tt.position)
+			got := make([]string, len(items))
+			for i, item := range items {
+				got[i] = item.Label
+			}
+
+			assert.EqualValuesf(t, got, tt.want, "unexpected style values")
 		})
 	}
 }

@@ -6,6 +6,10 @@ lsp
 * auto-complete for attribute keys
   * review c6a9d552f560b23589fb8686e3afe7fdb96b2466 completion.go
   * fix: in Graph context I don't get layout, why?
+  * fix: don't add another = when trying to change the name=
+  * fix: support completing values like styles that have to be quoted to use multiple ones
+  * add docs to values? so layout engines can have an explanation for example
+  * completion test: add more completion.Items tests instead of lower level context tests?
 
   * make finding candidates less naive
   * make my completion impl clean: review

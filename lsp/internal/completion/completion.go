@@ -32,9 +32,10 @@ func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
 			}
 		}
 		if at != nil {
-			items = make([]rpc.CompletionItem, len(at.Type.Values()))
-			for i, v := range at.Type.Values() {
-				items[i] = attributeValueItem(v, at.Type)
+			values := at.Type.ValuesFor(attrCtx.AttrCtx)
+			items = make([]rpc.CompletionItem, len(values))
+			for i, v := range values {
+				items[i] = attributeValueItem(v.Value, at.Type)
 			}
 		}
 	}

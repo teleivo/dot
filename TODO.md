@@ -11,6 +11,8 @@ lsp
   * make my completion impl clean: review
   * merge
 
+  * make my use of Type/Kind naming consistent
+
 * simplify lsp main loop, responding with error is more common now. how to simplify the
 json.RawMessage
 * add hover support for attribute names?

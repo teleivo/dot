@@ -3,19 +3,20 @@
 ## Now
 
 * lsp: auto-complete for attribute keys
-  * implement completion for attribute values
+  * fix: in Graph context I don't get layout, why?
+  * how much would it simplify my code if Attribute would have Name/Value which have IDs? so all of
+    this moves into the parser. Then move the attribute types in the parser as well?
+
   * make finding candidates less naive
   * make my completion impl clean: review
+  * improve tests, use t.Log instead of comments in lsp_test.go, reduce this comment noise
   * merge
 
   * add hover support for attribute names?
   * add custom attributes to attributes?
   * how fast/slow does this feel so far? profile and see if I should already use different ds for
   the completion items or for finding things in the tree
-  * add types to attributes with validation of values? if I would do that I think it should live in
-    the parser. so maybe attributes would move over there
 
-* improve tests, use t.Log instead of comments in lsp_test.go
 * simplify lsp main loop, responding with error is more common now. how to simplify the
 json.RawMessage
 * lsp: look into debouncing diagnostics. delay publishing by ~100ms, cancel if another change
@@ -116,6 +117,7 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
 ## Testing
 
 * can I use fuzzing?
+* or the https://graphviz.org/docs/cli/gvgen/
 
 ## High Level API
 

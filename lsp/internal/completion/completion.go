@@ -35,7 +35,7 @@ func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
 			values := at.Type.ValuesFor(attrCtx.AttrCtx)
 			items = make([]rpc.CompletionItem, len(values))
 			for i, v := range values {
-				items[i] = attributeValueItem(v.Value, at.Type)
+				items[i] = attributeValueItem(v, at.Type)
 			}
 		}
 	}
@@ -58,16 +58,16 @@ func attributeNameItem(attr Attribute) rpc.CompletionItem {
 	}
 }
 
-func attributeValueItem(value string, attrType AttrType) rpc.CompletionItem {
+func attributeValueItem(v AttrValue, attrType AttrType) rpc.CompletionItem {
 	kind := rpc.CompletionItemKindValue
 	detail := attrType.String()
 	return rpc.CompletionItem{
-		Label:  value,
+		Label:  v.Value,
 		Kind:   &kind,
 		Detail: &detail,
 		Documentation: &rpc.MarkupContent{
 			Kind:  "markdown",
-			Value: "[" + attrType.String() + "](" + attrType.URL() + ")",
+			Value: v.markdownDoc(attrType),
 		},
 	}
 }

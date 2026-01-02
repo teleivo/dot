@@ -2,6 +2,8 @@
 package hover
 
 import (
+	"strings"
+
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/lsp/internal/attribute"
 	"github.com/teleivo/dot/lsp/internal/rpc"
@@ -56,8 +58,9 @@ func Info(root *dot.Tree, pos token.Position) *rpc.Hover {
 		return nil
 	}
 
+	unquoted := strings.Trim(attrValueTok.Literal, "\"")
 	for _, v := range attrFound.Type.Values() {
-		if attrValueTok.Literal == v.Value {
+		if unquoted == v.Value {
 			return &rpc.Hover{Contents: rpc.MarkupContent{Kind: "markdown", Value: v.MarkdownDoc(attrFound.Type)}}
 		}
 	}

@@ -70,9 +70,21 @@ func TestInfo(t *testing.T) {
 			wantDoc:  "Shape of a node",
 		},
 		"QuotedValue": {
-			// "box" at 1:18-22 (with quotes) - literal includes quotes so no match
+			// "box" at 1:18-22 (with quotes) - should still match after stripping quotes
 			src:      `graph { a [shape="box"] }`,
 			position: token.Position{Line: 1, Column: 19},
+			wantDoc:  "shape",
+		},
+		"StyleCommaSeparated": {
+			// "dashed,bold" - complex format not matched, no hover for value
+			src:      `graph { a [style="dashed,bold"] }`,
+			position: token.Position{Line: 1, Column: 19},
+			wantNil:  true,
+		},
+		"ColorHex": {
+			// "#FF0000" - color format not matched
+			src:      `graph { a [color="#FF0000"] }`,
+			position: token.Position{Line: 1, Column: 18},
 			wantNil:  true,
 		},
 		"MultipleAttrsSecond": {

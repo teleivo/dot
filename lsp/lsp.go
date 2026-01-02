@@ -17,6 +17,7 @@ import (
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/lsp/internal/completion"
+	"github.com/teleivo/dot/lsp/internal/diagnostic"
 	"github.com/teleivo/dot/lsp/internal/hover"
 	"github.com/teleivo/dot/lsp/internal/rpc"
 	"github.com/teleivo/dot/printer"
@@ -215,12 +216,7 @@ func (srv *Server) Start(ctx context.Context) error {
 					}
 					doc := newDocument(params.TextDocument)
 					srv.docs[params.TextDocument.URI] = doc
-					response, err := diagnostics(doc)
-					if err != nil {
-						srv.logger.Error("diagnostics failed", "method", message.Method, "uri", doc.uri, "err", err)
-						continue
-					}
-					srv.write(cancel, response)
+					srv.publishDiagnostics(cancel, doc)
 				case rpc.MethodDidChange:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
@@ -252,12 +248,7 @@ func (srv *Server) Start(ctx context.Context) error {
 					}
 
 					doc.version = params.TextDocument.Version
-					response, err := diagnostics(doc)
-					if err != nil {
-						srv.logger.Error("diagnostics failed", "method", message.Method, "uri", doc.uri, "err", err)
-						continue
-					}
-					srv.write(cancel, response)
+					srv.publishDiagnostics(cancel, doc)
 				case rpc.MethodFormatting:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
@@ -437,42 +428,16 @@ func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
 	}
 }
 
-func diagnostics(doc *document) (rpc.Message, error) {
-	ps := dot.NewParser(doc.src)
-	ps.Parse()
-
-	response := rpc.Message{
-		Method: rpc.MethodPublishDiagnostics,
-	}
-	responseParams := rpc.PublishDiagnosticsParams{
-		URI:     doc.uri,
-		Version: &doc.version,
-	}
-	sev := rpc.SeverityError
-	errs := ps.Errors()
-	responseParams.Diagnostics = make([]rpc.Diagnostic, len(errs))
-	for i, err := range errs {
-		responseParams.Diagnostics[i] = rpc.Diagnostic{
-			Range: rpc.Range{
-				Start: rpc.Position{
-					Line:      uint32(err.Pos.Line) - 1,
-					Character: uint32(err.Pos.Column) - 1,
-				},
-				End: rpc.Position{
-					Line:      uint32(err.Pos.Line) - 1,
-					Character: uint32(err.Pos.Column) - 1,
-				},
-			},
-			Severity: &sev,
-			Message:  err.Msg,
-		}
-	}
-	rp, err := json.Marshal(responseParams)
+func (srv *Server) publishDiagnostics(cancel context.CancelCauseFunc, doc *document) {
+	params := diagnostic.Compute(doc.src, doc.uri, doc.version)
+	rp, err := json.Marshal(params)
 	if err != nil {
-		return response, err
+		srv.logger.Error("failed to marshal diagnostics", "uri", doc.uri, "err", err)
+		return
 	}
 	rm := json.RawMessage(rp)
-	response.Params = &rm
-
-	return response, nil
+	srv.write(cancel, rpc.Message{
+		Method: rpc.MethodPublishDiagnostics,
+		Params: &rm,
+	})
 }

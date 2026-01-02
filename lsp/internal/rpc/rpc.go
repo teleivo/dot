@@ -50,6 +50,8 @@ const (
 	MethodPublishDiagnostics = "textDocument/publishDiagnostics"
 	MethodFormatting         = "textDocument/formatting"
 	MethodCompletion         = "textDocument/completion"
+	MethodSignatureHelp      = "textDocument/signatureHelp"
+	MethodHover              = "textDocument/hover"
 )
 
 // Message has all the fields of request, response and notification. Presence/absence of fields is
@@ -126,6 +128,10 @@ var initializeResult = func() json.RawMessage {
 			"completionProvider": map[string]any{
 				"triggerCharacters": []string{"[", ",", ";", "{", "="},
 			},
+			"signatureHelpProvider": map[string]any{
+				"triggerCharacters": []string{"="},
+			},
+			"hoverProvider": true,
 			"documentFormattingProvider": true,
 			"positionEncoding":           EncodingUTF8,
 			"textDocumentSync":           SyncIncremental,
@@ -424,3 +430,107 @@ const (
 	CompletionItemKindOperator      CompletionItemKind = 24
 	CompletionItemKindTypeParameter CompletionItemKind = 25
 )
+
+// SignatureHelpParams contains the parameters for the textDocument/signatureHelp request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#signatureHelpParams
+type SignatureHelpParams struct {
+	// TextDocument is the text document.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	// Position is the position inside the text document.
+	Position Position `json:"position"`
+	// Context is the signature help context. Only available if the client specifies contextSupport.
+	Context *SignatureHelpContext `json:"context,omitempty"`
+}
+
+// SignatureHelpContext contains additional information about the context in which a signature
+// help request was triggered.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#signatureHelpContext
+type SignatureHelpContext struct {
+	// TriggerKind indicates how the signature help was triggered.
+	TriggerKind SignatureHelpTriggerKind `json:"triggerKind"`
+	// TriggerCharacter is the character that caused signature help to be triggered.
+	// Only set when TriggerKind is TriggerCharacter.
+	TriggerCharacter *string `json:"triggerCharacter,omitempty"`
+	// IsRetrigger is true if signature help was already showing when it was triggered.
+	IsRetrigger bool `json:"isRetrigger"`
+	// ActiveSignatureHelp is the currently active SignatureHelp.
+	// Only set when IsRetrigger is true.
+	ActiveSignatureHelp *SignatureHelp `json:"activeSignatureHelp,omitempty"`
+}
+
+// SignatureHelpTriggerKind indicates how signature help was triggered.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#signatureHelpTriggerKind
+type SignatureHelpTriggerKind int
+
+const (
+	// SignatureHelpInvoked means signature help was invoked manually by the user or a command.
+	SignatureHelpInvoked SignatureHelpTriggerKind = 1
+	// SignatureHelpTriggerCharacter means signature help was triggered by a trigger character.
+	SignatureHelpTriggerCharacter SignatureHelpTriggerKind = 2
+	// SignatureHelpContentChange means signature help was triggered by cursor movement or
+	// document content change.
+	SignatureHelpContentChange SignatureHelpTriggerKind = 3
+)
+
+// SignatureHelp represents the signature of something callable. There can be multiple signatures
+// but only one active and only one active parameter.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#signatureHelp
+type SignatureHelp struct {
+	// Signatures contains one or more signatures. If no signatures are available the response
+	// should be null instead of an empty SignatureHelp.
+	Signatures []SignatureInformation `json:"signatures"`
+	// ActiveSignature is the active signature. If omitted or outside the range of signatures,
+	// it defaults to zero.
+	ActiveSignature *uint `json:"activeSignature,omitempty"`
+	// ActiveParameter is the active parameter of the active signature. If omitted or outside
+	// the range of parameters, it defaults to zero.
+	ActiveParameter *uint `json:"activeParameter,omitempty"`
+}
+
+// SignatureInformation represents the signature of something callable. A signature can have a
+// label, a doc-comment, and a set of parameters.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#signatureInformation
+type SignatureInformation struct {
+	// Label is the label of this signature. Will be shown in the UI.
+	Label string `json:"label"`
+	// Documentation is the human-readable doc-comment of this signature. Will be shown in the
+	// UI but can be omitted.
+	Documentation *MarkupContent `json:"documentation,omitempty"`
+	// Parameters contains the parameters of this signature.
+	Parameters []ParameterInformation `json:"parameters,omitempty"`
+	// ActiveParameter is the index of the active parameter. If provided, this is used in place
+	// of SignatureHelp.ActiveParameter.
+	ActiveParameter *uint `json:"activeParameter,omitempty"`
+}
+
+// ParameterInformation represents a parameter of a callable-signature. A parameter can have a
+// label and a doc-comment.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#parameterInformation
+type ParameterInformation struct {
+	// Label is the label of this parameter. Either a string or an inclusive start and exclusive
+	// end offset within its containing signature label. The offsets are based on a UTF-16 string
+	// representation.
+	Label string `json:"label"`
+	// Documentation is the human-readable doc-comment of this parameter. Will be shown in the
+	// UI but can be omitted.
+	Documentation *MarkupContent `json:"documentation,omitempty"`
+}
+
+// HoverParams contains the parameters for the textDocument/hover request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#hoverParams
+type HoverParams struct {
+	// TextDocument is the text document.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	// Position is the position inside the text document.
+	Position Position `json:"position"`
+}
+
+// Hover is the result of a hover request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#hover
+type Hover struct {
+	// Contents is the hover's content.
+	Contents MarkupContent `json:"contents"`
+	// Range is an optional range inside a text document that is used to visualize the hover,
+	// e.g. by changing the background color.
+	Range *Range `json:"range,omitempty"`
+}

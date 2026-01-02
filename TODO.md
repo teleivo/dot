@@ -4,13 +4,13 @@
 
 lsp
 * auto-complete for attribute keys
+  * let completion use the new tree package
+  * completion test: add more completion.Items tests instead of lower level context tests?
   * fix completion: in Graph context I don't get layout, why?
   * fix completion: don't add another = when trying to change the name=
 
-  * completion test: add more completion.Items tests instead of lower level context tests?
-
-  * make finding candidates less naive
-  * make my completion impl clean: review
+  * make finding attributes easier? less naive for completion?
+  * review code again
   * merge
 
 * simplify lsp main loop, responding with error is more common now. how to simplify the

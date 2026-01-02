@@ -4,11 +4,9 @@
 
 lsp
 * auto-complete for attribute keys
-  * review c6a9d552f560b23589fb8686e3afe7fdb96b2466 completion.go
-  * fix: in Graph context I don't get layout, why?
-  * fix: don't add another = when trying to change the name=
+  * fix completion: in Graph context I don't get layout, why?
+  * fix completion: don't add another = when trying to change the name=
 
-  * fix code organization: hover is now in completion
   * completion test: add more completion.Items tests instead of lower level context tests?
 
   * make finding candidates less naive

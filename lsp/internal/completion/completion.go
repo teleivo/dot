@@ -42,38 +42,6 @@ func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
 	return items
 }
 
-// TODO where to put this? or rename completion package?
-// Hover returns hover information for the symbol at the given position.
-func Hover(tree *dot.Tree, pos token.Position) *rpc.Hover {
-	attrCtx := result{AttrCtx: Graph}
-	context(tree, pos, &attrCtx)
-
-	// Cursor is on attribute name (Prefix contains the name)
-	if attrCtx.AttrName == "" && attrCtx.Prefix != "" {
-		for _, attr := range Attributes {
-			if attr.Name == attrCtx.Prefix {
-				return &rpc.Hover{Contents: rpc.MarkupContent{Kind: "markdown", Value: attr.MarkdownDoc}}
-			}
-		}
-	}
-
-	// Cursor is on attribute value (AttrName contains the attribute, Prefix contains the value)
-	if attrCtx.AttrName != "" {
-		for _, attr := range Attributes {
-			if attr.Name == attrCtx.AttrName && attr.UsedBy&attrCtx.AttrCtx != 0 {
-				for _, v := range attr.Type.Values() {
-					if attrCtx.Prefix == v.Value {
-						return &rpc.Hover{Contents: rpc.MarkupContent{Kind: "markdown", Value: v.markdownDoc(attr.Type)}}
-					}
-				}
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 func attributeNameItem(attr Attribute) rpc.CompletionItem {
 	kind := rpc.CompletionItemKindProperty
 	detail := attr.Type.String()

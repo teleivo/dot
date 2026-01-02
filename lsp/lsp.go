@@ -17,6 +17,7 @@ import (
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/lsp/internal/completion"
+	"github.com/teleivo/dot/lsp/internal/hover"
 	"github.com/teleivo/dot/lsp/internal/rpc"
 	"github.com/teleivo/dot/printer"
 	"github.com/teleivo/dot/token"
@@ -363,7 +364,7 @@ func (srv *Server) Start(ctx context.Context) error {
 					ps := dot.NewParser(doc.src)
 					tree := ps.Parse()
 
-					hover := completion.Hover(tree, tokenPosition(params.Position))
+					hover := hover.Info(tree, tokenPosition(params.Position))
 
 					response := rpc.Message{
 						ID: message.ID,

@@ -38,11 +38,11 @@ func NewFormat(format string) (Format, error) {
 	return Default, fmt.Errorf("invalid format string: %q, valid ones are: %q", format, validFormats)
 }
 
-// TreeKind represents the type of syntax tree node (non-terminals)
-type TreeKind int
+// TreeKind represents the type of syntax tree node (non-terminals).
+type TreeKind uint
 
 const (
-	KindErrorTree TreeKind = iota
+	KindErrorTree TreeKind = 1 << iota
 
 	// Graph structure
 	KindFile

@@ -17,6 +17,7 @@ type AttrValue struct {
 	Value  string           // The value string (e.g., "dashed", "filled")
 	UsedBy AttributeContext // Which contexts this value is valid for
 	Doc    string           // Brief description of what the value does
+	URL    string           // Optional documentation URL (overrides type-based URL)
 }
 
 // markdownDoc generates the markdown documentation for this value.
@@ -26,11 +27,18 @@ func (v AttrValue) markdownDoc(attrType AttrType) string {
 		sb.WriteString(v.Doc)
 		sb.WriteString("\n\n")
 	}
-	sb.WriteString("[")
-	sb.WriteString(attrType.String())
-	sb.WriteString("](")
-	sb.WriteString(attrType.URL())
-	sb.WriteString(")")
+	// Use value-specific URL if available, otherwise fall back to type URL
+	if v.URL != "" {
+		sb.WriteString("[Docs](")
+		sb.WriteString(v.URL)
+		sb.WriteString(")")
+	} else if url := attrType.URL(); url != "" {
+		sb.WriteString("[")
+		sb.WriteString(attrType.String())
+		sb.WriteString("](")
+		sb.WriteString(url)
+		sb.WriteString(")")
+	}
 	return sb.String()
 }
 
@@ -89,7 +97,12 @@ var attrTypeInfo = [...]struct {
 	TypeClusterMode: {"clusterMode", av("global", "local", "none"), "Cluster handling mode"},
 	TypeColor:       {"color", nil, "Color value. Format: #rrggbb, #rrggbbaa, H,S,V, or name"},
 	TypeColorList:   {"colorList", nil, "Weighted color list for gradients. Format: color[:color]* or color;weight[:...]"},
-	TypeDirType:     {"dirType", av("back", "both", "forward", "none"), "Edge arrow direction"},
+	TypeDirType: {"dirType", []AttrValue{
+		{Value: "back", UsedBy: All, Doc: "Arrow at tail end only (T <- H)"},
+		{Value: "both", UsedBy: All, Doc: "Arrow at both ends (T <-> H)"},
+		{Value: "forward", UsedBy: All, Doc: "Arrow at head end only (T -> H)"},
+		{Value: "none", UsedBy: All, Doc: "No arrows"},
+	}, "Edge arrow direction"},
 	TypeDouble:      {"double", nil, "Double-precision floating point number"},
 	TypeDoubleList:  {"doubleList", nil, "Colon-separated list of doubles. Format: num[:num]*"},
 	TypeEscString:   {"escString", nil, "String with escape sequences. Escapes: \\N \\G \\E \\T \\H \\L \\n \\l \\r"},
@@ -98,23 +111,49 @@ var attrTypeInfo = [...]struct {
 	TypeLayerRange:  {"layerRange", nil, "Layer range specification. Format: layer or layer1:layer2"},
 	TypeLblString:   {"lblString", nil, "Label: escString or HTML-like <table>...</table>"},
 	TypeLayout: {"layout", []AttrValue{
-		{Value: "circo", UsedBy: All, Doc: "Circular layout for cyclic structures"},
-		{Value: "dot", UsedBy: All, Doc: "Hierarchical layout for directed graphs"},
-		{Value: "fdp", UsedBy: All, Doc: "Force-directed layout using springs"},
-		{Value: "neato", UsedBy: All, Doc: "Force-directed layout using stress majorization"},
-		{Value: "osage", UsedBy: All, Doc: "Array-based layout for clustered graphs"},
-		{Value: "patchwork", UsedBy: All, Doc: "Squarified treemap layout"},
-		{Value: "sfdp", UsedBy: All, Doc: "Scalable force-directed layout for large graphs"},
-		{Value: "twopi", UsedBy: All, Doc: "Radial layout with root at center"},
+		{Value: "circo", UsedBy: All, Doc: "Circular layout for cyclic structures", URL: "https://graphviz.org/docs/layouts/circo/"},
+		{Value: "dot", UsedBy: All, Doc: "Hierarchical layout for directed graphs", URL: "https://graphviz.org/docs/layouts/dot/"},
+		{Value: "fdp", UsedBy: All, Doc: "Force-directed layout using springs", URL: "https://graphviz.org/docs/layouts/fdp/"},
+		{Value: "neato", UsedBy: All, Doc: "Force-directed layout using stress majorization", URL: "https://graphviz.org/docs/layouts/neato/"},
+		{Value: "osage", UsedBy: All, Doc: "Array-based layout for clustered graphs", URL: "https://graphviz.org/docs/layouts/osage/"},
+		{Value: "patchwork", UsedBy: All, Doc: "Squarified treemap layout", URL: "https://graphviz.org/docs/layouts/patchwork/"},
+		{Value: "sfdp", UsedBy: All, Doc: "Scalable force-directed layout for large graphs", URL: "https://graphviz.org/docs/layouts/sfdp/"},
+		{Value: "twopi", UsedBy: All, Doc: "Radial layout with root at center", URL: "https://graphviz.org/docs/layouts/twopi/"},
 	}, "Layout engine"},
-	TypeOutputMode: {"outputMode", av("breadthfirst", "edgesfirst", "nodesfirst"), "Order in which nodes and edges are drawn"},
-	TypePackMode:   {"packMode", av("cluster", "graph", "node"), "How closely to pack graph components"},
-	TypePagedir:    {"pagedir", av("BL", "BR", "LB", "LT", "RB", "RT", "TL", "TR"), "Page traversal order for multi-page output"},
+	TypeOutputMode: {"outputMode", []AttrValue{
+		{Value: "breadthfirst", UsedBy: All, Doc: "Draw nodes and edges in breadth-first order (default)"},
+		{Value: "nodesfirst", UsedBy: All, Doc: "Draw all nodes first, then edges (edges always beneath nodes)"},
+		{Value: "edgesfirst", UsedBy: All, Doc: "Draw all edges first, then nodes (nodes always on top)"},
+	}, "Order in which nodes and edges are drawn"},
+	TypePackMode: {"packMode", []AttrValue{
+		{Value: "node", UsedBy: All, Doc: "Pack at node/edge level, least area but allows interleaving"},
+		{Value: "cluster", UsedBy: All, Doc: "Keep top-level clusters intact"},
+		{Value: "graph", UsedBy: All, Doc: "Pack using component bounding boxes, no interleaving"},
+	}, "How closely to pack graph components"},
+	TypePagedir: {"pagedir", []AttrValue{
+		{Value: "BL", UsedBy: All, Doc: "Bottom-to-top, left-to-right"},
+		{Value: "BR", UsedBy: All, Doc: "Bottom-to-top, right-to-left"},
+		{Value: "TL", UsedBy: All, Doc: "Top-to-bottom, left-to-right"},
+		{Value: "TR", UsedBy: All, Doc: "Top-to-bottom, right-to-left"},
+		{Value: "RB", UsedBy: All, Doc: "Right-to-left, bottom-to-top"},
+		{Value: "RT", UsedBy: All, Doc: "Right-to-left, top-to-bottom"},
+		{Value: "LB", UsedBy: All, Doc: "Left-to-right, bottom-to-top"},
+		{Value: "LT", UsedBy: All, Doc: "Left-to-right, top-to-bottom"},
+	}, "Page traversal order for multi-page output"},
 	TypePoint:       {"point", nil, "2D/3D point. Format: x,y[,z][!] (! fixes position)"},
 	TypePointList:   {"pointList", nil, "Space-separated list of points. Format: x,y x,y ..."},
 	TypePortPos:     {"portPos", nil, "Port position on node. Format: portname[:compass]"},
-	TypeQuadType: {"quadType", av("fast", "none", "normal"), "Quadtree scheme for force-directed layout"},
-	TypeRankdir:  {"rankdir", av("BT", "LR", "RL", "TB"), "Graph layout direction"},
+	TypeQuadType: {"quadType", []AttrValue{
+		{Value: "normal", UsedBy: All, Doc: "Use quadtree for neighbor computation"},
+		{Value: "fast", UsedBy: All, Doc: "2-4x faster but may reduce layout quality"},
+		{Value: "none", UsedBy: All, Doc: "Disable quadtree optimization"},
+	}, "Quadtree scheme for force-directed layout"},
+	TypeRankdir: {"rankdir", []AttrValue{
+		{Value: "TB", UsedBy: All, Doc: "Top to bottom"},
+		{Value: "BT", UsedBy: All, Doc: "Bottom to top"},
+		{Value: "LR", UsedBy: All, Doc: "Left to right"},
+		{Value: "RL", UsedBy: All, Doc: "Right to left"},
+	}, "Graph layout direction"},
 	TypeRankType: {"rankType", av("max", "min", "same", "sink", "source"), "Rank constraint on subgraph nodes"},
 	TypeRect:        {"rect", nil, "Rectangle. Format: llx,lly,urx,ury"},
 	TypeShape: {"shape", av(
@@ -141,19 +180,19 @@ var attrTypeInfo = [...]struct {
 	TypeStartType:   {"startType", nil, "Initial node placement. Format: [style][seed]"},
 	TypeString:      {"string", nil, "Text string"},
 	TypeStyle: {"style", []AttrValue{
-		{Value: "solid", UsedBy: Node | Edge},
-		{Value: "dashed", UsedBy: Node | Edge},
-		{Value: "dotted", UsedBy: Node | Edge},
-		{Value: "bold", UsedBy: Node | Edge},
-		{Value: "invis", UsedBy: Node | Edge},
-		{Value: "filled", UsedBy: Node | Cluster},
-		{Value: "striped", UsedBy: Node | Cluster},
-		{Value: "wedged", UsedBy: Node},
-		{Value: "diagonals", UsedBy: Node},
-		{Value: "rounded", UsedBy: Node | Cluster},
-		{Value: "tapered", UsedBy: Edge},
-		{Value: "radial", UsedBy: Node | Cluster | Graph},
-	}, "Drawing style"},
+		{Value: "solid", UsedBy: Node | Edge, Doc: "Draw with solid lines"},
+		{Value: "dashed", UsedBy: Node | Edge, Doc: "Draw with dashed lines"},
+		{Value: "dotted", UsedBy: Node | Edge, Doc: "Draw with dotted lines"},
+		{Value: "bold", UsedBy: Node | Edge, Doc: "Draw with bolder lines"},
+		{Value: "invis", UsedBy: Node | Edge, Doc: "Make element invisible"},
+		{Value: "filled", UsedBy: Node | Cluster, Doc: "Fill background with fillcolor"},
+		{Value: "striped", UsedBy: Node | Cluster, Doc: "Fill with vertical color stripes from colorList"},
+		{Value: "wedged", UsedBy: Node, Doc: "Fill with wedge-shaped color sections from colorList"},
+		{Value: "diagonals", UsedBy: Node, Doc: "Draw diagonal lines on Mrecord shape corners"},
+		{Value: "rounded", UsedBy: Node | Cluster, Doc: "Round corners on rectangles and clusters"},
+		{Value: "tapered", UsedBy: Edge, Doc: "Taper edge from tail to head based on penwidth and dir"},
+		{Value: "radial", UsedBy: Node | Cluster | Graph, Doc: "Use radial gradient fill with fillcolor and bgcolor"},
+	}, "Drawing style. Format: \"style[,style]*\" (quotes required when combining styles)"},
 	TypeViewPort: {"viewPort", nil, "Clipping window. Format: W,H[,Z[,x,y]] or W,H,Z,'node'"},
 }
 

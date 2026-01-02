@@ -19,6 +19,7 @@ Features:
 * Diagnostics (syntax errors as you type)
 * Formatting
 * Attribute completion with context-aware filtering (node, edge, graph attributes)
+* Hover documentation for attributes
 
 ## Formatter
 

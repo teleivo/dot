@@ -53,7 +53,7 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","signatureHelpProvider":{"triggerCharacters":["="]},"textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -133,7 +133,7 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","signatureHelpProvider":{"triggerCharacters":["="]},"textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 

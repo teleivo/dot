@@ -339,25 +339,6 @@ func (srv *Server) Start(ctx context.Context) error {
 					response.Result = &rm
 
 					srv.write(cancel, response)
-				case rpc.MethodSignatureHelp:
-					if message.ID == nil {
-						srv.logger.Error("missing request id", "method", message.Method)
-						continue
-					}
-					if message.Params == nil {
-						srv.logger.Error("missing params", "method", message.Method)
-						continue
-					}
-					var params rpc.SignatureHelpParams
-					if err := json.Unmarshal(*message.Params, &params); err != nil {
-						srv.logger.Error("invalid params", "method", message.Method, "err", err)
-						continue
-					}
-					srv.logger.Debug("signatureHelp", "uri", params.TextDocument.URI, "position", params.Position)
-
-					// TODO: implement signature help
-					nullResult := json.RawMessage("null")
-					srv.write(cancel, rpc.Message{ID: message.ID, Result: &nullResult})
 				case rpc.MethodHover:
 					if message.ID == nil {
 						srv.logger.Error("missing request id", "method", message.Method)

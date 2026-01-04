@@ -6,46 +6,50 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/lsp/internal/rpc"
+	"github.com/teleivo/dot/lsp/internal/tree"
 	"github.com/teleivo/dot/token"
 )
 
 // Items returns completion items for the given tree at the given position.
-func Items(tree *dot.Tree, pos token.Position) []rpc.CompletionItem {
-	attrCtx := result{AttrCtx: Graph}
-	context(tree, pos, &attrCtx)
+func Items(root *dot.Tree, pos token.Position) []rpc.CompletionItem {
+	ctx := result{Comp: tree.Graph}
+	context(root, pos, &ctx)
 
 	// TODO simplify this
 	var items []rpc.CompletionItem
-	if attrCtx.AttrName == "" { // attribute name completion
+	if ctx.AttrName == "" { // attribute name completion
 		for _, attr := range Attributes {
-			if strings.HasPrefix(attr.Name, attrCtx.Prefix) && attr.UsedBy&attrCtx.AttrCtx != 0 {
-				items = append(items, attributeNameItem(attr))
+			if strings.HasPrefix(attr.Name, ctx.Prefix) && attr.UsedBy&ctx.Comp != 0 {
+				items = append(items, attributeNameItem(attr, ctx.HasEqual))
 			}
 		}
 	} else { // attribute value completion
 		var at *Attribute
 		for _, attr := range Attributes {
 			// TODO does context still matter?
-			if attr.Name == attrCtx.AttrName && attr.UsedBy&attrCtx.AttrCtx != 0 {
+			if attr.Name == ctx.AttrName && attr.UsedBy&ctx.Comp != 0 {
 				at = &attr
 				break
 			}
 		}
 		if at != nil {
-			values := at.Type.ValuesFor(attrCtx.AttrCtx)
-			items = make([]rpc.CompletionItem, len(values))
-			for i, v := range values {
-				items[i] = attributeValueItem(v, at.Type)
+			for _, v := range at.Type.ValuesFor(ctx.Comp) {
+				if strings.HasPrefix(v.Value, ctx.Prefix) {
+					items = append(items, attributeValueItem(v, at.Type))
+				}
 			}
 		}
 	}
 	return items
 }
 
-func attributeNameItem(attr Attribute) rpc.CompletionItem {
+func attributeNameItem(attr Attribute, hasEqual bool) rpc.CompletionItem {
 	kind := rpc.CompletionItemKindProperty
 	detail := attr.Type.String()
-	text := attr.Name + "="
+	text := attr.Name
+	if !hasEqual {
+		text += "="
+	}
 	return rpc.CompletionItem{
 		Label:      attr.Name,
 		InsertText: &text,
@@ -74,9 +78,10 @@ func attributeValueItem(v AttrValue, attrType AttrType) rpc.CompletionItem {
 
 // result accumulates context as we traverse the tree.
 type result struct {
-	Prefix   string           // text typed so far (for filtering)
-	AttrCtx  AttributeContext // element context (Node, Edge, Graph, etc.)
-	AttrName string           // when non-empty, cursor is in value position for this attribute
+	Prefix   string         // text typed so far (for filtering)
+	Comp     tree.Component // element context (Node, Edge, Graph, etc.)
+	AttrName string         // when non-empty, cursor is in value position for this attribute
+	HasEqual bool           // true when = already exists in the attribute
 }
 
 // hasEqualToken checks if the tree has an = token child.
@@ -113,26 +118,26 @@ func attrNameFrom(attr *dot.Tree) string {
 // context finds the prefix text at the cursor position and determines the attribute context.
 // Returns the prefix string (text before cursor within the current token), the context
 // for filtering attributes (Node, Edge, Graph, etc.), and the attribute name when in value position.
-func context(tree *dot.Tree, pos token.Position, result *result) {
-	if tree == nil {
+func context(root *dot.Tree, pos token.Position, result *result) {
+	if root == nil {
 		return
 	}
 
-	switch tree.Type {
+	switch root.Type {
 	case dot.KindSubgraph:
-		result.AttrCtx = Subgraph
+		result.Comp = tree.Subgraph
 	case dot.KindNodeStmt:
-		result.AttrCtx = Node
+		result.Comp = tree.Node
 	case dot.KindEdgeStmt:
-		result.AttrCtx = Edge
+		result.Comp = tree.Edge
 	}
 
-	for i, child := range tree.Children {
+	for i, child := range root.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
-			if tree.Type == dot.KindSubgraph && i == 1 && c.Type == dot.KindID && len(c.Children) > 0 {
+			if root.Type == dot.KindSubgraph && i == 1 && c.Type == dot.KindID && len(c.Children) > 0 {
 				if id, ok := c.Children[0].(dot.TokenChild); ok && strings.HasPrefix(id.Literal, "cluster_") {
-					result.AttrCtx = Cluster
+					result.Comp = tree.Cluster
 				}
 			}
 
@@ -140,35 +145,39 @@ func context(tree *dot.Tree, pos token.Position, result *result) {
 			if !pos.Before(c.Start) && !pos.After(end) {
 				// skip AttrName if cursor is past its actual end AND there's a = token
 				// (meaning we're in value position, not still typing the name)
-				if c.Type == dot.KindAttrName && pos.After(c.End) && hasEqualToken(tree) {
+				if c.Type == dot.KindAttrName && pos.After(c.End) && hasEqualToken(root) {
 					continue
 				}
-				// when entering AttrValue, capture the attribute name from parent Attribute
-				if c.Type == dot.KindAttrValue && tree.Type == dot.KindAttribute {
-					result.AttrName = attrNameFrom(tree)
+				if root.Type == dot.KindAttribute {
+					switch c.Type {
+					case dot.KindAttrName:
+						result.HasEqual = hasEqualToken(root)
+					case dot.KindAttrValue:
+						result.AttrName = attrNameFrom(root)
+					}
 				}
 				context(c.Tree, pos, result)
 				return
 			}
 		case dot.TokenChild:
-			if i == 0 && tree.Type == dot.KindAttrStmt {
+			if i == 0 && root.Type == dot.KindAttrStmt {
 				switch c.Type {
 				case token.Graph: // graph [name=value]
-					if result.AttrCtx != Cluster {
-						result.AttrCtx = Graph
+					if result.Comp != tree.Cluster && result.Comp != tree.Subgraph {
+						result.Comp = tree.Graph
 					}
 				case token.Node: // node [name=value]
-					result.AttrCtx = Node
+					result.Comp = tree.Node
 				case token.Edge: // edge [name=value]
-					result.AttrCtx = Edge
+					result.Comp = tree.Edge
 				}
 			}
 
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
 				// cursor on or after = in Attribute means value position
-				if c.Type == token.Equal && tree.Type == dot.KindAttribute {
-					result.AttrName = attrNameFrom(tree)
+				if c.Type == token.Equal && root.Type == dot.KindAttribute {
+					result.AttrName = attrNameFrom(root)
 					if pos.After(c.End) {
 						continue // cursor is past =, continue to find AttrValue for prefix
 					}

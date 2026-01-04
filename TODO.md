@@ -4,10 +4,10 @@
 
 lsp
 * auto-complete for attribute keys
-  * let completion use the new tree package
-  * completion test: add more completion.Items tests instead of lower level context tests?
-  * fix completion: in Graph context I don't get layout, why?
-  * fix completion: don't add another = when trying to change the name=
+  * add test for this so I can fix it: in Graph context I don't get layout. I think its because `graph { lay }` lay is
+    a NodeId in a NodeStmt. I want to get attribute completion for the correct Component. so
+  `graph { subgraph cluster_a { some }}` should give cluster attribute names (fix some to something
+  that makes sense).
 
   * make finding attributes easier? less naive for completion?
   * review code again
@@ -20,10 +20,12 @@ json.RawMessage
 quote is missing?
   a [area=50,style="dashed,]
 * add signature help on attr names/values?
-* add custom attributes to attributes?
+* feat: add document symbols
+* feat: add go to definition
+* feat: add list references
+
 * how fast/slow does this feel so far? profile and see if I should already use different ds for
 the completion items or for finding things in the tree
-
 * lsp: look into debouncing diagnostics. delay publishing by ~100ms, cancel if another change
 arrives. joining } of subgraph onto line above it causes brief flashes of errors as neovim sends an
 insert and then a delete as separate changes

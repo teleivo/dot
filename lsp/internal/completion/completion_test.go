@@ -8,187 +8,159 @@ import (
 	"github.com/teleivo/dot/token"
 )
 
-func TestContext(t *testing.T) {
-	tests := map[string]struct {
-		src          string
-		position     token.Position // 1-based line and column
-		wantPrefix   string
-		wantAttrCtx  AttributeContext
-		wantAttrName string // empty means completing name, non-empty means completing value
-	}{
-		"NameInNodeAttrList": {
-			src:         `graph { A [lab] }`,
-			position:    token.Position{Line: 1, Column: 15},
-			wantPrefix:  "lab",
-			wantAttrCtx: Node,
-		},
-		"NameInNodeAttrListMultiLine": {
-			src:         "graph {\n  A [lab]\n}",
-			position:    token.Position{Line: 2, Column: 9},
-			wantPrefix:  "lab",
-			wantAttrCtx: Node,
-		},
-		"NameInNodeAttrListMultiLineColumnLessThanGraphStart": {
-			src:         "  graph {\nA\n}",
-			position:    token.Position{Line: 2, Column: 2},
-			wantPrefix:  "A",
-			wantAttrCtx: Node,
-		},
-		"NameInEdgeAttrList": {
-			src:         `digraph { a -> b [arr] }`,
-			position:    token.Position{Line: 1, Column: 22},
-			wantPrefix:  "arr",
-			wantAttrCtx: Edge,
-		},
-		"NameEmptyAfterOpenBracket": {
-			src:         `graph { a [ }`,
-			position:    token.Position{Line: 1, Column: 12},
-			wantPrefix:  "",
-			wantAttrCtx: Node,
-		},
-		"NameEmptyAfterComma": {
-			src:         `graph { a [label=red,] }`,
-			position:    token.Position{Line: 1, Column: 22},
-			wantPrefix:  "",
-			wantAttrCtx: Node,
-		},
-		"NameInAttrStmtNode": {
-			src:         `graph { node [lab] }`,
-			position:    token.Position{Line: 1, Column: 18},
-			wantPrefix:  "lab",
-			wantAttrCtx: Node,
-		},
-		"NameInAttrStmtEdge": {
-			src:         `graph { edge [lab] }`,
-			position:    token.Position{Line: 1, Column: 18},
-			wantPrefix:  "lab",
-			wantAttrCtx: Edge,
-		},
-		"NameInAttrStmtGraph": {
-			src:         `graph { graph [lab] }`,
-			position:    token.Position{Line: 1, Column: 19},
-			wantPrefix:  "lab",
-			wantAttrCtx: Graph,
-		},
-		"NameInNodeInsideSubgraph": {
-			src:         `graph { subgraph { a [lab] } }`,
-			position:    token.Position{Line: 1, Column: 26},
-			wantPrefix:  "lab",
-			wantAttrCtx: Node,
-		},
-		"NameInEmptySource": {
-			src:         ``,
-			position:    token.Position{Line: 1, Column: 1},
-			wantPrefix:  "",
-			wantAttrCtx: Graph,
-		},
-		"NameInNodeInsideAnonymousSubgraph": {
-			src:         `graph { subgraph { a [pen] } }`,
-			position:    token.Position{Line: 1, Column: 26},
-			wantPrefix:  "pen",
-			wantAttrCtx: Node,
-		},
-		"NameInNodeInsideNamedSubgraph": {
-			src:         `graph { subgraph foo { a [pen] } }`,
-			position:    token.Position{Line: 1, Column: 30},
-			wantPrefix:  "pen",
-			wantAttrCtx: Node,
-		},
-		"NameInNodeInsideClusterSubgraph": {
-			src:         `graph { subgraph cluster_foo { a [pen] } }`,
-			position:    token.Position{Line: 1, Column: 38},
-			wantPrefix:  "pen",
-			wantAttrCtx: Node,
-		},
-		"NameInAttrStmtGraphInsideClusterSubgraph": {
-			src:         `graph { subgraph cluster_foo { graph [pen] } }`,
-			position:    token.Position{Line: 1, Column: 42},
-			wantPrefix:  "pen",
-			wantAttrCtx: Cluster,
-		},
-		"NameWithoutEquals": {
-			src:         `graph { a [sha] }`,
-			position:    token.Position{Line: 1, Column: 15},
-			wantPrefix:  "sha",
-			wantAttrCtx: Node,
-		},
-		"ValueEmptyAfterEquals": {
-			src:          `graph { a [shape=] }`,
-			position:     token.Position{Line: 1, Column: 18},
-			wantPrefix:   "",
-			wantAttrCtx:  Node,
-			wantAttrName: "shape",
-		},
-		"ValuePartialInNodeAttrList": {
-			src:          `graph { a [shape=bo] }`,
-			position:     token.Position{Line: 1, Column: 20},
-			wantPrefix:   "bo",
-			wantAttrCtx:  Node,
-			wantAttrName: "shape",
-		},
-		"ValueEmptyInEdgeAttrList": {
-			src:          `digraph { a -> b [dir=] }`,
-			position:     token.Position{Line: 1, Column: 22},
-			wantPrefix:   "",
-			wantAttrCtx:  Edge,
-			wantAttrName: "dir",
-		},
-		"ValuePartialInEdgeAttrList": {
-			src:          `digraph { a -> b [dir=ba] }`,
-			position:     token.Position{Line: 1, Column: 24},
-			wantPrefix:   "ba",
-			wantAttrCtx:  Edge,
-			wantAttrName: "dir",
-		},
-		"ValueEmptySecondAttrAfterComma": {
-			src:          `graph { a [label=foo, shape=] }`,
-			position:     token.Position{Line: 1, Column: 28},
-			wantPrefix:   "",
-			wantAttrCtx:  Node,
-			wantAttrName: "shape",
-		},
-		"ValuePartialGraphLevelAttr": {
-			src:          `digraph { rankdir=L }`,
-			position:     token.Position{Line: 1, Column: 19},
-			wantPrefix:   "L",
-			wantAttrCtx:  Graph,
-			wantAttrName: "rankdir",
-		},
-		"ValueUnclosedQuoteReturnsEmptyPrefix": {
-			src:         `graph { a [shape="bo] }`,
-			position:    token.Position{Line: 1, Column: 21},
-			wantPrefix:  "",
-			wantAttrCtx: Node,
-		},
-		"ValuePartialMultiLine": {
-			src:          "graph {\n  a [shape=\n    bo]\n}",
-			position:     token.Position{Line: 3, Column: 6},
-			wantPrefix:   "bo",
-			wantAttrCtx:  Node,
-			wantAttrName: "shape",
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			ps := dot.NewParser([]byte(tt.src))
-			tree := ps.Parse()
-
-			got := result{AttrCtx: Graph}
-			context(tree, tt.position, &got)
-			want := result{Prefix: tt.wantPrefix, AttrCtx: tt.wantAttrCtx, AttrName: tt.wantAttrName}
-
-			assert.EqualValuesf(t, got, want, "for %q at %s", tt.src, tt.position)
-		})
-	}
-}
-
 func TestItems(t *testing.T) {
 	tests := map[string]struct {
-		src      string
-		position token.Position
-		want     []string
+		src            string
+		position       token.Position
+		want           []string
+		wantInsertText map[string]string
 	}{
+		// Name completion: node context with prefix filtering
+		"NameInNodeAttrList": {
+			src:      `graph { A [lab] }`,
+			position: token.Position{Line: 1, Column: 15},
+			want:     []string{"label", "labelloc"},
+		},
+		"NameInNodeAttrListMultiLine": {
+			src:      "graph {\n  A [lab]\n}",
+			position: token.Position{Line: 2, Column: 9},
+			want:     []string{"label", "labelloc"},
+		},
+		"NameInEdgeAttrList": {
+			src:      `digraph { a -> b [arr] }`,
+			position: token.Position{Line: 1, Column: 22},
+			want:     []string{"arrowhead", "arrowsize", "arrowtail"},
+		},
+		"NameInAttrStmtEdge": {
+			src:      `graph { edge [labe] }`,
+			position: token.Position{Line: 1, Column: 19},
+			want:     []string{"label", "labelURL", "labelangle", "labeldistance", "labelfloat", "labelfontcolor", "labelfontname", "labelfontsize", "labelhref", "labeltarget", "labeltooltip"},
+		},
+		"NameInAttrStmtGraph": {
+			src:      `graph { graph [labe] }`,
+			position: token.Position{Line: 1, Column: 20},
+			want:     []string{"label", "label_scheme", "labeljust", "labelloc"},
+		},
+		"NameInNodeInsideSubgraph": {
+			src:      `graph { subgraph { a [lab] } }`,
+			position: token.Position{Line: 1, Column: 26},
+			want:     []string{"label", "labelloc"},
+		},
+		// graph [...] inside non-cluster subgraph only gets Subgraph attrs (rank, cluster)
+		"NameInAttrStmtGraphInsideSubgraph": {
+			src:      `graph { subgraph { graph [ran] } }`,
+			position: token.Position{Line: 1, Column: 29},
+			want:     []string{"rank"},
+		},
+		"NameInAttrStmtGraphInsideSubgraphNoPenAttrs": {
+			src:      `graph { subgraph { graph [pen] } }`,
+			position: token.Position{Line: 1, Column: 29},
+			want:     []string{}, // penwidth is N|E|C, not S
+		},
+		"NameInNodeInsideClusterSubgraph": {
+			src:      `graph { subgraph cluster_foo { a [pen] } }`,
+			position: token.Position{Line: 1, Column: 38},
+			want:     []string{"penwidth"},
+		},
+		// graph [...] inside cluster gets cluster-specific attrs like pencolor
+		"NameInAttrStmtGraphInsideClusterSubgraph": {
+			src:      `graph { subgraph cluster_foo { graph [pen] } }`,
+			position: token.Position{Line: 1, Column: 42},
+			want:     []string{"pencolor", "penwidth"},
+		},
+		"NameWithPrefixFiltering": {
+			src:      `graph { a [sha] }`,
+			position: token.Position{Line: 1, Column: 15},
+			want:     []string{"shape", "shapefile"},
+		},
+		// When no = exists, insert one
+		"NameWithoutEquals": {
+			src:            `graph { a [lab] }`,
+			position:       token.Position{Line: 1, Column: 14},
+			want:           []string{"label", "labelloc"},
+			wantInsertText: map[string]string{"label": "label=", "labelloc": "labelloc="},
+		},
+		// When = already exists, don't insert another one
+		"NameWithExistingEquals": {
+			src:            `graph { a [lab=foo] }`,
+			position:       token.Position{Line: 1, Column: 14},
+			want:           []string{"label", "labelloc"},
+			wantInsertText: map[string]string{"label": "label", "labelloc": "labelloc"},
+		},
+
+		// Value completion: shape values
+		"ValueShapeEmpty": {
+			src:      `graph { a [shape=] }`,
+			position: token.Position{Line: 1, Column: 18},
+			want: []string{
+				"Mcircle", "Mdiamond", "Mrecord", "Msquare",
+				"assembly", "box", "box3d", "cds", "circle", "component", "cylinder",
+				"diamond", "doublecircle", "doubleoctagon",
+				"egg", "ellipse",
+				"fivepoverhang", "folder",
+				"hexagon", "house",
+				"insulator", "invhouse", "invtrapezium", "invtriangle",
+				"larrow", "lpromoter",
+				"none", "note", "noverhang",
+				"octagon", "oval",
+				"parallelogram", "pentagon", "plain", "plaintext", "point", "polygon",
+				"primersite", "promoter", "proteasesite", "proteinstab",
+				"rarrow", "record", "rect", "rectangle", "restrictionsite", "ribosite",
+				"rnastab", "rpromoter",
+				"septagon", "signature", "square", "star",
+				"tab", "terminator", "threepoverhang", "trapezium", "triangle", "tripleoctagon",
+				"underline", "utr",
+			},
+		},
+		"ValueShapeAfterComma": {
+			src:      `graph { a [label=foo, shape=] }`,
+			position: token.Position{Line: 1, Column: 28},
+			want: []string{
+				"Mcircle", "Mdiamond", "Mrecord", "Msquare",
+				"assembly", "box", "box3d", "cds", "circle", "component", "cylinder",
+				"diamond", "doublecircle", "doubleoctagon",
+				"egg", "ellipse",
+				"fivepoverhang", "folder",
+				"hexagon", "house",
+				"insulator", "invhouse", "invtrapezium", "invtriangle",
+				"larrow", "lpromoter",
+				"none", "note", "noverhang",
+				"octagon", "oval",
+				"parallelogram", "pentagon", "plain", "plaintext", "point", "polygon",
+				"primersite", "promoter", "proteasesite", "proteinstab",
+				"rarrow", "record", "rect", "rectangle", "restrictionsite", "ribosite",
+				"rnastab", "rpromoter",
+				"septagon", "signature", "square", "star",
+				"tab", "terminator", "threepoverhang", "trapezium", "triangle", "tripleoctagon",
+				"underline", "utr",
+			},
+		},
+		"ValueShapeMultiLine": {
+			src:      "graph {\n  a [shape=\n    bo]\n}",
+			position: token.Position{Line: 3, Column: 6},
+			want:     []string{"box", "box3d"},
+		},
+
+		// Value completion: dir values (edge)
+		"ValueDirEmpty": {
+			src:      `digraph { a -> b [dir=] }`,
+			position: token.Position{Line: 1, Column: 22},
+			want:     []string{"back", "both", "forward", "none"},
+		},
+		"ValueDirPartial": {
+			src:      `digraph { a -> b [dir=ba] }`,
+			position: token.Position{Line: 1, Column: 24},
+			want:     []string{"back"},
+		},
+
+		// Value completion: rankdir values (graph)
+		"ValueRankdirPartial": {
+			src:      `digraph { rankdir=L }`,
+			position: token.Position{Line: 1, Column: 19},
+			want:     []string{"LR"},
+		},
+
+		// Value completion: style values
 		"StyleValuesForNode": {
 			src:      `graph { a [style=] }`,
 			position: token.Position{Line: 1, Column: 18},
@@ -204,6 +176,8 @@ func TestItems(t *testing.T) {
 			position: token.Position{Line: 1, Column: 43},
 			want:     []string{"filled", "striped", "rounded", "radial"},
 		},
+
+		// No values for free-form types
 		"NoValuesForColor": {
 			src:      `graph { a [color=] }`,
 			position: token.Position{Line: 1, Column: 18},
@@ -214,15 +188,25 @@ func TestItems(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			ps := dot.NewParser([]byte(tt.src))
-			tree := ps.Parse()
+			root := ps.Parse()
 
-			items := Items(tree, tt.position)
+			items := Items(root, tt.position)
 			got := make([]string, len(items))
 			for i, item := range items {
 				got[i] = item.Label
 			}
 
-			assert.EqualValuesf(t, got, tt.want, "unexpected style values")
+			assert.EqualValuesf(t, got, tt.want, "unexpected items")
+
+			if tt.wantInsertText != nil {
+				gotInsertText := make(map[string]string)
+				for _, item := range items {
+					if item.InsertText != nil {
+						gotInsertText[item.Label] = *item.InsertText
+					}
+				}
+				assert.EqualValuesf(t, gotInsertText, tt.wantInsertText, "unexpected InsertText")
+			}
 		})
 	}
 }

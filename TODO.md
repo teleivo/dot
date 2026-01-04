@@ -3,12 +3,12 @@
 ## Now
 
 lsp
-* simplify lsp main loop, responding with error is more common now. how to simplify the
-json.RawMessage
 * make my use of Type/Kind naming consistent
+
 * support completing values like styles that have to be quoted to use multiple ones and the
 quote is missing?
   a [area=50,style="dashed,]
+
 * feat: add document symbols
 * feat: add go to definition
 * feat: add list references

@@ -2,10 +2,19 @@
 
 ## Now
 
-* lsp: auto-complete for attribute keys
-* improve tests, use t.Log instead of comments in lsp_test.go
+lsp
 * simplify lsp main loop, responding with error is more common now. how to simplify the
 json.RawMessage
+* make my use of Type/Kind naming consistent
+* support completing values like styles that have to be quoted to use multiple ones and the
+quote is missing?
+  a [area=50,style="dashed,]
+* feat: add document symbols
+* feat: add go to definition
+* feat: add list references
+
+* how fast/slow does this feel so far? profile and see if I should already use different ds for
+the completion items or for finding things in the tree
 * lsp: look into debouncing diagnostics. delay publishing by ~100ms, cancel if another change
 arrives. joining } of subgraph onto line above it causes brief flashes of errors as neovim sends an
 insert and then a delete as separate changes
@@ -104,6 +113,7 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
 ## Testing
 
 * can I use fuzzing?
+* or the https://graphviz.org/docs/cli/gvgen/
 
 ## High Level API
 

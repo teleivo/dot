@@ -401,14 +401,17 @@ func (p *Parser) parseAttribute() *Tree {
 	assert.That(p.curTokenIs(token.ID), "current token must be ID, got %s", p.curToken)
 
 	attr := &Tree{Type: KindAttribute}
-	id := p.parseID()
-	attr.appendTree(id)
+
+	name := &Tree{Type: KindAttrName}
+	name.appendTree(p.parseID())
+	attr.appendTree(name)
 
 	okEqual := p.expect(attr, token.Equal)
 
 	if p.curTokenIs(token.ID) {
-		id := p.parseID()
-		attr.appendTree(id)
+		value := &Tree{Type: KindAttrValue}
+		value.appendTree(p.parseID())
+		attr.appendTree(value)
 	} else if okEqual { // reduce noise by only reporting missing rhs ID if we've seen a =
 		p.error("expected attribute value")
 	}

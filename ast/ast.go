@@ -389,16 +389,20 @@ type Attribute struct {
 // Name returns the attribute name.
 func (a Attribute) Name() ID {
 	// a_list : ID '=' ID [ (';' | ',') ] [ a_list ]
-	id, ok := idAt(a.tree, 0)
-	assert.That(ok, "Attribute missing required name ID child")
+	nameTree, ok := treeAt(a.tree, dot.KindAttrName, 0)
+	assert.That(ok, "Attribute missing required AttrName child")
+	id, ok := idAt(nameTree, 0)
+	assert.That(ok, "AttrName missing required ID child")
 	return *id
 }
 
 // Value returns the attribute value.
 func (a Attribute) Value() ID {
 	// a_list : ID '=' ID [ (';' | ',') ] [ a_list ]
-	id, ok := idAt(a.tree, 2)
-	assert.That(ok, "Attribute missing required value ID child")
+	valueTree, ok := treeAt(a.tree, dot.KindAttrValue, 2)
+	assert.That(ok, "Attribute missing required AttrValue child")
+	id, ok := idAt(valueTree, 0)
+	assert.That(ok, "AttrValue missing required ID child")
 	return *id
 }
 

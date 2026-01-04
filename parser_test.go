@@ -118,8 +118,9 @@ func TestParser(t *testing.T) {
 		'{'
 		StmtList
 			Attribute
-				ID
-					'rank'
+				AttrName
+					ID
+						'rank'
 				'='
 		'}'
 `,
@@ -140,11 +141,13 @@ func TestParser(t *testing.T) {
 		'{'
 		StmtList
 			Attribute
-				ID
-					'rank'
+				AttrName
+					ID
+						'rank'
 				'='
-				ID
-					'same'
+				AttrValue
+					ID
+						'same'
 		'}'
 `,
 		},
@@ -550,8 +553,9 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 					']'
 		'}'
 `,
@@ -574,8 +578,9 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
 					']'
 		'}'
@@ -599,14 +604,17 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'blue'
+							AttrValue
+								ID
+									'blue'
 						Attribute
-							ID
-								'font'
+							AttrName
+								ID
+									'font'
 					']'
 		'}'
 `,
@@ -629,19 +637,22 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'blue'
+							AttrName
+								ID
+									'blue'
 			AttrStmt
 				'edge'
 				AttrList
 					'['
 					AList
 						Attribute
-							ID
-								'a'
+							AttrName
+								ID
+									'a'
 							'='
-							ID
-								'b'
+							AttrValue
+								ID
+									'b'
 					']'
 			ErrorTree
 				']'
@@ -668,22 +679,26 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'blue'
+							AttrValue
+								ID
+									'blue'
 			AttrStmt
 				'node'
 				AttrList
 					'['
 					AList
 						Attribute
-							ID
-								'shape'
+							AttrName
+								ID
+									'shape'
 							'='
-							ID
-								'box'
+							AttrValue
+								ID
+									'box'
 					']'
 		'}'
 `,
@@ -706,16 +721,19 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 					'['
 					AList
 						Attribute
-							ID
-								'font'
+							AttrName
+								ID
+									'font'
 							'='
-							ID
-								'arial'
+							AttrValue
+								ID
+									'arial'
 					']'
 		'}'
 `,
@@ -739,21 +757,25 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'blue'
-							ID
-								'font'
+							AttrName
+								ID
+									'blue'
+							AttrValue
+								ID
+									'font'
 			AttrStmt
 				'edge'
 				AttrList
 					'['
 					AList
 						Attribute
-							ID
-								'a'
+							AttrName
+								ID
+									'a'
 							'='
-							ID
-								'b'
+							AttrValue
+								ID
+									'b'
 					']'
 		'}'
 `,
@@ -777,19 +799,23 @@ func TestParser(t *testing.T) {
 					'['
 					AList
 						Attribute
-							ID
-								'a'
+							AttrName
+								ID
+									'a'
 							'='
-							ID
-								'b'
+							AttrValue
+								ID
+									'b'
 					'['
 					AList
 						Attribute
-							ID
-								'c'
+							AttrName
+								ID
+									'c'
 							'='
-							ID
-								'd'
+							AttrValue
+								ID
+									'd'
 					']'
 		'}'
 `,
@@ -885,11 +911,13 @@ func TestParser(t *testing.T) {
 		'{'
 		StmtList
 			Attribute
-				ID
-					'rank'
+				AttrName
+					ID
+						'rank'
 				'='
-				ID
-					'same'
+				AttrValue
+					ID
+						'same'
 			';'
 		'}'
 `,
@@ -907,19 +935,23 @@ func TestParser(t *testing.T) {
 		'{'
 		StmtList
 			Attribute
-				ID
-					'rank'
+				AttrName
+					ID
+						'rank'
 				'='
-				ID
-					'same'
+				AttrValue
+					ID
+						'same'
 			';'
 			';'
 			Attribute
-				ID
-					'color'
+				AttrName
+					ID
+						'color'
 				'='
-				ID
-					'red'
+				AttrValue
+					ID
+						'red'
 		'}'
 `,
 		},
@@ -937,17 +969,21 @@ func TestParser(t *testing.T) {
 		'{'
 		StmtList
 			Attribute
-				ID
-					'rank'
+				AttrName
+					ID
+						'rank'
 				'='
-				ID
-					'same'
+				AttrValue
+					ID
+						'same'
 			Attribute
-				ID
-					'color'
+				AttrName
+					ID
+						'color'
 				'='
-				ID
-					'red'
+				AttrValue
+					ID
+						'red'
 		'}'
 `,
 		},
@@ -959,19 +995,22 @@ func TestParser(t *testing.T) {
 		'{'
 		StmtList
 			Attribute
-				ID
-					'A'
+				AttrName
+					ID
+						'A'
 				'='
 	Graph
 		'digraph'
 		'{'
 		StmtList
 			Attribute
-				ID
-					'C'
+				AttrName
+					ID
+						'C'
 				'='
-				ID
-					'D'
+				AttrValue
+					ID
+						'D'
 		'}'
 `,
 			wantErrors: []string{
@@ -1305,11 +1344,13 @@ strict graph G3 {}`,
 		'{'
 		StmtList
 			Attribute
-				ID
-					'rank'
+				AttrName
+					ID
+						'rank'
 				'='
-				ID
-					'same'
+				AttrValue
+					ID
+						'same'
 			';'
 		'}'
 `,
@@ -1324,11 +1365,13 @@ strict graph G3 {}`,
 		'{'
 		StmtList
 			Attribute
-				ID
-					'label'
+				AttrName
+					ID
+						'label'
 				'='
-				ID
-					'"Rainy days
+				AttrValue
+					ID
+						'"Rainy days
 				in summer"'
 		'}'
 `,
@@ -1343,11 +1386,13 @@ strict graph G3 {}`,
 		'{'
 		StmtList
 			Attribute
-				ID
-					'label'
+				AttrName
+					ID
+						'label'
 				'='
-				ID
-					'"Rainy days\
+				AttrValue
+					ID
+						'"Rainy days\
 				in summer"'
 		'}'
 `,
@@ -1364,11 +1409,13 @@ strict graph G3 {}`,
 		'{'
 		StmtList
 			Attribute
-				ID
-					'a'
+				AttrName
+					ID
+						'a'
 				'='
-				ID
-					'1'
+				AttrValue
+					ID
+						'1'
 			NodeStmt
 				NodeID
 					ID
@@ -1515,11 +1562,13 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'red'
+							AttrValue
+								ID
+									'red'
 					']'
 		'}'
 `,
@@ -1539,18 +1588,22 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'red'
+							AttrValue
+								ID
+									'red'
 						','
 						Attribute
-							ID
-								'shape'
+							AttrName
+								ID
+									'shape'
 							'='
-							ID
-								'box'
+							AttrValue
+								ID
+									'box'
 					']'
 		'}'
 `,
@@ -1570,20 +1623,24 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'red'
+							AttrValue
+								ID
+									'red'
 					']'
 					'['
 					AList
 						Attribute
-							ID
-								'shape'
+							AttrName
+								ID
+									'shape'
 							'='
-							ID
-								'box'
+							AttrValue
+								ID
+									'box'
 					']'
 		'}'
 `,
@@ -1918,11 +1975,13 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'red'
+							AttrValue
+								ID
+									'red'
 		'}'
 `,
 			wantErrors: []string{
@@ -2079,11 +2138,13 @@ strict graph G3 {}`,
 				'{'
 				StmtList
 					Attribute
-						ID
-							'rank'
+						AttrName
+							ID
+								'rank'
 						'='
-						ID
-							'same'
+						AttrValue
+							ID
+								'same'
 				'}'
 		'}'
 `,
@@ -2300,11 +2361,13 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'red'
+							AttrValue
+								ID
+									'red'
 					']'
 		'}'
 `,
@@ -2336,18 +2399,22 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'a'
+							AttrName
+								ID
+									'a'
 							'='
-							ID
-								'b'
+							AttrValue
+								ID
+									'b'
 						','
 						Attribute
-							ID
-								'c'
+							AttrName
+								ID
+									'c'
 							'='
-							ID
-								'd'
+							AttrValue
+								ID
+									'd'
 					']'
 		'}'
 `,
@@ -2371,20 +2438,24 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'red'
+							AttrValue
+								ID
+									'red'
 					']'
 					'['
 					AList
 						Attribute
-							ID
-								'shape'
+							AttrName
+								ID
+									'shape'
 							'='
-							ID
-								'box'
+							AttrValue
+								ID
+									'box'
 					']'
 		'}'
 `,
@@ -2641,11 +2712,13 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 							'='
-							ID
-								'red'
+							AttrValue
+								ID
+									'red'
 					']'
 		'}'
 `,
@@ -2717,8 +2790,9 @@ strict graph G3 {}`,
 					'['
 					AList
 						Attribute
-							ID
-								'color'
+							AttrName
+								ID
+									'color'
 		'}'
 `,
 			wantErrors: []string{

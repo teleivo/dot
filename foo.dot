@@ -1,0 +1,6 @@
+digraph foo {
+	style=filled
+	a [area=50]
+	b [area=20,color=red,fillcolor=red,style=filled]
+	a -> b [dir=forward]
+}

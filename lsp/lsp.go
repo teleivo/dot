@@ -16,8 +16,12 @@ import (
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
+	"github.com/teleivo/dot/lsp/internal/completion"
+	"github.com/teleivo/dot/lsp/internal/diagnostic"
+	"github.com/teleivo/dot/lsp/internal/hover"
 	"github.com/teleivo/dot/lsp/internal/rpc"
 	"github.com/teleivo/dot/printer"
+	"github.com/teleivo/dot/token"
 )
 
 // Config holds the configuration for creating an LSP server.
@@ -74,6 +78,8 @@ type document struct {
 	version int32
 	src     []byte
 	lines   []int
+	tree    *dot.Tree   // cached parse result, nil if stale
+	errors  []dot.Error // cached parse errors from tree
 }
 
 func newDocument(item rpc.TextDocumentItem) *document {
@@ -122,14 +128,33 @@ func (d *document) change(change rpc.TextDocumentContentChangeEvent) error {
 	copy(newSrc, d.src[:start])
 	copy(newSrc[start:], text)
 	copy(newSrc[start+len(text):], d.src[end:])
-	d.setSrc(newSrc)
+	d.src = newSrc
+	d.lines = buildLines(d.src)
+	d.tree = nil   // invalidate cached tree
+	d.errors = nil // invalidate cached errors
 
 	return nil
 }
 
-func (d *document) setSrc(src []byte) {
-	d.src = src
-	d.lines = buildLines(d.src)
+// parse parses the document if needed, caching both tree and errors.
+func (d *document) parse() {
+	if d.tree == nil {
+		ps := dot.NewParser(d.src)
+		d.tree = ps.Parse()
+		d.errors = ps.Errors()
+	}
+}
+
+// Tree returns the cached parse tree, parsing the document if needed.
+func (d *document) Tree() *dot.Tree {
+	d.parse()
+	return d.tree
+}
+
+// Errors returns the cached parse errors, parsing the document if needed.
+func (d *document) Errors() []dot.Error {
+	d.parse()
+	return d.errors
 }
 
 func (d *document) startPos() rpc.Position {
@@ -143,6 +168,13 @@ func (d *document) endPos() rpc.Position {
 	return rpc.Position{
 		Line:      uint32(len(d.lines)) - 1,
 		Character: uint32(len(d.src) - d.lines[len(d.lines)-1]),
+	}
+}
+
+func tokenPosition(pos rpc.Position) token.Position {
+	return token.Position{
+		Line:   int(pos.Line) + 1,
+		Column: int(pos.Character) + 1,
 	}
 }
 
@@ -209,12 +241,7 @@ func (srv *Server) Start(ctx context.Context) error {
 					}
 					doc := newDocument(params.TextDocument)
 					srv.docs[params.TextDocument.URI] = doc
-					response, err := diagnostics(doc)
-					if err != nil {
-						srv.logger.Error("diagnostics failed", "method", message.Method, "uri", doc.uri, "err", err)
-						continue
-					}
-					srv.write(cancel, response)
+					srv.publishDiagnostics(cancel, doc)
 				case rpc.MethodDidChange:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
@@ -246,12 +273,7 @@ func (srv *Server) Start(ctx context.Context) error {
 					}
 
 					doc.version = params.TextDocument.Version
-					response, err := diagnostics(doc)
-					if err != nil {
-						srv.logger.Error("diagnostics failed", "method", message.Method, "uri", doc.uri, "err", err)
-						continue
-					}
-					srv.write(cancel, response)
+					srv.publishDiagnostics(cancel, doc)
 				case rpc.MethodFormatting:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
@@ -298,6 +320,73 @@ func (srv *Server) Start(ctx context.Context) error {
 					response.Result = &rm
 
 					srv.write(cancel, response)
+				case rpc.MethodCompletion:
+					if message.Params == nil {
+						srv.logger.Error("missing params", "method", message.Method)
+						continue
+					}
+					var params rpc.CompletionParams
+					if err := json.Unmarshal(*message.Params, &params); err != nil {
+						srv.logger.Error("invalid params", "method", message.Method, "err", err)
+						continue
+					}
+					doc, ok := srv.docs[params.TextDocument.URI]
+					if !ok {
+						srv.logger.Error("unknown document", "uri", params.TextDocument.URI)
+						continue
+					}
+
+					items := completion.Items(doc.Tree(), tokenPosition(params.Position))
+
+					response := rpc.Message{
+						ID: message.ID,
+					}
+					completions := rpc.CompletionList{
+						Items: items,
+					}
+					rp, err := json.Marshal(completions)
+					if err != nil {
+						srv.logger.Error("failed to marshal completion result", "method", message.Method, "err", err)
+						continue
+					}
+					rm := json.RawMessage(rp)
+					response.Result = &rm
+
+					srv.write(cancel, response)
+				case rpc.MethodHover:
+					if message.ID == nil {
+						srv.logger.Error("missing request id", "method", message.Method)
+						continue
+					}
+					if message.Params == nil {
+						srv.logger.Error("missing params", "method", message.Method)
+						continue
+					}
+					var params rpc.HoverParams
+					if err := json.Unmarshal(*message.Params, &params); err != nil {
+						srv.logger.Error("invalid params", "method", message.Method, "err", err)
+						continue
+					}
+					doc, ok := srv.docs[params.TextDocument.URI]
+					if !ok {
+						srv.logger.Error("unknown document", "uri", params.TextDocument.URI)
+						continue
+					}
+
+					hover := hover.Info(doc.Tree(), tokenPosition(params.Position))
+
+					response := rpc.Message{
+						ID: message.ID,
+					}
+					rp, err := json.Marshal(hover)
+					if err != nil {
+						srv.logger.Error("failed to marshal hover result", "method", message.Method, "err", err)
+						continue
+					}
+					rm := json.RawMessage(rp)
+					response.Result = &rm
+
+					srv.write(cancel, response)
 				case rpc.MethodDidClose:
 					if message.Params == nil {
 						srv.logger.Error("missing params", "method", message.Method)
@@ -326,6 +415,9 @@ func (srv *Server) Start(ctx context.Context) error {
 					srv.logger.Debug("exit notification received")
 					cancel(nil)
 				default:
+					if message.ID == nil { // notifications are ignored
+						continue
+					}
 					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server is shutting down"}})
 				}
 			}
@@ -357,42 +449,16 @@ func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
 	}
 }
 
-func diagnostics(doc *document) (rpc.Message, error) {
-	ps := dot.NewParser(doc.src)
-	ps.Parse()
-
-	response := rpc.Message{
-		Method: rpc.MethodPublishDiagnostics,
-	}
-	responseParams := rpc.PublishDiagnosticsParams{
-		URI:     doc.uri,
-		Version: &doc.version,
-	}
-	sev := rpc.SeverityError
-	errs := ps.Errors()
-	responseParams.Diagnostics = make([]rpc.Diagnostic, len(errs))
-	for i, err := range errs {
-		responseParams.Diagnostics[i] = rpc.Diagnostic{
-			Range: rpc.Range{
-				Start: rpc.Position{
-					Line:      uint32(err.Pos.Line) - 1,
-					Character: uint32(err.Pos.Column) - 1,
-				},
-				End: rpc.Position{
-					Line:      uint32(err.Pos.Line) - 1,
-					Character: uint32(err.Pos.Column) - 1,
-				},
-			},
-			Severity: &sev,
-			Message:  err.Msg,
-		}
-	}
-	rp, err := json.Marshal(responseParams)
+func (srv *Server) publishDiagnostics(cancel context.CancelCauseFunc, doc *document) {
+	params := diagnostic.Compute(doc.Errors(), doc.uri, doc.version)
+	rp, err := json.Marshal(params)
 	if err != nil {
-		return response, err
+		srv.logger.Error("failed to marshal diagnostics", "uri", doc.uri, "err", err)
+		return
 	}
 	rm := json.RawMessage(rp)
-	response.Params = &rm
-
-	return response, nil
+	srv.write(cancel, rpc.Message{
+		Method: rpc.MethodPublishDiagnostics,
+		Params: &rm,
+	})
 }

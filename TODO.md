@@ -9,7 +9,6 @@ json.RawMessage
 * support completing values like styles that have to be quoted to use multiple ones and the
 quote is missing?
   a [area=50,style="dashed,]
-* add signature help on attr names/values?
 * feat: add document symbols
 * feat: add go to definition
 * feat: add list references

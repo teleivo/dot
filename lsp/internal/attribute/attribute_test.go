@@ -20,6 +20,10 @@ func TestAttributeMarkdownDoc(t *testing.T) {
 			name: "color",
 			want: "Basic drawing color for graphics\n\n**Type:** [color](https://graphviz.org/docs/attr-types/color/)\n\nColor value. Format: #rrggbb, #rrggbbaa, H,S,V, or name\n\n[Docs](https://graphviz.org/docs/attrs/color/)",
 		},
+		"WithLayoutType": {
+			name: "layout",
+			want: "Which layout engine to use\n\n**Type:** [layout](https://graphviz.org/docs/layouts/): `circo` | `dot` | `fdp` | `neato` | `osage` | `patchwork` | `sfdp` | `twopi`\n\n[Docs](https://graphviz.org/docs/attrs/layout/)",
+		},
 	}
 
 	for name, tt := range tests {

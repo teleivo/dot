@@ -231,10 +231,14 @@ func (t AttrType) Doc() string { return attrTypeInfo[t].Doc }
 
 // URL returns the Graphviz documentation URL for this type.
 func (t AttrType) URL() string {
-	if t == TypeUnknown {
+	switch t {
+	case TypeUnknown:
 		return ""
+	case TypeLayout:
+		return "https://graphviz.org/docs/layouts/"
+	default:
+		return "https://graphviz.org/docs/attr-types/" + t.String() + "/"
 	}
-	return "https://graphviz.org/docs/attr-types/" + t.String() + "/"
 }
 
 // markdownDoc generates the markdown documentation for this type.

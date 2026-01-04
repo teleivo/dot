@@ -3,10 +3,6 @@
 ## Now
 
 lsp
-* auto-complete for attribute keys
-  * review
-  * merge
-
 * simplify lsp main loop, responding with error is more common now. how to simplify the
 json.RawMessage
 * make my use of Type/Kind naming consistent

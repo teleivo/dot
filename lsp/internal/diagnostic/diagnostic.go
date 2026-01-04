@@ -6,17 +6,13 @@ import (
 	"github.com/teleivo/dot/lsp/internal/rpc"
 )
 
-// Compute returns diagnostics for parse errors in the given source.
-func Compute(src []byte, uri rpc.DocumentURI, version int32) rpc.PublishDiagnosticsParams {
-	ps := dot.NewParser(src)
-	ps.Parse()
-
+// Compute returns diagnostics for the given parse errors.
+func Compute(errs []dot.Error, uri rpc.DocumentURI, version int32) rpc.PublishDiagnosticsParams {
 	params := rpc.PublishDiagnosticsParams{
 		URI:     uri,
 		Version: &version,
 	}
 	sev := rpc.SeverityError
-	errs := ps.Errors()
 	params.Diagnostics = make([]rpc.Diagnostic, len(errs))
 	for i, err := range errs {
 		params.Diagnostics[i] = rpc.Diagnostic{

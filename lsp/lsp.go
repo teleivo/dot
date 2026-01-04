@@ -78,6 +78,8 @@ type document struct {
 	version int32
 	src     []byte
 	lines   []int
+	tree    *dot.Tree   // cached parse result, nil if stale
+	errors  []dot.Error // cached parse errors from tree
 }
 
 func newDocument(item rpc.TextDocumentItem) *document {
@@ -128,8 +130,31 @@ func (d *document) change(change rpc.TextDocumentContentChangeEvent) error {
 	copy(newSrc[start+len(text):], d.src[end:])
 	d.src = newSrc
 	d.lines = buildLines(d.src)
+	d.tree = nil   // invalidate cached tree
+	d.errors = nil // invalidate cached errors
 
 	return nil
+}
+
+// parse parses the document if needed, caching both tree and errors.
+func (d *document) parse() {
+	if d.tree == nil {
+		ps := dot.NewParser(d.src)
+		d.tree = ps.Parse()
+		d.errors = ps.Errors()
+	}
+}
+
+// Tree returns the cached parse tree, parsing the document if needed.
+func (d *document) Tree() *dot.Tree {
+	d.parse()
+	return d.tree
+}
+
+// Errors returns the cached parse errors, parsing the document if needed.
+func (d *document) Errors() []dot.Error {
+	d.parse()
+	return d.errors
 }
 
 func (d *document) startPos() rpc.Position {
@@ -311,10 +336,7 @@ func (srv *Server) Start(ctx context.Context) error {
 						continue
 					}
 
-					// TODO cache the tree in the document
-					ps := dot.NewParser(doc.src)
-					tree := ps.Parse()
-					items := completion.Items(tree, tokenPosition(params.Position))
+					items := completion.Items(doc.Tree(), tokenPosition(params.Position))
 
 					response := rpc.Message{
 						ID: message.ID,
@@ -324,7 +346,7 @@ func (srv *Server) Start(ctx context.Context) error {
 					}
 					rp, err := json.Marshal(completions)
 					if err != nil {
-						srv.logger.Error("formatting failed due to marshaling edits", "method", message.Method, "err", err)
+						srv.logger.Error("failed to marshal completion result", "method", message.Method, "err", err)
 						continue
 					}
 					rm := json.RawMessage(rp)
@@ -351,18 +373,14 @@ func (srv *Server) Start(ctx context.Context) error {
 						continue
 					}
 
-					// TODO cache the tree in the document
-					ps := dot.NewParser(doc.src)
-					tree := ps.Parse()
-
-					hover := hover.Info(tree, tokenPosition(params.Position))
+					hover := hover.Info(doc.Tree(), tokenPosition(params.Position))
 
 					response := rpc.Message{
 						ID: message.ID,
 					}
 					rp, err := json.Marshal(hover)
 					if err != nil {
-						srv.logger.Error("formatting failed due to marshaling hover", "method", message.Method, "err", err)
+						srv.logger.Error("failed to marshal hover result", "method", message.Method, "err", err)
 						continue
 					}
 					rm := json.RawMessage(rp)
@@ -397,6 +415,9 @@ func (srv *Server) Start(ctx context.Context) error {
 					srv.logger.Debug("exit notification received")
 					cancel(nil)
 				default:
+					if message.ID == nil { // notifications are ignored
+						continue
+					}
 					srv.write(cancel, rpc.Message{ID: message.ID, Error: &rpc.Error{Code: rpc.InvalidRequest, Message: "server is shutting down"}})
 				}
 			}
@@ -429,7 +450,7 @@ func (srv *Server) write(cancel context.CancelCauseFunc, msg rpc.Message) {
 }
 
 func (srv *Server) publishDiagnostics(cancel context.CancelCauseFunc, doc *document) {
-	params := diagnostic.Compute(doc.src, doc.uri, doc.version)
+	params := diagnostic.Compute(doc.Errors(), doc.uri, doc.version)
 	rp, err := json.Marshal(params)
 	if err != nil {
 		srv.logger.Error("failed to marshal diagnostics", "uri", doc.uri, "err", err)

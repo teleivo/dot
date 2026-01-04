@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/teleivo/dot"
+	"github.com/teleivo/dot/lsp/internal/attribute"
 	"github.com/teleivo/dot/lsp/internal/rpc"
 	"github.com/teleivo/dot/lsp/internal/tree"
 	"github.com/teleivo/dot/token"
@@ -17,7 +18,7 @@ func Items(root *dot.Tree, pos token.Position) []rpc.CompletionItem {
 
 	var items []rpc.CompletionItem
 	if ctx.AttrName == "" { // attribute name completion
-		for _, attr := range Attributes {
+		for _, attr := range attribute.Attributes {
 			if strings.HasPrefix(attr.Name, ctx.Prefix) && attr.UsedBy&ctx.Comp != 0 {
 				items = append(items, attributeNameItem(attr, ctx.HasEqual))
 			}
@@ -32,7 +33,7 @@ func Items(root *dot.Tree, pos token.Position) []rpc.CompletionItem {
 	return items
 }
 
-func attributeNameItem(attr Attribute, hasEqual bool) rpc.CompletionItem {
+func attributeNameItem(attr attribute.Attribute, hasEqual bool) rpc.CompletionItem {
 	kind := rpc.CompletionItemKindProperty
 	detail := attr.Type.String()
 	text := attr.Name
@@ -51,8 +52,8 @@ func attributeNameItem(attr Attribute, hasEqual bool) rpc.CompletionItem {
 	}
 }
 
-func findAttr(name string, comp tree.Component) *Attribute {
-	for _, attr := range Attributes {
+func findAttr(name string, comp tree.Component) *attribute.Attribute {
+	for _, attr := range attribute.Attributes {
 		if attr.Name == name && attr.UsedBy&comp != 0 {
 			return &attr
 		}
@@ -60,7 +61,7 @@ func findAttr(name string, comp tree.Component) *Attribute {
 	return nil
 }
 
-func attributeValueItem(v AttrValue, attrType AttrType) rpc.CompletionItem {
+func attributeValueItem(v attribute.AttrValue, attrType attribute.AttrType) rpc.CompletionItem {
 	kind := rpc.CompletionItemKindValue
 	detail := attrType.String()
 	return rpc.CompletionItem{
@@ -69,7 +70,7 @@ func attributeValueItem(v AttrValue, attrType AttrType) rpc.CompletionItem {
 		Detail: &detail,
 		Documentation: &rpc.MarkupContent{
 			Kind:  "markdown",
-			Value: v.markdownDoc(attrType),
+			Value: v.MarkdownDoc(attrType),
 		},
 	}
 }

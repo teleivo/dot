@@ -100,7 +100,7 @@ func (k Kind) IsTerminal() bool {
 
 // Token represents a token of the DOT language.
 type Token struct {
-	Type       Kind
+	Kind       Kind
 	Literal    string
 	Error      string // Error message for ERROR tokens, empty otherwise
 	Start, End Position
@@ -109,15 +109,15 @@ type Token struct {
 // String returns the string representation of the token. For IDs, it returns the literal
 // value. For other token types, it returns the token type's string representation.
 func (t Token) String() string {
-	if t.Type == ID {
+	if t.Kind == ID {
 		return t.Literal
 	}
 
-	return t.Type.String()
+	return t.Kind.String()
 }
 
 func (t Token) IsKeyword() bool {
-	switch t.Type {
+	switch t.Kind {
 	case Digraph, Edge, Graph, Node, Strict, Subgraph:
 		return true
 	default:
@@ -127,7 +127,7 @@ func (t Token) IsKeyword() bool {
 }
 
 func (t Token) IsCompassPoint() bool {
-	if t.Type != ID {
+	if t.Kind != ID {
 		return false
 	}
 

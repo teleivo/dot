@@ -27,13 +27,13 @@ type Graph struct {
 
 // NewGraph returns all graphs from a parsed [dot.Tree]. Returns nil if the tree is not a File.
 func NewGraph(tree *dot.Tree) []*Graph {
-	if tree.Type != dot.KindFile {
+	if tree.Kind != dot.KindFile {
 		return nil
 	}
 
 	var result []*Graph
 	for _, child := range tree.Children {
-		if tc, ok := child.(dot.TreeChild); ok && tc.Type == dot.KindGraph {
+		if tc, ok := child.(dot.TreeChild); ok && tc.Kind == dot.KindGraph {
 			result = append(result, &Graph{tc.Tree})
 		}
 	}
@@ -61,7 +61,7 @@ func tokenAt(tree *dot.Tree, want token.Kind, at int) (token.Token, bool) {
 		return tok, false
 	}
 
-	if tc, ok := tree.Children[at].(dot.TokenChild); ok && tc.Type&want != 0 {
+	if tc, ok := tree.Children[at].(dot.TokenChild); ok && tc.Kind&want != 0 {
 		return tc.Token, true
 	}
 	return tok, false
@@ -74,7 +74,7 @@ func tokenFirst(tree *dot.Tree, want token.Kind, last int) (token.Token, int, bo
 			break
 		}
 
-		if tc, ok := child.(dot.TokenChild); ok && tc.Type&want != 0 {
+		if tc, ok := child.(dot.TokenChild); ok && tc.Kind&want != 0 {
 			return tc.Token, i, true
 		}
 		last--
@@ -89,7 +89,7 @@ func treeAt(tree *dot.Tree, want dot.TreeKind, at int) (*dot.Tree, bool) {
 		return nil, false
 	}
 
-	if tc, ok := tree.Children[at].(dot.TreeChild); ok && tc.Type == want {
+	if tc, ok := tree.Children[at].(dot.TreeChild); ok && tc.Kind == want {
 		return tc.Tree, true
 	}
 	return nil, false
@@ -112,7 +112,7 @@ func treeFirst(tree *dot.Tree, want dot.TreeKind, last int) (*dot.Tree, bool) {
 			break
 		}
 
-		if tc, ok := child.(dot.TreeChild); ok && tc.Type == want {
+		if tc, ok := child.(dot.TreeChild); ok && tc.Kind == want {
 			return tc.Tree, true
 		}
 		last--
@@ -143,7 +143,7 @@ func stmts(tree *dot.Tree) []Stmt {
 
 	for _, child := range stmtList.Children {
 		if tc, ok := child.(dot.TreeChild); ok {
-			switch tc.Type {
+			switch tc.Kind {
 			case dot.KindAttribute:
 				result = append(result, Attribute{tc.Tree})
 			case dot.KindAttrStmt:
@@ -309,7 +309,7 @@ func (e EdgeStmt) Operands() []EdgeOperand {
 	var result []EdgeOperand
 	for _, child := range e.tree.Children {
 		if tc, ok := child.(dot.TreeChild); ok {
-			switch tc.Type {
+			switch tc.Kind {
 			case dot.KindNodeID:
 				result = append(result, NodeID{tc.Tree})
 			case dot.KindSubgraph:
@@ -364,15 +364,15 @@ func (a AttrList) Lists() [][]Attribute {
 	var current []Attribute
 	for _, child := range a.tree.Children {
 		if tc, ok := child.(dot.TokenChild); ok {
-			switch tc.Type {
+			switch tc.Kind {
 			case token.LeftBracket:
 				current = make([]Attribute, 0)
 			case token.RightBracket:
 				result = append(result, current)
 			}
-		} else if tc, ok := child.(dot.TreeChild); ok && tc.Type == dot.KindAList {
+		} else if tc, ok := child.(dot.TreeChild); ok && tc.Kind == dot.KindAList {
 			for _, ac := range tc.Children {
-				if attr, ok := ac.(dot.TreeChild); ok && attr.Type == dot.KindAttribute {
+				if attr, ok := ac.(dot.TreeChild); ok && attr.Kind == dot.KindAttribute {
 					current = append(current, Attribute{attr.Tree})
 				}
 			}

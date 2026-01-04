@@ -52,7 +52,7 @@ func (sc *Scanner) Next() token.Token {
 
 	sc.skipWhitespace()
 	if sc.cur < 0 {
-		tok.Type = token.EOF
+		tok.Kind = token.EOF
 		pos := sc.pos()
 		tok.Start = pos
 		tok.End = pos
@@ -86,7 +86,7 @@ func (sc *Scanner) Next() token.Token {
 		}
 	}
 
-	assert.That(tok.Type != token.ERROR || tok.Error != "", "ERROR token must have an error message")
+	assert.That(tok.Kind != token.ERROR || tok.Error != "", "ERROR token must have an error message")
 
 	return tok
 }
@@ -146,9 +146,9 @@ func isWhitespace(r rune) bool {
 	return false
 }
 
-func (sc *Scanner) tokenizeRuneAs(tokenType token.Kind) token.Token {
+func (sc *Scanner) tokenizeRuneAs(kind token.Kind) token.Token {
 	pos := sc.pos()
-	tok := token.Token{Type: tokenType, Literal: string(sc.cur), Start: pos, End: pos}
+	tok := token.Token{Kind: kind, Literal: string(sc.cur), Start: pos, End: pos}
 	sc.next()
 	return tok
 }
@@ -157,7 +157,7 @@ func (sc *Scanner) tokenizeComment() token.Token {
 	if sc.cur == '/' && (sc.peek < 0 || (sc.peek != '/' && sc.peek != '*')) {
 		pos := sc.pos()
 		tok := token.Token{
-			Type:    token.ERROR,
+			Kind:    token.ERROR,
 			Literal: string(sc.cur),
 			Error:   sc.error("use '//' (line) or '/*...*/' (block) for comments"),
 			Start:   pos,
@@ -185,13 +185,13 @@ func (sc *Scanner) tokenizeComment() token.Token {
 	}
 
 	tok := token.Token{
-		Type:    token.Comment,
+		Kind:    token.Comment,
 		Literal: string(comment),
 		Start:   start,
 		End:     end,
 	}
 	if isMultiLine && !hasClosingMarker {
-		tok.Type = token.ERROR
+		tok.Kind = token.ERROR
 		tok.Error = "invalid character '/': unclosed comment: missing '*/'"
 	}
 
@@ -210,14 +210,14 @@ func (sc *Scanner) tokenizeEdgeOperator() token.Token {
 	end := sc.pos()
 	if sc.cur == '-' {
 		tok = token.Token{
-			Type:    token.UndirectedEdge,
+			Kind:    token.UndirectedEdge,
 			Literal: token.UndirectedEdge.String(),
 			Start:   start,
 			End:     end,
 		}
 	} else {
 		tok = token.Token{
-			Type:    token.DirectedEdge,
+			Kind:    token.DirectedEdge,
 			Literal: token.DirectedEdge.String(),
 			Start:   start,
 			End:     end,
@@ -305,7 +305,7 @@ func (sc *Scanner) tokenizeUnquotedID() token.Token {
 
 	if firstErrMsg != "" {
 		return token.Token{
-			Type:    token.ERROR,
+			Kind:    token.ERROR,
 			Literal: literal,
 			Error:   firstErrMsg,
 			Start:   start,
@@ -314,7 +314,7 @@ func (sc *Scanner) tokenizeUnquotedID() token.Token {
 	}
 
 	return token.Token{
-		Type:    token.Lookup(literal),
+		Kind:    token.Lookup(literal),
 		Literal: literal,
 		Start:   start,
 		End:     end,
@@ -376,7 +376,7 @@ func (sc *Scanner) tokenizeNumeral() token.Token {
 
 	if firstErrMsg != "" {
 		return token.Token{
-			Type:    token.ERROR,
+			Kind:    token.ERROR,
 			Literal: literal,
 			Error:   firstErrMsg,
 			Start:   start,
@@ -385,7 +385,7 @@ func (sc *Scanner) tokenizeNumeral() token.Token {
 	}
 
 	return token.Token{
-		Type:    token.ID,
+		Kind:    token.ID,
 		Literal: literal,
 		Start:   start,
 		End:     end,
@@ -428,16 +428,16 @@ func (sc *Scanner) tokenizeQuotedID() token.Token {
 	literal := string(id)
 
 	tok := token.Token{
-		Type:    token.ID,
+		Kind:    token.ID,
 		Literal: literal,
 		Start:   start,
 		End:     end,
 	}
 	if nulByteErrMsg != "" {
-		tok.Type = token.ERROR
+		tok.Kind = token.ERROR
 		tok.Error = nulByteErrMsg
 	} else if !hasClosingQuote {
-		tok.Type = token.ERROR
+		tok.Kind = token.ERROR
 		tok.Error = `invalid character '"': unclosed ID: missing closing '"'`
 	}
 

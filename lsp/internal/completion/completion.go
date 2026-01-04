@@ -89,7 +89,7 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 		return
 	}
 
-	switch root.Type {
+	switch root.Kind {
 	case dot.KindSubgraph:
 		res.Comp = tree.Subgraph
 	case dot.KindNodeStmt:
@@ -103,7 +103,7 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 	for i, child := range root.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
-			if root.Type == dot.KindSubgraph && i == 1 && c.Type == dot.KindID && len(c.Children) > 0 {
+			if root.Kind == dot.KindSubgraph && i == 1 && c.Kind == dot.KindID && len(c.Children) > 0 {
 				if id, ok := c.Children[0].(dot.TokenChild); ok && strings.HasPrefix(id.Literal, "cluster_") {
 					res.Comp = tree.Cluster
 				}
@@ -113,11 +113,11 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 			if !pos.Before(c.Start) && !pos.After(end) {
 				// skip AttrName if cursor is past its actual end AND there's a = token
 				// (meaning we're in value position, not still typing the name)
-				if c.Type == dot.KindAttrName && pos.After(c.End) && tree.HasEqualSign(root) {
+				if c.Kind == dot.KindAttrName && pos.After(c.End) && tree.HasEqualSign(root) {
 					continue
 				}
-				if root.Type == dot.KindAttribute {
-					switch c.Type {
+				if root.Kind == dot.KindAttribute {
+					switch c.Kind {
 					case dot.KindAttrName:
 						res.HasEqual = tree.HasEqualSign(root)
 					case dot.KindAttrValue:
@@ -128,8 +128,8 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 				return
 			}
 		case dot.TokenChild:
-			if i == 0 && root.Type == dot.KindAttrStmt {
-				switch c.Type {
+			if i == 0 && root.Kind == dot.KindAttrStmt {
+				switch c.Kind {
 				case token.Graph: // graph [name=value]
 					if res.Comp != tree.Cluster && res.Comp != tree.Subgraph {
 						res.Comp = tree.Graph
@@ -144,14 +144,14 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
 				// cursor on or after = in Attribute means value position
-				if c.Type == token.Equal && root.Type == dot.KindAttribute {
+				if c.Kind == token.Equal && root.Kind == dot.KindAttribute {
 					res.AttrName = tree.AttrName(root)
 					if pos.After(c.End) {
 						continue // cursor is past =, continue to find AttrValue for prefix
 					}
 					return
 				}
-				if c.Type == token.ID {
+				if c.Kind == token.ID {
 					res.Prefix = c.String()
 				}
 				return

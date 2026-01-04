@@ -242,7 +242,7 @@ func TestFind(t *testing.T) {
 			} else {
 				assert.NotNilf(t, got.Tree, "expected non-nil tree for %q at %s", tt.src, tt.position)
 				if got.Tree != nil {
-					assert.EqualValuesf(t, got.Tree.Type, tt.wantTree, "unexpected tree type for %q at %s", tt.src, tt.position)
+					assert.EqualValuesf(t, got.Tree.Kind, tt.wantTree, "unexpected tree type for %q at %s", tt.src, tt.position)
 					if tt.wantLiteral != "" {
 						gotLiteral := extractLiteral(got.Tree)
 						assert.EqualValuesf(t, gotLiteral, tt.wantLiteral, "unexpected literal for %q at %s", tt.src, tt.position)
@@ -261,7 +261,7 @@ func extractLiteral(tree *dot.Tree) string {
 	for _, child := range tree.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
-			if c.Type == dot.KindID && len(c.Children) > 0 {
+			if c.Kind == dot.KindID && len(c.Children) > 0 {
 				if tok, ok := c.Children[0].(dot.TokenChild); ok {
 					return tok.Literal
 				}

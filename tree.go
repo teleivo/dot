@@ -118,7 +118,7 @@ func (tk TreeKind) String() string {
 // node's children in source order, which may be either [TreeChild] (subtrees) or [TokenChild]
 // (tokens). Start and End mark the source positions.
 type Tree struct {
-	Type       TreeKind
+	Kind       TreeKind
 	Children   []Child
 	Start, End token.Position
 }
@@ -161,7 +161,7 @@ func renderDefault(bw *bufio.Writer, tree *Tree, indent int) error {
 	if err != nil {
 		return err
 	}
-	_, err = bw.WriteString(tree.Type.String())
+	_, err = bw.WriteString(tree.Kind.String())
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func renderScheme(bw *bufio.Writer, tree *Tree, indent int) error {
 	if err != nil {
 		return err
 	}
-	_, err = bw.WriteString(tree.Type.String())
+	_, err = bw.WriteString(tree.Kind.String())
 	if err != nil {
 		return err
 	}

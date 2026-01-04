@@ -1,34 +1,22 @@
 # TODO
 
-## Now
+## Jan
 
-lsp
-* make my use of Type/Kind naming consistent
-
-* support completing values like styles that have to be quoted to use multiple ones and the
+* lsp: support completing values like styles that have to be quoted to use multiple ones and the
 quote is missing?
   a [area=50,style="dashed,]
 
-* feat: add document symbols
-* feat: add go to definition
-* feat: add list references
+* lsp feat: add document symbols
+* lsp feat: add go to definition
+* lsp feat: add list references
 
-* how fast/slow does this feel so far? profile and see if I should already use different ds for
-the completion items or for finding things in the tree
-* lsp: look into debouncing diagnostics. delay publishing by ~100ms, cancel if another change
-arrives. joining } of subgraph onto line above it causes brief flashes of errors as neovim sends an
-insert and then a delete as separate changes
+* fmt: support comments
+* fmt: format files/directories
 
-```dot
-graph foo {
-	subgraph cluster_faa {
-		1 -- 18
-	}
-}
-```
+* profile fmt/lsp `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
+  * add ability to capture execution traces using flight recorder?
 
-* profile `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
-  * consider `sync.Pool` for buffer reuse or unique?
+* skeleton: lrb using my dotx toolchain and visual .dot files for test errors and state
 
 ## Parser
 
@@ -98,9 +86,19 @@ Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a sli
 
 ## LSP
 
-## CLI
+* look into debouncing diagnostics. delay publishing by ~100ms, cancel if another change
+arrives. joining } of subgraph onto line above it causes brief flashes of errors as neovim sends an
+insert and then a delete as separate changes
 
-* add ability to capture execution traces using flight recorder?
+```dot
+graph foo {
+	subgraph cluster_faa {
+		1 -- 18
+	}
+}
+```
+
+## CLI
 
 ## Performance
 

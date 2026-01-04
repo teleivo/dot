@@ -81,7 +81,7 @@ func NewParser(src []byte) *Parser {
 // nextToken advances to the next non-comment token. Comments are currently skipped.
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
-	for p.peekToken = p.scanner.Next(); p.peekToken.Type == token.Comment; p.peekToken = p.scanner.Next() {
+	for p.peekToken = p.scanner.Next(); p.peekToken.Kind == token.Comment; p.peekToken = p.scanner.Next() {
 	}
 }
 
@@ -106,7 +106,7 @@ func (p *Parser) Parse() *Tree {
 			p.wrapErrorExpected(f, first)
 		}
 	}
-	f.Type = KindFile
+	f.Kind = KindFile
 	return f
 }
 
@@ -115,7 +115,7 @@ func (p *Parser) Parse() *Tree {
 //	graph : [ 'strict' ] ( 'graph' | 'digraph' ) [ ID ] '{' stmt_list '}'
 func (p *Parser) parseGraph() *Tree {
 	assert.That(p.curTokenIs(token.Strict|token.Graph|token.Digraph), "current token must be strict, graph, or digraph, got %s", p.curToken)
-	graph := &Tree{Type: KindGraph}
+	graph := &Tree{Kind: KindGraph}
 
 	okStrict := p.optional(graph, token.Strict)
 
@@ -189,7 +189,7 @@ func (p *Parser) parseStatementList(recoverySet token.Kind) *Tree {
 				p.error("expected [ to start attribute list")
 			}
 
-			stmt.Type = KindAttrStmt
+			stmt.Kind = KindAttrStmt
 			stmts.appendTree(stmt)
 		} else if p.curTokenIs(token.ID | token.Subgraph | token.LeftBrace) { // edge_stmt | node_stmt | subgraph
 			// Parse the operand (node_id or subgraph)
@@ -203,7 +203,7 @@ func (p *Parser) parseStatementList(recoverySet token.Kind) *Tree {
 			}
 
 			if p.curTokenIs(token.UndirectedEdge | token.DirectedEdge) { // edge_stmt
-				stmt := &Tree{Type: KindEdgeStmt}
+				stmt := &Tree{Kind: KindEdgeStmt}
 				stmt.appendTree(operand)
 				p.parseEdgeRHS(stmt, recoverySet)
 				if p.curTokenIs(token.LeftBracket) {
@@ -214,7 +214,7 @@ func (p *Parser) parseStatementList(recoverySet token.Kind) *Tree {
 			} else if isSubgraph { // standalone subgraph
 				stmts.appendTree(operand)
 			} else { // node_stmt
-				stmt := &Tree{Type: KindNodeStmt}
+				stmt := &Tree{Kind: KindNodeStmt}
 				stmt.appendTree(operand)
 				if p.curTokenIs(token.LeftBracket) {
 					attrs := p.parseAttrList(recoverySet | token.Edge | token.Graph | token.Node)
@@ -233,7 +233,7 @@ func (p *Parser) parseStatementList(recoverySet token.Kind) *Tree {
 		}
 	}
 
-	stmts.Type = KindStmtList
+	stmts.Kind = KindStmtList
 	return stmts
 }
 
@@ -275,7 +275,7 @@ func (p *Parser) parseEdgeRHS(stmt *Tree, recoverySet token.Kind) {
 func (p *Parser) parseNodeID() *Tree {
 	assert.That(p.curTokenIs(token.ID), "current token must be ID, got %s", p.curToken)
 
-	nid := &Tree{Type: KindNodeID}
+	nid := &Tree{Kind: KindNodeID}
 	id := p.parseID()
 	nid.appendTree(id)
 
@@ -291,7 +291,7 @@ func (p *Parser) parseNodeID() *Tree {
 func (p *Parser) parseID() *Tree {
 	assert.That(p.curTokenIs(token.ID), "current token must be ID, got %s", p.curToken)
 
-	id := &Tree{Type: KindID}
+	id := &Tree{Kind: KindID}
 	p.expect(id, token.ID)
 	return id
 }
@@ -303,7 +303,7 @@ func (p *Parser) parseID() *Tree {
 func (p *Parser) parsePort() *Tree {
 	assert.That(p.curTokenIs(token.Colon), "current token must be colon, got %s", p.curToken)
 
-	port := &Tree{Type: KindPort}
+	port := &Tree{Kind: KindPort}
 	p.expect(port, token.Colon)
 
 	firstCompass := p.curToken.IsCompassPoint()
@@ -322,7 +322,7 @@ func (p *Parser) parsePort() *Tree {
 		if p.curTokenIs(token.ID) {
 			secondID := p.parseID()
 			if secondCompass {
-				secondID.Type = KindCompassPoint
+				secondID.Kind = KindCompassPoint
 			} else {
 				p.error("expected compass point (c, e, n, ne, nw, s, se, sw, w, or _)")
 			}
@@ -333,7 +333,7 @@ func (p *Parser) parsePort() *Tree {
 	} else {
 		// first is only a compass point if its one and there is no second :
 		if firstCompass {
-			firstID.Type = KindCompassPoint
+			firstID.Kind = KindCompassPoint
 		}
 	}
 	return port
@@ -345,7 +345,7 @@ func (p *Parser) parsePort() *Tree {
 func (p *Parser) parseAttrList(recoverySet token.Kind) *Tree {
 	assert.That(p.curTokenIs(token.LeftBracket), "current token must be [, got %s", p.curToken)
 
-	attrList := &Tree{Type: KindAttrList}
+	attrList := &Tree{Kind: KindAttrList}
 	for p.curTokenIs(token.LeftBracket) && !p.curTokenIs(token.EOF) {
 		p.consume(attrList)
 
@@ -371,7 +371,7 @@ func (p *Parser) parseAList(recoverySet token.Kind) *Tree {
 	assert.That(p.curTokenIs(token.ID), "current token must be ID, got %s", p.curToken)
 
 	var hasID bool
-	aList := &Tree{Type: KindAList}
+	aList := &Tree{Kind: KindAList}
 	for !p.curTokenIs(token.RightBracket) && !p.curTokenIs(token.EOF) {
 		if p.curTokenIs(token.ID) {
 			hasID = true
@@ -400,16 +400,16 @@ func (p *Parser) parseAList(recoverySet token.Kind) *Tree {
 func (p *Parser) parseAttribute() *Tree {
 	assert.That(p.curTokenIs(token.ID), "current token must be ID, got %s", p.curToken)
 
-	attr := &Tree{Type: KindAttribute}
+	attr := &Tree{Kind: KindAttribute}
 
-	name := &Tree{Type: KindAttrName}
+	name := &Tree{Kind: KindAttrName}
 	name.appendTree(p.parseID())
 	attr.appendTree(name)
 
 	okEqual := p.expect(attr, token.Equal)
 
 	if p.curTokenIs(token.ID) {
-		value := &Tree{Type: KindAttrValue}
+		value := &Tree{Kind: KindAttrValue}
 		value.appendTree(p.parseID())
 		attr.appendTree(value)
 	} else if okEqual { // reduce noise by only reporting missing rhs ID if we've seen a =
@@ -424,7 +424,7 @@ func (p *Parser) parseAttribute() *Tree {
 //	subgraph : [ 'subgraph' [ ID ] ] '{' stmt_list '}'
 func (p *Parser) parseSubgraph(recoverySet token.Kind) *Tree {
 	assert.That(p.curTokenIs(token.LeftBrace|token.Subgraph), "current token must be { or subgraph, got %s", p.curToken)
-	subgraph := &Tree{Type: KindSubgraph}
+	subgraph := &Tree{Kind: KindSubgraph}
 
 	okSubgraph := p.optional(subgraph, token.Subgraph)
 
@@ -466,11 +466,11 @@ func (p *Parser) parseSubgraph(recoverySet token.Kind) *Tree {
 }
 
 func (p *Parser) curTokenIs(t token.Kind) bool {
-	return p.curToken.Type&t != 0
+	return p.curToken.Kind&t != 0
 }
 
 func (p *Parser) peekTokenIs(t token.Kind) bool {
-	return p.peekToken.Type&t != 0
+	return p.peekToken.Kind&t != 0
 }
 
 // optional checks if the current token matches one of the wanted kinds. If it does, consumes it.
@@ -523,11 +523,11 @@ func (p *Parser) consume(t *Tree) {
 // wrapError consumes curToken into ErrorTree, records error, advances.
 // For ERROR tokens, uses the scanner's error message; otherwise records "unexpected token X".
 func (p *Parser) wrapError(t *Tree) {
-	errTree := &Tree{Type: KindErrorTree}
+	errTree := &Tree{Kind: KindErrorTree}
 	errTree.appendToken(p.curToken)
 	t.appendTree(errTree)
 
-	if p.curToken.Type == token.ERROR { // scanner error
+	if p.curToken.Kind == token.ERROR { // scanner error
 		p.error(p.curToken.Error)
 	} else { // parsing error
 		var msg strings.Builder
@@ -542,11 +542,11 @@ func (p *Parser) wrapError(t *Tree) {
 // wrapErrorMsg consumes curToken into ErrorTree, records error, advances.
 // For ERROR tokens, uses the scanner's error message; otherwise records "'X' msg".
 func (p *Parser) wrapErrorMsg(t *Tree, suffix string) {
-	errTree := &Tree{Type: KindErrorTree}
+	errTree := &Tree{Kind: KindErrorTree}
 	errTree.appendToken(p.curToken)
 	t.appendTree(errTree)
 
-	if p.curToken.Type == token.ERROR { // scanner error
+	if p.curToken.Kind == token.ERROR { // scanner error
 		p.error(p.curToken.Error)
 	} else { // parsing error
 		var msg strings.Builder
@@ -562,11 +562,11 @@ func (p *Parser) wrapErrorMsg(t *Tree, suffix string) {
 // wrapErrorExpected consumes curToken into ErrorTree, records error, advances.
 // For ERROR tokens, uses the scanner's error message; otherwise records "unexpected token X, expected Y".
 func (p *Parser) wrapErrorExpected(t *Tree, want token.Kind) {
-	errTree := &Tree{Type: KindErrorTree}
+	errTree := &Tree{Kind: KindErrorTree}
 	errTree.appendToken(p.curToken)
 	t.appendTree(errTree)
 
-	if p.curToken.Type == token.ERROR { // scanner error
+	if p.curToken.Kind == token.ERROR { // scanner error
 		p.error(p.curToken.Error)
 	} else { // parsing error
 		var msg strings.Builder
@@ -608,8 +608,8 @@ func writeToken(tok token.Token, msg *strings.Builder) {
 		return
 	}
 
-	if tok.Type == token.ID {
-		msg.WriteString(tok.Type.String())
+	if tok.Kind == token.ID {
+		msg.WriteString(tok.Kind.String())
 		msg.WriteRune(' ')
 	}
 	msg.WriteRune('\'')

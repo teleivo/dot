@@ -243,8 +243,8 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 
 		_, _ = fmt.Fprintf(tw, "POSITION\tTYPE\tLITERAL\tERROR\n")
 
-		for tok := sc.Next(); tok.Type != token.EOF; tok = sc.Next() {
-			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", tokenPosition(tok), tok.Type.String(), tokenLiteral(tok), tok.Error)
+		for tok := sc.Next(); tok.Kind != token.EOF; tok = sc.Next() {
+			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", tokenPosition(tok), tok.Kind.String(), tokenLiteral(tok), tok.Error)
 		}
 
 		return nil
@@ -263,10 +263,10 @@ func tokenPosition(tok token.Token) string {
 }
 
 func tokenLiteral(tok token.Token) string {
-	if tok.Type == token.ID || tok.Type == token.ERROR {
+	if tok.Kind == token.ID || tok.Kind == token.ERROR {
 		return tok.Literal
 	}
-	return tok.Type.String()
+	return tok.Kind.String()
 }
 
 func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {

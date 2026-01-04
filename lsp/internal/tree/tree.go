@@ -78,7 +78,7 @@ func find(tree *dot.Tree, pos token.Position, want dot.TreeKind, match *Match) {
 		return
 	}
 
-	switch tree.Type {
+	switch tree.Kind {
 	case dot.KindSubgraph:
 		match.Comp = Subgraph
 	case dot.KindNodeStmt:
@@ -87,14 +87,14 @@ func find(tree *dot.Tree, pos token.Position, want dot.TreeKind, match *Match) {
 		match.Comp = Edge
 	}
 
-	if tree.Type&want != 0 {
+	if tree.Kind&want != 0 {
 		match.Tree = tree
 	}
 
 	for i, child := range tree.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
-			if tree.Type == dot.KindSubgraph && i == 1 && c.Type == dot.KindID && len(c.Children) > 0 {
+			if tree.Kind == dot.KindSubgraph && i == 1 && c.Kind == dot.KindID && len(c.Children) > 0 {
 				if id, ok := c.Children[0].(dot.TokenChild); ok && strings.HasPrefix(id.Literal, "cluster_") {
 					match.Comp = Cluster
 				}
@@ -105,8 +105,8 @@ func find(tree *dot.Tree, pos token.Position, want dot.TreeKind, match *Match) {
 				return
 			}
 		case dot.TokenChild:
-			if i == 0 && tree.Type == dot.KindAttrStmt {
-				switch c.Type {
+			if i == 0 && tree.Kind == dot.KindAttrStmt {
+				switch c.Kind {
 				case token.Graph:
 					if match.Comp != Cluster && match.Comp != Subgraph {
 						match.Comp = Graph
@@ -124,7 +124,7 @@ func find(tree *dot.Tree, pos token.Position, want dot.TreeKind, match *Match) {
 // HasAttrList checks if the tree has an AttrList child.
 func HasAttrList(t *dot.Tree) bool {
 	for _, child := range t.Children {
-		if c, ok := child.(dot.TreeChild); ok && c.Type == dot.KindAttrList {
+		if c, ok := child.(dot.TreeChild); ok && c.Kind == dot.KindAttrList {
 			return true
 		}
 	}
@@ -134,7 +134,7 @@ func HasAttrList(t *dot.Tree) bool {
 // HasEqualSign checks if the tree has an = token child.
 func HasEqualSign(t *dot.Tree) bool {
 	for _, child := range t.Children {
-		if tok, ok := child.(dot.TokenChild); ok && tok.Type == token.Equal {
+		if tok, ok := child.(dot.TokenChild); ok && tok.Kind == token.Equal {
 			return true
 		}
 	}
@@ -148,11 +148,11 @@ func AttrName(attr *dot.Tree) string {
 		return ""
 	}
 	nameTree, ok := attr.Children[0].(dot.TreeChild)
-	if !ok || nameTree.Type != dot.KindAttrName || len(nameTree.Children) == 0 {
+	if !ok || nameTree.Kind != dot.KindAttrName || len(nameTree.Children) == 0 {
 		return ""
 	}
 	idTree, ok := nameTree.Children[0].(dot.TreeChild)
-	if !ok || idTree.Type != dot.KindID || len(idTree.Children) == 0 {
+	if !ok || idTree.Kind != dot.KindID || len(idTree.Children) == 0 {
 		return ""
 	}
 	tok, ok := idTree.Children[0].(dot.TokenChild)

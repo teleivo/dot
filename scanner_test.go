@@ -18,7 +18,7 @@ func TestScanner(t *testing.T) {
 			in: "",
 			want: []token.Token{
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 1, Column: 1},
 					End:   token.Position{Line: 1, Column: 1},
 				},
@@ -28,12 +28,12 @@ func TestScanner(t *testing.T) {
 			in: "a",
 			want: []token.Token{
 				{
-					Type: token.ID, Literal: "a",
+					Kind: token.ID, Literal: "a",
 					Start: token.Position{Line: 1, Column: 1},
 					End:   token.Position{Line: 1, Column: 1},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 1, Column: 2},
 					End:   token.Position{Line: 1, Column: 2},
 				},
@@ -43,7 +43,7 @@ func TestScanner(t *testing.T) {
 			in: "\t \n \t\t   \r\n",
 			want: []token.Token{
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 3, Column: 1},
 					End:   token.Position{Line: 3, Column: 1},
 				},
@@ -53,47 +53,47 @@ func TestScanner(t *testing.T) {
 			in: "{};=[],:",
 			want: []token.Token{
 				{
-					Type: token.LeftBrace, Literal: "{",
+					Kind: token.LeftBrace, Literal: "{",
 					Start: token.Position{Line: 1, Column: 1},
 					End:   token.Position{Line: 1, Column: 1},
 				},
 				{
-					Type: token.RightBrace, Literal: "}",
+					Kind: token.RightBrace, Literal: "}",
 					Start: token.Position{Line: 1, Column: 2},
 					End:   token.Position{Line: 1, Column: 2},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 1, Column: 3},
 					End:   token.Position{Line: 1, Column: 3},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 1, Column: 4},
 					End:   token.Position{Line: 1, Column: 4},
 				},
 				{
-					Type: token.LeftBracket, Literal: "[",
+					Kind: token.LeftBracket, Literal: "[",
 					Start: token.Position{Line: 1, Column: 5},
 					End:   token.Position{Line: 1, Column: 5},
 				},
 				{
-					Type: token.RightBracket, Literal: "]",
+					Kind: token.RightBracket, Literal: "]",
 					Start: token.Position{Line: 1, Column: 6},
 					End:   token.Position{Line: 1, Column: 6},
 				},
 				{
-					Type: token.Comma, Literal: ",",
+					Kind: token.Comma, Literal: ",",
 					Start: token.Position{Line: 1, Column: 7},
 					End:   token.Position{Line: 1, Column: 7},
 				},
 				{
-					Type: token.Colon, Literal: ":",
+					Kind: token.Colon, Literal: ":",
 					Start: token.Position{Line: 1, Column: 8},
 					End:   token.Position{Line: 1, Column: 8},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 1, Column: 9},
 					End:   token.Position{Line: 1, Column: 9},
 				},
@@ -103,79 +103,79 @@ func TestScanner(t *testing.T) {
 			in: " graph Graph strict  Strict\ndigraph\tDigraph Subgraph  subgraph Node node edge Edge \n \t ",
 			want: []token.Token{
 				{
-					Type:    token.Graph,
+					Kind:    token.Graph,
 					Literal: "graph",
 					Start:   token.Position{Line: 1, Column: 2},
 					End:     token.Position{Line: 1, Column: 6},
 				},
 				{
-					Type:    token.Graph,
+					Kind:    token.Graph,
 					Literal: "Graph",
 					Start:   token.Position{Line: 1, Column: 8},
 					End:     token.Position{Line: 1, Column: 12},
 				},
 				{
-					Type:    token.Strict,
+					Kind:    token.Strict,
 					Literal: "strict",
 					Start:   token.Position{Line: 1, Column: 14},
 					End:     token.Position{Line: 1, Column: 19},
 				},
 				{
-					Type:    token.Strict,
+					Kind:    token.Strict,
 					Literal: "Strict",
 					Start:   token.Position{Line: 1, Column: 22},
 					End:     token.Position{Line: 1, Column: 27},
 				},
 				{
-					Type:    token.Digraph,
+					Kind:    token.Digraph,
 					Literal: "digraph",
 					Start:   token.Position{Line: 2, Column: 1},
 					End:     token.Position{Line: 2, Column: 7},
 				},
 				{
-					Type:    token.Digraph,
+					Kind:    token.Digraph,
 					Literal: "Digraph",
 					Start:   token.Position{Line: 2, Column: 9},
 					End:     token.Position{Line: 2, Column: 15},
 				},
 				{
-					Type:    token.Subgraph,
+					Kind:    token.Subgraph,
 					Literal: "Subgraph",
 					Start:   token.Position{Line: 2, Column: 17},
 					End:     token.Position{Line: 2, Column: 24},
 				},
 				{
-					Type:    token.Subgraph,
+					Kind:    token.Subgraph,
 					Literal: "subgraph",
 					Start:   token.Position{Line: 2, Column: 27},
 					End:     token.Position{Line: 2, Column: 34},
 				},
 				{
-					Type:    token.Node,
+					Kind:    token.Node,
 					Literal: "Node",
 					Start:   token.Position{Line: 2, Column: 36},
 					End:     token.Position{Line: 2, Column: 39},
 				},
 				{
-					Type:    token.Node,
+					Kind:    token.Node,
 					Literal: "node",
 					Start:   token.Position{Line: 2, Column: 41},
 					End:     token.Position{Line: 2, Column: 44},
 				},
 				{
-					Type:    token.Edge,
+					Kind:    token.Edge,
 					Literal: "edge",
 					Start:   token.Position{Line: 2, Column: 46},
 					End:     token.Position{Line: 2, Column: 49},
 				},
 				{
-					Type:    token.Edge,
+					Kind:    token.Edge,
 					Literal: "Edge",
 					Start:   token.Position{Line: 2, Column: 51},
 					End:     token.Position{Line: 2, Column: 54},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 3, Column: 4},
 					End:   token.Position{Line: 3, Column: 4},
 				},
@@ -189,55 +189,55 @@ func TestScanner(t *testing.T) {
 `,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 1},
 				},
 				{
-					Type:    token.Comment,
+					Kind:    token.Comment,
 					Literal: `//commenting on A`,
 					Start:   token.Position{Line: 1, Column: 2},
 					End:     token.Position{Line: 1, Column: 18},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Line: 2, Column: 4},
 					End:     token.Position{Line: 2, Column: 4},
 				},
 				{
-					Type:    token.Comment,
+					Kind:    token.Comment,
 					Literal: `#commenting on B`,
 					Start:   token.Position{Line: 2, Column: 5},
 					End:     token.Position{Line: 2, Column: 20},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"C"`,
 					Start:   token.Position{Line: 3, Column: 1},
 					End:     token.Position{Line: 3, Column: 3},
 				},
 				{
-					Type:    token.Comment,
+					Kind:    token.Comment,
 					Literal: `//commenting on C`,
 					Start:   token.Position{Line: 3, Column: 4},
 					End:     token.Position{Line: 3, Column: 20},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"D"`,
 					Start:   token.Position{Line: 4, Column: 1},
 					End:     token.Position{Line: 4, Column: 3},
 				},
 				{
-					Type:    token.Comment,
+					Kind:    token.Comment,
 					Literal: `#commenting on D`,
 					Start:   token.Position{Line: 4, Column: 4},
 					End:     token.Position{Line: 4, Column: 19},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 5, Column: 1},
 					End:   token.Position{Line: 5, Column: 1},
 				},
@@ -247,13 +247,13 @@ func TestScanner(t *testing.T) {
 			in: `""`,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `""`,
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 2},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 1, Column: 3},
 					End:   token.Position{Line: 1, Column: 3},
 				},
@@ -265,52 +265,52 @@ func TestScanner(t *testing.T) {
 			}`,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Line: 2, Column: 6},
 					End:     token.Position{Line: 2, Column: 6},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 2, Column: 7},
 					End:   token.Position{Line: 2, Column: 7},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Line: 2, Column: 8},
 					End:     token.Position{Line: 2, Column: 8},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 2, Column: 9},
 					End:   token.Position{Line: 2, Column: 9},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Line: 2, Column: 10},
 					End:     token.Position{Line: 2, Column: 10},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"D"`,
 					Start:   token.Position{Line: 2, Column: 11},
 					End:     token.Position{Line: 2, Column: 13},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"E"`,
 					Start:   token.Position{Line: 2, Column: 14},
 					End:     token.Position{Line: 2, Column: 16},
 				},
 				{
-					Type: token.RightBrace, Literal: "}",
+					Kind: token.RightBrace, Literal: "}",
 					Start: token.Position{Line: 3, Column: 4},
 					End:   token.Position{Line: 3, Column: 4},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 3, Column: 5},
 					End:   token.Position{Line: 3, Column: 5},
 				},
@@ -320,25 +320,25 @@ func TestScanner(t *testing.T) {
 			in: `A"B"C`,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 1},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"B"`,
 					Start:   token.Position{Line: 1, Column: 2},
 					End:     token.Position{Line: 1, Column: 4},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Line: 1, Column: 5},
 					End:     token.Position{Line: 1, Column: 5},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 1, Column: 6},
 					End:   token.Position{Line: 1, Column: 6},
 				},
@@ -348,19 +348,19 @@ func TestScanner(t *testing.T) {
 			in: `"A"_B`,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"A"`,
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 3},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "_B",
 					Start:   token.Position{Line: 1, Column: 4},
 					End:     token.Position{Line: 1, Column: 5},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 1, Column: 6},
 					End:   token.Position{Line: 1, Column: 6},
 				},
@@ -370,19 +370,19 @@ func TestScanner(t *testing.T) {
 			in: `A_1"B"`,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "A_1",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 3},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"B"`,
 					Start:   token.Position{Line: 1, Column: 4},
 					End:     token.Position{Line: 1, Column: 6},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 1, Column: 7},
 					End:   token.Position{Line: 1, Column: 7},
 				},
@@ -396,156 +396,156 @@ func TestScanner(t *testing.T) {
 					edge [arrowhead=none color="#00008844",style = filled];  `,
 			want: []token.Token{
 				{
-					Type:    token.Graph,
+					Kind:    token.Graph,
 					Literal: "graph",
 					Start:   token.Position{Line: 1, Column: 2},
 					End:     token.Position{Line: 1, Column: 6},
 				},
 				{
-					Type: token.LeftBracket, Literal: "[",
+					Kind: token.LeftBracket, Literal: "[",
 					Start: token.Position{Line: 1, Column: 8},
 					End:   token.Position{Line: 1, Column: 8},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "labelloc",
 					Start:   token.Position{Line: 2, Column: 5},
 					End:     token.Position{Line: 2, Column: 12},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 2, Column: 14},
 					End:   token.Position{Line: 2, Column: 14},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "t",
 					Start:   token.Position{Line: 2, Column: 16},
 					End:     token.Position{Line: 2, Column: 16},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "fontname",
 					Start:   token.Position{Line: 3, Column: 5},
 					End:     token.Position{Line: 3, Column: 12},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 3, Column: 14},
 					End:   token.Position{Line: 3, Column: 14},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"Helvetica,Arial,sans-serif"`,
 					Start:   token.Position{Line: 3, Column: 16},
 					End:     token.Position{Line: 3, Column: 43},
 				},
 				{
-					Type: token.Comma, Literal: ",",
+					Kind: token.Comma, Literal: ",",
 					Start: token.Position{Line: 3, Column: 44},
 					End:   token.Position{Line: 3, Column: 44},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "fontsize",
 					Start:   token.Position{Line: 3, Column: 45},
 					End:     token.Position{Line: 3, Column: 52},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 3, Column: 53},
 					End:   token.Position{Line: 3, Column: 53},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "16",
 					Start:   token.Position{Line: 3, Column: 54},
 					End:     token.Position{Line: 3, Column: 55},
 				},
 				{
-					Type: token.RightBracket, Literal: "]",
+					Kind: token.RightBracket, Literal: "]",
 					Start: token.Position{Line: 4, Column: 4},
 					End:   token.Position{Line: 4, Column: 4},
 				},
 				{
-					Type:    token.Edge,
+					Kind:    token.Edge,
 					Literal: "edge",
 					Start:   token.Position{Line: 5, Column: 6},
 					End:     token.Position{Line: 5, Column: 9},
 				},
 				{
-					Type: token.LeftBracket, Literal: "[",
+					Kind: token.LeftBracket, Literal: "[",
 					Start: token.Position{Line: 5, Column: 11},
 					End:   token.Position{Line: 5, Column: 11},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "arrowhead",
 					Start:   token.Position{Line: 5, Column: 12},
 					End:     token.Position{Line: 5, Column: 20},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 5, Column: 21},
 					End:   token.Position{Line: 5, Column: 21},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "none",
 					Start:   token.Position{Line: 5, Column: 22},
 					End:     token.Position{Line: 5, Column: 25},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "color",
 					Start:   token.Position{Line: 5, Column: 27},
 					End:     token.Position{Line: 5, Column: 31},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 5, Column: 32},
 					End:   token.Position{Line: 5, Column: 32},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"#00008844"`,
 					Start:   token.Position{Line: 5, Column: 33},
 					End:     token.Position{Line: 5, Column: 43},
 				},
 				{
-					Type: token.Comma, Literal: ",",
+					Kind: token.Comma, Literal: ",",
 					Start: token.Position{Line: 5, Column: 44},
 					End:   token.Position{Line: 5, Column: 44},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "style",
 					Start:   token.Position{Line: 5, Column: 45},
 					End:     token.Position{Line: 5, Column: 49},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 5, Column: 51},
 					End:   token.Position{Line: 5, Column: 51},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "filled",
 					Start:   token.Position{Line: 5, Column: 53},
 					End:     token.Position{Line: 5, Column: 58},
 				},
 				{
-					Type: token.RightBracket, Literal: "]",
+					Kind: token.RightBracket, Literal: "]",
 					Start: token.Position{Line: 5, Column: 59},
 					End:   token.Position{Line: 5, Column: 59},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 5, Column: 60},
 					End:   token.Position{Line: 5, Column: 60},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 5, Column: 63},
 					End:   token.Position{Line: 5, Column: 63},
 				},
@@ -560,134 +560,134 @@ func TestScanner(t *testing.T) {
 			}`,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Line: 1, Column: 3},
 					End:     token.Position{Line: 1, Column: 3},
 				},
 				{
-					Type: token.DirectedEdge, Literal: "->",
+					Kind: token.DirectedEdge, Literal: "->",
 					Start: token.Position{Line: 1, Column: 5},
 					End:   token.Position{Line: 1, Column: 6},
 				},
 				{
-					Type: token.LeftBrace, Literal: "{",
+					Kind: token.LeftBrace, Literal: "{",
 					Start: token.Position{Line: 1, Column: 8},
 					End:   token.Position{Line: 1, Column: 8},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Line: 1, Column: 9},
 					End:     token.Position{Line: 1, Column: 9},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Line: 1, Column: 11},
 					End:     token.Position{Line: 1, Column: 11},
 				},
 				{
-					Type: token.RightBrace, Literal: "}",
+					Kind: token.RightBrace, Literal: "}",
 					Start: token.Position{Line: 1, Column: 12},
 					End:   token.Position{Line: 1, Column: 12},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "D",
 					Start:   token.Position{Line: 2, Column: 5},
 					End:     token.Position{Line: 2, Column: 5},
 				},
 				{
-					Type: token.UndirectedEdge, Literal: "--",
+					Kind: token.UndirectedEdge, Literal: "--",
 					Start: token.Position{Line: 2, Column: 7},
 					End:   token.Position{Line: 2, Column: 8},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "E",
 					Start:   token.Position{Line: 2, Column: 10},
 					End:     token.Position{Line: 2, Column: 10},
 				},
 				{
-					Type:    token.Subgraph,
+					Kind:    token.Subgraph,
 					Literal: "subgraph",
 					Start:   token.Position{Line: 3, Column: 4},
 					End:     token.Position{Line: 3, Column: 11},
 				},
 				{
-					Type: token.LeftBrace, Literal: "{",
+					Kind: token.LeftBrace, Literal: "{",
 					Start: token.Position{Line: 3, Column: 13},
 					End:   token.Position{Line: 3, Column: 13},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: `"F"`,
 					Start:   token.Position{Line: 4, Column: 5},
 					End:     token.Position{Line: 4, Column: 7},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "rank",
 					Start:   token.Position{Line: 5, Column: 6},
 					End:     token.Position{Line: 5, Column: 9},
 				},
 				{
-					Type: token.Equal, Literal: "=",
+					Kind: token.Equal, Literal: "=",
 					Start: token.Position{Line: 5, Column: 11},
 					End:   token.Position{Line: 5, Column: 11},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "same",
 					Start:   token.Position{Line: 5, Column: 13},
 					End:     token.Position{Line: 5, Column: 16},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 5, Column: 17},
 					End:   token.Position{Line: 5, Column: 17},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "A",
 					Start:   token.Position{Line: 5, Column: 19},
 					End:     token.Position{Line: 5, Column: 19},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 5, Column: 20},
 					End:   token.Position{Line: 5, Column: 20},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "B",
 					Start:   token.Position{Line: 5, Column: 21},
 					End:     token.Position{Line: 5, Column: 21},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 5, Column: 22},
 					End:   token.Position{Line: 5, Column: 22},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "C",
 					Start:   token.Position{Line: 5, Column: 23},
 					End:     token.Position{Line: 5, Column: 23},
 				},
 				{
-					Type: token.Semicolon, Literal: ";",
+					Kind: token.Semicolon, Literal: ";",
 					Start: token.Position{Line: 5, Column: 24},
 					End:   token.Position{Line: 5, Column: 24},
 				},
 				{
-					Type: token.RightBrace, Literal: "}",
+					Kind: token.RightBrace, Literal: "}",
 					Start: token.Position{Line: 6, Column: 4},
 					End:   token.Position{Line: 6, Column: 4},
 				},
 				{
-					Type:  token.EOF,
+					Kind:  token.EOF,
 					Start: token.Position{Line: 6, Column: 5},
 					End:   token.Position{Line: 6, Column: 5},
 				},
@@ -697,91 +697,91 @@ func TestScanner(t *testing.T) {
 			in: `  1->2 3 ->4  5--6 7-- 8 9 --10`,
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "1",
 					Start:   token.Position{Line: 1, Column: 3},
 					End:     token.Position{Line: 1, Column: 3},
 				},
 				{
-					Type:    token.DirectedEdge,
+					Kind:    token.DirectedEdge,
 					Literal: "->",
 					Start:   token.Position{Line: 1, Column: 4},
 					End:     token.Position{Line: 1, Column: 5},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "2",
 					Start:   token.Position{Line: 1, Column: 6},
 					End:     token.Position{Line: 1, Column: 6},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "3",
 					Start:   token.Position{Line: 1, Column: 8},
 					End:     token.Position{Line: 1, Column: 8},
 				},
 				{
-					Type:    token.DirectedEdge,
+					Kind:    token.DirectedEdge,
 					Literal: "->",
 					Start:   token.Position{Line: 1, Column: 10},
 					End:     token.Position{Line: 1, Column: 11},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "4",
 					Start:   token.Position{Line: 1, Column: 12},
 					End:     token.Position{Line: 1, Column: 12},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "5",
 					Start:   token.Position{Line: 1, Column: 15},
 					End:     token.Position{Line: 1, Column: 15},
 				},
 				{
-					Type:    token.UndirectedEdge,
+					Kind:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Line: 1, Column: 16},
 					End:     token.Position{Line: 1, Column: 17},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "6",
 					Start:   token.Position{Line: 1, Column: 18},
 					End:     token.Position{Line: 1, Column: 18},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "7",
 					Start:   token.Position{Line: 1, Column: 20},
 					End:     token.Position{Line: 1, Column: 20},
 				},
 				{
-					Type:    token.UndirectedEdge,
+					Kind:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Line: 1, Column: 21},
 					End:     token.Position{Line: 1, Column: 22},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "8",
 					Start:   token.Position{Line: 1, Column: 24},
 					End:     token.Position{Line: 1, Column: 24},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "9",
 					Start:   token.Position{Line: 1, Column: 26},
 					End:     token.Position{Line: 1, Column: 26},
 				},
 				{
-					Type:    token.UndirectedEdge,
+					Kind:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Line: 1, Column: 28},
 					End:     token.Position{Line: 1, Column: 29},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "10",
 					Start:   token.Position{Line: 1, Column: 30},
 					End:     token.Position{Line: 1, Column: 31},
@@ -792,13 +792,13 @@ func TestScanner(t *testing.T) {
 			in: "123#comment",
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "123",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 3},
 				},
 				{
-					Type:    token.Comment,
+					Kind:    token.Comment,
 					Literal: "#comment",
 					Start:   token.Position{Line: 1, Column: 4},
 					End:     token.Position{Line: 1, Column: 11},
@@ -809,13 +809,13 @@ func TestScanner(t *testing.T) {
 			in: "456//comment",
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "456",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 3},
 				},
 				{
-					Type:    token.Comment,
+					Kind:    token.Comment,
 					Literal: "//comment",
 					Start:   token.Position{Line: 1, Column: 4},
 					End:     token.Position{Line: 1, Column: 12},
@@ -826,19 +826,19 @@ func TestScanner(t *testing.T) {
 			in: "ab--cd",
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "ab",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 2},
 				},
 				{
-					Type:    token.UndirectedEdge,
+					Kind:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Line: 1, Column: 3},
 					End:     token.Position{Line: 1, Column: 4},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "cd",
 					Start:   token.Position{Line: 1, Column: 5},
 					End:     token.Position{Line: 1, Column: 6},
@@ -849,19 +849,19 @@ func TestScanner(t *testing.T) {
 			in: "ab->cd",
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "ab",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 2},
 				},
 				{
-					Type:    token.DirectedEdge,
+					Kind:    token.DirectedEdge,
 					Literal: "->",
 					Start:   token.Position{Line: 1, Column: 3},
 					End:     token.Position{Line: 1, Column: 4},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "cd",
 					Start:   token.Position{Line: 1, Column: 5},
 					End:     token.Position{Line: 1, Column: 6},
@@ -872,19 +872,19 @@ func TestScanner(t *testing.T) {
 			in: "12--34",
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "12",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 2},
 				},
 				{
-					Type:    token.UndirectedEdge,
+					Kind:    token.UndirectedEdge,
 					Literal: "--",
 					Start:   token.Position{Line: 1, Column: 3},
 					End:     token.Position{Line: 1, Column: 4},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "34",
 					Start:   token.Position{Line: 1, Column: 5},
 					End:     token.Position{Line: 1, Column: 6},
@@ -895,19 +895,19 @@ func TestScanner(t *testing.T) {
 			in: "12->34",
 			want: []token.Token{
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "12",
 					Start:   token.Position{Line: 1, Column: 1},
 					End:     token.Position{Line: 1, Column: 2},
 				},
 				{
-					Type:    token.DirectedEdge,
+					Kind:    token.DirectedEdge,
 					Literal: "->",
 					Start:   token.Position{Line: 1, Column: 3},
 					End:     token.Position{Line: 1, Column: 4},
 				},
 				{
-					Type:    token.ID,
+					Kind:    token.ID,
 					Literal: "34",
 					Start:   token.Position{Line: 1, Column: 5},
 					End:     token.Position{Line: 1, Column: 6},
@@ -934,7 +934,7 @@ func TestScanner(t *testing.T) {
 					in: "_A",
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "_A",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 2},
@@ -945,7 +945,7 @@ func TestScanner(t *testing.T) {
 					in: "A_cZ",
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "A_cZ",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 4},
@@ -956,7 +956,7 @@ func TestScanner(t *testing.T) {
 					in: "A10",
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "A10",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 3},
@@ -967,7 +967,7 @@ func TestScanner(t *testing.T) {
 					in: "\u0080ÿ  ",
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "\u0080ÿ",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 3}, // last char ÿ starts at byte offset 2 (1-based: 3)
@@ -978,7 +978,7 @@ func TestScanner(t *testing.T) {
 					in: "Контрагенты",
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "Контрагенты",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 21}, // last char starts at byte 20 (1-based: 21)
@@ -1004,7 +1004,7 @@ func TestScanner(t *testing.T) {
 					in: "  \x7f", // \177 - cannot start any token
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "\x7f",
 							Error:   "invalid character U+007F: unquoted IDs must start with a letter or underscore",
 							Start:   token.Position{Line: 1, Column: 3},
@@ -1016,7 +1016,7 @@ func TestScanner(t *testing.T) {
 					in: "  _zab\x7fx", // \177 in middle - ERROR token consumes until separator
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "_zab\x7fx",
 							Error:   "invalid character U+007F: unquoted IDs can only contain letters, digits, and underscores",
 							Start:   token.Position{Line: 1, Column: 3},
@@ -1028,7 +1028,7 @@ func TestScanner(t *testing.T) {
 					in: "A\000\000B", // null bytes within identifier - consume entire sequence as ERROR
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "A\x00\x00B",
 							Error:   "invalid character U+0000: unquoted IDs cannot contain null bytes",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1040,32 +1040,32 @@ func TestScanner(t *testing.T) {
 					in: "A;x\000y{B", // null byte with adjacent chars grouped into ERROR, separated by terminals
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "A",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 1},
 						},
 						{
-							Type:    token.Semicolon,
+							Kind:    token.Semicolon,
 							Literal: ";",
 							Start:   token.Position{Line: 1, Column: 2},
 							End:     token.Position{Line: 1, Column: 2},
 						},
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "x\x00y",
 							Error:   "invalid character U+0000: unquoted IDs cannot contain null bytes",
 							Start:   token.Position{Line: 1, Column: 3},
 							End:     token.Position{Line: 1, Column: 5},
 						},
 						{
-							Type:    token.LeftBrace,
+							Kind:    token.LeftBrace,
 							Literal: "{",
 							Start:   token.Position{Line: 1, Column: 6},
 							End:     token.Position{Line: 1, Column: 6},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "B",
 							Start:   token.Position{Line: 1, Column: 7},
 							End:     token.Position{Line: 1, Column: 7},
@@ -1076,7 +1076,7 @@ func TestScanner(t *testing.T) {
 					in: "@@@",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "@@@",
 							Error:   "invalid character '@': unquoted IDs must start with a letter or underscore",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1088,7 +1088,7 @@ func TestScanner(t *testing.T) {
 					in: "abc@def$ghi",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "abc@def$ghi",
 							Error:   "invalid character '@': unquoted IDs can only contain letters, digits, and underscores",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1100,7 +1100,7 @@ func TestScanner(t *testing.T) {
 					in: "a\x80b", // invalid UTF-8 byte (0x80 is a continuation byte without a start byte)
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "a\ufffdb", // ERROR consumes until separator
 							Error:   "invalid character U+FFFD '�': unquoted IDs can only contain letters, digits, and underscores",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1112,7 +1112,7 @@ func TestScanner(t *testing.T) {
 					in: "\xfe\xff", // UTF-16 BOM (invalid UTF-8)
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "\ufffd\ufffd",
 							Error:   "invalid character U+FFFD '�': unquoted IDs must start with a letter or underscore",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1141,7 +1141,7 @@ func TestScanner(t *testing.T) {
 					in: "a-b",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "a-b",
 							Error:   "invalid character '-': use '--' (undirected) or '->' (directed) for edges, or quote the ID",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1169,7 +1169,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: " -.9\t\n",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "-.9",
 						Start:   token.Position{Line: 1, Column: 2},
 						End:     token.Position{Line: 1, Column: 4},
@@ -1178,7 +1178,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-0.13",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "-0.13",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 5},
@@ -1187,7 +1187,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-0.",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "-0.",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 3},
@@ -1196,7 +1196,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-92.58",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "-92.58",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 6},
@@ -1205,7 +1205,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "-92",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "-92",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 3},
@@ -1214,7 +1214,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: ".13",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: ".13",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 3},
@@ -1223,7 +1223,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "0.",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "0.",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 2},
@@ -1232,7 +1232,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "0.13",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "0.13",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 4},
@@ -1241,7 +1241,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "47",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "47",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 2},
@@ -1250,7 +1250,7 @@ func TestScanner(t *testing.T) {
 				{
 					in: "47.58",
 					want: token.Token{
-						Type:    token.ID,
+						Kind:    token.ID,
 						Literal: "47.58",
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 5},
@@ -1275,7 +1275,7 @@ func TestScanner(t *testing.T) {
 					in: "-.1A",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "-.1A",
 							Error:   "invalid character 'A': invalid character in number: valid forms are '1', '-1', '1.2', '-.1', '.1'",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1287,7 +1287,7 @@ func TestScanner(t *testing.T) {
 					in: "1-20",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "1-20",
 							Error:   "invalid character '-': ambiguous: quote for ID containing '-', use space for separate IDs, or '--'/'->' for edges",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1299,7 +1299,7 @@ func TestScanner(t *testing.T) {
 					in: ".13.4",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: ".13.4",
 							Error:   "invalid character '.': ambiguous: quote for ID containing multiple '.', or use one decimal point for number",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1311,7 +1311,7 @@ func TestScanner(t *testing.T) {
 					in: "-.",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "-.",
 							Error:   "ambiguous: quote for ID, or add digit for number like '-.1' or '-0.'",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1323,14 +1323,14 @@ func TestScanner(t *testing.T) {
 					in: "\n. 0",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: ".",
 							Error:   "invalid character ' ': ambiguous: quote for ID, or add digit for number like '-.1' or '-0.'",
 							Start:   token.Position{Line: 2, Column: 1},
 							End:     token.Position{Line: 2, Column: 1},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "0",
 							Start:   token.Position{Line: 2, Column: 3},
 							End:     token.Position{Line: 2, Column: 3},
@@ -1341,7 +1341,7 @@ func TestScanner(t *testing.T) {
 					in: "100\u00A0200", // non-breaking space between 100 and 200
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "100\u00A0200",
 							Error:   "invalid character U+00A0 '\u00a0': invalid character in number: valid forms are '1', '-1', '1.2', '-.1', '.1'",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1353,14 +1353,14 @@ func TestScanner(t *testing.T) {
 					in: "\n\n\n\t  - F",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "-",
 							Error:   "invalid character ' ': ambiguous: quote for ID, or add digit for number like '-.1' or '-0.'",
 							Start:   token.Position{Line: 4, Column: 4},
 							End:     token.Position{Line: 4, Column: 4},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "F",
 							Start:   token.Position{Line: 4, Column: 6},
 							End:     token.Position{Line: 4, Column: 6},
@@ -1371,19 +1371,19 @@ func TestScanner(t *testing.T) {
 					in: "A---B",
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "A",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 1},
 						},
 						{
-							Type:    token.UndirectedEdge,
+							Kind:    token.UndirectedEdge,
 							Literal: "--",
 							Start:   token.Position{Line: 1, Column: 2},
 							End:     token.Position{Line: 1, Column: 3},
 						},
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "-B",
 							Error:   "invalid character 'B': invalid character in number: only digits and decimal point can follow '-'",
 							Start:   token.Position{Line: 1, Column: 4},
@@ -1395,7 +1395,7 @@ func TestScanner(t *testing.T) {
 					in: "1.2.3abc",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "1.2.3abc",
 							Error:   "invalid character '.': ambiguous: quote for ID containing multiple '.', or use one decimal point for number",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1424,13 +1424,13 @@ func TestScanner(t *testing.T) {
 					in: `"graph""strict"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"graph"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 7},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"strict"`,
 							Start:   token.Position{Line: 1, Column: 8},
 							End:     token.Position{Line: 1, Column: 15},
@@ -1441,7 +1441,7 @@ func TestScanner(t *testing.T) {
 					in: `"\"d"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"\"d"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 5},
@@ -1452,7 +1452,7 @@ func TestScanner(t *testing.T) {
 					in: `"\nd"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"\nd"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 5},
@@ -1463,7 +1463,7 @@ func TestScanner(t *testing.T) {
 					in: `"\\d"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"\\d"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 5},
@@ -1474,7 +1474,7 @@ func TestScanner(t *testing.T) {
 					in: `"a\\"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"a\\"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 5},
@@ -1485,7 +1485,7 @@ func TestScanner(t *testing.T) {
 					in: `"_A"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"_A"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 4},
@@ -1496,7 +1496,7 @@ func TestScanner(t *testing.T) {
 					in: `"-.9"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"-.9"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 5},
@@ -1507,7 +1507,7 @@ func TestScanner(t *testing.T) {
 					in: `"A--B"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"A--B"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 6},
@@ -1518,7 +1518,7 @@ func TestScanner(t *testing.T) {
 					in: `"A->B"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"A->B"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 6},
@@ -1529,7 +1529,7 @@ func TestScanner(t *testing.T) {
 					in: `"A-B"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"A-B"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 5},
@@ -1540,7 +1540,7 @@ func TestScanner(t *testing.T) {
 					in: `"Helvetica,Arial,sans-serif"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"Helvetica,Arial,sans-serif"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 28},
@@ -1551,7 +1551,7 @@ func TestScanner(t *testing.T) {
 					in: `"#00008844"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"#00008844"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 11},
@@ -1563,7 +1563,7 @@ func TestScanner(t *testing.T) {
 #00008844"`,
 					want: []token.Token{
 						{
-							Type: token.ID,
+							Kind: token.ID,
 							Literal: `"color\
 #00008844"`,
 							Start: token.Position{Line: 1, Column: 1},
@@ -1580,7 +1580,7 @@ func TestScanner(t *testing.T) {
 #00008844"`,
 					want: []token.Token{
 						{
-							Type: token.ID,
+							Kind: token.ID,
 							Literal: `"color
 #00008844"`,
 							Start: token.Position{Line: 1, Column: 1},
@@ -1592,7 +1592,7 @@ func TestScanner(t *testing.T) {
 					in: `"emoji 🎉 test"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"emoji 🎉 test"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 17}, // " (1) + emoji (5) + space (1) + 🎉 (4) + space (1) + test (4) + " (1) = 17
@@ -1603,7 +1603,7 @@ func TestScanner(t *testing.T) {
 					in: `"unicode: éñ中文"`,
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: `"unicode: éñ中文"`,
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 21}, // " (1) + unicode: (9) + space (1) + é (2) + ñ (2) + 中 (3) + 文 (3) + " (1) = 21? Let me recalc
@@ -1629,7 +1629,7 @@ func TestScanner(t *testing.T) {
 					in: `"asdf`,
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: `"asdf`,
 							Error:   "invalid character '\"': unclosed ID: missing closing '\"'",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1642,7 +1642,7 @@ func TestScanner(t *testing.T) {
 		}`,
 					want: []token.Token{
 						{
-							Type: token.ERROR,
+							Kind: token.ERROR,
 							Literal: `"asdf
 		}`,
 							Error: "invalid character '\"': unclosed ID: missing closing '\"'",
@@ -1655,7 +1655,7 @@ func TestScanner(t *testing.T) {
 					in: "\"node\x00with\x00nul\"",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "\"node\x00with\x00nul\"",
 							Error:   "invalid character U+0000: quoted IDs cannot contain null bytes",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1667,7 +1667,7 @@ func TestScanner(t *testing.T) {
 					in: `"a\"`,
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: `"a\"`,
 							Error:   "invalid character '\"': unclosed ID: missing closing '\"'",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1698,7 +1698,7 @@ func TestScanner(t *testing.T) {
 
 							#  C preprocessor style comment "noidentifier" /* ignore this */ edge  `,
 					want: token.Token{
-						Type:    token.Comment,
+						Kind:    token.Comment,
 						Literal: `#  C preprocessor style comment "noidentifier" /* ignore this */ edge  `,
 						Start:   token.Position{Line: 3, Column: 8},
 						End:     token.Position{Line: 3, Column: 78},
@@ -1709,7 +1709,7 @@ func TestScanner(t *testing.T) {
 							//	C++ style line comment "noidentifier" /* ignore this */ edge
 			`,
 					want: token.Token{
-						Type:    token.Comment,
+						Kind:    token.Comment,
 						Literal: `//	C++ style line comment "noidentifier" /* ignore this */ edge`,
 						Start:   token.Position{Line: 2, Column: 8},
 						End:     token.Position{Line: 2, Column: 70},
@@ -1724,7 +1724,7 @@ spacious
 					*/
 			`,
 					want: token.Token{
-						Type: token.Comment,
+						Kind: token.Comment,
 						Literal: `/* C++ style multi-line comment "noidentifier" edge
 					# don't treat this as a separate comment
 					# don't treat this as a separate comment
@@ -1738,7 +1738,7 @@ spacious
 				{
 					in: `/* ** */`,
 					want: token.Token{
-						Type:    token.Comment,
+						Kind:    token.Comment,
 						Literal: `/* ** */`,
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 8},
@@ -1747,7 +1747,7 @@ spacious
 				{
 					in: `/* * */`,
 					want: token.Token{
-						Type:    token.Comment,
+						Kind:    token.Comment,
 						Literal: `/* * */`,
 						Start:   token.Position{Line: 1, Column: 1},
 						End:     token.Position{Line: 1, Column: 7},
@@ -1757,7 +1757,7 @@ spacious
 					in: `/* *
 */`,
 					want: token.Token{
-						Type: token.Comment,
+						Kind: token.Comment,
 						Literal: `/* *
 */`,
 						Start: token.Position{Line: 1, Column: 1},
@@ -1782,38 +1782,38 @@ spacious
 					in: "/ is not a valid comment",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "/",
 							Error:   "invalid character '/': use '//' (line) or '/*...*/' (block) for comments",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 1},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "is",
 							Start:   token.Position{Line: 1, Column: 3},
 							End:     token.Position{Line: 1, Column: 4},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "not",
 							Start:   token.Position{Line: 1, Column: 6},
 							End:     token.Position{Line: 1, Column: 8},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "a",
 							Start:   token.Position{Line: 1, Column: 10},
 							End:     token.Position{Line: 1, Column: 10},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "valid",
 							Start:   token.Position{Line: 1, Column: 12},
 							End:     token.Position{Line: 1, Column: 16},
 						},
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "comment",
 							Start:   token.Position{Line: 1, Column: 18},
 							End:     token.Position{Line: 1, Column: 24},
@@ -1824,13 +1824,13 @@ spacious
 					in: "A/",
 					want: []token.Token{
 						{
-							Type:    token.ID,
+							Kind:    token.ID,
 							Literal: "A",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 1},
 						},
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "/",
 							Error:   "invalid character '/': use '//' (line) or '/*...*/' (block) for comments",
 							Start:   token.Position{Line: 1, Column: 2},
@@ -1842,14 +1842,14 @@ spacious
 					in: "/# is not a valid comment",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "/",
 							Error:   "invalid character '/': use '//' (line) or '/*...*/' (block) for comments",
 							Start:   token.Position{Line: 1, Column: 1},
 							End:     token.Position{Line: 1, Column: 1},
 						},
 						{
-							Type:    token.Comment,
+							Kind:    token.Comment,
 							Literal: "# is not a valid comment",
 							Start:   token.Position{Line: 1, Column: 2},
 							End:     token.Position{Line: 1, Column: 25},
@@ -1860,7 +1860,7 @@ spacious
 					in: "/* is not a valid comment",
 					want: []token.Token{
 						{
-							Type:    token.ERROR,
+							Kind:    token.ERROR,
 							Literal: "/* is not a valid comment",
 							Error:   "invalid character '/': unclosed comment: missing '*/'",
 							Start:   token.Position{Line: 1, Column: 1},
@@ -1900,7 +1900,7 @@ func assertEOF(t *testing.T, scanner *Scanner) {
 	t.Helper()
 
 	tok := scanner.Next()
-	assert.EqualValuesf(t, token.EOF, tok.Type, "Next()")
+	assert.EqualValuesf(t, token.EOF, tok.Kind, "Next()")
 }
 
 func assertNext(t *testing.T, scanner *Scanner, want []token.Token, input string) {
@@ -1913,7 +1913,7 @@ func assertNext(t *testing.T, scanner *Scanner, want []token.Token, input string
 
 	// Verify EOF after all expected tokens
 	eofToken := scanner.Next()
-	assert.EqualValuesf(t, token.EOF, eofToken.Type, "EOF for input %q", input)
+	assert.EqualValuesf(t, token.EOF, eofToken.Kind, "EOF for input %q", input)
 }
 
 func TestError(t *testing.T) {

@@ -93,7 +93,7 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 	case dot.KindSubgraph:
 		res.Comp = tree.Subgraph
 	case dot.KindNodeStmt:
-		if tree.HasAttrList(root) {
+		if tree.HasKind(root, dot.KindAttrList) {
 			res.Comp = tree.Node
 		}
 	case dot.KindEdgeStmt:
@@ -122,6 +122,16 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 						res.HasEqual = tree.HasEqualSign(root)
 					case dot.KindAttrValue:
 						res.AttrName = tree.AttrName(root)
+					}
+				}
+				// When cursor is inside ErrorTree following an incomplete Attribute
+				// (has = but no AttrValue), we're in value position for that attribute.
+				// This can happen in AList (inside [...]) or StmtList (top-level attrs).
+				if c.Kind == dot.KindErrorTree && (root.Kind == dot.KindAList || root.Kind == dot.KindStmtList) && i > 0 {
+					if prev, ok := root.Children[i-1].(dot.TreeChild); ok {
+						if prev.Kind == dot.KindAttribute && tree.HasEqualSign(prev.Tree) && !tree.HasKind(prev.Tree, dot.KindAttrValue) {
+							res.AttrName = tree.AttrName(prev.Tree)
+						}
 					}
 				}
 				context(c.Tree, pos, res)

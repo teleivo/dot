@@ -121,10 +121,10 @@ func find(tree *dot.Tree, pos token.Position, want dot.TreeKind, match *Match) {
 	}
 }
 
-// HasAttrList checks if the tree has an AttrList child.
-func HasAttrList(t *dot.Tree) bool {
+// HasKind checks if the tree has a child tree node of the given kind.
+func HasKind(t *dot.Tree, kind dot.TreeKind) bool {
 	for _, child := range t.Children {
-		if c, ok := child.(dot.TreeChild); ok && c.Kind == dot.KindAttrList {
+		if c, ok := child.(dot.TreeChild); ok && c.Kind == kind {
 			return true
 		}
 	}

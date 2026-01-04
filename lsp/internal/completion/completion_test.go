@@ -195,6 +195,26 @@ func TestItems(t *testing.T) {
 			position: token.Position{Line: 1, Column: 18},
 			want:     []string{},
 		},
+
+		// Multiple style values in quotes - missing closing quote
+		"StyleValuesInsideQuotedStringMissingClosingQuote": {
+			src:      `graph { a [style="dashed,] }`,
+			position: token.Position{Line: 1, Column: 26},
+			want:     []string{"solid", "dashed", "dotted", "bold", "invis", "filled", "striped", "wedged", "diagonals", "rounded", "radial"},
+		},
+		// Top-level (graph) attribute with unclosed quote.
+		// Returns all values (no prefix filtering since partial value is inside ERROR token).
+		"ValueTopLevelUnclosedQuote": {
+			src:      `graph { rankdir="L }`,
+			position: token.Position{Line: 1, Column: 19},
+			want:     []string{"TB", "BT", "LR", "RL"},
+		},
+		// Top-level style= only shows graph-applicable styles (radial is the only one)
+		"ValueStyleTopLevelGraphOnly": {
+			src:      "digraph foo {\n\tstyle=\n\ta [style=diagonals]\n}",
+			position: token.Position{Line: 2, Column: 7},
+			want:     []string{"radial"},
+		},
 	}
 
 	for name, tt := range tests {

@@ -120,3 +120,44 @@ func find(tree *dot.Tree, pos token.Position, want dot.TreeKind, match *Match) {
 		}
 	}
 }
+
+// HasAttrList checks if the tree has an AttrList child.
+func HasAttrList(t *dot.Tree) bool {
+	for _, child := range t.Children {
+		if c, ok := child.(dot.TreeChild); ok && c.Type == dot.KindAttrList {
+			return true
+		}
+	}
+	return false
+}
+
+// HasEqualSign checks if the tree has an = token child.
+func HasEqualSign(t *dot.Tree) bool {
+	for _, child := range t.Children {
+		if tok, ok := child.(dot.TokenChild); ok && tok.Type == token.Equal {
+			return true
+		}
+	}
+	return false
+}
+
+// AttrName extracts the attribute name from an Attribute node.
+func AttrName(attr *dot.Tree) string {
+	// Attribute: AttrName '=' AttrValue
+	if len(attr.Children) == 0 {
+		return ""
+	}
+	nameTree, ok := attr.Children[0].(dot.TreeChild)
+	if !ok || nameTree.Type != dot.KindAttrName || len(nameTree.Children) == 0 {
+		return ""
+	}
+	idTree, ok := nameTree.Children[0].(dot.TreeChild)
+	if !ok || idTree.Type != dot.KindID || len(idTree.Children) == 0 {
+		return ""
+	}
+	tok, ok := idTree.Children[0].(dot.TokenChild)
+	if !ok {
+		return ""
+	}
+	return tok.Literal
+}

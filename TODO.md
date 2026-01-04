@@ -4,13 +4,7 @@
 
 lsp
 * auto-complete for attribute keys
-  * add test for this so I can fix it: in Graph context I don't get layout. I think its because `graph { lay }` lay is
-    a NodeId in a NodeStmt. I want to get attribute completion for the correct Component. so
-  `graph { subgraph cluster_a { some }}` should give cluster attribute names (fix some to something
-  that makes sense).
-
-  * make finding attributes easier? less naive for completion?
-  * review code again
+  * review
   * merge
 
 * simplify lsp main loop, responding with error is more common now. how to simplify the

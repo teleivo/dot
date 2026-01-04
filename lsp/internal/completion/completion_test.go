@@ -41,6 +41,18 @@ func TestItems(t *testing.T) {
 			position: token.Position{Line: 1, Column: 20},
 			want:     []string{"label", "label_scheme", "labeljust", "labelloc"},
 		},
+		// Graph-level attribute without attr_stmt: `graph { lay }` should complete graph attrs
+		"NameGraphLevelAttr": {
+			src:      `graph { lay }`,
+			position: token.Position{Line: 1, Column: 12},
+			want:     []string{"layerlistsep", "layers", "layerselect", "layersep", "layout"},
+		},
+		// Cluster-level attribute: `subgraph cluster_a { pen }` should complete cluster attrs
+		"NameClusterLevelAttr": {
+			src:      `graph { subgraph cluster_a { penc } }`,
+			position: token.Position{Line: 1, Column: 33},
+			want:     []string{"pencolor"},
+		},
 		"NameInNodeInsideSubgraph": {
 			src:      `graph { subgraph { a [lab] } }`,
 			position: token.Position{Line: 1, Column: 26},

@@ -19,6 +19,7 @@ import (
 	"github.com/teleivo/dot/lsp/internal/completion"
 	"github.com/teleivo/dot/lsp/internal/diagnostic"
 	"github.com/teleivo/dot/lsp/internal/hover"
+	"github.com/teleivo/dot/lsp/internal/navigate"
 	"github.com/teleivo/dot/lsp/internal/rpc"
 	"github.com/teleivo/dot/printer"
 	"github.com/teleivo/dot/token"
@@ -389,6 +390,22 @@ func (srv *Server) Start(ctx context.Context) error {
 						continue
 					}
 					srv.writeResult(cancel, message.ID, hover.Info(doc.Tree(), tokenPosition(params.Position)))
+				case rpc.MethodDocumentSymbol:
+					if message.ID == nil {
+						srv.logger.Error("missing request id", "method", message.Method)
+						continue
+					}
+					params, rpcErr := unmarshalParams[rpc.DocumentSymbolParams](message.Params)
+					if rpcErr != nil {
+						srv.writeErr(cancel, message.ID, rpcErr)
+						continue
+					}
+					doc, rpcErr := srv.getDoc(params.TextDocument.URI)
+					if rpcErr != nil {
+						srv.writeErr(cancel, message.ID, rpcErr)
+						continue
+					}
+					srv.writeResult(cancel, message.ID, navigate.DocumentSymbols(doc.Tree()))
 				case rpc.MethodDidClose:
 					params, rpcErr := unmarshalParams[rpc.DidCloseTextDocumentParams](message.Params)
 					if rpcErr != nil {

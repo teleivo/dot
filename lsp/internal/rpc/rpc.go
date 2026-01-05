@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"github.com/teleivo/dot/internal/version"
+	"github.com/teleivo/dot/token"
 )
 
 // ErrorCode represents a JSON-RPC error code.
@@ -320,6 +321,27 @@ type Range struct {
 type Position struct {
 	Line      uint32 `json:"line"`
 	Character uint32 `json:"character"`
+}
+
+// PositionFromToken converts a 1-based token.Position to a 0-based rpc.Position.
+func PositionFromToken(p token.Position) Position {
+	return Position{
+		Line:      uint32(p.Line) - 1,
+		Character: uint32(p.Column) - 1,
+	}
+}
+
+// RangeFromToken creates an rpc.Range from 1-based token positions.
+// The end position is adjusted to be exclusive (LSP convention) since
+// token.Position.End is inclusive (points to the last character).
+func RangeFromToken(start, end token.Position) Range {
+	return Range{
+		Start: PositionFromToken(start),
+		End: Position{
+			Line:      uint32(end.Line) - 1,
+			Character: uint32(end.Column), // no -1: convert inclusive to exclusive
+		},
+	}
 }
 
 // CompletionParams contains the parameters for the textDocument/completion request.

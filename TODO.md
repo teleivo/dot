@@ -2,9 +2,10 @@
 
 ## Jan
 
-* lsp feat: add document symbols
 * lsp feat: add go to definition
 * lsp feat: add list references
+* improve tree navigation API in general (can the LSP also use the AST? or only parts that expect
+the tree to be a valid AST like document symbols?)
 
 * fmt: support comments
 * fmt: format files/directories

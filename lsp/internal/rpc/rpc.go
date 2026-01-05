@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"github.com/teleivo/dot/internal/version"
+	"github.com/teleivo/dot/token"
 )
 
 // ErrorCode represents a JSON-RPC error code.
@@ -49,8 +50,9 @@ const (
 
 	MethodPublishDiagnostics = "textDocument/publishDiagnostics"
 	MethodFormatting         = "textDocument/formatting"
-	MethodCompletion = "textDocument/completion"
-	MethodHover      = "textDocument/hover"
+	MethodCompletion     = "textDocument/completion"
+	MethodHover          = "textDocument/hover"
+	MethodDocumentSymbol = "textDocument/documentSymbol"
 )
 
 // Message has all the fields of request, response and notification. Presence/absence of fields is
@@ -127,7 +129,8 @@ var initializeResult = func() json.RawMessage {
 			"completionProvider": map[string]any{
 				"triggerCharacters": []string{"[", ",", ";", "{", "="},
 			},
-			"hoverProvider": true,
+			"hoverProvider":              true,
+			"documentSymbolProvider":     true,
 			"documentFormattingProvider": true,
 			"positionEncoding":           EncodingUTF8,
 			"textDocumentSync":           SyncIncremental,
@@ -320,6 +323,27 @@ type Position struct {
 	Character uint32 `json:"character"`
 }
 
+// PositionFromToken converts a 1-based token.Position to a 0-based rpc.Position.
+func PositionFromToken(p token.Position) Position {
+	return Position{
+		Line:      uint32(p.Line) - 1,
+		Character: uint32(p.Column) - 1,
+	}
+}
+
+// RangeFromToken creates an rpc.Range from 1-based token positions.
+// The end position is adjusted to be exclusive (LSP convention) since
+// token.Position.End is inclusive (points to the last character).
+func RangeFromToken(start, end token.Position) Range {
+	return Range{
+		Start: PositionFromToken(start),
+		End: Position{
+			Line:      uint32(end.Line) - 1,
+			Character: uint32(end.Column), // no -1: convert inclusive to exclusive
+		},
+	}
+}
+
 // CompletionParams contains the parameters for the textDocument/completion request.
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#completionParams
 type CompletionParams struct {
@@ -445,3 +469,66 @@ type Hover struct {
 	// e.g. by changing the background color.
 	Range *Range `json:"range,omitempty"`
 }
+
+// DocumentSymbolParams contains the parameters for the textDocument/documentSymbol request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#documentSymbolParams
+type DocumentSymbolParams struct {
+	// TextDocument is the text document.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
+// DocumentSymbol represents programming constructs like variables, classes, interfaces etc.
+// that appear in a document. Document symbols can be hierarchical and they have two ranges:
+// one that encloses its definition and one that points to its most interesting range,
+// e.g. the range of an identifier.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#documentSymbol
+type DocumentSymbol struct {
+	// Name is the name of this symbol. Will be displayed in the user interface.
+	Name string `json:"name"`
+	// Detail is more detail for this symbol, e.g. the signature of a function.
+	Detail string `json:"detail,omitempty"`
+	// Kind is the kind of this symbol.
+	Kind SymbolKind `json:"kind"`
+	// Range is the range enclosing this symbol not including leading/trailing whitespace
+	// but everything else like comments. This information is typically used to determine
+	// if the clients cursor is inside the symbol to reveal in the symbol in the UI.
+	Range Range `json:"range"`
+	// SelectionRange is the range that should be selected and revealed when this symbol
+	// is being picked, e.g. the name of a function. Must be contained by the Range.
+	SelectionRange Range `json:"selectionRange"`
+	// Children are the children of this symbol, e.g. properties of a class.
+	Children []DocumentSymbol `json:"children,omitempty"`
+}
+
+// SymbolKind represents the kind of a symbol.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind
+type SymbolKind int
+
+const (
+	SymbolKindFile          SymbolKind = 1
+	SymbolKindModule        SymbolKind = 2
+	SymbolKindNamespace     SymbolKind = 3
+	SymbolKindPackage       SymbolKind = 4
+	SymbolKindClass         SymbolKind = 5
+	SymbolKindMethod        SymbolKind = 6
+	SymbolKindProperty      SymbolKind = 7
+	SymbolKindField         SymbolKind = 8
+	SymbolKindConstructor   SymbolKind = 9
+	SymbolKindEnum          SymbolKind = 10
+	SymbolKindInterface     SymbolKind = 11
+	SymbolKindFunction      SymbolKind = 12
+	SymbolKindVariable      SymbolKind = 13
+	SymbolKindConstant      SymbolKind = 14
+	SymbolKindString        SymbolKind = 15
+	SymbolKindNumber        SymbolKind = 16
+	SymbolKindBoolean       SymbolKind = 17
+	SymbolKindArray         SymbolKind = 18
+	SymbolKindObject        SymbolKind = 19
+	SymbolKindKey           SymbolKind = 20
+	SymbolKindNull          SymbolKind = 21
+	SymbolKindEnumMember    SymbolKind = 22
+	SymbolKindStruct        SymbolKind = 23
+	SymbolKindEvent         SymbolKind = 24
+	SymbolKindOperator      SymbolKind = 25
+	SymbolKindTypeParameter SymbolKind = 26
+)

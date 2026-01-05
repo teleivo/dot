@@ -53,7 +53,7 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -133,7 +133,7 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -351,6 +351,33 @@ func TestServer(t *testing.T) {
 		want := `{"jsonrpc":"2.0","id":2,"result":{"contents":{"kind":"markdown","value":"Text label attached to objects\n\n**Type:** [lblString](https://graphviz.org/docs/attr-types/lblString/)\n\nLabel: escString or HTML-like \u003ctable\u003e...\u003c/table\u003e\n\n[Docs](https://graphviz.org/docs/attrs/label/)"}}}`
 		assert.Truef(t, s.Scan(), "expecting hover response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected hover response")
+	})
+
+	t.Run("DocumentSymbols", func(t *testing.T) {
+		s, in := setup(t)
+
+		t.Log("initialize handshake")
+		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
+		writeMessage(t, in, initMsg)
+		assert.Truef(t, s.Scan(), "expecting initialize response")
+
+		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
+		writeMessage(t, in, initializedMsg)
+
+		t.Log("open document with graph, subgraph, nodes, and edges")
+		docContent := `digraph G { subgraph cluster_0 { a; b } a -> b }`
+		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
+		writeMessage(t, in, didOpen)
+
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+
+		t.Log("request document symbols")
+		symbolsReq := `{"jsonrpc":"2.0","method":"textDocument/documentSymbol","id":2,"params":{"textDocument":{"uri":"file:///test.dot"}}}`
+		writeMessage(t, in, symbolsReq)
+
+		want := `{"jsonrpc":"2.0","id":2,"result":[{"name":"G","detail":"digraph","kind":2,"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":48}},"selectionRange":{"start":{"line":0,"character":8},"end":{"line":0,"character":9}},"children":[{"name":"cluster_0","detail":"subgraph","kind":3,"range":{"start":{"line":0,"character":12},"end":{"line":0,"character":39}},"selectionRange":{"start":{"line":0,"character":21},"end":{"line":0,"character":30}},"children":[{"name":"a","kind":13,"range":{"start":{"line":0,"character":33},"end":{"line":0,"character":34}},"selectionRange":{"start":{"line":0,"character":33},"end":{"line":0,"character":34}}},{"name":"b","kind":13,"range":{"start":{"line":0,"character":36},"end":{"line":0,"character":37}},"selectionRange":{"start":{"line":0,"character":36},"end":{"line":0,"character":37}}}]},{"name":"a -\u003e b","kind":24,"range":{"start":{"line":0,"character":40},"end":{"line":0,"character":46}},"selectionRange":{"start":{"line":0,"character":40},"end":{"line":0,"character":46}}}]}]}`
+		assert.Truef(t, s.Scan(), "expecting documentSymbol response")
+		require.EqualValuesf(t, s.Text(), want, "unexpected documentSymbol response")
 	})
 }
 

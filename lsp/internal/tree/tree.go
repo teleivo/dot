@@ -122,23 +122,36 @@ func find(tree *dot.Tree, pos token.Position, want dot.TreeKind, match *Match) {
 }
 
 // HasKind checks if the tree has a child tree node of the given kind.
-func HasKind(t *dot.Tree, kind dot.TreeKind) bool {
-	for _, child := range t.Children {
-		if c, ok := child.(dot.TreeChild); ok && c.Kind == kind {
-			return true
-		}
-	}
-	return false
+func HasKind(t *dot.Tree, want dot.TreeKind) bool {
+	_, ok := GetKind(t, want)
+	return ok
 }
 
-// HasEqualSign checks if the tree has an = token child.
-func HasEqualSign(t *dot.Tree) bool {
+// GetKind returns the first child tree node matching any of the given kinds.
+func GetKind(t *dot.Tree, want dot.TreeKind) (*dot.Tree, bool) {
 	for _, child := range t.Children {
-		if tok, ok := child.(dot.TokenChild); ok && tok.Kind == token.Equal {
-			return true
+		if c, ok := child.(dot.TreeChild); ok && c.Kind&want != 0 {
+			return c.Tree, true
 		}
 	}
-	return false
+	return nil, false
+}
+
+// HasToken checks if the tree has a child token of the given kind.
+func HasToken(t *dot.Tree, want token.Kind) bool {
+	_, ok := GetToken(t, want)
+	return ok
+}
+
+// GetToken returns the first child token matching any of the given kinds.
+func GetToken(t *dot.Tree, want token.Kind) (token.Token, bool) {
+	for _, child := range t.Children {
+		if tok, ok := child.(dot.TokenChild); ok && tok.Kind&want != 0 {
+			return tok.Token, true
+		}
+	}
+	var tok token.Token
+	return tok, false
 }
 
 // AttrName extracts the attribute name from an Attribute node.

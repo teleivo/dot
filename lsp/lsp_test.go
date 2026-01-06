@@ -53,7 +53,7 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"definitionProvider":true,"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"definitionProvider":true,"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","referencesProvider":true,"textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -133,7 +133,7 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"definitionProvider":true,"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
+		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"definitionProvider":true,"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","referencesProvider":true,"textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
 		assert.Truef(t, s.Scan(), "expecting initialize response")
 		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
 
@@ -407,6 +407,35 @@ func TestServer(t *testing.T) {
 		want := `{"jsonrpc":"2.0","id":2,"result":{"uri":"file:///test.dot","range":{"start":{"line":0,"character":10},"end":{"line":0,"character":11}}}}`
 		assert.Truef(t, s.Scan(), "expecting definition response")
 		require.EqualValuesf(t, s.Text(), want, "unexpected definition response")
+	})
+
+	t.Run("References", func(t *testing.T) {
+		s, in := setup(t)
+
+		t.Log("initialize handshake")
+		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
+		writeMessage(t, in, initMsg)
+		assert.Truef(t, s.Scan(), "expecting initialize response")
+
+		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
+		writeMessage(t, in, initializedMsg)
+
+		t.Log("open document with node 'a' appearing twice")
+		docContent := `digraph { a -> b; a }`
+		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
+		writeMessage(t, in, didOpen)
+
+		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+
+		t.Log("request references for 'a' in edge stmt (character 10), should find both occurrences")
+		// Position is on 'a' in the edge statement at character 10 (0-based)
+		refsReq := `{"jsonrpc":"2.0","method":"textDocument/references","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":10},"context":{"includeDeclaration":true}}}`
+		writeMessage(t, in, refsReq)
+
+		// References should include both 'a' at character 10 and 'a' at character 18
+		want := `{"jsonrpc":"2.0","id":2,"result":[{"uri":"file:///test.dot","range":{"start":{"line":0,"character":10},"end":{"line":0,"character":11}}},{"uri":"file:///test.dot","range":{"start":{"line":0,"character":18},"end":{"line":0,"character":19}}}]}`
+		assert.Truef(t, s.Scan(), "expecting references response")
+		require.EqualValuesf(t, s.Text(), want, "unexpected references response")
 	})
 }
 

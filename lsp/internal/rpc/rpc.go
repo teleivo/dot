@@ -50,10 +50,11 @@ const (
 
 	MethodPublishDiagnostics = "textDocument/publishDiagnostics"
 	MethodFormatting         = "textDocument/formatting"
-	MethodCompletion     = "textDocument/completion"
-	MethodHover          = "textDocument/hover"
-	MethodDocumentSymbol = "textDocument/documentSymbol"
-	MethodDefinition     = "textDocument/definition"
+	MethodCompletion         = "textDocument/completion"
+	MethodHover              = "textDocument/hover"
+	MethodDocumentSymbol     = "textDocument/documentSymbol"
+	MethodDefinition         = "textDocument/definition"
+	MethodReferences         = "textDocument/references"
 )
 
 // Message has all the fields of request, response and notification. Presence/absence of fields is
@@ -133,6 +134,7 @@ var initializeResult = func() json.RawMessage {
 			"hoverProvider":              true,
 			"documentSymbolProvider":     true,
 			"definitionProvider":         true,
+			"referencesProvider":         true,
 			"documentFormattingProvider": true,
 			"positionEncoding":           EncodingUTF8,
 			"textDocumentSync":           SyncIncremental,
@@ -551,4 +553,23 @@ type Location struct {
 	URI DocumentURI `json:"uri"`
 	// Range is the range within the document.
 	Range Range `json:"range"`
+}
+
+// ReferenceParams contains the parameters for the textDocument/references request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#referenceParams
+type ReferenceParams struct {
+	// TextDocument is the text document.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	// Position is the position inside the text document.
+	Position Position `json:"position"`
+	// Context contains additional information about the reference request.
+	Context ReferenceContext `json:"context"`
+}
+
+// ReferenceContext contains additional information for a references request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#referenceContext
+type ReferenceContext struct {
+	// IncludeDeclaration indicates whether the declaration of the symbol should be included
+	// in the result.
+	IncludeDeclaration bool `json:"includeDeclaration"`
 }

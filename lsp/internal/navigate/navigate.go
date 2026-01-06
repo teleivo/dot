@@ -1,7 +1,7 @@
 // Package navigate provides code navigation features for DOT graph documents.
 //
-// This package implements LSP navigation capabilities including document symbols
-// and go-to-definition.
+// This package implements LSP navigation capabilities including document symbols,
+// go-to-definition, and find references.
 package navigate
 
 import (
@@ -37,11 +37,11 @@ const (
 // To handle large files, symbols are limited to MaxItems total and MaxDepth nesting.
 func DocumentSymbols(root *dot.Tree) []rpc.DocumentSymbol {
 	var symbols []rpc.DocumentSymbol
-	symbols, _ = collect(root, symbols, 0, 0)
+	symbols, _ = collectSymbols(root, symbols, 0, 0)
 	return symbols
 }
 
-func collect(root *dot.Tree, result []rpc.DocumentSymbol, depth, items int) ([]rpc.DocumentSymbol, int) {
+func collectSymbols(root *dot.Tree, result []rpc.DocumentSymbol, depth, items int) ([]rpc.DocumentSymbol, int) {
 	if root == nil {
 		return result, items
 	}
@@ -56,7 +56,7 @@ func collect(root *dot.Tree, result []rpc.DocumentSymbol, depth, items int) ([]r
 				}
 				sym := documentSymbol(c.Tree)
 				var children []rpc.DocumentSymbol
-				children, items = collect(c.Tree, children, depth+1, items)
+				children, items = collectSymbols(c.Tree, children, depth+1, items)
 				sym.Children = children
 
 				result = append(result, *sym)
@@ -72,7 +72,7 @@ func collect(root *dot.Tree, result []rpc.DocumentSymbol, depth, items int) ([]r
 					items++
 				}
 
-				result, items = collect(c.Tree, result, depth, items)
+				result, items = collectSymbols(c.Tree, result, depth, items)
 			}
 		}
 	}
@@ -206,4 +206,56 @@ func firstNodeID(root *dot.Tree, name string) *token.Token {
 	}
 
 	return nil
+}
+
+// References returns all locations where the node ID at the given position is used.
+// This finds all occurrences of the same node ID throughout the document, whether they
+// appear in node statements or edge statements.
+//
+// Returns nil if the position is not on a node ID or the tree is nil.
+func References(root *dot.Tree, uri rpc.DocumentURI, pos token.Position) []rpc.Location {
+	match := tree.Find(root, pos, dot.KindNodeID)
+	if match.Tree == nil {
+		return nil
+	}
+	idTree, ok := tree.GetKind(match.Tree, dot.KindID)
+	if !ok {
+		return nil
+	}
+	id, ok := tree.GetToken(idTree, token.ID)
+	if !ok {
+		return nil
+	}
+
+	var result []rpc.Location
+	return collectReferences(root, uri, id.Literal, result)
+}
+
+func collectReferences(root *dot.Tree, uri rpc.DocumentURI, name string, result []rpc.Location) []rpc.Location {
+	if root == nil {
+		return result
+	}
+
+	for _, child := range root.Children {
+		switch c := child.(type) {
+		case dot.TreeChild:
+			if c.Kind == dot.KindNodeID {
+				idTree, ok := tree.GetKind(c.Tree, dot.KindID)
+				if !ok {
+					continue
+				}
+				id, ok := tree.GetToken(idTree, token.ID)
+				if !ok {
+					continue
+				}
+				if id.Literal == name {
+					result = append(result, rpc.Location{URI: uri, Range: rpc.RangeFromToken(id.Start, id.End)})
+				}
+			} else {
+				result = collectReferences(c.Tree, uri, name, result)
+			}
+		}
+	}
+
+	return result
 }

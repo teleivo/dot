@@ -454,6 +454,138 @@ func TestDefinition(t *testing.T) {
 	}
 }
 
+func TestReferences(t *testing.T) {
+	uri := rpc.DocumentURI("file:///test.dot")
+
+	tests := map[string]struct {
+		src  string
+		pos  token.Position // cursor position (1-based line, column)
+		want []rpc.Location
+	}{
+		"SingleOccurrence": {
+			// Node only appears once
+			src:  `digraph { a }`,
+			pos:  token.Position{Line: 1, Column: 11}, // on 'a'
+			want: []rpc.Location{{URI: uri, Range: r(0, 10, 0, 11)}},
+		},
+		"TwoOccurrencesNodeAndEdge": {
+			// Node 'a' appears in node stmt and edge stmt
+			src:  `digraph { a; a -> b }`,
+			pos:  token.Position{Line: 1, Column: 11}, // on first 'a'
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 10, 0, 11)},
+				{URI: uri, Range: r(0, 13, 0, 14)},
+			},
+		},
+		"TwoOccurrencesEdgeThenNode": {
+			// Node 'a' appears in edge stmt first, then node stmt
+			src:  `digraph { a -> b; a }`,
+			pos:  token.Position{Line: 1, Column: 19}, // on second 'a' in node stmt
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 10, 0, 11)},
+				{URI: uri, Range: r(0, 18, 0, 19)},
+			},
+		},
+		"MultipleEdges": {
+			// Node 'b' appears in multiple edges
+			src:  `digraph { a -> b; b -> c; d -> b }`,
+			pos:  token.Position{Line: 1, Column: 16}, // on first 'b'
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 15, 0, 16)},
+				{URI: uri, Range: r(0, 18, 0, 19)},
+				{URI: uri, Range: r(0, 31, 0, 32)},
+			},
+		},
+		"InSubgraph": {
+			// Node 'a' appears both inside and outside subgraph
+			src:  `digraph { subgraph { a }; a -> b }`,
+			pos:  token.Position{Line: 1, Column: 22}, // on 'a' inside subgraph
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 21, 0, 22)},
+				{URI: uri, Range: r(0, 26, 0, 27)},
+			},
+		},
+		"QuotedIdentifier": {
+			// Quoted IDs should match exactly
+			src:  `digraph { "foo" -> b; "foo" }`,
+			pos:  token.Position{Line: 1, Column: 11}, // on first "foo"
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 10, 0, 15)},
+				{URI: uri, Range: r(0, 22, 0, 27)},
+			},
+		},
+		"MultilineReferences": {
+			src: `digraph {
+	a -> b
+	c -> a
+	a
+}`,
+			pos: token.Position{Line: 2, Column: 2}, // on 'a' in first edge (line 2)
+			want: []rpc.Location{
+				{URI: uri, Range: r(1, 1, 1, 2)},
+				{URI: uri, Range: r(2, 6, 2, 7)},
+				{URI: uri, Range: r(3, 1, 3, 2)},
+			},
+		},
+		"NodeWithPort": {
+			// Node ID with port - should find both occurrences of 'a'
+			src:  `digraph { a:p1 -> b; a }`,
+			pos:  token.Position{Line: 1, Column: 22}, // on 'a' in node stmt
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 10, 0, 11)},
+				{URI: uri, Range: r(0, 21, 0, 22)},
+			},
+		},
+		"CursorNotOnNodeID": {
+			// Cursor on keyword, not a node ID
+			src:  `digraph { a }`,
+			pos:  token.Position{Line: 1, Column: 3}, // on 'digraph'
+			want: nil,
+		},
+		"CursorOnEdgeOperator": {
+			// Cursor on '->', not a node ID
+			src:  `digraph { a -> b }`,
+			pos:  token.Position{Line: 1, Column: 13}, // on '->'
+			want: nil,
+		},
+		"EmptySource": {
+			src:  ``,
+			pos:  token.Position{Line: 1, Column: 1},
+			want: nil,
+		},
+		"EdgeChain": {
+			// Node appears multiple times in edge chain
+			src:  `digraph { a -> b -> a }`,
+			pos:  token.Position{Line: 1, Column: 11}, // on first 'a'
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 10, 0, 11)},
+				{URI: uri, Range: r(0, 20, 0, 21)},
+			},
+		},
+		"NestedSubgraphs": {
+			// Node appears at different nesting levels
+			src:  `digraph { a; subgraph { subgraph { a } }; a }`,
+			pos:  token.Position{Line: 1, Column: 11}, // on first 'a'
+			want: []rpc.Location{
+				{URI: uri, Range: r(0, 10, 0, 11)},
+				{URI: uri, Range: r(0, 35, 0, 36)},
+				{URI: uri, Range: r(0, 42, 0, 43)},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ps := dot.NewParser([]byte(tt.src))
+			tree := ps.Parse()
+
+			got := References(tree, uri, tt.pos)
+
+			assert.EqualValuesf(t, got, tt.want, "unexpected references for %q at %v", tt.src, tt.pos)
+		})
+	}
+}
+
 // r creates an rpc.Range from 0-based line/character positions.
 // Arguments: startLine, startChar, endLine, endChar
 func r(sl, sc, el, ec int) rpc.Range {

@@ -22,6 +22,7 @@ Features:
 * Hover documentation for attributes
 * Document symbols for outline view (graphs, subgraphs, nodes, edges)
 * Go to definition for node IDs
+* Find references for node IDs
 
 ## Formatter
 

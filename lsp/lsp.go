@@ -422,6 +422,22 @@ func (srv *Server) Start(ctx context.Context) error {
 						continue
 					}
 					srv.writeResult(cancel, message.ID, navigate.Definition(doc.Tree(), params.TextDocument.URI, tokenPosition(params.Position)))
+				case rpc.MethodReferences:
+					if message.ID == nil {
+						srv.logger.Error("missing request id", "method", message.Method)
+						continue
+					}
+					params, rpcErr := unmarshalParams[rpc.ReferenceParams](message.Params)
+					if rpcErr != nil {
+						srv.writeErr(cancel, message.ID, rpcErr)
+						continue
+					}
+					doc, rpcErr := srv.getDoc(params.TextDocument.URI)
+					if rpcErr != nil {
+						srv.writeErr(cancel, message.ID, rpcErr)
+						continue
+					}
+					srv.writeResult(cancel, message.ID, navigate.References(doc.Tree(), params.TextDocument.URI, tokenPosition(params.Position)))
 				case rpc.MethodDidClose:
 					params, rpcErr := unmarshalParams[rpc.DidCloseTextDocumentParams](message.Params)
 					if rpcErr != nil {

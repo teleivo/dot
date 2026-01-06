@@ -1,6 +1,7 @@
 // Package navigate provides code navigation features for DOT graph documents.
 //
-// This package implements LSP navigation capabilities including document symbols.
+// This package implements LSP navigation capabilities including document symbols
+// and go-to-definition.
 package navigate
 
 import (
@@ -101,8 +102,9 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 		keyword, _ := tree.GetToken(t, token.Subgraph)
 		result := rpc.DocumentSymbol{
 			Detail: keyword.Kind.String(),
-			Kind:   rpc.SymbolKindNamespace,
-			Range:  rpc.RangeFromToken(t.Start, t.End),
+			// Namespace: subgraphs group statements but don't create scope in DOT
+			Kind:  rpc.SymbolKindNamespace,
+			Range: rpc.RangeFromToken(t.Start, t.End),
 		}
 		idTree, ok := tree.GetKind(t, dot.KindID)
 		if ok {
@@ -149,6 +151,58 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 			SelectionRange: treeRange,
 		}
 		return &result
+	}
+
+	return nil
+}
+
+// Definition returns the location of the definition for the node ID at the given position.
+// A definition is the first occurrence of a node ID in the document, whether it appears
+// in a node statement or an edge statement.
+//
+// Returns nil if the position is not on a node ID or the tree is nil.
+func Definition(root *dot.Tree, uri rpc.DocumentURI, pos token.Position) *rpc.Location {
+	match := tree.Find(root, pos, dot.KindNodeID)
+	if match.Tree == nil {
+		return nil
+	}
+	idTree, ok := tree.GetKind(match.Tree, dot.KindID)
+	if !ok {
+		return nil
+	}
+	id, ok := tree.GetToken(idTree, token.ID)
+	if !ok {
+		return nil
+	}
+
+	def := firstNodeID(root, id.Literal)
+	return &rpc.Location{URI: uri, Range: rpc.RangeFromToken(def.Start, def.End)}
+}
+
+func firstNodeID(root *dot.Tree, name string) *token.Token {
+	if root == nil {
+		return nil
+	}
+
+	for _, child := range root.Children {
+		switch c := child.(type) {
+		case dot.TreeChild:
+			if c.Kind == dot.KindNodeID {
+				idTree, ok := tree.GetKind(c.Tree, dot.KindID)
+				if !ok {
+					continue
+				}
+				id, ok := tree.GetToken(idTree, token.ID)
+				if !ok {
+					continue
+				}
+				if id.Literal == name {
+					return &id
+				}
+			} else if found := firstNodeID(c.Tree, name); found != nil {
+				return found
+			}
+		}
 	}
 
 	return nil

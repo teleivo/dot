@@ -6,6 +6,7 @@ import (
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/lsp/internal/rpc"
+	"github.com/teleivo/dot/token"
 )
 
 func TestDocumentSymbols(t *testing.T) {
@@ -245,13 +246,11 @@ func TestDocumentSymbols(t *testing.T) {
 			assert.EqualValuesf(t, got, tt.want, "unexpected symbols for %q", tt.src)
 		})
 	}
-}
 
-func TestDocumentSymbolsLimits(t *testing.T) {
-	t.Run("MaxItems", func(t *testing.T) {
+	t.Run("LimitMaxItems", func(t *testing.T) {
 		// Generate a graph with more than maxItems nodes
 		src := "digraph { "
-		for i := 0; i < maxItems+100; i++ {
+		for i := 0; i < maxItems+1; i++ {
 			src += "n" + string(rune('a'+i%26)) + string(rune('0'+i/26%10)) + "; "
 		}
 		src += "}"
@@ -266,7 +265,7 @@ func TestDocumentSymbolsLimits(t *testing.T) {
 		assert.Truef(t, total <= maxItems, "expected at most %d symbols, got %d", maxItems, total)
 	})
 
-	t.Run("MaxItemsAcrossGraphs", func(t *testing.T) {
+	t.Run("LimitMaxItemsAcrossGraphs", func(t *testing.T) {
 		// Generate multiple graphs, each with nodes that together exceed maxItems
 		// This tests that the item counter is shared across siblings, not reset per graph
 		nodesPerGraph := maxItems / 3
@@ -288,7 +287,7 @@ func TestDocumentSymbolsLimits(t *testing.T) {
 		assert.Truef(t, total <= maxItems, "expected at most %d symbols, got %d", maxItems, total)
 	})
 
-	t.Run("MaxDepth", func(t *testing.T) {
+	t.Run("LimitMaxDepth", func(t *testing.T) {
 		// Generate deeply nested subgraphs
 		src := "digraph { "
 		for i := 0; i < maxDepth+2; i++ {
@@ -330,6 +329,129 @@ func maxSymbolDepth(symbols []rpc.DocumentSymbol) int {
 		}
 	}
 	return 1 + maxChild
+}
+
+func TestDefinition(t *testing.T) {
+	uri := rpc.DocumentURI("file:///test.dot")
+
+	tests := map[string]struct {
+		src  string
+		pos  token.Position // cursor position (1-based line, column)
+		want *rpc.Location
+	}{
+		"NodeStmtToEdgeStmt": {
+			// Cursor on 'a' in node stmt, definition is 'a' in edge (first occurrence)
+			src:  `digraph { a -> b; a }`,
+			pos:  token.Position{Line: 1, Column: 19}, // on 'a' in node stmt
+			want: &rpc.Location{URI: uri, Range: r(0, 10, 0, 11)},
+		},
+		"EdgeStmtToNodeStmt": {
+			// Cursor on 'a' in edge stmt, definition is 'a' in node stmt (first occurrence)
+			src:  `digraph { a; a -> b }`,
+			pos:  token.Position{Line: 1, Column: 14}, // on 'a' in edge stmt
+			want: &rpc.Location{URI: uri, Range: r(0, 10, 0, 11)},
+		},
+		"EdgeToEdge": {
+			// Cursor on 'b' in second edge, definition is 'b' in first edge
+			src:  `digraph { a -> b; b -> c }`,
+			pos:  token.Position{Line: 1, Column: 19}, // on 'b' in second edge
+			want: &rpc.Location{URI: uri, Range: r(0, 15, 0, 16)},
+		},
+		"CursorOnFirstOccurrence": {
+			// Cursor is already on first occurrence, still return the location
+			src:  `digraph { a; a -> b }`,
+			pos:  token.Position{Line: 1, Column: 11}, // on 'a' in node stmt (first occurrence)
+			want: &rpc.Location{URI: uri, Range: r(0, 10, 0, 11)},
+		},
+		"SingleOccurrence": {
+			// Node only appears once, still return the location
+			src:  `digraph { a }`,
+			pos:  token.Position{Line: 1, Column: 11}, // on 'a'
+			want: &rpc.Location{URI: uri, Range: r(0, 10, 0, 11)},
+		},
+		"CursorNotOnNodeID": {
+			// Cursor on keyword, not a node ID
+			src:  `digraph { a }`,
+			pos:  token.Position{Line: 1, Column: 3}, // on 'digraph'
+			want: nil,
+		},
+		"CursorOnEdgeOperator": {
+			// Cursor on '->', not a node ID
+			src:  `digraph { a -> b }`,
+			pos:  token.Position{Line: 1, Column: 13}, // on '->'
+			want: nil,
+		},
+		"QuotedIdentifier": {
+			// Quoted IDs should match
+			src:  `digraph { "foo" -> b; "foo" }`,
+			pos:  token.Position{Line: 1, Column: 23}, // on second "foo"
+			want: &rpc.Location{URI: uri, Range: r(0, 10, 0, 15)},
+		},
+		"MultilineDefinition": {
+			src: `digraph {
+	a -> b
+	a
+}`,
+			pos:  token.Position{Line: 3, Column: 2}, // on 'a' in node stmt (line 3)
+			want: &rpc.Location{URI: uri, Range: r(1, 1, 1, 2)},
+		},
+		"InSubgraph": {
+			// Definition spans across subgraph boundaries
+			src:  `digraph { subgraph { a }; a -> b }`,
+			pos:  token.Position{Line: 1, Column: 27}, // on 'a' in edge stmt
+			want: &rpc.Location{URI: uri, Range: r(0, 21, 0, 22)},
+		},
+		"NodeAfterSubgraph": {
+			// Node 'a' appears after a subgraph containing different nodes
+			// Tests that search continues past subgraph when node not found inside
+			src:  `digraph { subgraph { b }; a }`,
+			pos:  token.Position{Line: 1, Column: 27}, // on 'a' after subgraph
+			want: &rpc.Location{URI: uri, Range: r(0, 26, 0, 27)},
+		},
+		"SameNodeInGraphAndSubgraph": {
+			// Node 'a' appears in both graph and subgraph - no special scoping
+			// First occurrence wins regardless of nesting level
+			src:  `digraph { a; subgraph { a } }`,
+			pos:  token.Position{Line: 1, Column: 25}, // on 'a' inside subgraph
+			want: &rpc.Location{URI: uri, Range: r(0, 10, 0, 11)},
+		},
+		"SameNodeSubgraphFirst": {
+			// Node 'a' appears in subgraph first, then in graph
+			// First occurrence (in subgraph) wins
+			src:  `digraph { subgraph { a }; a }`,
+			pos:  token.Position{Line: 1, Column: 27}, // on 'a' after subgraph
+			want: &rpc.Location{URI: uri, Range: r(0, 21, 0, 22)},
+		},
+		"NodeWithPort": {
+			// Node ID with port - definition should find the node ID part
+			src:  `digraph { a:p1 -> b; a }`,
+			pos:  token.Position{Line: 1, Column: 22}, // on 'a' in node stmt
+			want: &rpc.Location{URI: uri, Range: r(0, 10, 0, 11)},
+		},
+		"EdgeToInlineSubgraph": {
+			// Edge target is inline subgraph containing 'b'
+			// Cursor on 'b' inside subgraph should find itself (first occurrence)
+			src:  `digraph { a -> { b }; b }`,
+			pos:  token.Position{Line: 1, Column: 23}, // on 'b' after subgraph
+			want: &rpc.Location{URI: uri, Range: r(0, 17, 0, 18)},
+		},
+		"EmptySource": {
+			src:  ``,
+			pos:  token.Position{Line: 1, Column: 1},
+			want: nil,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ps := dot.NewParser([]byte(tt.src))
+			tree := ps.Parse()
+
+			got := Definition(tree, uri, tt.pos)
+
+			assert.EqualValuesf(t, got, tt.want, "unexpected definition for %q at %v", tt.src, tt.pos)
+		})
+	}
 }
 
 // r creates an rpc.Range from 0-based line/character positions.

@@ -2,17 +2,24 @@
 
 ## Jan
 
+week 2
 * improve tree navigation API in general (can the LSP also use the AST? or only parts that expect
 the tree to be a valid AST like document symbols?)
   * a pattern I see is finding a NodeID and then wanting its token literal
 
-* fmt: support comments
+week 3
+* fmt/lsp: support comments
 * fmt: format files/directories
 
-* profile fmt/lsp `dotx fmt < samples-graphviz/share/examples/world.gv` and improve
+week 4
+* profile fmt/lsp
+  * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * add ability to capture execution traces using flight recorder?
 
-* skeleton: lrb using my dotx toolchain and visual .dot files for test errors and state
+week 5
+* skeleton:
+  * lrb using my dotx toolchain and visual .dot files for test errors and state
+  * invariant check
 
 ## Parser
 
@@ -108,32 +115,6 @@ graph foo {
 
 * can I use fuzzing?
 * or the https://graphviz.org/docs/cli/gvgen/
-
-## High Level API
-
-I would like to define dot graphs in Go without having to create an ast. Like
-
-```go
-dot.Graph{
-    ID: "galaxy",
-    Attributes: []dot.Attribute{
-        dot.Attribute{
-            Name: "",
-            Value: "",
-        }
-    }
-}
-```
-
-I then want to print that to `io.Writer` in dot format. I could achieve that by going from the
-above to an `ast.Graph` then use the `Printer`.
-
-Would also be great to go from an `ast.Graph` to a `dot.Graph`. Here I need to evaluate the `ast`
-as attributes apply to the current "scope" in order.
-
-Questions:
-* how to represent an `ast.ID`? If I just use a `string` in `dot.Graph.ID` it would lead to an
-  invalid ID in the ast. Validate that before? Or deal with such errors later? Or sanitize myself?
 
 ## Questions
 

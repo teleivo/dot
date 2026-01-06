@@ -6,6 +6,7 @@
 * lsp feat: add list references
 * improve tree navigation API in general (can the LSP also use the AST? or only parts that expect
 the tree to be a valid AST like document symbols?)
+  * a pattern I see is finding a NodeID and then wanting its token literal
 
 * fmt: support comments
 * fmt: format files/directories

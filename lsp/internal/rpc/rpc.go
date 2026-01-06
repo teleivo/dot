@@ -53,6 +53,7 @@ const (
 	MethodCompletion     = "textDocument/completion"
 	MethodHover          = "textDocument/hover"
 	MethodDocumentSymbol = "textDocument/documentSymbol"
+	MethodDefinition     = "textDocument/definition"
 )
 
 // Message has all the fields of request, response and notification. Presence/absence of fields is
@@ -131,6 +132,7 @@ var initializeResult = func() json.RawMessage {
 			},
 			"hoverProvider":              true,
 			"documentSymbolProvider":     true,
+			"definitionProvider":         true,
 			"documentFormattingProvider": true,
 			"positionEncoding":           EncodingUTF8,
 			"textDocumentSync":           SyncIncremental,
@@ -532,3 +534,21 @@ const (
 	SymbolKindOperator      SymbolKind = 25
 	SymbolKindTypeParameter SymbolKind = 26
 )
+
+// DefinitionParams contains the parameters for the textDocument/definition request.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#definitionParams
+type DefinitionParams struct {
+	// TextDocument is the text document.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	// Position is the position inside the text document.
+	Position Position `json:"position"`
+}
+
+// Location represents a location inside a resource, such as a line inside a text file.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#location
+type Location struct {
+	// URI is the document URI.
+	URI DocumentURI `json:"uri"`
+	// Range is the range within the document.
+	Range Range `json:"range"`
+}

@@ -21,6 +21,7 @@ Features:
 * Attribute completion with context-aware filtering (node, edge, graph attributes)
 * Hover documentation for attributes
 * Document symbols for outline view (graphs, subgraphs, nodes, edges)
+* Go to definition for node IDs
 
 ## Formatter
 

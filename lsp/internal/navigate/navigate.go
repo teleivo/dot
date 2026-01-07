@@ -83,15 +83,13 @@ func collectSymbols(root *dot.Tree, result []rpc.DocumentSymbol, depth, items in
 func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 	switch t.Kind {
 	case dot.KindGraph:
-		keyword, _ := tree.GetToken(t, token.Graph|token.Digraph)
+		keyword, _ := dot.TokenFirst(t, token.Graph|token.Digraph)
 		result := rpc.DocumentSymbol{
 			Detail: keyword.Kind.String(),
 			Kind:   rpc.SymbolKindModule,
 			Range:  rpc.RangeFromToken(t.Start, t.End),
 		}
-		idTree, ok := tree.GetKind(t, dot.KindID)
-		if ok {
-			id, _ := tree.GetToken(idTree, token.ID)
+		if id, ok := dot.FirstID(t); ok {
 			result.Name = id.Literal
 			result.SelectionRange = rpc.RangeFromToken(id.Start, id.End)
 		} else {
@@ -99,16 +97,14 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 		}
 		return &result
 	case dot.KindSubgraph:
-		keyword, _ := tree.GetToken(t, token.Subgraph)
+		keyword, _ := dot.TokenFirst(t, token.Subgraph)
 		result := rpc.DocumentSymbol{
 			Detail: keyword.Kind.String(),
 			// Namespace: subgraphs group statements but don't create scope in DOT
 			Kind:  rpc.SymbolKindNamespace,
 			Range: rpc.RangeFromToken(t.Start, t.End),
 		}
-		idTree, ok := tree.GetKind(t, dot.KindID)
-		if ok {
-			id, _ := tree.GetToken(idTree, token.ID)
+		if id, ok := dot.FirstID(t); ok {
 			result.Name = id.Literal
 			result.SelectionRange = rpc.RangeFromToken(id.Start, id.End)
 		} else {
@@ -122,10 +118,8 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 			Range:          treeRange,
 			SelectionRange: treeRange,
 		}
-		nodeID, _ := tree.GetKind(t, dot.KindNodeID)
-		idTree, ok := tree.GetKind(nodeID, dot.KindID)
-		if ok {
-			id, _ := tree.GetToken(idTree, token.ID)
+		nodeID, _ := dot.TreeFirst(t, dot.KindNodeID)
+		if id, ok := dot.FirstID(nodeID); ok {
 			result.Name = id.Literal
 			result.SelectionRange = rpc.RangeFromToken(id.Start, id.End)
 		}
@@ -134,9 +128,9 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 		var sb strings.Builder
 		for _, child := range t.Children {
 			if c, ok := child.(dot.TreeChild); ok && c.Kind == dot.KindNodeID {
-				idTree, _ := tree.GetKind(c.Tree, dot.KindID)
-				id, _ := tree.GetToken(idTree, token.ID)
-				sb.WriteString(id.Literal)
+				if id, ok := dot.FirstID(c.Tree); ok {
+					sb.WriteString(id.Literal)
+				}
 			} else if tok, ok := child.(dot.TokenChild); ok && tok.Kind&(token.DirectedEdge|token.UndirectedEdge) != 0 {
 				sb.WriteByte(' ')
 				sb.WriteString(tok.Literal)
@@ -166,11 +160,7 @@ func Definition(root *dot.Tree, uri rpc.DocumentURI, pos token.Position) *rpc.Lo
 	if match.Tree == nil {
 		return nil
 	}
-	idTree, ok := tree.GetKind(match.Tree, dot.KindID)
-	if !ok {
-		return nil
-	}
-	id, ok := tree.GetToken(idTree, token.ID)
+	id, ok := dot.FirstID(match.Tree)
 	if !ok {
 		return nil
 	}
@@ -188,15 +178,7 @@ func firstNodeID(root *dot.Tree, name string) *token.Token {
 		switch c := child.(type) {
 		case dot.TreeChild:
 			if c.Kind == dot.KindNodeID {
-				idTree, ok := tree.GetKind(c.Tree, dot.KindID)
-				if !ok {
-					continue
-				}
-				id, ok := tree.GetToken(idTree, token.ID)
-				if !ok {
-					continue
-				}
-				if id.Literal == name {
+				if id, ok := dot.FirstID(c.Tree); ok && id.Literal == name {
 					return &id
 				}
 			} else if found := firstNodeID(c.Tree, name); found != nil {
@@ -218,11 +200,7 @@ func References(root *dot.Tree, uri rpc.DocumentURI, pos token.Position) []rpc.L
 	if match.Tree == nil {
 		return nil
 	}
-	idTree, ok := tree.GetKind(match.Tree, dot.KindID)
-	if !ok {
-		return nil
-	}
-	id, ok := tree.GetToken(idTree, token.ID)
+	id, ok := dot.FirstID(match.Tree)
 	if !ok {
 		return nil
 	}
@@ -240,15 +218,7 @@ func collectReferences(root *dot.Tree, uri rpc.DocumentURI, name string, result 
 		switch c := child.(type) {
 		case dot.TreeChild:
 			if c.Kind == dot.KindNodeID {
-				idTree, ok := tree.GetKind(c.Tree, dot.KindID)
-				if !ok {
-					continue
-				}
-				id, ok := tree.GetToken(idTree, token.ID)
-				if !ok {
-					continue
-				}
-				if id.Literal == name {
+				if id, ok := dot.FirstID(c.Tree); ok && id.Literal == name {
 					result = append(result, rpc.Location{URI: uri, Range: rpc.RangeFromToken(id.Start, id.End)})
 				}
 			} else {

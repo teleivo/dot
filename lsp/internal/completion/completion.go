@@ -93,7 +93,7 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 	case dot.KindSubgraph:
 		res.Comp = tree.Subgraph
 	case dot.KindNodeStmt:
-		if tree.HasKind(root, dot.KindAttrList) {
+		if _, ok := dot.TreeFirst(root, dot.KindAttrList); ok {
 			res.Comp = tree.Node
 		}
 	case dot.KindEdgeStmt:
@@ -113,13 +113,15 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 			if !pos.Before(c.Start) && !pos.After(end) {
 				// skip AttrName if cursor is past its actual end AND there's a = token
 				// (meaning we're in value position, not still typing the name)
-				if c.Kind == dot.KindAttrName && pos.After(c.End) && tree.HasToken(root, token.Equal) {
-					continue
+				if c.Kind == dot.KindAttrName && pos.After(c.End) {
+					if _, ok := dot.TokenFirst(root, token.Equal); ok {
+						continue
+					}
 				}
 				if root.Kind == dot.KindAttribute {
 					switch c.Kind {
 					case dot.KindAttrName:
-						res.HasEqual = tree.HasToken(root, token.Equal)
+						_, res.HasEqual = dot.TokenFirst(root, token.Equal)
 					case dot.KindAttrValue:
 						res.AttrName = tree.AttrName(root)
 					}
@@ -129,7 +131,9 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 				// This can happen in AList (inside [...]) or StmtList (top-level attrs).
 				if c.Kind == dot.KindErrorTree && (root.Kind == dot.KindAList || root.Kind == dot.KindStmtList) && i > 0 {
 					if prev, ok := root.Children[i-1].(dot.TreeChild); ok {
-						if prev.Kind == dot.KindAttribute && tree.HasToken(prev.Tree, token.Equal) && !tree.HasKind(prev.Tree, dot.KindAttrValue) {
+						_, hasEqual := dot.TokenFirst(prev.Tree, token.Equal)
+						_, hasValue := dot.TreeFirst(prev.Tree, dot.KindAttrValue)
+						if prev.Kind == dot.KindAttribute && hasEqual && !hasValue {
 							res.AttrName = tree.AttrName(prev.Tree)
 						}
 					}

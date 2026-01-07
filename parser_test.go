@@ -2800,7 +2800,6 @@ strict graph G3 {}`,
 				"1:23: expected ] to close attribute list",
 			},
 		},
-
 		"EdgeOperatorMismatch": {
 			in: `digraph { A -- B }
 graph { C -> D }`,
@@ -2836,6 +2835,236 @@ graph { C -> D }`,
 				"1:13: expected '->' for edge in directed graph",
 				"2:11: expected '--' for edge in undirected graph",
 			},
+		},
+		// Comment tests - placement decisions to debate
+		//
+		// Rules under consideration (rust-analyzer style):
+		// - Newlines are the boundary between leading/trailing
+		// - Trailing trivia (same line after token): belongs to preceding context
+		// - Leading trivia (new line before token): belongs to following context
+		"CommentLineBeforeGraph": {
+			in: `// c1
+// c2
+digraph {}`,
+			want: `File
+	'// c1'
+	'// c2'
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentLineAfterGraph": {
+			in: `digraph {} // c1`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+		'// c1'
+`,
+		},
+		"CommentLineBeforeStmt": {
+			in: `graph {
+	// c1
+	A
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'// c1'
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'}'
+`,
+		},
+		"CommentLineAfterStmt": {
+			in: `graph {
+	A // c1
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+						'// c1'
+		'}'
+`,
+		},
+		"CommentLineBetweenStmts": {
+			in: `graph {
+	A
+	// c1
+	B
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+			'// c1'
+			NodeStmt
+				NodeID
+					ID
+						'B'
+		'}'
+`,
+		},
+		"CommentBlockBeforeGraph": {
+			in: `/* c1 */ /* c2 */ digraph {}`,
+			want: `File
+	Graph
+		'/* c1 */'
+		'/* c2 */'
+		'digraph'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentBlockAfterGraph": {
+			in: `digraph {} /* c1 */`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+		'/* c1 */'
+`,
+		},
+		"CommentBlockBetweenGraphKeywordAndBrace": {
+			in: `graph /* c1 */ {}`,
+			want: `File
+	Graph
+		'graph'
+		'/* c1 */'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentBlockBetweenBraceAndStmt": {
+			in: `graph { /* c1 */ A }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'}'
+`,
+		},
+		"CommentBlockMidEdge": {
+			in: `graph { A -- B /* c1 */; B -- C }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+						'/* c1 */'
+			';'
+			EdgeStmt
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+		'}'
+`,
+		},
+		"CommentBlockMultiline": {
+			in: `graph {
+	/*
+	 * Multi-line
+	 * preserved exactly
+	 */
+	A
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'/*
+	 * Multi-line
+	 * preserved exactly
+	 */'
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'}'
+`,
+		},
+		"CommentPreprocessorBeforeGraph": {
+			in: `# 1 "test.dot"
+digraph {}`,
+			want: `File
+	'# 1 "test.dot"'
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentOnlyFile": {
+			in: `// c1`,
+			want: `File
+	'// c1'
+`,
+		},
+		"CommentBetweenGraphs": {
+			in: `graph G1 {}
+// c1
+graph G2 {}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'G1'
+		'{'
+		StmtList
+		'}'
+	'// c1'
+	Graph
+		'graph'
+		ID
+			'G2'
+		'{'
+		StmtList
+		'}'
+`,
 		},
 	}
 

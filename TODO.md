@@ -2,10 +2,15 @@
 
 ## Jan
 
-week 2
+week 2-3
 * fmt/lsp: support comments
 
-week 3
+  Trailing comments (same line as previous non-comment token):
+  → Attach to parent of that token, as sibling after the token
+
+  Leading comments (own line or same line as next token):
+  → Attach to parent of next token, as sibling before that token
+
 * fmt: format files/directories
 
 week 4
@@ -34,9 +39,14 @@ week 5
 ## fmt
 
 * support comments
+  * store comments as trivia in the CST, attached to adjacent tokens
+    * leading trivia (before newline) attaches to FOLLOWING token
+    * trailing trivia (after token, same line) attaches to PRECEDING token
+    * newlines are the boundary between leading/trailing
+  * printer preserves comment content exactly as-is (no wrapping to 80 cols)
+    * block comments can contain ASCII art, code examples, tables - wrapping would break these
+    * this matches Prettier, gofumpt, rust-analyzer approach
   * line comments only at first
-  * support word-wrapping
-  * how to align comments when breaking them up? right now they are not indented at all
   * add a test for a multi-line comment like `A -- B /* foo */; B -- C`
 * measure in original sets broken if text contains newline - not correct for raw strings?
   `foo\nfaa` in Go or similar with escaped newlines in DOT should not cause a newline. Add a new
@@ -55,7 +65,7 @@ week 5
 ```
 
   In this example `]` exceeds the maxCol.
-* improve error printing - print the line/snippet with ^^^ to highlight where the error is
+* improve error printing for `dotx fmt` - print the line/snippet with ^^^ to highlight where the error is
   * make error messages more user friendly - for example when parsing attr_stmt the attr_list is
     mandatory, instead of saying "expected [" could say that
 * count opening braces and brackets and decrement on closing to validate they match? Or is that

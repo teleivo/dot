@@ -59,6 +59,7 @@ type Parser struct {
 	scanner   *Scanner
 	curToken  token.Token
 	peekToken token.Token
+	comments  []token.Token
 	errors    []Error
 	directed  bool // true if parsing a digraph, false for graph
 }
@@ -82,6 +83,7 @@ func NewParser(src []byte) *Parser {
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	for p.peekToken = p.scanner.Next(); p.peekToken.Kind == token.Comment; p.peekToken = p.scanner.Next() {
+		p.comments = append(p.comments, p.peekToken)
 	}
 }
 

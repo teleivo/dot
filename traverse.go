@@ -7,7 +7,7 @@ func TreeFirst(tree *Tree, want TreeKind) (*Tree, bool) {
 	return TreeFirstWithin(tree, want, len(tree.Children))
 }
 
-// TreeFirstWithin returns the first tree matching want within children[0:last] (inclusive).
+// TreeFirstWithin returns the first child tree matching want within children[0:last] (inclusive).
 func TreeFirstWithin(tree *Tree, want TreeKind, last int) (*Tree, bool) {
 	for _, child := range tree.Children {
 		if last < 0 {
@@ -32,7 +32,7 @@ func TreeLast(tree *Tree, want TreeKind) (*Tree, bool) {
 	return nil, false
 }
 
-// TreeAt returns the tree at index if it matches want.
+// TreeAt returns the child tree at index if it matches want.
 func TreeAt(tree *Tree, want TreeKind, at int) (*Tree, bool) {
 	if at >= len(tree.Children) {
 		return nil, false
@@ -50,7 +50,7 @@ func TokenFirst(tree *Tree, want token.Kind) (token.Token, bool) {
 	return tok, ok
 }
 
-// TokenFirstWithin returns the first token matching want within children[0:last] (inclusive).
+// TokenFirstWithin returns the first child token matching want within children[0:last] (inclusive).
 func TokenFirstWithin(tree *Tree, want token.Kind, last int) (token.Token, int, bool) {
 	for i, child := range tree.Children {
 		if last < 0 {
@@ -66,7 +66,7 @@ func TokenFirstWithin(tree *Tree, want token.Kind, last int) (token.Token, int, 
 	return tok, 0, false
 }
 
-// TokenAt returns the token at index if it matches want.
+// TokenAt returns the child token at index if it matches want.
 func TokenAt(tree *Tree, want token.Kind, at int) (token.Token, bool) {
 	var tok token.Token
 	if at >= len(tree.Children) {
@@ -79,7 +79,7 @@ func TokenAt(tree *Tree, want token.Kind, at int) (token.Token, bool) {
 	return tok, false
 }
 
-// FirstID finds the first KindID child and returns its token.
+// FirstID returns the token.ID of the first KindID child tree.
 func FirstID(tree *Tree) (token.Token, bool) {
 	idTree, ok := TreeFirst(tree, KindID)
 	if !ok {

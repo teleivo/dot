@@ -92,29 +92,41 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 	switch root.Kind {
 	case dot.KindSubgraph:
 		res.Comp = tree.Subgraph
+		if id, ok := dot.FirstID(root); ok && strings.HasPrefix(id.Literal, "cluster_") {
+			res.Comp = tree.Cluster
+		}
 	case dot.KindNodeStmt:
 		if _, ok := dot.TreeFirst(root, dot.KindAttrList); ok {
 			res.Comp = tree.Node
 		}
 	case dot.KindEdgeStmt:
 		res.Comp = tree.Edge
+	case dot.KindAttrStmt:
+		if tok, ok := dot.TokenAt(root, token.Graph|token.Node|token.Edge, 0); ok {
+			switch tok.Kind {
+			case token.Graph:
+				if res.Comp != tree.Cluster && res.Comp != tree.Subgraph {
+					res.Comp = tree.Graph
+				}
+			case token.Node:
+				res.Comp = tree.Node
+			case token.Edge:
+				res.Comp = tree.Edge
+			}
+		}
 	}
 
-	for i, child := range root.Children {
+	var prev dot.TreeChild
+	for _, child := range root.Children {
 		switch c := child.(type) {
 		case dot.TreeChild:
-			if root.Kind == dot.KindSubgraph && i == 1 && c.Kind == dot.KindID && len(c.Children) > 0 {
-				if id, ok := c.Children[0].(dot.TokenChild); ok && strings.HasPrefix(id.Literal, "cluster_") {
-					res.Comp = tree.Cluster
-				}
-			}
-
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
 				// skip AttrName if cursor is past its actual end AND there's a = token
 				// (meaning we're in value position, not still typing the name)
 				if c.Kind == dot.KindAttrName && pos.After(c.End) {
 					if _, ok := dot.TokenFirst(root, token.Equal); ok {
+						prev = c
 						continue
 					}
 				}
@@ -129,32 +141,18 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 				// When cursor is inside ErrorTree following an incomplete Attribute
 				// (has = but no AttrValue), we're in value position for that attribute.
 				// This can happen in AList (inside [...]) or StmtList (top-level attrs).
-				if c.Kind == dot.KindErrorTree && (root.Kind == dot.KindAList || root.Kind == dot.KindStmtList) && i > 0 {
-					if prev, ok := root.Children[i-1].(dot.TreeChild); ok {
-						_, hasEqual := dot.TokenFirst(prev.Tree, token.Equal)
-						_, hasValue := dot.TreeFirst(prev.Tree, dot.KindAttrValue)
-						if prev.Kind == dot.KindAttribute && hasEqual && !hasValue {
-							res.AttrName = tree.AttrName(prev.Tree)
-						}
+				if c.Kind == dot.KindErrorTree && (root.Kind == dot.KindAList || root.Kind == dot.KindStmtList) && prev.Tree != nil {
+					_, hasEqual := dot.TokenFirst(prev.Tree, token.Equal)
+					_, hasValue := dot.TreeFirst(prev.Tree, dot.KindAttrValue)
+					if prev.Kind == dot.KindAttribute && hasEqual && !hasValue {
+						res.AttrName = tree.AttrName(prev.Tree)
 					}
 				}
 				context(c.Tree, pos, res)
 				return
 			}
+			prev = c
 		case dot.TokenChild:
-			if i == 0 && root.Kind == dot.KindAttrStmt {
-				switch c.Kind {
-				case token.Graph: // graph [name=value]
-					if res.Comp != tree.Cluster && res.Comp != tree.Subgraph {
-						res.Comp = tree.Graph
-					}
-				case token.Node: // node [name=value]
-					res.Comp = tree.Node
-				case token.Edge: // edge [name=value]
-					res.Comp = tree.Edge
-				}
-			}
-
 			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
 			if !pos.Before(c.Start) && !pos.After(end) {
 				// cursor on or after = in Attribute means value position

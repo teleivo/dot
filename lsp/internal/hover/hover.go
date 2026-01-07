@@ -14,27 +14,18 @@ import (
 // Info returns hover information for the symbol at the given position.
 func Info(root *dot.Tree, pos token.Position) *rpc.Hover {
 	matchAttr := tree.Find(root, pos, dot.KindAttribute)
-	if matchAttr.Tree == nil || len(matchAttr.Tree.Children) == 0 {
+	if matchAttr.Tree == nil {
 		return nil
 	}
 
-	matchAttrName, ok := matchAttr.Tree.Children[0].(dot.TreeChild)
-	if !ok || len(matchAttrName.Children) == 0 {
-		return nil
-	}
-
-	id, ok := matchAttrName.Children[0].(dot.TreeChild)
-	if !ok || len(id.Children) == 0 {
-		return nil
-	}
-	attrNameTok, ok := id.Children[0].(dot.TokenChild)
-	if !ok {
+	attrName := tree.AttrName(matchAttr.Tree)
+	if attrName == "" {
 		return nil
 	}
 
 	var attrFound *attribute.Attribute
 	for _, v := range attribute.Attributes {
-		if attrNameTok.Literal == v.Name {
+		if attrName == v.Name {
 			attrFound = &v
 			break
 		}
@@ -49,11 +40,7 @@ func Info(root *dot.Tree, pos token.Position) *rpc.Hover {
 	}
 
 	// hover might be on attribute value
-	id, ok = matchAttrValue.Tree.Children[0].(dot.TreeChild)
-	if !ok || len(id.Children) == 0 {
-		return nil
-	}
-	attrValueTok, ok := id.Children[0].(dot.TokenChild)
+	attrValueTok, ok := dot.FirstID(matchAttrValue.Tree)
 	if !ok {
 		return nil
 	}

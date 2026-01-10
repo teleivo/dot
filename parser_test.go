@@ -3068,6 +3068,269 @@ graph G2 {}`,
 		'}'
 `,
 		},
+		// Comments around tokens consumed
+		"CommentAroundAttrStmtKeyword": {
+			in: `graph { /* c1 */ node /* c2 */ [] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+			AttrStmt
+				'node'
+				'/* c2 */'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"CommentAroundSemicolon": {
+			in: `graph { A /* c1 */ ; /* c2 */ B }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+						'/* c1 */'
+			';'
+			NodeStmt
+				NodeID
+					ID
+						'/* c2 */'
+						'B'
+		'}'
+`,
+		},
+		"CommentAroundEdgeOp": {
+			in: `graph { A /* c1 */ -- /* c2 */ B }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+						'/* c1 */'
+				'--'
+				NodeID
+					ID
+						'/* c2 */'
+						'B'
+		'}'
+`,
+		},
+		"CommentInsideAttrListBrackets": {
+			in: `graph { A [ /* c1 */ color=red /* c2 */ ] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					'/* c1 */'
+					AList
+						Attribute
+							AttrName
+								ID
+									'color'
+							'='
+							AttrValue
+								ID
+									'red'
+									'/* c2 */'
+					']'
+		'}'
+`,
+		},
+		"CommentAroundCommaInAList": {
+			in: `graph { A [a=b /* c1 */ , /* c2 */ c=d] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'a'
+							'='
+							AttrValue
+								ID
+									'b'
+									'/* c1 */'
+						','
+						Attribute
+							AttrName
+								ID
+									'/* c2 */'
+									'c'
+							'='
+							AttrValue
+								ID
+									'd'
+					']'
+		'}'
+`,
+		},
+		"CommentAroundEquals": {
+			in: `graph { a /* c1 */ = /* c2 */ b }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Attribute
+				AttrName
+					ID
+						'a'
+						'/* c1 */'
+				'='
+				'/* c2 */'
+				AttrValue
+					ID
+						'b'
+		'}'
+`,
+		},
+		"CommentAroundPortColon": {
+			in: `digraph { A /* c1 */ : /* c2 */ port1 }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+						'/* c1 */'
+					Port
+						':'
+						'/* c2 */'
+						ID
+							'port1'
+		'}'
+`,
+		},
+		"CommentAroundSubgraphKeyword": {
+			in: `graph { /* c1 */ subgraph /* c2 */ foo /* c3 */ { A } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+			Subgraph
+				'subgraph'
+				'/* c2 */'
+				ID
+					'foo'
+					'/* c3 */'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+				'}'
+		'}'
+`,
+		},
+		"CommentMultilineGraph": {
+			in: `graph {
+	// comment before A
+	A
+	// comment before B
+	B // trailing on B
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'// comment before A'
+			NodeStmt
+				NodeID
+					ID
+						'A'
+			'// comment before B'
+			NodeStmt
+				NodeID
+					ID
+						'B'
+						'// trailing on B'
+		'}'
+`,
+		},
+		"CommentInsideEmptyGraph": {
+			in: `graph { /* c1 */ }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+		'}'
+`,
+		},
+		"CommentAfterClosingBrace": {
+			in: `graph {} // c1`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+		'// c1'
+`,
+		},
+		"CommentBeforeClosingBracket": {
+			in: `graph { A [color=red /* c1 */ ] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'color'
+							'='
+							AttrValue
+								ID
+									'red'
+									'/* c1 */'
+					']'
+		'}'
+`,
+		},
 	}
 
 	for name, test := range tests {

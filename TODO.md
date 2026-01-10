@@ -4,13 +4,12 @@
 
 week 2-3
 * fmt/lsp: support comments
-
-  Leading comments:
-  → Sibling to the next token if on the same line, otherwise sibling to the tree containing the
-    next token
-
-  Trailing comments:
-  → Sibling to the previous token
+  * fix p.consume()
+  * add tests for invalid parse: can I reuse the same logic?
+  * review tests: any duplicates?
+  * can I cleanup the implementation?
+  * any updates needed to the rest of the code? do all tests pass? if yes, merge and move on to
+  printer changes
 
 * fmt: format files/directories
 

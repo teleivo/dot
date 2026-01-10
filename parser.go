@@ -56,13 +56,13 @@ func (e Error) Error() string {
 // The parser uses one token of lookahead (LL(1)) and produces a [Tree] that preserves all tokens
 // from the source.
 type Parser struct {
-	scanner        *Scanner
-	curToken       token.Token
-	peekToken      token.Token
-	comments       []token.Token
-	lastNonComment token.Token
-	errors         []Error
-	directed       bool // true if parsing a digraph, false for graph
+	scanner   *Scanner
+	prevToken token.Token
+	curToken  token.Token
+	peekToken token.Token
+	comments  []token.Token
+	errors    []Error
+	directed  bool // true if parsing a digraph, false for graph
 }
 
 // NewParser creates a new parser that parses the given DOT source code.
@@ -82,7 +82,7 @@ func NewParser(src []byte) *Parser {
 
 // nextToken advances to the next non-comment token. Comments are currently skipped.
 func (p *Parser) nextToken() {
-	p.lastNonComment = p.curToken
+	p.prevToken = p.curToken
 	p.curToken = p.peekToken
 	for p.peekToken = p.scanner.Next(); p.peekToken.Kind == token.Comment; p.peekToken = p.scanner.Next() {
 		p.comments = append(p.comments, p.peekToken)
@@ -110,9 +110,12 @@ func (p *Parser) Parse() *Tree {
 			p.wrapErrorExpected(f, first)
 		}
 	}
-	// TODO bit odd to have parent and current be the same but this works if there are left over
-	// comments, like in the case of a file with only comments
-	p.flushComments(f, f)
+	// Flush remaining comments that weren't consumed during parsing.
+	// This handles comments at the very end of the file that aren't trailing
+	// (e.g., on their own line after the last graph).
+	for _, comment := range p.comments {
+		f.appendToken(comment)
+	}
 	f.Kind = KindFile
 	return f
 }
@@ -124,16 +127,16 @@ func (p *Parser) parseGraph(parent *Tree) *Tree {
 	assert.That(p.curTokenIs(token.Strict|token.Graph|token.Digraph), "current token must be strict, graph, or digraph, got %s", p.curToken)
 	graph := &Tree{Kind: KindGraph}
 
-	okStrict := p.optionalNew(parent, graph, token.Strict)
+	okStrict := p.optional(parent, graph, token.Strict)
 
 	p.directed = p.curTokenIs(token.Digraph)
 	defer func() { p.directed = false }()
 
 	var okGraph bool
 	if okStrict || p.curTokenIs(token.LeftBrace) {
-		okGraph = p.expectNew(parent, graph, token.Graph|token.Digraph)
+		okGraph = p.expect(parent, graph, token.Graph|token.Digraph)
 	} else { // optional to avoid cascading error
-		okGraph = p.optionalNew(parent, graph, token.Graph|token.Digraph)
+		okGraph = p.optional(parent, graph, token.Graph|token.Digraph)
 	}
 
 	if okGraph && p.curTokenIs(token.ID) {
@@ -159,16 +162,16 @@ func (p *Parser) parseGraph(parent *Tree) *Tree {
 
 	var okLeft bool
 	if okGraph {
-		okLeft = p.expectNew(parent, graph, token.LeftBrace)
+		okLeft = p.expect(parent, graph, token.LeftBrace)
 	} else { // optional to avoid cascading error
-		okLeft = p.optionalNew(parent, graph, token.LeftBrace)
+		okLeft = p.optional(parent, graph, token.LeftBrace)
 	}
 
 	if okLeft {
 		stmts := p.parseStatementList(parent, recoverySet)
 		graph.appendTree(stmts)
 
-		p.expectNew(parent, graph, token.RightBrace)
+		p.expect(parent, graph, token.RightBrace)
 	}
 
 	return graph
@@ -183,14 +186,14 @@ func (p *Parser) parseStatementList(parent *Tree, recoverySet token.Kind) *Tree 
 	recoverySet |= token.RightBrace | token.Semicolon
 	for !p.curTokenIs(token.RightBrace | token.EOF) {
 		if p.curTokenIs(token.ID) && p.peekTokenIs(token.Equal) { // ID '=' ID
-			stmt := p.parseAttribute(parent)
+			stmt := p.parseAttribute(stmts)
 			stmts.appendTree(stmt)
 		} else if p.curTokenIs(token.Edge | token.Graph | token.Node) { // attr_stmt  : (graph | node | edge) attr_list
 			stmt := &Tree{}
 			p.consume(stmt)
 
 			if p.curTokenIs(token.LeftBracket) { // attr_list is required
-				attrs := p.parseAttrList(parent, recoverySet|token.Edge|token.Graph|token.Node)
+				attrs := p.parseAttrList(stmts, recoverySet|token.Edge|token.Graph|token.Node)
 				stmt.appendTree(attrs)
 			} else {
 				p.error("expected [ to start attribute list")
@@ -203,18 +206,18 @@ func (p *Parser) parseStatementList(parent *Tree, recoverySet token.Kind) *Tree 
 			var operand *Tree
 			var isSubgraph bool
 			if p.curTokenIs(token.ID) {
-				operand = p.parseNodeID(parent)
+				operand = p.parseNodeID(stmts)
 			} else {
-				operand = p.parseSubgraph(parent, recoverySet)
+				operand = p.parseSubgraph(stmts, recoverySet)
 				isSubgraph = true
 			}
 
 			if p.curTokenIs(token.UndirectedEdge | token.DirectedEdge) { // edge_stmt
 				stmt := &Tree{Kind: KindEdgeStmt}
 				stmt.appendTree(operand)
-				p.parseEdgeRHS(parent, stmt, recoverySet)
+				p.parseEdgeRHS(stmts, stmt, recoverySet)
 				if p.curTokenIs(token.LeftBracket) {
-					attrs := p.parseAttrList(parent, recoverySet|token.Edge|token.Graph|token.Node)
+					attrs := p.parseAttrList(stmts, recoverySet|token.Edge|token.Graph|token.Node)
 					stmt.appendTree(attrs)
 				}
 				stmts.appendTree(stmt)
@@ -224,7 +227,7 @@ func (p *Parser) parseStatementList(parent *Tree, recoverySet token.Kind) *Tree 
 				stmt := &Tree{Kind: KindNodeStmt}
 				stmt.appendTree(operand)
 				if p.curTokenIs(token.LeftBracket) {
-					attrs := p.parseAttrList(parent, recoverySet|token.Edge|token.Graph|token.Node)
+					attrs := p.parseAttrList(stmts, recoverySet|token.Edge|token.Graph|token.Node)
 					stmt.appendTree(attrs)
 				}
 				stmts.appendTree(stmt)
@@ -299,7 +302,7 @@ func (p *Parser) parseID(parent *Tree) *Tree {
 	assert.That(p.curTokenIs(token.ID), "current token must be ID, got %s", p.curToken)
 
 	id := &Tree{Kind: KindID}
-	p.expectNew(parent, id, token.ID)
+	p.expect(parent, id, token.ID)
 	return id
 }
 
@@ -311,7 +314,7 @@ func (p *Parser) parsePort(parent *Tree) *Tree {
 	assert.That(p.curTokenIs(token.Colon), "current token must be colon, got %s", p.curToken)
 
 	port := &Tree{Kind: KindPort}
-	p.expect(port, token.Colon)
+	p.expect(parent, port, token.Colon)
 
 	firstCompass := p.curToken.IsCompassPoint()
 	var firstID *Tree
@@ -323,7 +326,7 @@ func (p *Parser) parsePort(parent *Tree) *Tree {
 	}
 
 	if p.curTokenIs(token.Colon) {
-		p.expect(port, token.Colon)
+		p.expect(parent, port, token.Colon)
 
 		secondCompass := p.curToken.IsCompassPoint()
 		if p.curTokenIs(token.ID) {
@@ -413,7 +416,7 @@ func (p *Parser) parseAttribute(parent *Tree) *Tree {
 	name.appendTree(p.parseID(parent))
 	attr.appendTree(name)
 
-	okEqual := p.expect(attr, token.Equal)
+	okEqual := p.expect(parent, attr, token.Equal)
 
 	if p.curTokenIs(token.ID) {
 		value := &Tree{Kind: KindAttrValue}
@@ -433,7 +436,7 @@ func (p *Parser) parseSubgraph(parent *Tree, recoverySet token.Kind) *Tree {
 	assert.That(p.curTokenIs(token.LeftBrace|token.Subgraph), "current token must be { or subgraph, got %s", p.curToken)
 	subgraph := &Tree{Kind: KindSubgraph}
 
-	okSubgraph := p.optional(subgraph, token.Subgraph)
+	okSubgraph := p.optional(parent, subgraph, token.Subgraph)
 
 	if okSubgraph && p.curTokenIs(token.ID) {
 		id := p.parseID(parent)
@@ -457,16 +460,16 @@ func (p *Parser) parseSubgraph(parent *Tree, recoverySet token.Kind) *Tree {
 
 	var okLeft bool
 	if okSubgraph {
-		okLeft = p.expect(subgraph, token.LeftBrace)
+		okLeft = p.expect(parent, subgraph, token.LeftBrace)
 	} else { // optional to avoid cascading error
-		okLeft = p.optional(subgraph, token.LeftBrace)
+		okLeft = p.optional(parent, subgraph, token.LeftBrace)
 	}
 
 	if okLeft {
 		stmts := p.parseStatementList(parent, recoverySet)
 		subgraph.appendTree(stmts)
 
-		p.expect(subgraph, token.RightBrace)
+		p.expect(parent, subgraph, token.RightBrace)
 	}
 
 	return subgraph
@@ -482,22 +485,9 @@ func (p *Parser) peekTokenIs(t token.Kind) bool {
 
 // optional checks if the current token matches one of the wanted kinds. If it does, consumes it.
 // Returns true if the token was consumed, false otherwise.
-func (p *Parser) optionalNew(parent *Tree, t *Tree, want token.Kind) bool {
+func (p *Parser) optional(parent *Tree, t *Tree, want token.Kind) bool {
 	if p.curTokenIs(want) {
-		t.appendToken(p.curToken)
-		p.flushComments(parent, t)
-		p.nextToken()
-		return true
-	}
-	return false
-}
-
-// optional checks if the current token matches one of the wanted kinds. If it does, consumes it.
-// Returns true if the token was consumed, false otherwise.
-func (p *Parser) optional(t *Tree, want token.Kind) bool {
-	if p.curTokenIs(want) {
-		t.appendToken(p.curToken)
-		p.nextToken()
+		p.appendToken(parent, t)
 		return true
 	}
 	return false
@@ -506,58 +496,54 @@ func (p *Parser) optional(t *Tree, want token.Kind) bool {
 // expect checks if the current token matches one of the wanted kinds. If it does, consumes it.
 // If not, reports an error but does NOT advance.
 // Returns true if the token was consumed, false otherwise.
-func (p *Parser) expectNew(parent *Tree, t *Tree, want token.Kind) bool {
+func (p *Parser) expect(parent *Tree, t *Tree, want token.Kind) bool {
 	if p.curTokenIs(want) {
-		t.appendToken(p.curToken)
-		p.flushComments(parent, t)
-		p.nextToken()
+		p.appendToken(parent, t)
 		return true
 	}
 
-	// TODO add tests for comments in invalid parse
 	p.errorExpected(want)
 
 	return false
 }
 
-func (p *Parser) flushComments(parent *Tree, t *Tree) {
+// appendToken appends the current token to tree t, flushing any buffered comments.
+//
+// Leading comments (before current token):
+//   - same line as current token: sibling to current token in t
+//   - own line: sibling to t in parent
+//
+// Trailing comments (after current token, same line): sibling to current token in t
+func (p *Parser) appendToken(parent *Tree, t *Tree) {
+	// leading comments
+	remaining := p.comments[:0]
 	for _, comment := range p.comments {
-		fmt.Printf("last token: %#v\ntoken: %#v\ncomment: %#v\n", p.lastNonComment, p.curToken, comment)
-		if comment.Start.Line == p.curToken.End.Line && comment.Start.After(p.curToken.End) {
-			t.appendToken(comment)
-		} else if comment.Start.Before(p.curToken.Start) {
+		if comment.Start.Before(p.curToken.Start) {
 			if comment.Start.Line != p.curToken.Start.Line {
 				parent.appendToken(comment)
 			} else {
 				t.appendToken(comment)
 			}
-			// } else if p.lastNonComment.End.IsValid() && p.lastNonComment.End.Line == comment.Start.Line && p.lastNonComment.End.Before(comment.Start) { // trailing comment of previous token
-			// 	parent.appendToken(comment)
-			// } else if comment.Start.Line == p.curToken.Start.Line { // leading comment of current token
-			// 	t.appendToken(comment)
-			// } else {
-			// 	// TODO how to make it
-			// 	t.appendToken(comment)
+		} else {
+			remaining = append(remaining, comment)
 		}
 	}
-	// TODO I think there is a case where I have comments for cur/peekToken in here, what about
-	// that?
-	p.comments = nil
-}
+	p.comments = remaining
 
-// expect checks if the current token matches one of the wanted kinds. If it does, consumes it.
-// If not, reports an error but does NOT advance.
-// Returns true if the token was consumed, false otherwise.
-func (p *Parser) expect(t *Tree, want token.Kind) bool {
-	if p.curTokenIs(want) {
-		t.appendToken(p.curToken)
-		p.nextToken()
-		return true
+	t.appendToken(p.curToken)
+
+	// trailing comments
+	remaining = p.comments[:0]
+	for _, comment := range p.comments {
+		if p.curToken.End.IsValid() && p.curToken.End.Before(comment.Start) && p.curToken.End.Line == comment.Start.Line {
+			t.appendToken(comment)
+		} else {
+			remaining = append(remaining, comment)
+		}
 	}
+	p.comments = remaining
 
-	p.errorExpected(want)
-
-	return false
+	p.nextToken()
 }
 
 // error records a parse error at current position with custom message.

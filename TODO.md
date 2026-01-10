@@ -5,11 +5,12 @@
 week 2-3
 * fmt/lsp: support comments
 
-  Trailing comments (same line as previous non-comment token):
-  → Attach to parent of that token, as sibling after the token
+  Leading comments:
+  → Sibling to the next token if on the same line, otherwise sibling to the tree containing the
+    next token
 
-  Leading comments (own line or same line as next token):
-  → Attach to parent of next token, as sibling before that token
+  Trailing comments:
+  → Sibling to the previous token
 
 * fmt: format files/directories
 
@@ -46,8 +47,6 @@ week 5
   * printer preserves comment content exactly as-is (no wrapping to 80 cols)
     * block comments can contain ASCII art, code examples, tables - wrapping would break these
     * this matches Prettier, gofumpt, rust-analyzer approach
-  * line comments only at first
-  * add a test for a multi-line comment like `A -- B /* foo */; B -- C`
 * measure in original sets broken if text contains newline - not correct for raw strings?
   `foo\nfaa` in Go or similar with escaped newlines in DOT should not cause a newline. Add a new
   tag/attribute? rawtext, `<text raw/>` or don't implement that?

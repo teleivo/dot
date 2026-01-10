@@ -123,6 +123,14 @@ type Tree struct {
 	Start, End token.Position
 }
 
+func (tree *Tree) appendTokenNew(parent *Tree, child token.Token) {
+	if len(tree.Children) == 0 {
+		tree.Start = child.Start
+	}
+	tree.End = child.End
+	tree.Children = append(tree.Children, TokenChild{child})
+}
+
 func (tree *Tree) appendToken(child token.Token) {
 	if len(tree.Children) == 0 {
 		tree.Start = child.Start

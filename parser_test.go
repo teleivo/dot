@@ -2836,12 +2836,14 @@ graph { C -> D }`,
 				"2:11: expected '--' for edge in undirected graph",
 			},
 		},
-		// Comment tests - placement decisions to debate
+		// Comment tests
 		//
-		// Rules under consideration (rust-analyzer style):
-		// - Newlines are the boundary between leading/trailing
-		// - Trailing trivia (same line after token): belongs to preceding context
-		// - Leading trivia (new line before token): belongs to following context
+		// Leading comments:
+		// → Sibling to the next token if on the same line, otherwise sibling to the tree
+		//   containing the next token
+		//
+		// Trailing comments:
+		// → Sibling to the previous token
 		"CommentLineBeforeGraph": {
 			in: `// c1
 // c2
@@ -3027,10 +3029,10 @@ digraph {}`,
 `,
 		},
 		"CommentPreprocessorBeforeGraph": {
-			in: `# 1 "test.dot"
+			in: `# c1
 digraph {}`,
 			want: `File
-	'# 1 "test.dot"'
+	'# c1'
 	Graph
 		'digraph'
 		'{'

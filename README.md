@@ -209,8 +209,7 @@ vim.lsp.enable('dotls')
   not account for grapheme clusters or display width, so characters like emojis (which may render as
   double-width) or combining characters will cause the formatter's column calculations to differ
   from visual appearance in editors.
-* The parser and formatter do not yet support comments while the scanner does. I plan to at least
-  support line comments.
+* The formatter does not yet support comments while the parser does.
 
 The following are not supported as I do not need them:
 

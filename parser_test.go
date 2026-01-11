@@ -2800,7 +2800,6 @@ strict graph G3 {}`,
 				"1:23: expected ] to close attribute list",
 			},
 		},
-
 		"EdgeOperatorMismatch": {
 			in: `digraph { A -- B }
 graph { C -> D }`,
@@ -2835,6 +2834,792 @@ graph { C -> D }`,
 			wantErrors: []string{
 				"1:13: expected '->' for edge in directed graph",
 				"2:11: expected '--' for edge in undirected graph",
+			},
+		},
+		// Comment tests
+		//
+		// Leading comments:
+		// → Sibling to the next token if on the same line, otherwise sibling to the tree
+		//   containing the next token
+		//
+		// Trailing comments:
+		// → Sibling to the previous token
+
+		// Line comments - file level
+		"CommentLineBeforeGraph": {
+			in: `// c1
+// c2
+digraph {}`,
+			want: `File
+	'// c1'
+	'// c2'
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentLineAfterGraph": {
+			in: `digraph {} // c1`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+		'// c1'
+`,
+		},
+		"CommentLineBetweenGraphs": {
+			in: `graph G1 {}
+// c1
+graph G2 {}`,
+			want: `File
+	Graph
+		'graph'
+		ID
+			'G1'
+		'{'
+		StmtList
+		'}'
+	'// c1'
+	Graph
+		'graph'
+		ID
+			'G2'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentPreprocessorBeforeGraph": {
+			in: `# c1
+digraph {}`,
+			want: `File
+	'# c1'
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+
+		// Line comments - statement level
+		"CommentLineBeforeStmt": {
+			in: `graph {
+	// c1
+	A
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'// c1'
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'}'
+`,
+		},
+		"CommentLineAfterStmt": {
+			in: `graph {
+	A // c1
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+						'// c1'
+		'}'
+`,
+		},
+		"CommentLineBetweenStmts": {
+			in: `graph {
+	A
+	// c1
+	B
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+			'// c1'
+			NodeStmt
+				NodeID
+					ID
+						'B'
+		'}'
+`,
+		},
+
+		// Block comments - same line
+		"CommentBlockBeforeGraph": {
+			in: `/* c1 */ /* c2 */ digraph {}`,
+			want: `File
+	Graph
+		'/* c1 */'
+		'/* c2 */'
+		'digraph'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentBlockAfterGraph": {
+			in: `digraph {} /* c1 */`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+		'}'
+		'/* c1 */'
+`,
+		},
+		"CommentBlockBetweenGraphKeywordAndBrace": {
+			in: `graph /* c1 */ {}`,
+			want: `File
+	Graph
+		'graph'
+		'/* c1 */'
+		'{'
+		StmtList
+		'}'
+`,
+		},
+		"CommentBlockBetweenBraceAndStmt": {
+			in: `graph { /* c1 */ A }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'}'
+`,
+		},
+		"CommentBlockMidEdge": {
+			in: `graph { A -- B /* c1 */; B -- C }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'--'
+				NodeID
+					ID
+						'B'
+						'/* c1 */'
+			';'
+			EdgeStmt
+				NodeID
+					ID
+						'B'
+				'--'
+				NodeID
+					ID
+						'C'
+		'}'
+`,
+		},
+
+		// Block comments around specific tokens (same line)
+		"CommentAroundEquals": {
+			in: `graph { a /* c1 */ = /* c2 */ b }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Attribute
+				AttrName
+					ID
+						'a'
+						'/* c1 */'
+				'='
+				'/* c2 */'
+				AttrValue
+					ID
+						'b'
+		'}'
+`,
+		},
+		"CommentAroundEdgeOp": {
+			in: `graph { A /* c1 */ -- /* c2 */ B }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+						'/* c1 */'
+				'--'
+				'/* c2 */'
+				NodeID
+					ID
+						'B'
+		'}'
+`,
+		},
+		"CommentAroundSemicolon": {
+			in: `graph { A /* c1 */ ; /* c2 */ B }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+						'/* c1 */'
+			';'
+			'/* c2 */'
+			NodeStmt
+				NodeID
+					ID
+						'B'
+		'}'
+`,
+		},
+		"CommentAroundCommaInAList": {
+			in: `graph { A [a=b /* c1 */ , /* c2 */ c=d] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'a'
+							'='
+							AttrValue
+								ID
+									'b'
+									'/* c1 */'
+						','
+						'/* c2 */'
+						Attribute
+							AttrName
+								ID
+									'c'
+							'='
+							AttrValue
+								ID
+									'd'
+					']'
+		'}'
+`,
+		},
+		"CommentAroundPortColon": {
+			in: `digraph { A /* c1 */ : /* c2 */ port1 }`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+						'/* c1 */'
+					Port
+						':'
+						'/* c2 */'
+						ID
+							'port1'
+		'}'
+`,
+		},
+		"CommentAroundAttrStmtKeyword": {
+			in: `graph { /* c1 */ node /* c2 */ [] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+			AttrStmt
+				'node'
+				'/* c2 */'
+				AttrList
+					'['
+					']'
+		'}'
+`,
+		},
+		"CommentAroundSubgraphKeyword": {
+			in: `graph { /* c1 */ subgraph /* c2 */ foo /* c3 */ { A } }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+			Subgraph
+				'subgraph'
+				'/* c2 */'
+				ID
+					'foo'
+					'/* c3 */'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+				'}'
+		'}'
+`,
+		},
+		"CommentInsideAttrListBrackets": {
+			in: `graph { A [ /* c1 */ color=red /* c2 */ ] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					'/* c1 */'
+					AList
+						Attribute
+							AttrName
+								ID
+									'color'
+							'='
+							AttrValue
+								ID
+									'red'
+									'/* c2 */'
+					']'
+		'}'
+`,
+		},
+		"CommentBeforeClosingBracket": {
+			in: `graph { A [color=red /* c1 */ ] }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'color'
+							'='
+							AttrValue
+								ID
+									'red'
+									'/* c1 */'
+					']'
+		'}'
+`,
+		},
+		// Multiline scenarios
+		"CommentBlockMultiline": {
+			in: `graph {
+	/*
+	 * Multi-line
+	 * preserved exactly
+	 */
+	A
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'/*
+	 * Multi-line
+	 * preserved exactly
+	 */'
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'}'
+`,
+		},
+		"CommentLineMultilineGraph": {
+			in: `graph {
+	// comment before A
+	A
+	// comment before B
+	B // trailing on B
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'// comment before A'
+			NodeStmt
+				NodeID
+					ID
+						'A'
+			'// comment before B'
+			NodeStmt
+				NodeID
+					ID
+						'B'
+						'// trailing on B'
+		'}'
+`,
+		},
+		"CommentBlockMultilineGraph": {
+			in: `graph {
+	/*
+	 * Block comment
+	 * before A
+	 */
+	"node
+A"
+	/*
+	 * Block comment
+	 * before B
+	 */
+	"node
+B" /* trailing */
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'/*
+	 * Block comment
+	 * before A
+	 */'
+			NodeStmt
+				NodeID
+					ID
+						'"node
+A"'
+			'/*
+	 * Block comment
+	 * before B
+	 */'
+			NodeStmt
+				NodeID
+					ID
+						'"node
+B"'
+						'/* trailing */'
+		'}'
+`,
+		},
+		// Edge cases
+		"CommentOnlyFile": {
+			in: `// c1`,
+			want: `File
+	'// c1'
+`,
+		},
+		"CommentInsideEmptyGraph": {
+			in: `graph { /* c1 */ }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+		'}'
+`,
+		},
+		"CommentAfterClosingBrace": {
+			in: `graph {} // c1`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+		'// c1'
+`,
+		},
+		// Comments before tokens consumed via consume() stay inside that tree
+		// rather than being elevated to parent (since consume passes t as both
+		// parent and tree to appendToken).
+		"CommentOwnLineBeforeEdgeOp": {
+			in: `graph {
+	A
+	/* c1 */
+	-- B
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			EdgeStmt
+				NodeID
+					ID
+						'A'
+				'/* c1 */'
+				'--'
+				NodeID
+					ID
+						'B'
+		'}'
+`,
+		},
+		"CommentOwnLineBeforeAttrListBracket": {
+			in: `graph {
+	A
+	/* c1 */
+	[color=red]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'/* c1 */'
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'color'
+							'='
+							AttrValue
+								ID
+									'red'
+					']'
+		'}'
+`,
+		},
+		"CommentOwnLineBeforeAttrStmtKeyword": {
+			in: `graph {
+	/* c1 */
+	node [color=red]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			AttrStmt
+				'/* c1 */'
+				'node'
+				AttrList
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'color'
+							'='
+							AttrValue
+								ID
+									'red'
+					']'
+		'}'
+`,
+		},
+		"CommentOwnLineBeforeClosingBracket": {
+			in: `graph {
+	A [color=red
+	/* c1 */
+	]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'color'
+							'='
+							AttrValue
+								ID
+									'red'
+					'/* c1 */'
+					']'
+		'}'
+`,
+		},
+		"CommentOwnLineBeforeCommaInAList": {
+			in: `graph {
+	A [a=b
+	/* c1 */
+	, c=d]
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+				AttrList
+					'['
+					AList
+						Attribute
+							AttrName
+								ID
+									'a'
+							'='
+							AttrValue
+								ID
+									'b'
+						'/* c1 */'
+						','
+						Attribute
+							AttrName
+								ID
+									'c'
+							'='
+							AttrValue
+								ID
+									'd'
+					']'
+		'}'
+`,
+		},
+		// Comments around error tokens
+		"CommentBeforeScannerError": {
+			in: `graph { /* c1 */ @ }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		'/* c1 */'
+		StmtList
+			ErrorTree
+				'ERROR'
+		'}'
+`,
+			wantErrors: []string{
+				"1:18: invalid character '@': unquoted IDs must start with a letter or underscore",
+			},
+		},
+		"CommentAfterScannerError": {
+			in: `graph { @ /* c1 */ }`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			ErrorTree
+				'ERROR'
+				'/* c1 */'
+		'}'
+`,
+			wantErrors: []string{
+				"1:9: invalid character '@': unquoted IDs must start with a letter or underscore",
+			},
+		},
+		"CommentOwnLineBeforeScannerError": {
+			in: `graph {
+	/* c1 */
+	@
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			'/* c1 */'
+			ErrorTree
+				'ERROR'
+		'}'
+`,
+			wantErrors: []string{
+				"3:2: invalid character '@': unquoted IDs must start with a letter or underscore",
+			},
+		},
+		"CommentBeforeParseError": {
+			in: `/* c1 */ stict graph {}`,
+			want: `File
+	ErrorTree
+		'/* c1 */'
+		'stict'
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				"1:10: unexpected token ID 'stict', expected digraph, graph or strict",
+			},
+		},
+		"CommentAfterParseError": {
+			in: `stict /* c1 */ graph {}`,
+			want: `File
+	ErrorTree
+		'stict'
+		'/* c1 */'
+	Graph
+		'graph'
+		'{'
+		StmtList
+		'}'
+`,
+			wantErrors: []string{
+				"1:1: unexpected token ID 'stict', expected digraph, graph or strict",
 			},
 		},
 	}

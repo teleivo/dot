@@ -109,7 +109,7 @@ type Token struct {
 // String returns the string representation of the token. For IDs, it returns the literal
 // value. For other token types, it returns the token type's string representation.
 func (t Token) String() string {
-	if t.Kind == ID {
+	if t.Kind == ID || t.Kind == Comment {
 		return t.Literal
 	}
 

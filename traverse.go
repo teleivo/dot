@@ -7,39 +7,53 @@ func TreeFirst(tree *Tree, want TreeKind) (*Tree, bool) {
 	return TreeFirstWithin(tree, want, len(tree.Children))
 }
 
-// TreeFirstWithin returns the first child tree matching want within children[0:last] (inclusive).
+// TreeFirstWithin returns the first child tree matching want within [0, last]. Comments are
+// skipped.
 func TreeFirstWithin(tree *Tree, want TreeKind, last int) (*Tree, bool) {
+	var pos int
 	for _, child := range tree.Children {
-		if last < 0 {
+		if tc, ok := child.(TokenChild); ok && tc.Kind == token.Comment {
+			continue
+		}
+		if pos > last {
 			break
 		}
-
 		if tc, ok := child.(TreeChild); ok && tc.Kind&want != 0 {
 			return tc.Tree, true
 		}
-		last--
+		pos++
 	}
 	return nil, false
 }
 
-// TreeLast returns the last child tree matching want.
+// TreeLast returns the last child tree matching want. Comments are skipped.
 func TreeLast(tree *Tree, want TreeKind) (*Tree, bool) {
 	for i := len(tree.Children) - 1; i >= 0; i-- {
-		if tc, ok := tree.Children[i].(TreeChild); ok && tc.Kind&want != 0 {
+		child := tree.Children[i]
+		if tc, ok := child.(TokenChild); ok && tc.Kind == token.Comment {
+			continue
+		}
+		if tc, ok := child.(TreeChild); ok && tc.Kind&want != 0 {
 			return tc.Tree, true
 		}
 	}
 	return nil, false
 }
 
-// TreeAt returns the child tree at index if it matches want.
+// TreeAt returns the child tree at semantic index if it matches want. Comments are skipped.
 func TreeAt(tree *Tree, want TreeKind, at int) (*Tree, bool) {
-	if at >= len(tree.Children) {
-		return nil, false
-	}
-
-	if tc, ok := tree.Children[at].(TreeChild); ok && tc.Kind&want != 0 {
-		return tc.Tree, true
+	var pos int
+	for _, child := range tree.Children {
+		if tc, ok := child.(TokenChild); ok && tc.Kind == token.Comment {
+			continue
+		}
+		if pos == at {
+			if tc, ok := child.(TreeChild); ok && tc.Kind&want != 0 {
+				return tc.Tree, true
+			}
+			return nil, false
+		}
+		pos++
 	}
 	return nil, false
 }
@@ -50,31 +64,41 @@ func TokenFirst(tree *Tree, want token.Kind) (token.Token, bool) {
 	return tok, ok
 }
 
-// TokenFirstWithin returns the first child token matching want within children[0:last] (inclusive).
+// TokenFirstWithin returns the first child token matching want within [0, last]. Comments are
+// skipped. The returned index is the semantic index.
 func TokenFirstWithin(tree *Tree, want token.Kind, last int) (token.Token, int, bool) {
-	for i, child := range tree.Children {
-		if last < 0 {
+	var pos int
+	for _, child := range tree.Children {
+		if tc, ok := child.(TokenChild); ok && tc.Kind == token.Comment {
+			continue
+		}
+		if pos > last {
 			break
 		}
-
 		if tc, ok := child.(TokenChild); ok && tc.Kind&want != 0 {
-			return tc.Token, i, true
+			return tc.Token, pos, true
 		}
-		last--
+		pos++
 	}
 	var tok token.Token
 	return tok, 0, false
 }
 
-// TokenAt returns the child token at index if it matches want.
+// TokenAt returns the child token at semantic index if it matches want. Comments are skipped.
 func TokenAt(tree *Tree, want token.Kind, at int) (token.Token, bool) {
 	var tok token.Token
-	if at >= len(tree.Children) {
-		return tok, false
-	}
-
-	if tc, ok := tree.Children[at].(TokenChild); ok && tc.Kind&want != 0 {
-		return tc.Token, true
+	var pos int
+	for _, child := range tree.Children {
+		if tc, ok := child.(TokenChild); ok && tc.Kind == token.Comment {
+			continue
+		}
+		if pos == at {
+			if tc, ok := child.(TokenChild); ok && tc.Kind&want != 0 {
+				return tc.Token, true
+			}
+			return tok, false
+		}
+		pos++
 	}
 	return tok, false
 }

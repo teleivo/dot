@@ -172,7 +172,7 @@ func (p *Parser) parseGraph(parent *Tree) *Tree {
 		stmts := p.parseStatementList(recoverySet)
 		graph.appendTree(stmts)
 
-		p.expect(parent, graph, token.RightBrace)
+		p.expect(graph, graph, token.RightBrace)
 	}
 
 	return graph
@@ -470,7 +470,7 @@ func (p *Parser) parseSubgraph(parent *Tree, recoverySet token.Kind) *Tree {
 		stmts := p.parseStatementList(recoverySet)
 		subgraph.appendTree(stmts)
 
-		p.expect(parent, subgraph, token.RightBrace)
+		p.expect(subgraph, subgraph, token.RightBrace)
 	}
 
 	return subgraph

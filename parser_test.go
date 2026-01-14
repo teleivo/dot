@@ -3382,6 +3382,49 @@ B"'
 		'// c1'
 `,
 		},
+		"CommentOwnLineBeforeClosingBrace": {
+			in: `graph {
+	A
+	// c1
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+		'// c1'
+		'}'
+`,
+		},
+		"CommentOwnLineBeforeClosingBraceInSubgraph": {
+			in: `graph {
+	subgraph {
+		A
+		// c1
+	}
+}`,
+			want: `File
+	Graph
+		'graph'
+		'{'
+		StmtList
+			Subgraph
+				'subgraph'
+				'{'
+				StmtList
+					NodeStmt
+						NodeID
+							ID
+								'A'
+				'// c1'
+				'}'
+		'}'
+`,
+		},
 		// Comments before tokens consumed via consume() stay inside that tree
 		// rather than being elevated to parent (since consume passes t as both
 		// parent and tree to appendToken).

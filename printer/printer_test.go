@@ -21,13 +21,15 @@ func TestPrint(t *testing.T) {
 
 			`,
 			want: `strict graph {
-}`,
+}
+`,
 		},
 		"GraphWithID": {
 			in: `strict graph
 					"galaxy"     {}`,
 			want: `strict graph "galaxy" {
-}`,
+}
+`,
 		},
 		"NodeStmtWithAttributeIDPastMaxColumn": {
 			in: `graph {
@@ -37,7 +39,8 @@ func TestPrint(t *testing.T) {
 	"Node1234" [
 		label="This is a test of a long attribute value that is past the max column which should be split on word boundaries several times of course as long as this is necessary it should also respect giant URLs https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13"
 	]
-}`,
+}
+`,
 		},
 		"NodeStatementsWithPorts": {
 			in: `graph {
@@ -53,7 +56,8 @@ func TestPrint(t *testing.T) {
 	B:"center"
 	C:"south"
 	D:n
-}`,
+}
+`,
 		},
 		"NodeStmtWithSingleAttribute": {
 			in: `graph {
@@ -61,7 +65,8 @@ A        	[ 	label="blue",]
 			}`,
 			want: `graph {
 	A [label="blue"]
-}`,
+}
+`,
 		},
 		"NodeStmtWithMultipleAttributes": {
 			in: `graph {
@@ -69,7 +74,8 @@ A     [ 	label="blue", color=grey; size=0.1,]
 			}`,
 			want: `graph {
 	A [label="blue",color=grey,size=0.1]
-}`,
+}
+`,
 		},
 		"NodeStmtWithMultipleAttributeLists": {
 			in: `graph {
@@ -77,7 +83,8 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 			}`,
 			want: `graph {
 	A [label="blue"] [color=grey,size=0.1] []
-}`,
+}
+`,
 		},
 		"EdgeStmtDigraph": {
 			in: `digraph {
@@ -88,7 +95,8 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 			want: `digraph {
 	3 -> 2 -> 4 [color="blue",len=2.6]
 	rank=same
-}`,
+}
+`,
 		},
 		"EdgeStmtWithAttributesPastMaxColumn": {
 			in: `digraph {
@@ -104,7 +112,8 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		arrowtail="halfopen"
 	]
 	rank=same
-}`,
+}
+`,
 		},
 		"EdgeStmtWithFirstAttributeListFitting": {
 			in: `digraph {
@@ -117,7 +126,8 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		arrowhead=diamond
 	]
 	rank=same
-}`,
+}
+`,
 		},
 		"EdgeStmtWithMultipleAttributeListsPastMaxColumn": {
 			in: `digraph {
@@ -137,7 +147,8 @@ A     [ 	label="blue", ] [color=grey ;	size =	0.1,] [ ]
 		taillabel="tail"
 	]
 	rank=same
-}`,
+}
+`,
 		},
 		"EdgeStmtWithSubgraphs": {
 			in: `
@@ -161,7 +172,8 @@ graph {
 		3
 		4
 	}
-}`,
+}
+`,
 		},
 		"AttrStmtsEmpty": {
 			in: `graph { node []; edge[]; graph[];}`,
@@ -169,7 +181,8 @@ graph {
 	node []
 	edge []
 	graph []
-}`,
+}
+`,
 		},
 		"AttrStmtWithEmptyAndSingleAttribute": {
 			in: `graph {
@@ -177,7 +190,8 @@ graph    [] [ 	label="blue",]
 			}`,
 			want: `graph {
 	graph [] [label="blue"]
-}`,
+}
+`,
 		},
 		"AttributeStmtWithSingleAttribute": {
 			in: `graph {
@@ -188,7 +202,8 @@ label="blue"; minlen=2;
 	label="blue"
 	minlen=2
 	color=grey
-}`,
+}
+`,
 		},
 		"Subgraph": {
 			in: `digraph {
@@ -216,7 +231,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 			Grandparent4 -> Parent2
 		}
 	}
-}`,
+}
+`,
 		},
 		"SubgraphWithoutKeyword": {
 			in: `graph
@@ -228,7 +244,8 @@ Grandparent1  -> Parent1; Grandparent2 -> Parent1;
 		A -- B
 		C -- E
 	}
-}`,
+}
+`,
 		},
 		"MultipleGraphs": {
 			in: `graph G1 { A }
@@ -238,7 +255,8 @@ digraph G2 { B -> C }`,
 }
 digraph G2 {
 	B -> C
-}`,
+}
+`,
 		},
 		"EscapeSequencesInStrings": {
 			in: `graph {
@@ -252,140 +270,444 @@ D [label="backslash\\here"]
 	B [label="tab\there"]
 	C [label="quote\"here"]
 	D [label="backslash\\here"]
-}`,
+}
+`,
 		},
-		// 		"CommentsWithOnlyWhitespaceAreDiscarded": {
-		// 			in: `graph {
-		// 		#
-		// 			//
-		//   /*
+		// Comment tests
 		//
-		// 			*/
+		// Line comments are preserved as-is with only indentation adjusted.
+		// Content is never modified: no line wrapping, no whitespace normalization.
+
+		// Basic placement
+		"CommentLineBeforeStmt": {
+			in: `graph {
+	// comment before A
+A
+}`,
+			want: `graph {
+	// comment before A
+	A
+}
+`,
+		},
+		"CommentTrailingID": {
+			in: `graph {
+A    //   trailing   spaces   preserved
+}`,
+			want: `graph {
+	A //   trailing   spaces   preserved
+}
+`,
+		},
+		"CommentTrailingAttrStmtTarget": {
+			in: `graph {
+node    //   trailing
+[color=red]
+}`,
+			want: `graph {
+	node //   trailing
+	[color=red]
+}
+`,
+		},
+		"CommentTrailingNodeID": {
+			in: `graph {
+A    //   trailing
+[color=red]
+}`,
+			want: `graph {
+	A //   trailing
+	[color=red]
+}
+`,
+		},
+		"CommentTrailingEdgeStmt": {
+			in: `digraph {
+A -> B    //   trailing
+[color=red]
+}`,
+			want: `digraph {
+	A -> B //   trailing
+	[color=red]
+}
+`,
+		},
+		"CommentTrailingSubgraphKeyword": {
+			in: `graph {
+subgraph    //   trailing
+{
+A
+}
+}`,
+			want: `graph {
+	subgraph //   trailing
+	{
+		A
+	}
+}
+`,
+		},
+		"CommentTrailingCompassPoint": {
+			in: `graph {
+A:n    //   trailing
+}`,
+			want: `graph {
+	A:n //   trailing
+}
+`,
+		},
+		"CommentTrailingPortWithCompassPoint": {
+			in: `graph {
+A:port:sw    //   trailing
+}`,
+			want: `graph {
+	A:port:sw //   trailing
+}
+`,
+		},
+		"CommentTrailingAttrName": {
+			in: `graph {
+color    //   trailing
+= red
+}`,
+			want: `graph {
+	color //   trailing
+	=red
+}
+`,
+		},
+		"CommentTrailingAttrValue": {
+			in: `graph {
+color = red    //   trailing
+}`,
+			want: `graph {
+	color=red //   trailing
+}
+`,
+		},
+		// TODO: block comments
+		// "CommentBlockBeforeStmt": {
+		// 	in: `graph {
+		// 		/* comment before A */
+		// A
 		// }`,
-		// 			want: `graph {
+		// 	want: `graph {
+		// 	/* comment before A */
+		// 	A
 		// }`,
-		// 		},
-		// 		"CommentsSingleLineAreChangedToCppMarker": {
-		// 			in: `graph {
-		// 		//this   is a comment! that has exactly 100 runes, 	which is the max column of dotfmt like it or not!
-		// #this   is a comment! that has exactly 100 runes, 	which is the max column of dotfmt like it or not!
+		// },
+		// "CommentBlockAfterStmt": {
+		// 	in: `graph {
+		// A /* trailing comment */
 		// }`,
-		// 			want: `graph {
-		// // this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
-		// // this is a comment! that has exactly 100 runes, which is the max column of dotfmt like it or not!
+		// 	want: `graph {
+		// 	A /* trailing comment */
 		// }`,
-		// 		},
-		// 		"CommentsSingleLineThatExceedMaxColumnAreBrokenUp": {
-		// 			in: `graph {
-		// 		//this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
-		// #this   is a comment! that has a bit more than 100 runes, 	which is the max column of dotfmt like it or not!
-		// // this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or knot2!
-		// }`,
-		// 			want: `graph {
-		// // this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
-		// // or not!
-		// // this is a comment! that has a bit more than 100 runes, which is the max column of dotfmt like it
-		// // or not!
-		// // this is a comment! that has exactly 101 runes, which is the max column of dotfmt like it or
-		// // knot2!
-		// }`,
-		// 		},
-		// 		"CommentsMultiLineThatFitOntoSingleLineAreChangedToSingleLineMarker": {
-		// 			in: `graph {
-		// 			/*	  this is a multi-line marker
-		// 			comment that fits onto a single line                            */
-		// }`,
-		// 			want: `graph {
-		// // this is a multi-line marker comment that fits onto a single line
-		// }`,
-		// 		},
-		// 		"CommentsMultiLineAreAreChangedToCppMarkerRespectingWordBoundaries": {
-		// 			in: `graph {
-		// 	/* this is a multi-line comment that will not fit onto a single line so it will stay a
-		// 			 multi-line comment but get stripped of its      superfluous    whitespace
-		//
-		// 			nonetheless
-		//
-		// 			*/
-		// }`,
-		// 			want: `graph {
-		// // this is a multi-line comment that will not fit onto a single line so it will stay a multi-line
-		// // comment but get stripped of its superfluous whitespace nonetheless
-		// }`,
-		// 		},
-		// 		"CommentsMultiLineWithWordsWhichAreGreaterThanMaxColumnAreNotBrokenUp": {
-		// 			in: `graph {
-		// 	// this uses a single-line marker but is too long for a single line https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
-		// }`,
-		// 			want: `graph {
-		// // this uses a single-line marker but is too long for a single line
-		// // https://github.com/teleivo/dot/blob/fake/27b6dbfe4b99f67df74bfb7323e19d6c547f68fd/parser_test.go#L13
-		// }`,
-		// 		},
-		// 		"CommentsWithSingleWord": {
-		// 			in: `graph {//graph
-		// 	C -- subgraph {//subgraph
-		// 	}
-		// }`,
-		// 			want: `graph { // graph
-		// 	C -- subgraph { // subgraph
-		// 	}
-		// }`,
-		// 		},
-		// 		"CommentsOnSubgraphStickToPreviousTokens": {
-		// 			in: `graph {
-		// 	C -- subgraph {
-		// 		D   //D is cool
-		// // stay with E
-		// 		E
-		// 	} // comment the subgraph
-		//
-		// 		}`,
-		// 			want: `graph {
-		// 	C -- subgraph {
-		// 		D // D is cool
-		// 		// stay with E
-		// 		E
-		// 	} // comment the subgraph
-		// }`,
-		// 		},
-		// 		"CommentsStickToAttributes": {
-		// 			in: `graph {
-		// 	A [
-		// 		style="filled" // always
-		// 		color="pink" // what else!
-		// 	] //  keep me
-		// }`,
-		// 			want: `graph {
-		// 	A [
-		// 		style="filled" // always
-		// 		color="pink" // what else!
-		// 	] // keep me
-		// }`,
-		// 		},
-		// 		"CommentsBeforeGraph": {
-		// 			in: `
-		// 			// this is my graph
-		// 							// and I do what I want to!
-		//
-		// 			graph {
+		// },
+
+		// Indentation correction
+		// "CommentIndentationCorrectedInNestedSubgraph": {
+		// 	in: `graph {
+		// // wrong indent
+		// 	A
+		// 	subgraph {
+		// 			// wrong indent in subgraph
+		// 		B
+		// 		subgraph {
+		// // deeply wrong indent
+		// 			C
 		// 		}
-		//
-		// `,
-		// 			want: `// this is my graph
-		// // and I do what I want to!
-		// graph {
+		// 	}
 		// }`,
-		// 		},
-		// 		"CommentsAfterGraph": {
-		// 			in: `graph {
-		// 		}//this is kept here
-		//
-		// 			//	 oh wait !`,
-		// 			want: `graph {
-		// } // this is kept here
-		// // oh wait !`,
-		// 		},
+		// 	want: `graph {
+		// 	// wrong indent
+		// 	A
+		// 	subgraph {
+		// 		// wrong indent in subgraph
+		// 		B
+		// 		subgraph {
+		// 			// deeply wrong indent
+		// 			C
+		// 		}
+		// 	}
+		// }`,
+		// },
+		// Content preservation - max column is NOT applied to comments
+		// "CommentLineExceedingMaxColumnPreserved": {
+		// 	in: `graph {
+		// 	// this is a very long comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping
+		// 	A
+		// }`,
+		// 	want: `graph {
+		// 	// this is a very long comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping
+		// 	A
+		// }`,
+		// },
+		// TODO: block comments
+		// "CommentBlockExceedingMaxColumnPreserved": {
+		// 	in: `graph {
+		// 	/* this is a very long block comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping */
+		// 	A
+		// }`,
+		// 	want: `graph {
+		// 	/* this is a very long block comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping */
+		// 	A
+		// }`,
+		// },
+		// "CommentBlockMultilineFormattingPreserved": {
+		// 	in: `graph {
+		// 	/*
+		// 	 * This block comment has
+		// 	 * intentional formatting with
+		// 	 * aligned asterisks that must
+		// 	 * be preserved exactly
+		// 	 */
+		// 	A
+		// }`,
+		// 	want: `graph {
+		// 	/*
+		// 	 * This block comment has
+		// 	 * intentional formatting with
+		// 	 * aligned asterisks that must
+		// 	 * be preserved exactly
+		// 	 */
+		// 	A
+		// }`,
+		// },
+		// "CommentInternalWhitespacePreserved": {
+		// 	in: `graph {
+		// 	//    multiple   spaces   preserved
+		// 	A
+		// }`,
+		// 	want: `graph {
+		// 	//    multiple   spaces   preserved
+		// 	A
+		// }`,
+		// },
+
+		// Multiple comment types
+		// "CommentPreprocessorStyle": {
+		// 	in: `# preprocessor comment
+		// graph {
+		// 		# inside graph
+		// 	A
+		// }`,
+		// 	want: `# preprocessor comment
+		// graph {
+		// 	# inside graph
+		// 	A
+		// }`,
+		// },
+		// TODO: block comments
+		// "CommentMixedTypes": {
+		// 	in: `// line comment
+		// # preprocessor comment
+		// /* block comment */
+		// graph {
+		// 	A
+		// }`,
+		// 	want: `// line comment
+		// # preprocessor comment
+		// /* block comment */
+		// graph {
+		// 	A
+		// }`,
+		// },
+
+		// Edge cases
+		// "CommentOnlyFile": {
+		// 	in: `// just a comment`,
+		// 	want: `// just a comment`,
+		// },
+		// TODO: block comments
+		// "CommentInEmptyGraph": {
+		// 	in: `graph {
+		// 		/* comment in empty graph */
+		// }`,
+		// 	want: `graph {
+		// 	/* comment in empty graph */
+		// }`,
+		// },
+		// "CommentBetweenGraphs": {
+		// 	in: `graph G1 {
+		// 	A
+		// }
+		// // between graphs
+		// graph G2 {
+		// 	B
+		// }`,
+		// 	want: `graph G1 {
+		// 	A
+		// }
+		// // between graphs
+		// graph G2 {
+		// 	B
+		// }`,
+		// },
+		// TODO: block comments
+		// "CommentAroundAttributes": {
+		// 	in: `graph {
+		// 	A [
+		// 		/* before attr */ color=red /* after value */
+		// 	]
+		// }`,
+		// 	want: `graph {
+		// 	A [/* before attr */ color=red /* after value */]
+		// }`,
+		// },
+		"CommentBeforeClosingBrace": {
+			in: `graph {
+	A
+	// c1
+}`,
+			want: `graph {
+	A
+	// c1
+}
+`,
+		},
+		"CommentBeforeClosingBraceInSubgraph": {
+			in: `graph {
+	subgraph {
+		A
+		// c1
+	}
+}`,
+			want: `graph {
+	subgraph {
+		A
+		// c1
+	}
+}
+`,
+		},
+		"CommentBeforeClosingBracket": {
+			in: `graph {
+	A [
+		color=red
+		// c1
+	]
+}`,
+			want: `graph {
+	A [
+		color=red
+		// c1
+	]
+}
+`,
+		},
+		"CommentTrailingAttrEquals": {
+			in: `graph {
+	a= // c1
+b
+}`,
+			want: `graph {
+	a= // c1
+	b
+}
+`,
+		},
+		"CommentTrailingEdgeOperator": {
+			in: `digraph {
+A -> // c1
+B
+}`,
+			want: `digraph {
+	A -> // c1
+	B
+}
+`,
+		},
+		"CommentLeadingEdgeOperator": {
+			in: `digraph {
+A
+// c1
+-> B
+}`,
+			want: `digraph {
+	A
+	// c1
+	-> B
+}
+`,
+		},
+		// File-level comments (between graphs)
+		"CommentFile": {
+			in: `// c1
+
+// c2
+graph {}
+// c3
+graph {}
+// c4`,
+			want: `// c1
+// c2
+graph {
+}
+// c3
+graph {
+}
+// c4
+`,
+		},
+		"CommentTrailingFirstGraph": {
+			in: `graph {} // c1
+graph {}`,
+			want: `graph {
+} // c1
+graph {
+}
+`,
+		},
+		"CommentSingleHash": {
+			in: `#!/usr/local/bin/dot
+# comment
+#
+digraph G {}`,
+			want: `#!/usr/local/bin/dot
+# comment
+#
+digraph G {
+}
+`,
+		},
+		// Port comments
+		"CommentTrailingPortColon": {
+			in: `graph {
+A: // c1
+port
+}`,
+			want: `graph {
+	A: // c1
+	port
+}
+`,
+		},
+		"CommentTrailingPortName": {
+			in: `graph {
+A:port // c1
+:n
+}`,
+			want: `graph {
+	A:port // c1
+	:n
+}
+`,
+		},
+		// Comment on its own line before second ':' stays inside Port.
+		"CommentLeadingPortCompassColon": {
+			in: `graph {
+A:port
+// c1
+:n
+}`,
+			want: `graph {
+	A:port
+	// c1
+	:n
+}
+`,
+		},
 	}
 
 	for name, test := range tests {

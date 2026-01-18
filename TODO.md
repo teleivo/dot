@@ -2,15 +2,16 @@
 
 ## Jan
 
-week 2-3
-* fmt/lsp: support comments
-  * printer
-    * how to test it prints comments as is but adjusts indentation
-    * do I need to introduce another element?
-
-* fmt: format files/directories
-
 week 4
+* fmt/lsp: support block comments
+  * fix `layoutBlock` first-element handling - block comments get no spacing after
+    * `/* c */\ngraph {}` → `/* c */graph {` (missing break)
+    * `/* c */ graph {}` → `/* c */graph {` (missing space)
+  * fix `layoutComment` - trailing block comments need Space after
+    * `strict /* c1 */ graph` → `strict /* c1 */graph` (missing space)
+  * multi-line block comments: split at `\n` into `Text()` + `Break(1)` sequences so groups break
+    correctly and indentation applies to continuation lines
+* fmt: format files/directories
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * add ability to capture execution traces using flight recorder?
@@ -35,14 +36,17 @@ week 5
 
 ## fmt
 
-* support comments
-  * store comments as trivia in the CST, attached to adjacent tokens
-    * leading trivia (before newline) attaches to FOLLOWING token
-    * trailing trivia (after token, same line) attaches to PRECEDING token
-    * newlines are the boundary between leading/trailing
-  * printer preserves comment content exactly as-is (no wrapping to 80 cols)
-    * block comments can contain ASCII art, code examples, tables - wrapping would break these
-    * this matches Prettier, gofumpt, rust-analyzer approach
+* support formatting file/dirs in place
+  * allow passing in file via flag and out file via flag while still allowing stdin/stdout
+  * goroutines could be fun once it's working
+  * format all of https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
+  * add a benchmark to ensure no regressions
+  * gofumpt uses positional args as files and reads from stdin if none given
+  * gofumpt hint on formatting pieces of Go: tries `parser.ParseFile`, on error adds `package p;`
+    and tries again. If that fails, wraps in package with function and tries ParseFile again.
+    Uses `;` so line numbers stay correct. I could try parsing a Graph, if that fails wrap in
+    `graph { }` assuming src is []Stmt. Might fail if src contains directed edges so detect and
+    try with `digraph {}`.
 * measure in original sets broken if text contains newline - not correct for raw strings?
   `foo\nfaa` in Go or similar with escaped newlines in DOT should not cause a newline. Add a new
   tag/attribute? rawtext, `<text raw/>` or don't implement that?
@@ -63,8 +67,6 @@ week 5
 * improve error printing for `dotx fmt` - print the line/snippet with ^^^ to highlight where the error is
   * make error messages more user friendly - for example when parsing attr_stmt the attr_list is
     mandatory, instead of saying "expected [" could say that
-* count opening braces and brackets and decrement on closing to validate they match? Or is that
-  too simplistic as there are rules as to when you are allowed/have to close them?
 * support parsing/formatting ranges
   * parser should be ok with comments before a graph - how to support that in terms of the parser
     API? right now it returns an ast.Graph but the leading comment comes before the ast.Graph
@@ -76,18 +78,6 @@ Parse(io.Reader) ast.Node // at least right now there is no node that would fit 
 Parse(io.Reader) []ast.Stmt // this could work. In most cases this will be a slice of
 // {ast.Graph} or {ast.Comment, ast.Graph} only but this could also work with parsing a range
 ```
-
-* support formatting file/dirs in place
-  * allow passing in file via flag and out file via flag while still allowing stdin/stdout
-  * goroutines could be fun once it's working
-  * format all of https://gitlab.com/graphviz/graphviz/-/tree/main/graphs?ref_type=heads
-  * add a benchmark to ensure no regressions
-  * gofumpt uses positional args as files and reads from stdin if none given
-  * gofumpt hint on formatting pieces of Go: tries `parser.ParseFile`, on error adds `package p;`
-    and tries again. If that fails, wraps in package with function and tries ParseFile again.
-    Uses `;` so line numbers stay correct. I could try parsing a Graph, if that fails wrap in
-    `graph { }` assuming src is []Stmt. Might fail if src contains directed edges so detect and
-    try with `digraph {}`.
 
 ## LSP
 
@@ -128,15 +118,4 @@ graph foo {
 * Lexical and Semantic Notes https://graphviz.org/doc/info/lang.html
   * should some of these influence the parser/should it err?
   * how does strict affect a graph? no cycles? is that something my parser should validate?
-* Are `{}` creating a lexical scope? This sets attributes on given nodes in the `{}` but will it
-  affect nodes outside?
-
-```dot
-{ node [shape=circle]
-    a b c d e f g h  i j k l m n o p  q r s t u v w x
-}
-{ node [shape=diamond]
-    A B C D E F G H  I J K L M N O P  Q R S T U V W X
-}
-```
 

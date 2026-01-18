@@ -2851,9 +2851,9 @@ graph { C -> D }`,
 // c2
 digraph {}`,
 			want: `File
-	'// c1'
-	'// c2'
 	Graph
+		'// c1'
+		'// c2'
 		'digraph'
 		'{'
 		StmtList
@@ -2883,8 +2883,8 @@ graph G2 {}`,
 		'{'
 		StmtList
 		'}'
-	'// c1'
 	Graph
+		'// c1'
 		'graph'
 		ID
 			'G2'
@@ -2897,8 +2897,8 @@ graph G2 {}`,
 			in: `# c1
 digraph {}`,
 			want: `File
-	'# c1'
 	Graph
+		'# c1'
 		'digraph'
 		'{'
 		StmtList
@@ -2965,7 +2965,6 @@ digraph {}`,
 		'}'
 `,
 		},
-
 		// Block comments - same line
 		"CommentBlockBeforeGraph": {
 			in: `/* c1 */ /* c2 */ digraph {}`,
@@ -3161,6 +3160,46 @@ digraph {}`,
 						'/* c2 */'
 						ID
 							'port1'
+		'}'
+`,
+		},
+		"CommentOwnLineBeforeSecondPortColon": {
+			in: `digraph {
+	A:port
+	/* c1 */
+	:n
+}`,
+			want: `File
+	Graph
+		'digraph'
+		'{'
+		StmtList
+			NodeStmt
+				NodeID
+					ID
+						'A'
+					Port
+						':'
+						ID
+							'port'
+						'/* c1 */'
+						':'
+						CompassPoint
+							'n'
+		'}'
+`,
+		},
+		"CommentOwnLineBetweenStrictAndGraph": {
+			in: `strict
+/* c1 */
+graph {}`,
+			want: `File
+	Graph
+		'strict'
+		'/* c1 */'
+		'graph'
+		'{'
+		StmtList
 		'}'
 `,
 		},

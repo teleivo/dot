@@ -135,9 +135,9 @@ func (p *Parser) parseGraph(parent *Tree) *Tree {
 
 	var okGraph bool
 	if okStrict || p.curTokenIs(token.LeftBrace) {
-		okGraph = p.expect(parent, graph, token.Graph|token.Digraph)
+		okGraph = p.expect(graph, graph, token.Graph|token.Digraph)
 	} else { // optional to avoid cascading error
-		okGraph = p.optional(parent, graph, token.Graph|token.Digraph)
+		okGraph = p.optional(graph, graph, token.Graph|token.Digraph)
 	}
 
 	if okGraph && p.curTokenIs(token.ID) {
@@ -327,7 +327,7 @@ func (p *Parser) parsePort(parent *Tree) *Tree {
 	}
 
 	if p.curTokenIs(token.Colon) {
-		p.expect(parent, port, token.Colon)
+		p.expect(port, port, token.Colon)
 
 		secondCompass := p.curToken.IsCompassPoint()
 		if p.curTokenIs(token.ID) {

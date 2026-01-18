@@ -318,7 +318,7 @@ func TestServer(t *testing.T) {
 		formatValid := `{"jsonrpc":"2.0","method":"textDocument/formatting","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"options":{"tabSize":2,"insertSpaces":false}}}`
 		writeMessage(t, in, formatValid)
 
-		wantFormatting := `{"jsonrpc":"2.0","id":3,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":18}},"newText":"digraph {\n\ta -\u003e b\n}"}]}`
+		wantFormatting := `{"jsonrpc":"2.0","id":3,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":18}},"newText":"digraph {\n\ta -\u003e b\n}\n"}]}`
 		assert.Truef(t, s.Scan(), "expecting formatting response")
 		require.EqualValuesf(t, s.Text(), wantFormatting, "unexpected formatting response")
 	})

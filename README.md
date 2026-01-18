@@ -53,6 +53,9 @@ EOF
 * **Comments are preserved as-is**: Comment content is never modified - no line wrapping or
   whitespace normalization. Only indentation is adjusted to match surrounding code. This preserves
   ASCII art, code examples, and tables that may appear in comments.
+* **Comment placement is normalized**: Line comments (`//`, `#`) always force a line break after
+  them. Single-line block comments (`/* c1 */`) stay inline with surrounding tokens. Multi-line
+  block comments force a line break after the closing `*/`.
 
 ### Testing
 
@@ -212,10 +215,6 @@ vim.lsp.enable('dotls')
   not account for grapheme clusters or display width, so characters like emojis (which may render as
   double-width) or combining characters will cause the formatter's column calculations to differ
   from visual appearance in editors.
-* The formatter fully supports line comments (`//`, `#`). Block comments (`/* */`) are partially
-  supported: they work correctly inside statements and attribute lists, but may have incorrect
-  spacing when placed before the `graph`/`digraph` keyword or between graph header tokens.
-  Multi-line block comments may not trigger proper line breaking or indentation.
 
 The following are not supported as I do not need them:
 

@@ -93,11 +93,15 @@ func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) {
 	// layout [ 'strict' ] ( 'graph' | 'digraph' ) [ ID ] up to '{'
 	// emittedToken tracks if we emitted a non-comment token, to distinguish trailing vs leading comments
 	// emittedAnything tracks if we emitted anything at all, to avoid leading break/space on first element
-	var emittedToken, emittedAnything bool
+	// needsSpace tracks if we need a space before the next element (after single-line block comment)
+	var emittedToken, emittedAnything, needsSpace bool
 	for i = 0; i < len(tree.Children); i++ {
 		child := tree.Children[i]
 		if tc, ok := child.(dot.TokenChild); ok {
 			if tc.Kind == token.LeftBrace {
+				if needsSpace {
+					doc.Space()
+				}
 				break
 			} else if tc.Kind == token.Comment {
 				if emittedAnything {
@@ -110,16 +114,24 @@ func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) {
 				}
 				emittedToken = false
 				emittedAnything = true
+				// single-line block comments need space after; line comments and
+				// multi-line block comments end with a break
+				needsSpace = !isLineComment(tc.Literal)
 			} else {
+				if needsSpace {
+					doc.Space()
+				}
 				doc.Text(tc.Literal).Space()
 				emittedToken = true
 				emittedAnything = true
+				needsSpace = false
 			}
 		} else if tc, ok := child.(dot.TreeChild); ok && tc.Kind == dot.KindID {
 			p.layoutID(doc, tc.Tree)
 			doc.Space()
 			emittedToken = true
 			emittedAnything = true
+			needsSpace = false
 		}
 	}
 
@@ -165,13 +177,14 @@ func (p *Printer) layoutStmtList(doc *layout.Doc, tree *dot.Tree) {
 
 // layoutID prints a DOT [identifier]. newlines without preceding '\' are not mentioned as legal but
 // are supported by the DOT tooling. Such newlines are normalized to line continuations.
+// Returns true if a trailing break was emitted (line comment or multi-line block comment).
 //
 // [identifier:] https://graphviz.org/doc/info/lang.html#ids
-func (p *Printer) layoutID(doc *layout.Doc, tree *dot.Tree) {
+func (p *Printer) layoutID(doc *layout.Doc, tree *dot.Tree) bool {
 	if tok, ok := dot.TokenFirst(tree, token.ID); ok {
 		doc.Text(tok.Literal)
 	}
-	p.layoutTrailingComments(doc, tree)
+	return p.layoutTrailingComments(doc, tree)
 }
 
 // layoutStmt handles: stmt : node_stmt | edge_stmt | attr_stmt | ID '=' ID | subgraph
@@ -197,8 +210,9 @@ func (p *Printer) layoutNodeStmt(doc *layout.Doc, tree *dot.Tree) {
 	doc.Break(1).
 		Group(func(d *layout.Doc) {
 			if nodeID, ok := dot.TreeAt(tree, dot.KindNodeID, 0); ok {
-				p.layoutNodeID(doc, nodeID)
-				p.spaceOrBreak(doc, nodeID)
+				if !p.layoutNodeID(doc, nodeID) {
+					doc.Space()
+				}
 			}
 			if attrList, ok := dot.TreeLast(tree, dot.KindAttrList); ok {
 				p.layoutAttrList(doc, attrList)
@@ -221,7 +235,7 @@ func (p *Printer) layoutComment(doc *layout.Doc, literal string, leading bool) {
 }
 
 // layoutTrailingComments emits any trailing comment tokens from tree's direct children.
-// Returns true if a line comment was emitted (which forces a break).
+// Returns true if a trailing break was emitted (line comment or multi-line block comment).
 func (p *Printer) layoutTrailingComments(doc *layout.Doc, tree *dot.Tree) bool {
 	var broken bool
 	for _, child := range tree.Children {
@@ -262,21 +276,25 @@ func (p *Printer) spaceOrBreak(doc *layout.Doc, tree *dot.Tree) {
 }
 
 // layoutNodeID handles: node_id : ID [ port ]
-func (p *Printer) layoutNodeID(doc *layout.Doc, tree *dot.Tree) {
+// Returns true if a trailing break was emitted (line comment or multi-line block comment).
+func (p *Printer) layoutNodeID(doc *layout.Doc, tree *dot.Tree) bool {
+	var broken bool
 	if id, ok := dot.TreeAt(tree, dot.KindID, 0); ok {
-		p.layoutID(doc, id)
+		broken = p.layoutID(doc, id)
 	}
 	if port, ok := dot.TreeAt(tree, dot.KindPort, 1); ok {
-		p.layoutPort(doc, port)
+		broken = p.layoutPort(doc, port)
 	}
+	return broken
 }
 
 // layoutPort handles: port : ':' ID [ ':' compass_pt ] | ':' compass_pt
-func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) {
+// Returns true if a trailing break was emitted (line comment or multi-line block comment).
+func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) bool {
 	// emittedColon tracks if we just emitted ':', to distinguish trailing vs leading comments
 	// pendingColon tracks if we have a ':' that needs to be printed before the next ID
-	emittedColon := false
-	pendingColon := false
+	// broken tracks if a trailing break was emitted
+	var emittedColon, pendingColon, broken bool
 	for _, child := range tree.Children {
 		if tc, ok := child.(dot.TokenChild); ok {
 			switch tc.Kind {
@@ -292,6 +310,9 @@ func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) {
 					emittedColon = true
 				}
 				p.layoutComment(doc, tc.Literal, !emittedColon)
+				if isLineComment(tc.Literal) {
+					broken = true
+				}
 				emittedColon = false
 			}
 		} else if tc, ok := child.(dot.TreeChild); ok {
@@ -301,13 +322,16 @@ func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) {
 					if pendingColon {
 						doc.Text(token.Colon.String())
 					}
-					p.layoutID(doc, tc.Tree)
+					if p.layoutID(doc, tc.Tree) {
+						broken = true
+					}
 					emittedColon = false
 				}
 				pendingColon = false
 			}
 		}
 	}
+	return broken
 }
 
 // layoutAttrList handles: attr_list : '[' [ a_list ] ']' [ attr_list ]
@@ -388,9 +412,9 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, tree *dot.Tree) {
 		// needsSpace tracks if the next element needs a leading space. After an
 		// operand we need a space before the edge operator. After a leading comment
 		// (which ends with a break), we don't need a space.
-		emittedEdgeOp := false
-		needsSpace := false
-		var lastOperand *dot.Tree
+		//
+		// lastBroken tracks if the last operand ended with a break.
+		var emittedEdgeOp, needsSpace, lastBroken bool
 		doc.Group(func(d *layout.Doc) {
 			for _, child := range tree.Children {
 				if tc, ok := child.(dot.TokenChild); ok {
@@ -415,16 +439,15 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, tree *dot.Tree) {
 						if needsSpace {
 							doc.Space()
 						}
-						p.layoutEdgeOperand(doc, tc.Tree)
-						lastOperand = tc.Tree
+						lastBroken = p.layoutEdgeOperand(doc, tc.Tree)
 						emittedEdgeOp = false
 						needsSpace = true
 					}
 				}
 			}
 		})
-		if lastOperand != nil {
-			p.spaceOrBreak(doc, lastOperand)
+		if !lastBroken {
+			doc.Space()
 		}
 
 		if attrList, ok := dot.TreeLast(tree, dot.KindAttrList); ok {
@@ -433,13 +456,16 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, tree *dot.Tree) {
 	})
 }
 
-func (p *Printer) layoutEdgeOperand(doc *layout.Doc, tree *dot.Tree) {
+// layoutEdgeOperand handles a node_id or subgraph in an edge statement.
+// Returns true if a trailing break was emitted (line comment or multi-line block comment).
+func (p *Printer) layoutEdgeOperand(doc *layout.Doc, tree *dot.Tree) bool {
 	switch tree.Kind {
 	case dot.KindNodeID:
-		p.layoutNodeID(doc, tree)
+		return p.layoutNodeID(doc, tree)
 	case dot.KindSubgraph:
 		p.layoutSubgraph(doc, tree)
 	}
+	return false
 }
 
 // layoutAttrStmt handles: attr_stmt : ( 'graph' | 'node' | 'edge' ) attr_list
@@ -460,22 +486,36 @@ func (p *Printer) layoutAttrStmt(doc *layout.Doc, tree *dot.Tree) {
 
 // layoutAttribute handles: ID '=' ID
 func (p *Printer) layoutAttribute(doc *layout.Doc, tree *dot.Tree) {
-	emittedToken := false
+	// emittedToken tracks if we emitted a non-comment token, to distinguish trailing vs leading comments
+	// needsSpace tracks if we need a space before the next element (after single-line block comment)
+	var emittedToken, needsSpace bool
 	for _, child := range tree.Children {
 		if tc, ok := child.(dot.TokenChild); ok {
 			switch tc.Kind {
 			case token.Equal:
+				if needsSpace {
+					doc.Space()
+				}
 				doc.Text(token.Equal.String())
 				emittedToken = true
+				needsSpace = false
 			case token.Comment:
 				p.layoutComment(doc, tc.Literal, !emittedToken)
 				emittedToken = false
+				// single-line block comments need space after; line comments and
+				// multi-line block comments end with a break
+				needsSpace = !isLineComment(tc.Literal)
 			}
 		} else if tc, ok := child.(dot.TreeChild); ok {
 			if tc.Kind == dot.KindAttrName || tc.Kind == dot.KindAttrValue {
 				if id, ok := dot.TreeAt(tc.Tree, dot.KindID, 0); ok {
-					p.layoutID(doc, id)
+					if needsSpace {
+						doc.Space()
+					}
+					broken := p.layoutID(doc, id)
 					emittedToken = true
+					// if layoutID didn't end with a break, we may need space before next element
+					needsSpace = !broken && hasComment(id)
 				}
 			}
 		}

@@ -294,7 +294,8 @@ func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) bool {
 	// emittedColon tracks if we just emitted ':', to distinguish trailing vs leading comments
 	// pendingColon tracks if we have a ':' that needs to be printed before the next ID
 	// broken tracks if a trailing break was emitted
-	var emittedColon, pendingColon, broken bool
+	// needsSpace tracks if we need a space before the next element (after single-line block comment)
+	var emittedColon, pendingColon, broken, needsSpace bool
 	for _, child := range tree.Children {
 		if tc, ok := child.(dot.TokenChild); ok {
 			switch tc.Kind {
@@ -312,6 +313,9 @@ func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) bool {
 				p.layoutComment(doc, tc.Literal, !emittedColon)
 				if isLineComment(tc.Literal) {
 					broken = true
+					needsSpace = false
+				} else {
+					needsSpace = true
 				}
 				emittedColon = false
 			}
@@ -319,11 +323,19 @@ func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) bool {
 			if tc.Kind == dot.KindID || tc.Kind == dot.KindCompassPoint {
 				// skip printing "_" compass point and its preceding ':'
 				if tok, ok := dot.TokenFirst(tc.Tree, token.ID); ok && tok.Literal != "_" {
+					if needsSpace {
+						doc.Space()
+					}
 					if pendingColon {
 						doc.Text(token.Colon.String())
 					}
-					if p.layoutID(doc, tc.Tree) {
+					idBroken := p.layoutID(doc, tc.Tree)
+					if idBroken {
 						broken = true
+						needsSpace = false
+					} else {
+						// ID may have trailing block comment
+						needsSpace = hasComment(tc.Tree)
 					}
 					emittedColon = false
 				}

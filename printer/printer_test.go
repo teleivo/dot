@@ -712,6 +712,16 @@ port
 }
 `,
 		},
+		"CommentBlockTrailingPortColon": {
+			in: `graph {
+A: /* c1 */
+port
+}`,
+			want: `graph {
+	A: /* c1 */ port
+}
+`,
+		},
 		"CommentTrailingPortName": {
 			in: `graph {
 A:port // c1
@@ -720,6 +730,16 @@ A:port // c1
 			want: `graph {
 	A:port // c1
 	:n
+}
+`,
+		},
+		"CommentBlockTrailingPortName": {
+			in: `graph {
+A:port /* c1 */
+:n
+}`,
+			want: `graph {
+	A:port /* c1 */ :n
 }
 `,
 		},
@@ -734,6 +754,15 @@ A:port
 	A:port
 	// c1
 	:n
+}
+`,
+		},
+		"CommentBlockLeadingPortCompassColon": {
+			in: `graph {
+A:port/* c1 */:n
+}`,
+			want: `graph {
+	A:port /* c1 */ :n
 }
 `,
 		},

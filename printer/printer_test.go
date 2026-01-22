@@ -273,13 +273,8 @@ D [label="backslash\\here"]
 }
 `,
 		},
-		// Comment tests
-		//
-		// Comments are preserved as-is with only indentation adjusted.
+		// Comment tests: comments are preserved as-is with only indentation adjusted.
 		// Content is never modified: no line wrapping, no whitespace normalization.
-		// Tests are organized following the grammar: file → graph → stmt → deeper constructs.
-
-		// File-level comments
 		"CommentFile": {
 			in: `// c1
 
@@ -344,8 +339,48 @@ graph {
 }
 `,
 		},
-
-		// Graph: comments before/after braces
+		"CommentTrailingStrict": {
+			in: `strict // c1
+graph {}`,
+			want: `strict // c1
+graph {
+}
+`,
+		},
+		"CommentBlockTrailingStrict": {
+			in: `strict /* c1 */ graph {}`,
+			want: `strict /* c1 */ graph {
+}
+`,
+		},
+		"CommentTrailingGraphKeyword": {
+			in: `graph // c1
+{}`,
+			want: `graph // c1
+{
+}
+`,
+		},
+		"CommentBlockTrailingGraphKeyword": {
+			in: `graph /* c1 */ {}`,
+			want: `graph /* c1 */ {
+}
+`,
+		},
+		"CommentTrailingGraphID": {
+			in: `graph G // c1
+{}`,
+			want: `graph G // c1
+{
+}
+`,
+		},
+		"CommentBlockTrailingGraphID": {
+			in: `graph G /* c1 */ {}`,
+			want: `graph G /* c1 */ {
+}
+`,
+		},
 		"CommentBeforeClosingBrace": {
 			in: `graph {
 	A
@@ -368,8 +403,6 @@ graph {
 }
 `,
 		},
-
-		// stmt_list: comments before statements
 		"CommentBeforeStmt": {
 			in: `graph {
 	// c1
@@ -392,8 +425,6 @@ A
 }
 `,
 		},
-
-		// stmt: ID '=' ID (graph-level attribute)
 		"CommentTrailingAttrName": {
 			in: `graph {
 color    // c1
@@ -454,8 +485,6 @@ color = red    /* c1 */
 }
 `,
 		},
-
-		// attr_stmt: (graph | node | edge) attr_list
 		"CommentTrailingAttrStmtTarget": {
 			in: `graph {
 node    // c1
@@ -477,8 +506,6 @@ node    /* c1 */
 }
 `,
 		},
-
-		// attr_list: comments before closing bracket
 		"CommentBeforeClosingBracket": {
 			in: `graph {
 	A [
@@ -509,8 +536,28 @@ node    /* c1 */
 }
 `,
 		},
-
-		// node_stmt: node_id [ attr_list ]
+		"CommentBetweenAttrs": {
+			in: `graph {
+	A [a=b // c1
+c=d]
+}`,
+			want: `graph {
+	A [
+		a=b // c1
+		c=d
+	]
+}
+`,
+		},
+		"CommentBlockBetweenAttrs": {
+			in: `graph {
+	A [a=b /* c1 */ c=d]
+}`,
+			want: `graph {
+	A [a=b /* c1 */,c=d]
+}
+`,
+		},
 		"CommentTrailingNodeID": {
 			in: `graph {
 A    // c1
@@ -532,8 +579,6 @@ A    /* c1 */
 }
 `,
 		},
-
-		// node_id: ID [ port ]
 		"CommentTrailingID": {
 			in: `graph {
 A    //   c1    c1    c1
@@ -552,8 +597,6 @@ A    /* c1    c1    c1 */
 }
 `,
 		},
-
-		// port: ':' ID [ ':' compass_pt ] | ':' compass_pt
 		"CommentTrailingPortColon": {
 			in: `graph {
 A: // c1
@@ -654,8 +697,6 @@ A:n    /* c1 */
 }
 `,
 		},
-
-		// edge_stmt: (node_id | subgraph) edgeRHS [ attr_list ]
 		"CommentTrailingEdgeStmt": {
 			in: `digraph {
 A -> B    // c1
@@ -723,8 +764,6 @@ A
 }
 `,
 		},
-
-		// subgraph: [ subgraph [ ID ] ] '{' stmt_list '}'
 		"CommentTrailingSubgraphKeyword": {
 			in: `graph {
 subgraph    // c1
@@ -749,6 +788,34 @@ A
 }`,
 			want: `graph {
 	subgraph /* c1 */ {
+		A
+	}
+}
+`,
+		},
+		"CommentTrailingSubgraphID": {
+			in: `graph {
+subgraph S // c1
+{
+A
+}
+}`,
+			want: `graph {
+	subgraph S // c1
+	{
+		A
+	}
+}
+`,
+		},
+		"CommentBlockTrailingSubgraphID": {
+			in: `graph {
+subgraph S /* c1 */ {
+A
+}
+}`,
+			want: `graph {
+	subgraph S /* c1 */ {
 		A
 	}
 }
@@ -781,6 +848,40 @@ A
 		A
 		/* c1 */
 	}
+}
+`,
+		},
+		// Long comments (>80 cols) are preserved as-is and force attr_list to break
+		"CommentLongLineInAttrList": {
+			in: `graph {
+	A [color=red // this is a very long comment that exceeds the 80 column limit for sure
+]
+}`,
+			want: `graph {
+	A [
+		color=red // this is a very long comment that exceeds the 80 column limit for sure
+	]
+}
+`,
+		},
+		"CommentLongBlockInAttrList": {
+			in: `graph {
+	A [color=red /* this is a very long block comment that exceeds the 80 column limit */ shape=box]
+}`,
+			want: `graph {
+	A [
+		color=red /* this is a very long block comment that exceeds the 80 column limit */
+		shape=box
+	]
+}
+`,
+		},
+		"CommentLongLineTrailingNodeID": {
+			in: `graph {
+A // this is a very long comment that exceeds eighty columns for sure sure sure
+}`,
+			want: `graph {
+	A // this is a very long comment that exceeds eighty columns for sure sure sure
 }
 `,
 		},

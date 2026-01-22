@@ -4,15 +4,8 @@
 
 week 4
 * fmt/lsp: support block comments
-  * fix `layoutBlock` first-element handling - block comments get no spacing after
-    * `/* c */\ngraph {}` → `/* c */graph {` (missing break)
-    * `/* c */ graph {}` → `/* c */graph {` (missing space)
-  * fix `layoutComment` - trailing block comments need Space after
-    * `strict /* c1 */ graph` → `strict /* c1 */graph` (missing space)
   * multi-line block comments: split at `\n` into `Text()` + `Break(1)` sequences so groups break
     correctly and indentation applies to continuation lines
-  * add test for line/block comment > 80 cols to show they are kept as is and how that affects
-  format of constructs like attribute list, ...
 * fmt: format files/directories
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging

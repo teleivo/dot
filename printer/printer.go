@@ -127,8 +127,9 @@ func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) {
 				needsSpace = false
 			}
 		} else if tc, ok := child.(dot.TreeChild); ok && tc.Kind == dot.KindID {
-			p.layoutID(doc, tc.Tree)
-			doc.Space()
+			if !p.layoutID(doc, tc.Tree) {
+				doc.Space()
+			}
 			emittedToken = true
 			emittedAnything = true
 			needsSpace = false

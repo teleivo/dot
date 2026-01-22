@@ -5,6 +5,7 @@ package printer
 
 import (
 	"io"
+	"strings"
 
 	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
@@ -229,9 +230,21 @@ func (p *Printer) layoutComment(doc *layout.Doc, literal string, leading bool) {
 	} else {
 		doc.Space()
 	}
-	doc.Text(literal)
 	if isLineComment(literal) {
+		doc.Text(literal)
 		doc.Break(1)
+	} else {
+		// TODO make this efficient
+		var start int
+		for i, r := range literal {
+			if r == '\n' {
+				doc.Text(strings.TrimSpace(literal[start:i])).Break(1)
+				start = i + 1
+			}
+		}
+		if start < len(literal) {
+			doc.Text(strings.TrimSpace(literal[start:]))
+		}
 	}
 }
 

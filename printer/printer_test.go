@@ -597,6 +597,51 @@ A    /* c1    c1    c1 */
 }
 `,
 		},
+		"CommentBlockMultiLineTrailingID": {
+			in: `graph {
+A /* line1
+line2
+line3 */
+}`,
+			want: `graph {
+	A /* line1
+	line2
+	line3 */
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingIDEmptyLine": {
+			in: `graph {
+A /* line1
+
+line3 */
+}`,
+			want: "graph {\n\tA /* line1\n\t\n\tline3 */\n}\n",
+		},
+		"CommentBlockMultiLineTrailingNodeIDFits": {
+			in: `graph {
+A /* line1
+line2 */ [color=red]
+}`,
+			want: `graph {
+	A /* line1
+	line2 */ [color=red]
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingNodeIDForcesBreak": {
+			in: `graph {
+A /* line1
+this is a long line that will push the attr list past the 80 column limit */ [color=red]
+}`,
+			want: `graph {
+	A /* line1
+	this is a long line that will push the attr list past the 80 column limit */ [
+		color=red
+	]
+}
+`,
+		},
 		"CommentTrailingPortColon": {
 			in: `graph {
 A: // c1

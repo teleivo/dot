@@ -77,8 +77,8 @@ DOTX_TEST_DIR=../../samples-graphviz/tests go test -C cmd/dotx -v -run TestVisua
 ./run-visual-tests.sh
 ```
 
-Note: Some tests will fail due to [known limitations](#limitations) such as HTML labels and block
-comments. These failures are expected and indicate features not yet supported rather than bugs.
+Note: Some tests will fail due to [known limitations](#limitations) such as HTML labels. These
+failures are expected and indicate features not yet supported rather than bugs.
 
 ## Inspect
 

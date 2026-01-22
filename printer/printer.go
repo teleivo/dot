@@ -281,13 +281,6 @@ func hasComment(tree *dot.Tree) bool {
 	return false
 }
 
-func (p *Printer) spaceOrBreak(doc *layout.Doc, tree *dot.Tree) {
-	if hasComment(tree) {
-		doc.Break(1)
-	} else {
-		doc.Space()
-	}
-}
 
 // layoutNodeID handles: node_id : ID [ port ]
 // Returns true if a trailing break was emitted (line comment or multi-line block comment).

@@ -4,8 +4,6 @@
 
 week 4
 * fmt/lsp: support block comments
-  * multi-line block comments: split at `\n` into `Text()` + `Break(1)` sequences so groups break
-    correctly and indentation applies to continuation lines
   * is there a way to simplify comment placement in the parser so we can simplify printing?
 * fmt: format files/directories
 * profile fmt/lsp

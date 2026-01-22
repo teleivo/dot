@@ -742,6 +742,28 @@ A:n    /* c1 */
 }
 `,
 		},
+		"CommentBlockMultiLineTrailingPortName": {
+			in: `graph {
+A:port /* line1
+line2 */
+}`,
+			want: `graph {
+	A:port /* line1
+	line2 */
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingCompassPoint": {
+			in: `graph {
+A:n /* line1
+line2 */
+}`,
+			want: `graph {
+	A:n /* line1
+	line2 */
+}
+`,
+		},
 		"CommentTrailingEdgeStmt": {
 			in: `digraph {
 A -> B    // c1
@@ -806,6 +828,29 @@ A
 			want: `digraph {
 	A
 	/* c1 */ -> B
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingEdgeOperator": {
+			in: `digraph {
+A -> /* line1
+line2 */ B
+}`,
+			want: `digraph {
+	A -> /* line1
+	line2 */ B
+}
+`,
+		},
+		"CommentBlockMultiLineLeadingEdgeOperator": {
+			in: `digraph {
+A /* line1
+line2 */
+-> B
+}`,
+			want: `digraph {
+	A /* line1
+	line2 */ -> B
 }
 `,
 		},
@@ -896,6 +941,34 @@ A
 }
 `,
 		},
+		"CommentBlockMultiLineTrailingSubgraphKeyword": {
+			in: `graph {
+subgraph /* line1
+line2 */ {
+A
+}
+}`,
+			want: `graph {
+	subgraph /* line1
+	line2 */ {
+		A
+	}
+}
+`,
+		},
+		"CommentBlockMultiLineBeforeClosingBrace": {
+			in: `graph {
+A
+/* line1
+line2 */
+}`,
+			want: `graph {
+	A
+	/* line1
+	line2 */
+}
+`,
+		},
 		// Long comments (>80 cols) are preserved as-is and force attr_list to break
 		"CommentLongLineInAttrList": {
 			in: `graph {
@@ -927,6 +1000,38 @@ A // this is a very long comment that exceeds eighty columns for sure sure sure
 }`,
 			want: `graph {
 	A // this is a very long comment that exceeds eighty columns for sure sure sure
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingAttrStmtTarget": {
+			in: `graph {
+node /* line1
+line2 */ [color=red]
+}`,
+			want: `graph {
+	node /* line1
+	line2 */ [color=red]
+}
+`,
+		},
+		"CommentBlockBetweenAttrListBrackets": {
+			in: `graph {
+A [a=b] /* c1 */ [c=d]
+}`,
+			want: `graph {
+	A [a=b] /* c1 */ [c=d]
+}
+`,
+		},
+		"CommentBlockBetweenAttrListBracketsForcesBreak": {
+			in: `graph {
+A [label="This is a long label value"] /* comment between brackets */ [color=red,shape=box]
+}`,
+			want: `graph {
+	A [label="This is a long label value"] /* comment between brackets */ [
+		color=red
+		shape=box
+	]
 }
 `,
 		},

@@ -275,217 +275,77 @@ D [label="backslash\\here"]
 		},
 		// Comment tests
 		//
-		// Line comments are preserved as-is with only indentation adjusted.
+		// Comments are preserved as-is with only indentation adjusted.
 		// Content is never modified: no line wrapping, no whitespace normalization.
+		// Tests are organized following the grammar: file → graph → stmt → deeper constructs.
 
-		// Basic placement
-		"CommentLineBeforeStmt": {
-			in: `graph {
-	// c1
-A
-}`,
+		// File-level comments
+		"CommentFile": {
+			in: `// c1
+
+// c2
+graph {}
+// c3
+graph {}
+// c4`,
+			want: `// c1
+// c2
+graph {
+}
+// c3
+graph {
+}
+// c4
+`,
+		},
+		"CommentBlockFile": {
+			in: `/* c1 */
+
+/* c2 */
+graph {}
+/* c3 */
+graph {}
+/* c4 */`,
+			want: `/* c1 */
+/* c2 */ graph {
+}
+/* c3 */ graph {
+}
+/* c4 */
+`,
+		},
+		"CommentSingleHash": {
+			in: `#!/usr/local/bin/dot
+# comment
+#
+digraph G {}`,
+			want: `#!/usr/local/bin/dot
+# comment
+#
+digraph G {
+}
+`,
+		},
+		"CommentTrailingFirstGraph": {
+			in: `graph {} // c1
+graph {}`,
 			want: `graph {
-	// c1
-	A
+} // c1
+graph {
 }
 `,
 		},
-		"CommentBlockBeforeStmt": {
-			in: `graph {
-	/* c1 */
-A
-}`,
+		"CommentBlockTrailingFirstGraph": {
+			in: `graph {} /* c1 */
+graph {}`,
 			want: `graph {
-	/* c1 */
-	A
+} /* c1 */
+graph {
 }
 `,
 		},
-		"CommentTrailingID": {
-			in: `graph {
-A    //   c1    c1    c1
-}`,
-			want: `graph {
-	A //   c1    c1    c1
-}
-`,
-		},
-		"CommentBlockTrailingID": {
-			in: `graph {
-A    /* c1    c1    c1 */
-}`,
-			want: `graph {
-	A /* c1    c1    c1 */
-}
-`,
-		},
-		"CommentTrailingAttrStmtTarget": {
-			in: `graph {
-node    // c1
-[color=red]
-}`,
-			want: `graph {
-	node // c1
-	[color=red]
-}
-`,
-		},
-		"CommentBlockTrailingAttrStmtTarget": {
-			in: `graph {
-node    /* c1 */
-[color=red]
-}`,
-			want: `graph {
-	node /* c1 */ [color=red]
-}
-`,
-		},
-		"CommentTrailingNodeID": {
-			in: `graph {
-A    // c1
-[color=red]
-}`,
-			want: `graph {
-	A // c1
-	[color=red]
-}
-`,
-		},
-		"CommentBlockTrailingNodeID": {
-			in: `graph {
-A    /* c1 */
-[color=red]
-}`,
-			want: `graph {
-	A /* c1 */ [color=red]
-}
-`,
-		},
-		"CommentTrailingEdgeStmt": {
-			in: `digraph {
-A -> B    // c1
-[color=red]
-}`,
-			want: `digraph {
-	A -> B // c1
-	[color=red]
-}
-`,
-		},
-		"CommentBlockTrailingEdgeStmt": {
-			in: `digraph {
-A -> B    /* c1 */
-[color=red]
-}`,
-			want: `digraph {
-	A -> B /* c1 */ [color=red]
-}
-`,
-		},
-		"CommentTrailingSubgraphKeyword": {
-			in: `graph {
-subgraph    // c1
-{
-A
-}
-}`,
-			want: `graph {
-	subgraph // c1
-	{
-		A
-	}
-}
-`,
-		},
-		"CommentBlockTrailingSubgraphKeyword": {
-			in: `graph {
-subgraph    /* c1 */
-{
-A
-}
-}`,
-			want: `graph {
-	subgraph /* c1 */ {
-		A
-	}
-}
-`,
-		},
-		"CommentTrailingCompassPoint": {
-			in: `graph {
-A:n    // c1
-}`,
-			want: `graph {
-	A:n // c1
-}
-`,
-		},
-		"CommentBlockTrailingCompassPoint": {
-			in: `graph {
-A:n    /* c1 */
-}`,
-			want: `graph {
-	A:n /* c1 */
-}
-`,
-		},
-		"CommentTrailingPortWithCompassPoint": {
-			in: `graph {
-A:port:sw    // c1
-}`,
-			want: `graph {
-	A:port:sw // c1
-}
-`,
-		},
-		"CommentBlockTrailingPortWithCompassPoint": {
-			in: `graph {
-A:port:sw    /* c1 */
-}`,
-			want: `graph {
-	A:port:sw /* c1 */
-}
-`,
-		},
-		"CommentTrailingAttrName": {
-			in: `graph {
-color    // c1
-= red
-}`,
-			want: `graph {
-	color // c1
-	=red
-}
-`,
-		},
-		"CommentBlockTrailingAttrName": {
-			in: `graph {
-color    /* c1 */
-= red
-}`,
-			want: `graph {
-	color /* c1 */ =red
-}
-`,
-		},
-		"CommentTrailingAttrValue": {
-			in: `graph {
-color = red    // c1
-}`,
-			want: `graph {
-	color=red // c1
-}
-`,
-		},
-		"CommentBlockTrailingAttrValue": {
-			in: `graph {
-color = red    /* c1 */
-}`,
-			want: `graph {
-	color=red /* c1 */
-}
-`,
-		},
+
+		// Graph: comments before/after braces
 		"CommentBeforeClosingBrace": {
 			in: `graph {
 	A
@@ -508,36 +368,117 @@ color = red    /* c1 */
 }
 `,
 		},
-		"CommentBeforeClosingBraceInSubgraph": {
+
+		// stmt_list: comments before statements
+		"CommentBeforeStmt": {
 			in: `graph {
-	subgraph {
-		A
-		// c1
-	}
+	// c1
+A
 }`,
 			want: `graph {
-	subgraph {
-		A
-		// c1
-	}
+	// c1
+	A
 }
 `,
 		},
-		"CommentBlockBeforeClosingBraceInSubgraph": {
+		"CommentBlockBeforeStmt": {
 			in: `graph {
-	subgraph {
-		A
-		/* c1 */
-	}
+	/* c1 */
+A
 }`,
 			want: `graph {
-	subgraph {
-		A
-		/* c1 */
-	}
+	/* c1 */
+	A
 }
 `,
 		},
+
+		// stmt: ID '=' ID (graph-level attribute)
+		"CommentTrailingAttrName": {
+			in: `graph {
+color    // c1
+= red
+}`,
+			want: `graph {
+	color // c1
+	=red
+}
+`,
+		},
+		"CommentBlockTrailingAttrName": {
+			in: `graph {
+color    /* c1 */
+= red
+}`,
+			want: `graph {
+	color /* c1 */ =red
+}
+`,
+		},
+		"CommentTrailingAttrEquals": {
+			in: `graph {
+	a= // c1
+b
+}`,
+			want: `graph {
+	a= // c1
+	b
+}
+`,
+		},
+		"CommentBlockTrailingAttrEquals": {
+			in: `graph {
+	a= /* c1 */
+b
+}`,
+			want: `graph {
+	a= /* c1 */ b
+}
+`,
+		},
+		"CommentTrailingAttrValue": {
+			in: `graph {
+color = red    // c1
+}`,
+			want: `graph {
+	color=red // c1
+}
+`,
+		},
+		"CommentBlockTrailingAttrValue": {
+			in: `graph {
+color = red    /* c1 */
+}`,
+			want: `graph {
+	color=red /* c1 */
+}
+`,
+		},
+
+		// attr_stmt: (graph | node | edge) attr_list
+		"CommentTrailingAttrStmtTarget": {
+			in: `graph {
+node    // c1
+[color=red]
+}`,
+			want: `graph {
+	node // c1
+	[color=red]
+}
+`,
+		},
+		"CommentBlockTrailingAttrStmtTarget": {
+			in: `graph {
+node    /* c1 */
+[color=red]
+}`,
+			want: `graph {
+	node /* c1 */ [color=red]
+}
+`,
+		},
+
+		// attr_list: comments before closing bracket
 		"CommentBeforeClosingBracket": {
 			in: `graph {
 	A [
@@ -568,24 +509,171 @@ color = red    /* c1 */
 }
 `,
 		},
-		"CommentTrailingAttrEquals": {
+
+		// node_stmt: node_id [ attr_list ]
+		"CommentTrailingNodeID": {
 			in: `graph {
-	a= // c1
-b
+A    // c1
+[color=red]
 }`,
 			want: `graph {
-	a= // c1
-	b
+	A // c1
+	[color=red]
 }
 `,
 		},
-		"CommentBlockTrailingAttrEquals": {
+		"CommentBlockTrailingNodeID": {
 			in: `graph {
-	a= /* c1 */
-b
+A    /* c1 */
+[color=red]
 }`,
 			want: `graph {
-	a= /* c1 */ b
+	A /* c1 */ [color=red]
+}
+`,
+		},
+
+		// node_id: ID [ port ]
+		"CommentTrailingID": {
+			in: `graph {
+A    //   c1    c1    c1
+}`,
+			want: `graph {
+	A //   c1    c1    c1
+}
+`,
+		},
+		"CommentBlockTrailingID": {
+			in: `graph {
+A    /* c1    c1    c1 */
+}`,
+			want: `graph {
+	A /* c1    c1    c1 */
+}
+`,
+		},
+
+		// port: ':' ID [ ':' compass_pt ] | ':' compass_pt
+		"CommentTrailingPortColon": {
+			in: `graph {
+A: // c1
+port
+}`,
+			want: `graph {
+	A: // c1
+	port
+}
+`,
+		},
+		"CommentBlockTrailingPortColon": {
+			in: `graph {
+A: /* c1 */
+port
+}`,
+			want: `graph {
+	A: /* c1 */ port
+}
+`,
+		},
+		"CommentTrailingPortName": {
+			in: `graph {
+A:port // c1
+:n
+}`,
+			want: `graph {
+	A:port // c1
+	:n
+}
+`,
+		},
+		"CommentBlockTrailingPortName": {
+			in: `graph {
+A:port /* c1 */
+:n
+}`,
+			want: `graph {
+	A:port /* c1 */ :n
+}
+`,
+		},
+		"CommentLeadingPortCompassColon": {
+			in: `graph {
+A:port
+// c1
+:n
+}`,
+			want: `graph {
+	A:port
+	// c1
+	:n
+}
+`,
+		},
+		"CommentBlockLeadingPortCompassColon": {
+			in: `graph {
+A:port/* c1 */:n
+}`,
+			want: `graph {
+	A:port /* c1 */ :n
+}
+`,
+		},
+		"CommentTrailingPortWithCompassPoint": {
+			in: `graph {
+A:port:sw    // c1
+}`,
+			want: `graph {
+	A:port:sw // c1
+}
+`,
+		},
+		"CommentBlockTrailingPortWithCompassPoint": {
+			in: `graph {
+A:port:sw    /* c1 */
+}`,
+			want: `graph {
+	A:port:sw /* c1 */
+}
+`,
+		},
+		"CommentTrailingCompassPoint": {
+			in: `graph {
+A:n    // c1
+}`,
+			want: `graph {
+	A:n // c1
+}
+`,
+		},
+		"CommentBlockTrailingCompassPoint": {
+			in: `graph {
+A:n    /* c1 */
+}`,
+			want: `graph {
+	A:n /* c1 */
+}
+`,
+		},
+
+		// edge_stmt: (node_id | subgraph) edgeRHS [ attr_list ]
+		"CommentTrailingEdgeStmt": {
+			in: `digraph {
+A -> B    // c1
+[color=red]
+}`,
+			want: `digraph {
+	A -> B // c1
+	[color=red]
+}
+`,
+		},
+		"CommentBlockTrailingEdgeStmt": {
+			in: `digraph {
+A -> B    /* c1 */
+[color=red]
+}`,
+			want: `digraph {
+	A -> B /* c1 */ [color=red]
 }
 `,
 		},
@@ -635,134 +723,64 @@ A
 }
 `,
 		},
-		// File-level comments (between graphs)
-		"CommentFile": {
-			in: `// c1
 
-// c2
-graph {}
-// c3
-graph {}
-// c4`,
-			want: `// c1
-// c2
-graph {
-}
-// c3
-graph {
-}
-// c4
-`,
-		},
-		"CommentBlockFile": {
-			in: `/* c1 */
-
-/* c2 */
-graph {}
-/* c3 */
-graph {}
-/* c4 */`,
-			want: `/* c1 */
-/* c2 */ graph {
-}
-/* c3 */ graph {
-}
-/* c4 */
-`,
-		},
-		"CommentTrailingFirstGraph": {
-			in: `graph {} // c1
-graph {}`,
-			want: `graph {
-} // c1
-graph {
-}
-`,
-		},
-		"CommentBlockTrailingFirstGraph": {
-			in: `graph {} /* c1 */
-graph {}`,
-			want: `graph {
-} /* c1 */
-graph {
-}
-`,
-		},
-		"CommentSingleHash": {
-			in: `#!/usr/local/bin/dot
-# comment
-#
-digraph G {}`,
-			want: `#!/usr/local/bin/dot
-# comment
-#
-digraph G {
-}
-`,
-		},
-		// Port comments
-		"CommentTrailingPortColon": {
+		// subgraph: [ subgraph [ ID ] ] '{' stmt_list '}'
+		"CommentTrailingSubgraphKeyword": {
 			in: `graph {
-A: // c1
-port
+subgraph    // c1
+{
+A
+}
 }`,
 			want: `graph {
-	A: // c1
-	port
+	subgraph // c1
+	{
+		A
+	}
 }
 `,
 		},
-		"CommentBlockTrailingPortColon": {
+		"CommentBlockTrailingSubgraphKeyword": {
 			in: `graph {
-A: /* c1 */
-port
+subgraph    /* c1 */
+{
+A
+}
 }`,
 			want: `graph {
-	A: /* c1 */ port
+	subgraph /* c1 */ {
+		A
+	}
 }
 `,
 		},
-		"CommentTrailingPortName": {
+		"CommentBeforeClosingBraceInSubgraph": {
 			in: `graph {
-A:port // c1
-:n
+	subgraph {
+		A
+		// c1
+	}
 }`,
 			want: `graph {
-	A:port // c1
-	:n
+	subgraph {
+		A
+		// c1
+	}
 }
 `,
 		},
-		"CommentBlockTrailingPortName": {
+		"CommentBlockBeforeClosingBraceInSubgraph": {
 			in: `graph {
-A:port /* c1 */
-:n
+	subgraph {
+		A
+		/* c1 */
+	}
 }`,
 			want: `graph {
-	A:port /* c1 */ :n
-}
-`,
-		},
-		// Comment on its own line before second ':' stays inside Port.
-		"CommentLeadingPortCompassColon": {
-			in: `graph {
-A:port
-// c1
-:n
-}`,
-			want: `graph {
-	A:port
-	// c1
-	:n
-}
-`,
-		},
-		"CommentBlockLeadingPortCompassColon": {
-			in: `graph {
-A:port/* c1 */:n
-}`,
-			want: `graph {
-	A:port /* c1 */ :n
+	subgraph {
+		A
+		/* c1 */
+	}
 }
 `,
 		},

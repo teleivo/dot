@@ -3,8 +3,6 @@
 ## Jan
 
 week 4
-* fmt/lsp: support block comments
-  * is there a way to simplify comment placement in the parser so we can simplify printing?
 * fmt: format files/directories
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging

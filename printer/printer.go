@@ -45,50 +45,36 @@ func (p *Printer) Print() error {
 		return errs[0]
 	}
 
-	var endsWithBreak bool
-	first := true
+	var broke bool
 	doc := layout.NewDoc(maxColumn)
-	for _, child := range file.Children {
+	for i, child := range file.Children {
 		if tc, ok := child.(dot.TokenChild); ok && tc.Kind == token.Comment {
-			// file-level comments are always on their own line
-			if !first {
-				doc.Break(1)
-			}
-			doc.Text(tc.Literal)
-			if isLineComment(tc.Literal) {
-				doc.Break(1)
-				endsWithBreak = true
-			}
-			first = false
+			// file-level comments come after last graph, always on own line
+			broke = !p.layoutComment(doc, tc.Literal, false)
 		} else if tc, ok := child.(dot.TreeChild); ok && tc.Kind == dot.KindGraph {
-			if !first {
+			if i > 0 {
 				doc.Break(1)
 			}
-			p.layoutGraph(doc, tc.Tree)
-			endsWithBreak = false
-			first = false
+			broke = p.layoutBlock(doc, tc.Tree)
 		}
 	}
-	if !endsWithBreak {
+	if !broke {
 		doc.Break(1)
 	}
+
 	if err := doc.Render(p.w, p.format); err != nil {
 		return err
 	}
-
 	return nil
-}
-
-// layoutGraph handles: graph : [ 'strict' ] ( 'graph' | 'digraph' ) [ ID ] '{' stmt_list '}'
-func (p *Printer) layoutGraph(doc *layout.Doc, tree *dot.Tree) {
-	p.layoutBlock(doc, tree)
 }
 
 // layoutBlock handles graph and subgraph layout:
 //
 //	graph    : [ 'strict' ] ( 'graph' | 'digraph' ) [ ID ] '{' stmt_list '}'
 //	subgraph : [ 'subgraph' [ ID ] ] '{' stmt_list '}'
-func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) {
+//
+// Returns true if a trailing break was emitted (line comment after closing brace).
+func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) bool {
 	var i int
 
 	// layout [ 'strict' ] ( 'graph' | 'digraph' ) [ ID ] up to '{'
@@ -102,24 +88,16 @@ func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) {
 				}
 				break
 			} else if tc.Kind == token.Comment {
-				prevLine := prevEndLine(tree.Children, i)
-				isTrailing := prevLine > 0 && tc.Start.Line == prevLine
-				if prevLine == 0 {
-					doc.Text(tc.Literal)
-					if isLineComment(tc.Literal) {
-						doc.Break(1)
-					}
+				if i > 0 {
+					isTrailing := isTrailingComment(tc, tree.Children, i)
+					needsSpace = p.layoutComment(doc, tc.Literal, isTrailing)
 				} else {
-					p.layoutComment(doc, tc.Literal, isTrailing)
+					needsSpace = p.layoutCommentText(doc, tc.Literal)
 				}
-				// Check if comment was on its own line (next element on different line)
-				nextLine := nextStartLine(tree.Children, i)
-				ownLine := !isTrailing && nextLine > 0 && tc.End.Line < nextLine
-				if ownLine && !isLineComment(tc.Literal) {
+				// Block comment on its own line needs a break after
+				if isOwnLineComment(tc, tree.Children, i) && needsSpace {
 					doc.Break(1)
 					needsSpace = false
-				} else {
-					needsSpace = !isLineComment(tc.Literal)
 				}
 			} else {
 				if needsSpace {
@@ -148,7 +126,8 @@ func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) {
 					if tc.Kind == token.RightBrace {
 						break
 					} else if tc.Kind == token.Comment {
-						p.layoutComment(doc, tc.Literal, false)
+						isTrailing := isTrailingComment(tc, tree.Children, i)
+						p.layoutComment(doc, tc.Literal, isTrailing)
 					}
 				} else if tc, ok := child.(dot.TreeChild); ok && tc.Kind == dot.KindStmtList {
 					p.layoutStmtList(doc, tc.Tree)
@@ -159,29 +138,32 @@ func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) {
 		doc.Break(1).Text(token.RightBrace.String())
 	})
 
-	// Handle trailing comments after '}'
 	braceEndLine := 0
 	if i < len(tree.Children) {
 		if tc, ok := tree.Children[i].(dot.TokenChild); ok && tc.Kind == token.RightBrace {
 			braceEndLine = tc.End.Line
 		}
 	}
+	// Handle trailing comments after '}'
+	var broke bool
 	for i++; i < len(tree.Children); i++ {
 		if tc, ok := tree.Children[i].(dot.TokenChild); ok && tc.Kind == token.Comment {
 			isTrailing := braceEndLine > 0 && tc.Start.Line == braceEndLine
-			p.layoutComment(doc, tc.Literal, isTrailing)
+			broke = !p.layoutComment(doc, tc.Literal, isTrailing)
 			braceEndLine = tc.End.Line
 		}
 	}
+	return broke
 }
 
 // layoutStmtList handles: stmt_list : [ stmt [ ';' ] stmt_list ]
 func (p *Printer) layoutStmtList(doc *layout.Doc, tree *dot.Tree) {
-	for _, child := range tree.Children {
+	for i, child := range tree.Children {
 		if tc, ok := child.(dot.TreeChild); ok {
 			p.layoutStmt(doc, tc.Tree)
 		} else if tc, ok := child.(dot.TokenChild); ok && tc.Kind == token.Comment {
-			p.layoutComment(doc, tc.Literal, false)
+			isTrailing := isTrailingComment(tc, tree.Children, i)
+			p.layoutComment(doc, tc.Literal, isTrailing)
 		}
 	}
 }
@@ -232,7 +214,7 @@ func (p *Printer) layoutNodeStmt(doc *layout.Doc, tree *dot.Tree) {
 }
 
 // layoutComment emits a comment with appropriate spacing.
-// If trailing, adds Space before; otherwise adds Break before.
+// If trailing, adds Space before, otherwise adds Break before.
 // Returns true if a space is needed after (block comments end with text).
 func (p *Printer) layoutComment(doc *layout.Doc, literal string, trailing bool) bool {
 	if trailing {
@@ -240,11 +222,18 @@ func (p *Printer) layoutComment(doc *layout.Doc, literal string, trailing bool) 
 	} else {
 		doc.Break(1)
 	}
+	return p.layoutCommentText(doc, literal)
+}
+
+// layoutCommentText emits comment text without leading spacing.
+// Returns true if a space is needed after (block comments end with text).
+func (p *Printer) layoutCommentText(doc *layout.Doc, literal string) bool {
 	if isLineComment(literal) {
 		doc.Text(literal)
 		doc.Break(1)
 		return false
 	}
+
 	var start int
 	for i, r := range literal {
 		if r == '\n' {
@@ -259,14 +248,12 @@ func (p *Printer) layoutComment(doc *layout.Doc, literal string, trailing bool) 
 }
 
 // layoutTrailingComments emits any trailing comment tokens from tree's direct children.
-// Returns true if a line comment was emitted (ends with break).
+// Returns true if the last comment emitted was a line comment (ends with break).
 func (p *Printer) layoutTrailingComments(doc *layout.Doc, tree *dot.Tree) bool {
 	var broke bool
 	for _, child := range tree.Children {
 		if tc, ok := child.(dot.TokenChild); ok && tc.Kind == token.Comment {
-			if !p.layoutComment(doc, tc.Literal, true) {
-				broke = true
-			}
+			broke = !p.layoutComment(doc, tc.Literal, true)
 		}
 	}
 	return broke
@@ -277,7 +264,7 @@ func isLineComment(s string) bool {
 	return (len(s) > 0 && s[0] == '#') || (len(s) > 1 && s[0] == '/' && s[1] == '/')
 }
 
-// prevEndLine returns the end line of the child at index i-1, or 0 if i==0.
+// prevEndLine returns the end line of the child at index i-1, or 0 if i <= 0.
 func prevEndLine(children []dot.Child, i int) int {
 	if i <= 0 {
 		return 0
@@ -292,7 +279,7 @@ func prevEndLine(children []dot.Child, i int) int {
 	return 0
 }
 
-// nextStartLine returns the start line of the child at index i+1, or 0 if i is last.
+// nextStartLine returns the start line of the child at index i+1, or 0 if i >= len(children)-1.
 func nextStartLine(children []dot.Child, i int) int {
 	if i >= len(children)-1 {
 		return 0
@@ -311,6 +298,16 @@ func nextStartLine(children []dot.Child, i int) int {
 func isTrailingComment(comment dot.TokenChild, children []dot.Child, i int) bool {
 	prevLine := prevEndLine(children, i)
 	return prevLine > 0 && comment.Start.Line == prevLine
+}
+
+// isOwnLineComment reports whether the comment at index i is on its own line
+// (not trailing the previous element and not on the same line as the next element).
+func isOwnLineComment(comment dot.TokenChild, children []dot.Child, i int) bool {
+	if isTrailingComment(comment, children, i) {
+		return false
+	}
+	nextLine := nextStartLine(children, i)
+	return nextLine > 0 && comment.End.Line < nextLine
 }
 
 // hasComment reports whether tree or any of its descendants contain a comment.
@@ -425,7 +422,8 @@ func (p *Printer) layoutBracketBlock(doc *layout.Doc, tree *dot.Tree, i int) int
 						if tc.Kind == token.RightBracket {
 							break
 						} else if tc.Kind == token.Comment {
-							p.layoutComment(doc, tc.Literal, false)
+							isTrailing := isTrailingComment(tc, tree.Children, i)
+							p.layoutComment(doc, tc.Literal, isTrailing)
 						}
 					} else if tc, ok := tree.Children[i].(dot.TreeChild); ok && tc.Kind == dot.KindAList {
 						emittedAttr = p.layoutAList(doc, tc.Tree, emittedAttr)
@@ -440,9 +438,10 @@ func (p *Printer) layoutBracketBlock(doc *layout.Doc, tree *dot.Tree, i int) int
 // layoutAList handles: a_list : ID '=' ID [ ( ';' | ',' ) ] [ a_list ]
 // Returns true if any attribute was emitted.
 func (p *Printer) layoutAList(doc *layout.Doc, tree *dot.Tree, emittedAttr bool) bool {
-	for _, child := range tree.Children {
+	for i, child := range tree.Children {
 		if tc, ok := child.(dot.TokenChild); ok && tc.Kind == token.Comment {
-			p.layoutComment(doc, tc.Literal, false)
+			isTrailing := isTrailingComment(tc, tree.Children, i)
+			p.layoutComment(doc, tc.Literal, isTrailing)
 		} else if tc, ok := child.(dot.TreeChild); ok && tc.Kind == dot.KindAttribute {
 			if emittedAttr {
 				doc.TextIf(token.Comma.String(), layout.Flat)
@@ -505,7 +504,7 @@ func (p *Printer) layoutEdgeOperand(doc *layout.Doc, tree *dot.Tree) bool {
 	case dot.KindNodeID:
 		return p.layoutNodeID(doc, tree)
 	case dot.KindSubgraph:
-		p.layoutSubgraph(doc, tree)
+		return p.layoutSubgraph(doc, tree)
 	}
 	return false
 }
@@ -557,8 +556,11 @@ func (p *Printer) layoutAttribute(doc *layout.Doc, tree *dot.Tree) {
 }
 
 // layoutSubgraph handles: subgraph : [ 'subgraph' [ ID ] ] '{' stmt_list '}'
-func (p *Printer) layoutSubgraph(doc *layout.Doc, tree *dot.Tree) {
+// Returns true if a trailing break was emitted (line comment after closing brace).
+func (p *Printer) layoutSubgraph(doc *layout.Doc, tree *dot.Tree) bool {
+	var broke bool
 	doc.Group(func(f *layout.Doc) {
-		p.layoutBlock(doc, tree)
+		broke = p.layoutBlock(doc, tree)
 	})
+	return broke
 }

@@ -2,13 +2,10 @@
 
 ## Jan
 
-week 4
 * fmt: format files/directories
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * add ability to capture execution traces using flight recorder?
-
-week 5
 * skeleton:
   * lrb using my dotx toolchain and visual .dot files for test errors and state
   * invariant check
@@ -86,14 +83,6 @@ graph foo {
 ```
 
 ## CLI
-
-## Performance
-
-* profile and improve performance
-  * use unique/string interning?
-  * can I make use of this in 1.26? https://github.com/golang/go/issues/73794
-  * improve layout printing and reduce overhead of fmt especially for writing '\t' or '\n'
-* should I buffer the given w writers in my Render/Print functions?
 
 ## Testing
 

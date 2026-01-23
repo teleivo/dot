@@ -317,6 +317,14 @@ graph {
 }
 `,
 		},
+		"CommentBlockMultiLineBeforeGraphKeyword": {
+			in: `/* line1
+   line2 */ graph {}`,
+			want: `/* line1
+line2 */ graph {
+}
+`,
+		},
 		"CommentSingleHash": {
 			in: `#!/usr/local/bin/dot
 # comment
@@ -584,6 +592,28 @@ A    /* c1 */
 }`,
 			want: `graph {
 	A /* c1 */ [color=red]
+}
+`,
+		},
+		"CommentTrailingStmtAfterSemicolon": {
+			in: `graph {
+A; // c1
+B
+}`,
+			want: `graph {
+	A // c1
+	B
+}
+`,
+		},
+		"CommentBlockTrailingStmtAfterSemicolon": {
+			in: `graph {
+A; /* c1 */
+B
+}`,
+			want: `graph {
+	A /* c1 */
+	B
 }
 `,
 		},

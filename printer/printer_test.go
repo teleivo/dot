@@ -302,11 +302,19 @@ graph {}
 graph {}
 /* c4 */`,
 			want: `/* c1 */
-/* c2 */ graph {
+/* c2 */
+graph {
 }
-/* c3 */ graph {
+/* c3 */
+graph {
 }
 /* c4 */
+`,
+		},
+		"CommentBlockInlineBeforeGraphKeyword": {
+			in:   `/* c1 */ graph {}`,
+			want: `/* c1 */ graph {
+}
 `,
 		},
 		"CommentSingleHash": {

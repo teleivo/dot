@@ -273,365 +273,8 @@ D [label="backslash\\here"]
 }
 `,
 		},
-		// Comment tests
-		//
-		// Line comments are preserved as-is with only indentation adjusted.
+		// Comment tests: comments are preserved as-is with only indentation adjusted.
 		// Content is never modified: no line wrapping, no whitespace normalization.
-
-		// Basic placement
-		"CommentLineBeforeStmt": {
-			in: `graph {
-	// comment before A
-A
-}`,
-			want: `graph {
-	// comment before A
-	A
-}
-`,
-		},
-		"CommentTrailingID": {
-			in: `graph {
-A    //   trailing   spaces   preserved
-}`,
-			want: `graph {
-	A //   trailing   spaces   preserved
-}
-`,
-		},
-		"CommentTrailingAttrStmtTarget": {
-			in: `graph {
-node    //   trailing
-[color=red]
-}`,
-			want: `graph {
-	node //   trailing
-	[color=red]
-}
-`,
-		},
-		"CommentTrailingNodeID": {
-			in: `graph {
-A    //   trailing
-[color=red]
-}`,
-			want: `graph {
-	A //   trailing
-	[color=red]
-}
-`,
-		},
-		"CommentTrailingEdgeStmt": {
-			in: `digraph {
-A -> B    //   trailing
-[color=red]
-}`,
-			want: `digraph {
-	A -> B //   trailing
-	[color=red]
-}
-`,
-		},
-		"CommentTrailingSubgraphKeyword": {
-			in: `graph {
-subgraph    //   trailing
-{
-A
-}
-}`,
-			want: `graph {
-	subgraph //   trailing
-	{
-		A
-	}
-}
-`,
-		},
-		"CommentTrailingCompassPoint": {
-			in: `graph {
-A:n    //   trailing
-}`,
-			want: `graph {
-	A:n //   trailing
-}
-`,
-		},
-		"CommentTrailingPortWithCompassPoint": {
-			in: `graph {
-A:port:sw    //   trailing
-}`,
-			want: `graph {
-	A:port:sw //   trailing
-}
-`,
-		},
-		"CommentTrailingAttrName": {
-			in: `graph {
-color    //   trailing
-= red
-}`,
-			want: `graph {
-	color //   trailing
-	=red
-}
-`,
-		},
-		"CommentTrailingAttrValue": {
-			in: `graph {
-color = red    //   trailing
-}`,
-			want: `graph {
-	color=red //   trailing
-}
-`,
-		},
-		// TODO: block comments
-		// "CommentBlockBeforeStmt": {
-		// 	in: `graph {
-		// 		/* comment before A */
-		// A
-		// }`,
-		// 	want: `graph {
-		// 	/* comment before A */
-		// 	A
-		// }`,
-		// },
-		// "CommentBlockAfterStmt": {
-		// 	in: `graph {
-		// A /* trailing comment */
-		// }`,
-		// 	want: `graph {
-		// 	A /* trailing comment */
-		// }`,
-		// },
-
-		// Indentation correction
-		// "CommentIndentationCorrectedInNestedSubgraph": {
-		// 	in: `graph {
-		// // wrong indent
-		// 	A
-		// 	subgraph {
-		// 			// wrong indent in subgraph
-		// 		B
-		// 		subgraph {
-		// // deeply wrong indent
-		// 			C
-		// 		}
-		// 	}
-		// }`,
-		// 	want: `graph {
-		// 	// wrong indent
-		// 	A
-		// 	subgraph {
-		// 		// wrong indent in subgraph
-		// 		B
-		// 		subgraph {
-		// 			// deeply wrong indent
-		// 			C
-		// 		}
-		// 	}
-		// }`,
-		// },
-		// Content preservation - max column is NOT applied to comments
-		// "CommentLineExceedingMaxColumnPreserved": {
-		// 	in: `graph {
-		// 	// this is a very long comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping
-		// 	A
-		// }`,
-		// 	want: `graph {
-		// 	// this is a very long comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping
-		// 	A
-		// }`,
-		// },
-		// TODO: block comments
-		// "CommentBlockExceedingMaxColumnPreserved": {
-		// 	in: `graph {
-		// 	/* this is a very long block comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping */
-		// 	A
-		// }`,
-		// 	want: `graph {
-		// 	/* this is a very long block comment that exceeds the max column limit but should be preserved exactly as written without any line breaking or wrapping */
-		// 	A
-		// }`,
-		// },
-		// "CommentBlockMultilineFormattingPreserved": {
-		// 	in: `graph {
-		// 	/*
-		// 	 * This block comment has
-		// 	 * intentional formatting with
-		// 	 * aligned asterisks that must
-		// 	 * be preserved exactly
-		// 	 */
-		// 	A
-		// }`,
-		// 	want: `graph {
-		// 	/*
-		// 	 * This block comment has
-		// 	 * intentional formatting with
-		// 	 * aligned asterisks that must
-		// 	 * be preserved exactly
-		// 	 */
-		// 	A
-		// }`,
-		// },
-		// "CommentInternalWhitespacePreserved": {
-		// 	in: `graph {
-		// 	//    multiple   spaces   preserved
-		// 	A
-		// }`,
-		// 	want: `graph {
-		// 	//    multiple   spaces   preserved
-		// 	A
-		// }`,
-		// },
-
-		// Multiple comment types
-		// "CommentPreprocessorStyle": {
-		// 	in: `# preprocessor comment
-		// graph {
-		// 		# inside graph
-		// 	A
-		// }`,
-		// 	want: `# preprocessor comment
-		// graph {
-		// 	# inside graph
-		// 	A
-		// }`,
-		// },
-		// TODO: block comments
-		// "CommentMixedTypes": {
-		// 	in: `// line comment
-		// # preprocessor comment
-		// /* block comment */
-		// graph {
-		// 	A
-		// }`,
-		// 	want: `// line comment
-		// # preprocessor comment
-		// /* block comment */
-		// graph {
-		// 	A
-		// }`,
-		// },
-
-		// Edge cases
-		// "CommentOnlyFile": {
-		// 	in: `// just a comment`,
-		// 	want: `// just a comment`,
-		// },
-		// TODO: block comments
-		// "CommentInEmptyGraph": {
-		// 	in: `graph {
-		// 		/* comment in empty graph */
-		// }`,
-		// 	want: `graph {
-		// 	/* comment in empty graph */
-		// }`,
-		// },
-		// "CommentBetweenGraphs": {
-		// 	in: `graph G1 {
-		// 	A
-		// }
-		// // between graphs
-		// graph G2 {
-		// 	B
-		// }`,
-		// 	want: `graph G1 {
-		// 	A
-		// }
-		// // between graphs
-		// graph G2 {
-		// 	B
-		// }`,
-		// },
-		// TODO: block comments
-		// "CommentAroundAttributes": {
-		// 	in: `graph {
-		// 	A [
-		// 		/* before attr */ color=red /* after value */
-		// 	]
-		// }`,
-		// 	want: `graph {
-		// 	A [/* before attr */ color=red /* after value */]
-		// }`,
-		// },
-		"CommentBeforeClosingBrace": {
-			in: `graph {
-	A
-	// c1
-}`,
-			want: `graph {
-	A
-	// c1
-}
-`,
-		},
-		"CommentBeforeClosingBraceInSubgraph": {
-			in: `graph {
-	subgraph {
-		A
-		// c1
-	}
-}`,
-			want: `graph {
-	subgraph {
-		A
-		// c1
-	}
-}
-`,
-		},
-		"CommentBeforeClosingBracket": {
-			in: `graph {
-	A [
-		color=red
-		// c1
-	]
-}`,
-			want: `graph {
-	A [
-		color=red
-		// c1
-	]
-}
-`,
-		},
-		"CommentTrailingAttrEquals": {
-			in: `graph {
-	a= // c1
-b
-}`,
-			want: `graph {
-	a= // c1
-	b
-}
-`,
-		},
-		"CommentTrailingEdgeOperator": {
-			in: `digraph {
-A -> // c1
-B
-}`,
-			want: `digraph {
-	A -> // c1
-	B
-}
-`,
-		},
-		"CommentLeadingEdgeOperator": {
-			in: `digraph {
-A
-// c1
--> B
-}`,
-			want: `digraph {
-	A
-	// c1
-	-> B
-}
-`,
-		},
-		// File-level comments (between graphs)
 		"CommentFile": {
 			in: `// c1
 
@@ -650,12 +293,44 @@ graph {
 // c4
 `,
 		},
-		"CommentTrailingFirstGraph": {
-			in: `graph {} // c1
-graph {}`,
-			want: `graph {
-} // c1
+		"CommentBlockFile": {
+			in: `/* c1 */
+
+/* c2 */
+graph {}
+/* c3 */
+graph {}
+/* c4 */`,
+			want: `/* c1 */
+/* c2 */
 graph {
+}
+/* c3 */
+graph {
+}
+/* c4 */
+`,
+		},
+		"CommentBlockLeadingFile": {
+			in: `/* c1 */
+
+strict graph {}`,
+			want: `/* c1 */
+strict graph {
+}
+`,
+		},
+		"CommentBlockInlineBeforeGraphKeyword": {
+			in:   `/* c1 */ graph {}`,
+			want: `/* c1 */ graph {
+}
+`,
+		},
+		"CommentBlockMultiLineBeforeGraphKeyword": {
+			in: `/* line1
+   line2 */ graph {}`,
+			want: `/* line1
+line2 */ graph {
 }
 `,
 		},
@@ -671,7 +346,349 @@ digraph G {
 }
 `,
 		},
-		// Port comments
+		"CommentTrailingFirstGraph": {
+			in: `graph {} // c1
+graph {}`,
+			want: `graph {
+} // c1
+graph {
+}
+`,
+		},
+		"CommentBlockTrailingFirstGraph": {
+			in: `graph {} /* c1 */
+graph {}`,
+			want: `graph {
+} /* c1 */
+graph {
+}
+`,
+		},
+		"CommentTrailingStrict": {
+			in: `strict // c1
+graph {}`,
+			want: `strict // c1
+graph {
+}
+`,
+		},
+		"CommentBlockTrailingStrict": {
+			in: `strict /* c1 */ graph {}`,
+			want: `strict /* c1 */ graph {
+}
+`,
+		},
+		"CommentTrailingGraphKeyword": {
+			in: `graph // c1
+{}`,
+			want: `graph // c1
+{
+}
+`,
+		},
+		"CommentBlockTrailingGraphKeyword": {
+			in: `graph /* c1 */ {}`,
+			want: `graph /* c1 */ {
+}
+`,
+		},
+		"CommentTrailingGraphID": {
+			in: `graph G // c1
+{}`,
+			want: `graph G // c1
+{
+}
+`,
+		},
+		"CommentBlockTrailingGraphID": {
+			in: `graph G /* c1 */ {}`,
+			want: `graph G /* c1 */ {
+}
+`,
+		},
+		"CommentBeforeClosingBrace": {
+			in: `graph {
+	A
+	// c1
+}`,
+			want: `graph {
+	A
+	// c1
+}
+`,
+		},
+		"CommentBlockBeforeClosingBrace": {
+			in: `graph {
+	A
+	/* c1 */
+}`,
+			want: `graph {
+	A
+	/* c1 */
+}
+`,
+		},
+		"CommentBeforeStmt": {
+			in: `graph {
+	// c1
+A
+}`,
+			want: `graph {
+	// c1
+	A
+}
+`,
+		},
+		"CommentBlockBeforeStmt": {
+			in: `graph {
+	/* c1 */
+A
+}`,
+			want: `graph {
+	/* c1 */
+	A
+}
+`,
+		},
+		"CommentTrailingAttrName": {
+			in: `graph {
+color    // c1
+= red
+}`,
+			want: `graph {
+	color // c1
+	=red
+}
+`,
+		},
+		"CommentBlockTrailingAttrName": {
+			in: `graph {
+color    /* c1 */
+= red
+}`,
+			want: `graph {
+	color /* c1 */ =red
+}
+`,
+		},
+		"CommentTrailingAttrEquals": {
+			in: `graph {
+	a= // c1
+b
+}`,
+			want: `graph {
+	a= // c1
+	b
+}
+`,
+		},
+		"CommentBlockTrailingAttrEquals": {
+			in: `graph {
+	a= /* c1 */
+b
+}`,
+			want: `graph {
+	a= /* c1 */ b
+}
+`,
+		},
+		"CommentTrailingAttrValue": {
+			in: `graph {
+color = red    // c1
+}`,
+			want: `graph {
+	color=red // c1
+}
+`,
+		},
+		"CommentBlockTrailingAttrValue": {
+			in: `graph {
+color = red    /* c1 */
+}`,
+			want: `graph {
+	color=red /* c1 */
+}
+`,
+		},
+		"CommentTrailingAttrStmtTarget": {
+			in: `graph {
+node    // c1
+[color=red]
+}`,
+			want: `graph {
+	node // c1
+	[color=red]
+}
+`,
+		},
+		"CommentBlockTrailingAttrStmtTarget": {
+			in: `graph {
+node    /* c1 */
+[color=red]
+}`,
+			want: `graph {
+	node /* c1 */ [color=red]
+}
+`,
+		},
+		"CommentBeforeClosingBracket": {
+			in: `graph {
+	A [
+		color=red
+		// c1
+	]
+}`,
+			want: `graph {
+	A [
+		color=red
+		// c1
+	]
+}
+`,
+		},
+		"CommentBlockBeforeClosingBracket": {
+			in: `graph {
+	A [
+		color=red
+		/* c1 */
+	]
+}`,
+			want: `graph {
+	A [
+		color=red
+		/* c1 */
+	]
+}
+`,
+		},
+		"CommentBetweenAttrs": {
+			in: `graph {
+	A [a=b // c1
+c=d]
+}`,
+			want: `graph {
+	A [
+		a=b // c1
+		c=d
+	]
+}
+`,
+		},
+		"CommentBlockBetweenAttrs": {
+			in: `graph {
+	A [a=b /* c1 */ c=d]
+}`,
+			want: `graph {
+	A [a=b /* c1 */,c=d]
+}
+`,
+		},
+		"CommentTrailingNodeID": {
+			in: `graph {
+A    // c1
+[color=red]
+}`,
+			want: `graph {
+	A // c1
+	[color=red]
+}
+`,
+		},
+		"CommentBlockTrailingNodeID": {
+			in: `graph {
+A    /* c1 */
+[color=red]
+}`,
+			want: `graph {
+	A /* c1 */ [color=red]
+}
+`,
+		},
+		"CommentTrailingStmtAfterSemicolon": {
+			in: `graph {
+A; // c1
+B
+}`,
+			want: `graph {
+	A // c1
+	B
+}
+`,
+		},
+		"CommentBlockTrailingStmtAfterSemicolon": {
+			in: `graph {
+A; /* c1 */
+B
+}`,
+			want: `graph {
+	A /* c1 */
+	B
+}
+`,
+		},
+		"CommentTrailingID": {
+			in: `graph {
+A    //   c1    c1    c1
+}`,
+			want: `graph {
+	A //   c1    c1    c1
+}
+`,
+		},
+		"CommentBlockTrailingID": {
+			in: `graph {
+A    /* c1    c1    c1 */
+}`,
+			want: `graph {
+	A /* c1    c1    c1 */
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingID": {
+			in: `graph {
+A /* line1
+line2
+line3 */
+}`,
+			want: `graph {
+	A /* line1
+	line2
+	line3 */
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingIDEmptyLine": {
+			in: `graph {
+A /* line1
+
+line3 */
+}`,
+			want: "graph {\n\tA /* line1\n\t\n\tline3 */\n}\n",
+		},
+		"CommentBlockMultiLineTrailingNodeIDFits": {
+			in: `graph {
+A /* line1
+line2 */ [color=red]
+}`,
+			want: `graph {
+	A /* line1
+	line2 */ [color=red]
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingNodeIDForcesBreak": {
+			in: `graph {
+A /* line1
+this is a long line that will push the attr list past the 80 column limit */ [color=red]
+}`,
+			want: `graph {
+	A /* line1
+	this is a long line that will push the attr list past the 80 column limit */ [
+		color=red
+	]
+}
+`,
+		},
 		"CommentTrailingPortColon": {
 			in: `graph {
 A: // c1
@@ -680,6 +697,16 @@ port
 			want: `graph {
 	A: // c1
 	port
+}
+`,
+		},
+		"CommentBlockTrailingPortColon": {
+			in: `graph {
+A: /* c1 */
+port
+}`,
+			want: `graph {
+	A: /* c1 */ port
 }
 `,
 		},
@@ -694,7 +721,16 @@ A:port // c1
 }
 `,
 		},
-		// Comment on its own line before second ':' stays inside Port.
+		"CommentBlockTrailingPortName": {
+			in: `graph {
+A:port /* c1 */
+:n
+}`,
+			want: `graph {
+	A:port /* c1 */ :n
+}
+`,
+		},
 		"CommentLeadingPortCompassColon": {
 			in: `graph {
 A:port
@@ -705,6 +741,344 @@ A:port
 	A:port
 	// c1
 	:n
+}
+`,
+		},
+		"CommentBlockLeadingPortCompassColon": {
+			in: `graph {
+A:port/* c1 */:n
+}`,
+			want: `graph {
+	A:port /* c1 */ :n
+}
+`,
+		},
+		"CommentTrailingPortWithCompassPoint": {
+			in: `graph {
+A:port:sw    // c1
+}`,
+			want: `graph {
+	A:port:sw // c1
+}
+`,
+		},
+		"CommentBlockTrailingPortWithCompassPoint": {
+			in: `graph {
+A:port:sw    /* c1 */
+}`,
+			want: `graph {
+	A:port:sw /* c1 */
+}
+`,
+		},
+		"CommentTrailingCompassPoint": {
+			in: `graph {
+A:n    // c1
+}`,
+			want: `graph {
+	A:n // c1
+}
+`,
+		},
+		"CommentBlockTrailingCompassPoint": {
+			in: `graph {
+A:n    /* c1 */
+}`,
+			want: `graph {
+	A:n /* c1 */
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingPortName": {
+			in: `graph {
+A:port /* line1
+line2 */
+}`,
+			want: `graph {
+	A:port /* line1
+	line2 */
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingCompassPoint": {
+			in: `graph {
+A:n /* line1
+line2 */
+}`,
+			want: `graph {
+	A:n /* line1
+	line2 */
+}
+`,
+		},
+		"CommentTrailingEdgeStmt": {
+			in: `digraph {
+A -> B    // c1
+[color=red]
+}`,
+			want: `digraph {
+	A -> B // c1
+	[color=red]
+}
+`,
+		},
+		"CommentBlockTrailingEdgeStmt": {
+			in: `digraph {
+A -> B    /* c1 */
+[color=red]
+}`,
+			want: `digraph {
+	A -> B /* c1 */ [color=red]
+}
+`,
+		},
+		"CommentTrailingEdgeOperator": {
+			in: `digraph {
+A -> // c1
+B
+}`,
+			want: `digraph {
+	A -> // c1
+	B
+}
+`,
+		},
+		"CommentBlockTrailingEdgeOperator": {
+			in: `digraph {
+A -> /* c1 */
+B
+}`,
+			want: `digraph {
+	A -> /* c1 */ B
+}
+`,
+		},
+		"CommentLeadingEdgeOperator": {
+			in: `digraph {
+A
+// c1
+-> B
+}`,
+			want: `digraph {
+	A
+	// c1
+	-> B
+}
+`,
+		},
+		"CommentBlockLeadingEdgeOperator": {
+			in: `digraph {
+A
+/* c1 */
+-> B
+}`,
+			want: `digraph {
+	A
+	/* c1 */ -> B
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingEdgeOperator": {
+			in: `digraph {
+A -> /* line1
+line2 */ B
+}`,
+			want: `digraph {
+	A -> /* line1
+	line2 */ B
+}
+`,
+		},
+		"CommentBlockMultiLineLeadingEdgeOperator": {
+			in: `digraph {
+A /* line1
+line2 */
+-> B
+}`,
+			want: `digraph {
+	A /* line1
+	line2 */ -> B
+}
+`,
+		},
+		"CommentTrailingSubgraphKeyword": {
+			in: `graph {
+subgraph    // c1
+{
+A
+}
+}`,
+			want: `graph {
+	subgraph // c1
+	{
+		A
+	}
+}
+`,
+		},
+		"CommentBlockTrailingSubgraphKeyword": {
+			in: `graph {
+subgraph    /* c1 */
+{
+A
+}
+}`,
+			want: `graph {
+	subgraph /* c1 */ {
+		A
+	}
+}
+`,
+		},
+		"CommentTrailingSubgraphID": {
+			in: `graph {
+subgraph S // c1
+{
+A
+}
+}`,
+			want: `graph {
+	subgraph S // c1
+	{
+		A
+	}
+}
+`,
+		},
+		"CommentBlockTrailingSubgraphID": {
+			in: `graph {
+subgraph S /* c1 */ {
+A
+}
+}`,
+			want: `graph {
+	subgraph S /* c1 */ {
+		A
+	}
+}
+`,
+		},
+		"CommentBeforeClosingBraceInSubgraph": {
+			in: `graph {
+	subgraph {
+		A
+		// c1
+	}
+}`,
+			want: `graph {
+	subgraph {
+		A
+		// c1
+	}
+}
+`,
+		},
+		"CommentBlockBeforeClosingBraceInSubgraph": {
+			in: `graph {
+	subgraph {
+		A
+		/* c1 */
+	}
+}`,
+			want: `graph {
+	subgraph {
+		A
+		/* c1 */
+	}
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingSubgraphKeyword": {
+			in: `graph {
+subgraph /* line1
+line2 */ {
+A
+}
+}`,
+			want: `graph {
+	subgraph /* line1
+	line2 */ {
+		A
+	}
+}
+`,
+		},
+		"CommentBlockMultiLineBeforeClosingBrace": {
+			in: `graph {
+A
+/* line1
+line2 */
+}`,
+			want: `graph {
+	A
+	/* line1
+	line2 */
+}
+`,
+		},
+		// Long comments (>80 cols) are preserved as-is and force attr_list to break
+		"CommentLongLineInAttrList": {
+			in: `graph {
+	A [color=red // this is a very long comment that exceeds the 80 column limit for sure
+]
+}`,
+			want: `graph {
+	A [
+		color=red // this is a very long comment that exceeds the 80 column limit for sure
+	]
+}
+`,
+		},
+		"CommentLongBlockInAttrList": {
+			in: `graph {
+	A [color=red /* this is a very long block comment that exceeds the 80 column limit */ shape=box]
+}`,
+			want: `graph {
+	A [
+		color=red /* this is a very long block comment that exceeds the 80 column limit */
+		shape=box
+	]
+}
+`,
+		},
+		"CommentLongLineTrailingNodeID": {
+			in: `graph {
+A // this is a very long comment that exceeds eighty columns for sure sure sure
+}`,
+			want: `graph {
+	A // this is a very long comment that exceeds eighty columns for sure sure sure
+}
+`,
+		},
+		"CommentBlockMultiLineTrailingAttrStmtTarget": {
+			in: `graph {
+node /* line1
+line2 */ [color=red]
+}`,
+			want: `graph {
+	node /* line1
+	line2 */ [color=red]
+}
+`,
+		},
+		"CommentBlockBetweenAttrListBrackets": {
+			in: `graph {
+A [a=b] /* c1 */ [c=d]
+}`,
+			want: `graph {
+	A [a=b] /* c1 */ [c=d]
+}
+`,
+		},
+		"CommentBlockBetweenAttrListBracketsForcesBreak": {
+			in: `graph {
+A [label="This is a long label value"] /* comment between brackets */ [color=red,shape=box]
+}`,
+			want: `graph {
+	A [label="This is a long label value"] /* comment between brackets */ [
+		color=red
+		shape=box
+	]
 }
 `,
 		},

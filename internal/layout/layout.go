@@ -87,6 +87,18 @@ func NewDoc(maxColumn int) *Doc {
 	return &Doc{maxColumn: maxColumn}
 }
 
+// HasTrailingSpace reports whether the last tag added to the document is whitespace (space or break).
+func (d *Doc) HasTrailingSpace() bool {
+	if len(d.tags) == 0 {
+		return false
+	}
+	switch d.tags[len(d.tags)-1].tag.(type) {
+	case space, newlines:
+		return true
+	}
+	return false
+}
+
 // Clone creates a deep copy of the Doc. Use this if you want to [Doc.Render] a Doc multiple times.
 func (d *Doc) Clone() *Doc {
 	clone := &Doc{

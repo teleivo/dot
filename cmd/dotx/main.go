@@ -6,8 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"runtime/pprof"
 	"syscall"
@@ -71,7 +73,7 @@ func usage(w io.Writer) {
 	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, lsp, version, watch")
 }
 
-func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
+func runFmt(args []string, f io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 	flags := flag.NewFlagSet("fmt", flag.ContinueOnError)
 	flags.SetOutput(wErr)
 	flags.Usage = func() {
@@ -95,17 +97,98 @@ func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 		return 2, fmt.Errorf("failed to convert -format=%q: %v", *format, err)
 	}
 
-	err = profile(func() error {
-		src, err := io.ReadAll(r)
+	// TODO wrap using profiling
+	// TODO make testable? fs.FS and fstest
+	// TODO cleanup
+	var src []byte
+	if flags.NArg() == 1 {
+		arg := flags.Arg(0)
+		fi, err := os.Stat(arg)
 		if err != nil {
-			return fmt.Errorf("error reading input: %v", err)
+			return 1, fmt.Errorf("failed to open file: %v", err)
 		}
-		p := printer.New(src, w, ft)
-		return p.Print()
-	}, *cpuProfile, *memProfile)
-	if err != nil {
-		return 1, err
+
+		if fi.IsDir() { // fmt dir
+			root, err := filepath.Abs(arg)
+			if err != nil {
+				return 1, fmt.Errorf("failed to get absolute path: %v", err)
+			}
+			fmt.Println(root)
+			err = profile(func() error {
+				return fs.WalkDir(os.DirFS(root), ".", func(path string, d fs.DirEntry, fsErr error) error {
+					// TODO what to do with fsErr (and what name to use)
+					if d == nil {
+						return nil
+					}
+					if ext := filepath.Ext(d.Name()); ext != ".dot" && ext != ".gv" {
+						return nil
+					}
+
+					// file := filepath.Join(root, path, d.Name())
+					file := filepath.Join(root, path)
+					src, err = os.ReadFile(file)
+					if err != nil {
+						return fmt.Errorf("error reading file: %v", err)
+					}
+					f, err := os.OpenFile(file, os.O_WRONLY, 0o600)
+					if err != nil {
+						return fmt.Errorf("failed to open file: %v", err)
+					}
+					defer func() {
+						_ = f.Close()
+					}()
+					w = f
+
+					// TODO I need to enhance/change the error like prepend the file name to
+					// line:col: error string
+					p := printer.New(src, w, ft)
+					return p.Print()
+				})
+			}, *cpuProfile, *memProfile)
+			if err != nil {
+				return 1, err
+			}
+		} else { // fmt file
+			f, err := os.OpenFile(arg, os.O_RDONLY, 0o600)
+			if err != nil {
+				return 1, fmt.Errorf("failed to open file: %v", err)
+			}
+			src, err = io.ReadAll(f)
+			_ = f.Close()
+			if err != nil {
+				return 1, fmt.Errorf("error reading input: %v", err)
+			}
+			f, err = os.OpenFile(arg, os.O_WRONLY, 0o600)
+			if err != nil {
+				return 1, fmt.Errorf("failed to open file: %v", err)
+			}
+			defer func() {
+				_ = f.Close()
+			}()
+			w = f
+
+			err = profile(func() error {
+				p := printer.New(src, w, ft)
+				return p.Print()
+			}, *cpuProfile, *memProfile)
+			if err != nil {
+				return 1, err
+			}
+		}
+	} else { // fmt stdin to stdout
+		src, err = io.ReadAll(f)
+		if err != nil {
+			return 1, fmt.Errorf("error reading input: %v", err)
+		}
+		err = profile(func() error {
+			p := printer.New(src, w, ft)
+			return p.Print()
+		}, *cpuProfile, *memProfile)
+		if err != nil {
+			return 1, err
+		}
 	}
+
 	return 0, nil
 }
 

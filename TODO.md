@@ -3,12 +3,13 @@
 ## Jan
 
 * fmt: format files/directories
+  * API: `dotx fmt [path ...]`
+    * no args → stdin to stdout
+    * file/dir args → format in-place (`.dot`/`.gv` files)
+  * errors to stderr in file order
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * add ability to capture execution traces using flight recorder?
-* skeleton:
-  * lrb using my dotx toolchain and visual .dot files for test errors and state
-  * invariant check
 
 ## Parser
 

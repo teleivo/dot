@@ -63,7 +63,9 @@ EOF
 * **No configuration**: `dotx fmt` is opinionated and has no options to change its format.
 * **Idempotency**: Formatting the same code multiple times produces identical output.
 * **Only formats valid code**: Parse errors are reported to stderr and no output is produced. The
-  formatter does not output partial or malformed results.
+  formatter does not output partial or malformed results. When formatting a directory, all files are
+  processed and errors from all files are reported (one error per file). Files without errors are
+  formatted successfully even when other files have errors.
 * **Comments are preserved as-is**: Comment content is never modified - no line wrapping or
   whitespace normalization. Only indentation is adjusted to match surrounding code. This preserves
   ASCII art, code examples, and tables that may appear in comments.

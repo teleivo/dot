@@ -2,6 +2,7 @@
 package format
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -24,7 +25,8 @@ func Reader(r io.Reader, w io.Writer, ft layout.Format) error {
 
 // Dir formats all DOT files (.dot, .gv) in a directory tree.
 func Dir(root string, ft layout.Format) error {
-	return fs.WalkDir(os.DirFS(root), ".", func(path string, d fs.DirEntry, fsErr error) error {
+	var errs []error
+	if err := fs.WalkDir(os.DirFS(root), ".", func(path string, d fs.DirEntry, fsErr error) error {
 		if fsErr != nil {
 			return fsErr
 		}
@@ -36,8 +38,14 @@ func Dir(root string, ft layout.Format) error {
 		}
 
 		file := filepath.Join(root, path)
-		return File(file, ft)
-	})
+		if err := File(file, ft); err != nil {
+			errs = append(errs, err)
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	return errors.Join(errs...)
 }
 
 // File formats a single DOT file in-place.

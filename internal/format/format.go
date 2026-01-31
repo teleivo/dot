@@ -22,27 +22,6 @@ func Reader(r io.Reader, w io.Writer, ft layout.Format) error {
 	return p.Print()
 }
 
-// File formats a single DOT file in-place.
-func File(path string, ft layout.Format) error {
-	src, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("error reading file: %v", err)
-	}
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0o600)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	p := printer.New(src, f, ft)
-	if err := p.Print(); err != nil {
-		return fmt.Errorf("%s:%s", path, err)
-	}
-	return nil
-}
-
 // Dir formats all DOT files (.dot, .gv) in a directory tree.
 func Dir(root string, ft layout.Format) error {
 	return fs.WalkDir(os.DirFS(root), ".", func(path string, d fs.DirEntry, fsErr error) error {
@@ -59,4 +38,50 @@ func Dir(root string, ft layout.Format) error {
 		file := filepath.Join(root, path)
 		return File(file, ft)
 	})
+}
+
+// File formats a single DOT file in-place.
+func File(path string, ft layout.Format) error {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %v", err)
+	}
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("error reading file: %v", err)
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+"*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file for atomic rename: %v", err)
+	}
+
+	var success bool
+	tmpPath := tmp.Name()
+	defer func() {
+		if !success {
+			_ = os.Remove(tmpPath)
+		}
+	}()
+
+	if err := tmp.Chmod(fi.Mode().Perm()); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("failed to set file mode: %v", err)
+	}
+
+	p := printer.New(src, tmp, ft)
+	if err := p.Print(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("%s:%s", path, err)
+	}
+
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %v", err)
+	}
+
+	if err := os.Rename(tmpPath, path); err != nil {
+		return fmt.Errorf("failed to rename temp file: %v", err)
+	}
+
+	success = true
+	return nil
 }

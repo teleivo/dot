@@ -1,11 +1,9 @@
 # TODO
 
 * dotx fmt
-  * use atomic write of files
   * add concurrency to printing files/dirs
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
-  * add ability to capture execution traces using flight recorder?
 
 ## Parser
 

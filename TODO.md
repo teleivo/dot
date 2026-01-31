@@ -2,7 +2,10 @@
 
 * dotx fmt
   * add concurrency to printing files/dirs
-* profile fmt/lsp
+* profile fmt
+  * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
+  * format entire graphviz dir
+* profile lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
 
 ## Parser

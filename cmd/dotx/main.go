@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"runtime/trace"
 	"syscall"
 	"text/tabwriter"
 
@@ -83,6 +84,7 @@ func runFmt(args []string, f io.Reader, w io.Writer, wErr io.Writer) (int, error
 	format := flags.String("format", "default", "Print the formatted DOT code using 'default', the intermediate representation (IR) used to layout the DOT code using 'layout' or a runnable main.go of the IR using 'go'")
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
+	traceProfile := flags.String("trace", "", "write execution trace to `file`")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -115,14 +117,14 @@ func runFmt(args []string, f io.Reader, w io.Writer, wErr io.Writer) (int, error
 		}
 		// fmt stdin to stdout
 		return dotfmt.Reader(f, w, ft)
-	}, *cpuProfile, *memProfile)
+	}, *cpuProfile, *memProfile, *traceProfile)
 	if err != nil {
 		return 1, err
 	}
 	return 0, nil
 }
 
-func profile(fn func() error, cpuProfile, memProfile string) error {
+func profile(fn func() error, cpuProfile, memProfile, traceProfile string) error {
 	if cpuProfile != "" {
 		f, err := os.Create(cpuProfile)
 		if err != nil {
@@ -133,6 +135,17 @@ func profile(fn func() error, cpuProfile, memProfile string) error {
 			return fmt.Errorf("could not start CPU profile: %v", err)
 		}
 		defer pprof.StopCPUProfile()
+	}
+	if traceProfile != "" {
+		f, err := os.Create(traceProfile)
+		if err != nil {
+			return fmt.Errorf("could not create trace: %v", err)
+		}
+		defer func() { _ = f.Close() }()
+		if err := trace.Start(f); err != nil {
+			return fmt.Errorf("could not start trace: %v", err)
+		}
+		defer trace.Stop()
 	}
 
 	err := fn()
@@ -183,6 +196,7 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) (in
 	format := flags.String("format", "default", "Print the DOT code using its 'default' indented tree representation, or using 'scheme' for a scheme like tree with positions")
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
+	traceProfile := flags.String("trace", "", "write execution trace to `file`")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -214,7 +228,7 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) (in
 		}
 
 		return nil
-	}, *cpuProfile, *memProfile)
+	}, *cpuProfile, *memProfile, *traceProfile)
 	if err != nil {
 		return 1, err
 	}
@@ -231,6 +245,7 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 	}
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
+	traceProfile := flags.String("trace", "", "write execution trace to `file`")
 
 	err = flags.Parse(args)
 	if err != nil {
@@ -261,7 +276,7 @@ func runInspectTokens(args []string, r io.Reader, w io.Writer, wErr io.Writer) (
 		}
 
 		return nil
-	}, *cpuProfile, *memProfile)
+	}, *cpuProfile, *memProfile, *traceProfile)
 	if err != nil {
 		return 1, err
 	}
@@ -294,6 +309,7 @@ func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 	tracePath := flags.String("tracefile", "", "write JSON-RPC messages to `file`")
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
+	traceProfile := flags.String("trace", "", "write execution trace to `file`")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -328,7 +344,7 @@ func runLsp(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 			return err
 		}
 		return l.Start(ctx)
-	}, *cpuProfile, *memProfile)
+	}, *cpuProfile, *memProfile, *traceProfile)
 	if err != nil {
 		return 1, err
 	}
@@ -347,6 +363,7 @@ func runWatch(args []string, wErr io.Writer) (int, error) {
 	debug := flags.Bool("debug", false, "enable debug logging")
 	cpuProfile := flags.String("cpuprofile", "", "write cpu profile to `file`")
 	memProfile := flags.String("memprofile", "", "write memory profile to `file`")
+	traceProfile := flags.String("trace", "", "write execution trace to `file`")
 
 	err := flags.Parse(args)
 	if err != nil {
@@ -376,7 +393,7 @@ func runWatch(args []string, wErr io.Writer) (int, error) {
 			return err
 		}
 		return w.Watch(ctx)
-	}, *cpuProfile, *memProfile)
+	}, *cpuProfile, *memProfile, *traceProfile)
 	if err != nil {
 		return 1, err
 	}

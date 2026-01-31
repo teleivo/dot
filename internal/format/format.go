@@ -63,9 +63,11 @@ func File(path string, ft layout.Format) error {
 		}
 	}()
 
-	if err := tmp.Chmod(fi.Mode().Perm()); err != nil {
-		_ = tmp.Close()
-		return fmt.Errorf("failed to set file mode: %v", err)
+	if perm := fi.Mode().Perm(); perm != 0o600 {
+		if err := tmp.Chmod(perm); err != nil {
+			_ = tmp.Close()
+			return fmt.Errorf("failed to set file mode: %v", err)
+		}
 	}
 
 	p := printer.New(src, tmp, ft)

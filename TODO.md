@@ -1,12 +1,8 @@
 # TODO
 
-## Jan
-
-* fmt: format files/directories
-  * API: `dotx fmt [path ...]`
-    * no args → stdin to stdout
-    * file/dir args → format in-place (`.dot`/`.gv` files)
-  * errors to stderr in file order
+* dotx fmt
+  * use atomic write of files
+  * add concurrency to printing files/dirs
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * add ability to capture execution traces using flight recorder?

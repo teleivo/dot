@@ -32,6 +32,20 @@ format.
 
 ### Usage
 
+Format a file in-place:
+
+```sh
+dotx fmt graph.dot
+```
+
+Format all `.dot` and `.gv` files in a directory (recursively):
+
+```sh
+dotx fmt ./graphs/
+```
+
+Format from stdin to stdout:
+
 ```sh
 dotx fmt < input.dot > output.dot
 ```

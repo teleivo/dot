@@ -8,16 +8,17 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"runtime/pprof"
 	"syscall"
 	"text/tabwriter"
 
 	"github.com/teleivo/dot"
+	dotfmt "github.com/teleivo/dot/internal/format"
 	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/internal/version"
 	"github.com/teleivo/dot/lsp"
-	"github.com/teleivo/dot/printer"
 	"github.com/teleivo/dot/token"
 	"github.com/teleivo/dot/watch"
 )
@@ -71,7 +72,7 @@ func usage(w io.Writer) {
 	_, _ = fmt.Fprintln(w, "commands: fmt, inspect, lsp, version, watch")
 }
 
-func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error) {
+func runFmt(args []string, f io.Reader, w io.Writer, wErr io.Writer) (int, error) {
 	flags := flag.NewFlagSet("fmt", flag.ContinueOnError)
 	flags.SetOutput(wErr)
 	flags.Usage = func() {
@@ -96,12 +97,24 @@ func runFmt(args []string, r io.Reader, w io.Writer, wErr io.Writer) (int, error
 	}
 
 	err = profile(func() error {
-		src, err := io.ReadAll(r)
-		if err != nil {
-			return fmt.Errorf("error reading input: %v", err)
+		if flags.NArg() == 1 {
+			arg := flags.Arg(0)
+			fi, err := os.Stat(arg)
+			if err != nil {
+				return fmt.Errorf("failed to open file: %v", err)
+			}
+			root, err := filepath.Abs(arg)
+			if err != nil {
+				return fmt.Errorf("failed to get absolute path: %v", err)
+			}
+
+			if fi.IsDir() {
+				return dotfmt.Dir(root, ft)
+			}
+			return dotfmt.File(root, ft)
 		}
-		p := printer.New(src, w, ft)
-		return p.Print()
+		// fmt stdin to stdout
+		return dotfmt.Reader(f, w, ft)
 	}, *cpuProfile, *memProfile)
 	if err != nil {
 		return 1, err

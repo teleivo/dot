@@ -1,14 +1,11 @@
 # TODO
 
-## Jan
-
-* fmt: format files/directories
+* dotx fmt
+  * use atomic write of files
+  * add concurrency to printing files/dirs
 * profile fmt/lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * add ability to capture execution traces using flight recorder?
-* skeleton:
-  * lrb using my dotx toolchain and visual .dot files for test errors and state
-  * invariant check
 
 ## Parser
 

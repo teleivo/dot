@@ -30,7 +30,7 @@ func TestSafeAdd(t *testing.T) {
 
 		for name, tt := range tests {
 			t.Run(name, func(t *testing.T) {
-				assert.Equalsf(t, safeAdd(tt.a, tt.b), tt.want, "safeAdd(%d, %d)", tt.a, tt.b)
+				assert.Equals(t, safeAdd(tt.a, tt.b), tt.want, "safeAdd(%d, %d)", tt.a, tt.b)
 			})
 		}
 	})

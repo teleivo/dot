@@ -416,7 +416,7 @@ in between
 			t.Run(name, func(t *testing.T) {
 				var got strings.Builder
 				err := tc.in.Clone().Render(&got, layout.Default)
-				require.NoErrorf(t, err, "failed to render default format")
+				require.NoError(t, err, "failed to render default format")
 
 				assert.EqualValues(t, got.String(), tc.wantDefault)
 			})
@@ -429,7 +429,7 @@ in between
 			t.Run(name, func(t *testing.T) {
 				var got strings.Builder
 				err := tc.in.Clone().Render(&got, layout.Layout)
-				require.NoErrorf(t, err, "failed to render layout format")
+				require.NoError(t, err, "failed to render layout format")
 
 				assert.EqualValues(t, got.String(), tc.wantLayout)
 			})
@@ -462,15 +462,15 @@ in between
 				require.NoError(t, err)
 
 				err = tc.in.Clone().Render(f, layout.Go)
-				require.NoErrorf(t, err, "failed to render Go format")
+				require.NoError(t, err, "failed to render Go format")
 				require.NoError(t, f.Close())
 				cmd := exec.CommandContext(t.Context(), "go", "run", f.Name())
 				got, err := cmd.Output()
 				var exitErr *exec.ExitError
 				if errors.As(err, &exitErr) {
-					require.NoErrorf(t, err, "failed to execute Go code generated using GoStringer: %s", exitErr.Stderr)
+					require.NoError(t, err, "failed to execute Go code generated using GoStringer: %s", exitErr.Stderr)
 				} else {
-					require.NoErrorf(t, err, "failed to execute Go code generated using GoStringer")
+					require.NoError(t, err, "failed to execute Go code generated using GoStringer")
 				}
 
 				// GoStringer should render to the same layout as its source document

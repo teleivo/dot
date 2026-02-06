@@ -21,9 +21,9 @@ func TestHandleGenerateSuccess(t *testing.T) {
 
 	wa.handleGenerate(rec, req)
 
-	assert.EqualValuesf(t, rec.Code, http.StatusOK, "status code")
-	assert.EqualValuesf(t, rec.Header().Get("Content-Type"), "image/svg+xml", "Content-Type")
-	assert.Truef(t, strings.Contains(rec.Body.String(), "<svg"), "body should contain <svg")
+	assert.EqualValues(t, rec.Code, http.StatusOK, "status code")
+	assert.EqualValues(t, rec.Header().Get("Content-Type"), "image/svg+xml", "Content-Type")
+	assert.True(t, strings.Contains(rec.Body.String(), "<svg"), "body should contain <svg")
 }
 
 func TestHandleGenerateInvalidDOT(t *testing.T) {
@@ -35,11 +35,11 @@ func TestHandleGenerateInvalidDOT(t *testing.T) {
 
 	wa.handleGenerate(rec, req)
 
-	assert.EqualValuesf(t, rec.Code, http.StatusOK, "status code")
-	assert.EqualValuesf(t, rec.Header().Get("Content-Type"), "image/svg+xml", "Content-Type")
+	assert.EqualValues(t, rec.Code, http.StatusOK, "status code")
+	assert.EqualValues(t, rec.Header().Get("Content-Type"), "image/svg+xml", "Content-Type")
 	body := rec.Body.String()
-	assert.Truef(t, strings.Contains(body, "<svg"), "body should contain <svg")
-	assert.Truef(t, strings.Contains(body, "syntax error"), "body should contain syntax error")
+	assert.True(t, strings.Contains(body, "<svg"), "body should contain <svg")
+	assert.True(t, strings.Contains(body, "syntax error"), "body should contain syntax error")
 }
 
 func tempDOT(t *testing.T, content string) string {

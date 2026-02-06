@@ -1893,14 +1893,14 @@ func assertNextTokenf(t *testing.T, scanner *Scanner, wantToken token.Token, for
 	t.Helper()
 
 	tok := scanner.Next()
-	require.EqualValuesf(t, tok, wantToken, format, args)
+	require.EqualValues(t, tok, wantToken, format, args)
 }
 
 func assertEOF(t *testing.T, scanner *Scanner) {
 	t.Helper()
 
 	tok := scanner.Next()
-	assert.EqualValuesf(t, token.EOF, tok.Kind, "Next()")
+	assert.EqualValues(t, token.EOF, tok.Kind, "Next()")
 }
 
 func assertNext(t *testing.T, scanner *Scanner, want []token.Token, input string) {
@@ -1908,12 +1908,12 @@ func assertNext(t *testing.T, scanner *Scanner, want []token.Token, input string
 
 	for i, wantToken := range want {
 		gotToken := scanner.Next()
-		assert.EqualValuesf(t, gotToken, wantToken, "token at index %d for input %q", i, input)
+		assert.EqualValues(t, gotToken, wantToken, "token at index %d for input %q", i, input)
 	}
 
 	// Verify EOF after all expected tokens
 	eofToken := scanner.Next()
-	assert.EqualValuesf(t, token.EOF, eofToken.Kind, "EOF for input %q", input)
+	assert.EqualValues(t, token.EOF, eofToken.Kind, "EOF for input %q", input)
 }
 
 func TestError(t *testing.T) {
@@ -1982,7 +1982,7 @@ func TestError(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := tt.err.Error()
-			assert.EqualValuesf(t, tt.want, got, "Error message for %s", name)
+			assert.EqualValues(t, tt.want, got, "Error message for %s", name)
 		})
 	}
 }

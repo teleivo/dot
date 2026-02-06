@@ -30,7 +30,7 @@ func TestAttributeMarkdownDoc(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			i := slices.IndexFunc(Attributes, func(a Attribute) bool { return a.Name == tt.name })
 			got := Attributes[i].MarkdownDoc
-			assert.EqualValuesf(t, got, tt.want, "unexpected markdown")
+			assert.EqualValues(t, got, tt.want, "unexpected markdown")
 		})
 	}
 }

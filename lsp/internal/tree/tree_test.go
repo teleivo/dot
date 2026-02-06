@@ -28,7 +28,7 @@ func TestComponentString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
 			got := tt.comp.String()
-			assert.EqualValuesf(t, got, tt.want, "unexpected string")
+			assert.EqualValues(t, got, tt.want, "unexpected string")
 		})
 	}
 }
@@ -236,16 +236,16 @@ func TestFind(t *testing.T) {
 
 			got := Find(tree, tt.position, tt.want)
 
-			assert.EqualValuesf(t, got.Comp, tt.wantComp, "unexpected component for %q at %s", tt.src, tt.position)
+			assert.EqualValues(t, got.Comp, tt.wantComp, "unexpected component for %q at %s", tt.src, tt.position)
 			if tt.wantTree == 0 {
-				assert.Nilf(t, got.Tree, "expected nil tree for %q at %s", tt.src, tt.position)
+				assert.Nil(t, got.Tree, "expected nil tree for %q at %s", tt.src, tt.position)
 			} else {
-				assert.NotNilf(t, got.Tree, "expected non-nil tree for %q at %s", tt.src, tt.position)
+				assert.NotNil(t, got.Tree, "expected non-nil tree for %q at %s", tt.src, tt.position)
 				if got.Tree != nil {
-					assert.EqualValuesf(t, got.Tree.Kind, tt.wantTree, "unexpected tree type for %q at %s", tt.src, tt.position)
+					assert.EqualValues(t, got.Tree.Kind, tt.wantTree, "unexpected tree type for %q at %s", tt.src, tt.position)
 					if tt.wantLiteral != "" {
 						gotLiteral := extractLiteral(got.Tree)
-						assert.EqualValuesf(t, gotLiteral, tt.wantLiteral, "unexpected literal for %q at %s", tt.src, tt.position)
+						assert.EqualValues(t, gotLiteral, tt.wantLiteral, "unexpected literal for %q at %s", tt.src, tt.position)
 					}
 				}
 			}

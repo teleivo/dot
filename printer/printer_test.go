@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
 	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/printer"
@@ -1089,22 +1090,18 @@ A [label="This is a long label value"] /* comment between brackets */ [color=red
 			var gotFirst bytes.Buffer
 			p := printer.New([]byte(test.in), &gotFirst, layout.Default)
 			err := p.Print()
-			require.NoErrorf(t, err, "Print(%q)", test.in)
+			require.NoError(t, err, "Print(%q)", test.in)
 
-			if gotFirst.String() != test.want {
-				t.Fatalf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", test.in, gotFirst.String(), test.want)
-			}
+			require.NoDiff(t, gotFirst.String(), test.want)
 
 			t.Logf("print again with the previous output as the input to ensure printing is idempotent")
 
 			var gotSecond bytes.Buffer
 			p = printer.New(gotFirst.Bytes(), &gotSecond, layout.Default)
 			err = p.Print()
-			require.NoErrorf(t, err, "Print(%q)", gotFirst.String())
+			require.NoError(t, err, "Print(%q)", gotFirst.String())
 
-			if gotSecond.String() != gotFirst.String() {
-				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", gotFirst.String(), gotSecond.String(), gotFirst.String())
-			}
+			assert.NoDiff(t, gotSecond.String(), gotFirst.String())
 		})
 	}
 }
@@ -1117,7 +1114,7 @@ func TestPrintErrorReturnsError(t *testing.T) {
 
 	err := p.Print()
 
-	require.NotNilf(t, err, "Print(%q) should return an error when parsing fails", input)
+	require.NotNil(t, err, "Print(%q) should return an error when parsing fails", input)
 
 	// Print() should not write anything to the writer when parsing fails. The implementation
 	// returns early on parse error, ensuring the output writer remains empty.

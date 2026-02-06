@@ -243,7 +243,7 @@ func TestDocumentSymbols(t *testing.T) {
 
 			got := DocumentSymbols(tree)
 
-			assert.EqualValuesf(t, got, tt.want, "unexpected symbols for %q", tt.src)
+			assert.EqualValues(t, got, tt.want, "unexpected symbols for %q", tt.src)
 		})
 	}
 
@@ -262,7 +262,7 @@ func TestDocumentSymbols(t *testing.T) {
 
 		// Count total symbols (graph + children)
 		total := countSymbols(got)
-		assert.Truef(t, total <= maxItems, "expected at most %d symbols, got %d", maxItems, total)
+		assert.True(t, total <= maxItems, "expected at most %d symbols, got %d", maxItems, total)
 	})
 
 	t.Run("LimitMaxItemsAcrossGraphs", func(t *testing.T) {
@@ -284,7 +284,7 @@ func TestDocumentSymbols(t *testing.T) {
 		got := DocumentSymbols(tree)
 
 		total := countSymbols(got)
-		assert.Truef(t, total <= maxItems, "expected at most %d symbols, got %d", maxItems, total)
+		assert.True(t, total <= maxItems, "expected at most %d symbols, got %d", maxItems, total)
 	})
 
 	t.Run("LimitMaxDepth", func(t *testing.T) {
@@ -305,7 +305,7 @@ func TestDocumentSymbols(t *testing.T) {
 		got := DocumentSymbols(tree)
 
 		depth := maxSymbolDepth(got)
-		assert.Truef(t, depth <= maxDepth, "expected max depth %d, got %d", maxDepth, depth)
+		assert.True(t, depth <= maxDepth, "expected max depth %d, got %d", maxDepth, depth)
 	})
 }
 
@@ -449,7 +449,7 @@ func TestDefinition(t *testing.T) {
 
 			got := Definition(tree, uri, tt.pos)
 
-			assert.EqualValuesf(t, got, tt.want, "unexpected definition for %q at %v", tt.src, tt.pos)
+			assert.EqualValues(t, got, tt.want, "unexpected definition for %q at %v", tt.src, tt.pos)
 		})
 	}
 }
@@ -581,7 +581,7 @@ func TestReferences(t *testing.T) {
 
 			got := References(tree, uri, tt.pos)
 
-			assert.EqualValuesf(t, got, tt.want, "unexpected references for %q at %v", tt.src, tt.pos)
+			assert.EqualValues(t, got, tt.want, "unexpected references for %q at %v", tt.src, tt.pos)
 		})
 	}
 }

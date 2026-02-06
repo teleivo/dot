@@ -101,7 +101,7 @@ func TestVisualOutput(t *testing.T) {
 			if string(formattedDotSecond) != string(formattedDot) {
 				// Preserve temp files on failure
 				shouldCleanup = false
-				t.Errorf("\n\nin:\n%s\n\ngot:\n%s\n\n\nwant:\n%s\n", formattedDot, formattedDotSecond, formattedDot)
+				assert.NoDiff(t, string(formattedDotSecond), string(formattedDot))
 			}
 
 			formattedPlain, err := generatePlain(t, formattedDot)

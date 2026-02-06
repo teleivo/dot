@@ -1,7 +1,8 @@
 # TODO
 
-* dotx fmt
-  * add concurrency to printing files/dirs
+* dotx fmt: add concurrency to printing files/dirs
+  * use trace task for formatting dir and region for individual files
+
 * profile fmt
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * format entire graphviz dir

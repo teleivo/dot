@@ -22,8 +22,8 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, msg)
 
 		want := `{"jsonrpc":"2.0","id":3,"error":{"code":-32002,"message":"server not initialized"}}`
-		assert.Truef(t, s.Scan(), "expecting response from server")
-		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+		assert.True(t, s.Scan(), "expecting response from server")
+		require.EqualValues(t, s.Text(), want, "unexpected response")
 	})
 
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialize
@@ -34,15 +34,15 @@ func TestServer(t *testing.T) {
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		assert.Truef(t, s.Scan(), "expecting first initialize response")
+		assert.True(t, s.Scan(), "expecting first initialize response")
 
 		t.Log("second initialize returns InvalidRequest error (-32600)")
 		initMsg2 := `{"jsonrpc":"2.0","method":"initialize","id":2,"params":{}}`
 		writeMessage(t, in, initMsg2)
 
 		want := `{"jsonrpc":"2.0","id":2,"error":{"code":-32600,"message":"server already initialized"}}`
-		assert.Truef(t, s.Scan(), "expecting error response for second initialize")
-		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+		assert.True(t, s.Scan(), "expecting error response for second initialize")
+		require.EqualValues(t, s.Text(), want, "unexpected response")
 	})
 
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#shutdown
@@ -54,8 +54,8 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, initMsg)
 
 		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"definitionProvider":true,"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","referencesProvider":true,"textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
-		assert.Truef(t, s.Scan(), "expecting initialize response")
-		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
+		require.EqualValues(t, s.Text(), wantInit, "unexpected initialize response")
 
 		t.Log("send initialized notification")
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
@@ -66,16 +66,16 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, shutdownMsg)
 
 		want := `{"jsonrpc":"2.0","id":2,"result":null}`
-		assert.Truef(t, s.Scan(), "expecting shutdown response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+		assert.True(t, s.Scan(), "expecting shutdown response")
+		require.EqualValues(t, s.Text(), want, "unexpected response")
 
 		t.Log("requests after shutdown return InvalidRequest error (-32600)")
 		postShutdownMsg := `{"jsonrpc":"2.0","method":"textDocument/hover","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":0}}}`
 		writeMessage(t, in, postShutdownMsg)
 
 		wantErr := `{"jsonrpc":"2.0","id":3,"error":{"code":-32600,"message":"server is shutting down"}}`
-		assert.Truef(t, s.Scan(), "expecting error response after shutdown")
-		require.EqualValuesf(t, s.Text(), wantErr, "unexpected response after shutdown")
+		assert.True(t, s.Scan(), "expecting error response after shutdown")
+		require.EqualValues(t, s.Text(), wantErr, "unexpected response after shutdown")
 
 		t.Log("exit notification terminates server")
 		exitMsg := `{"jsonrpc":"2.0","method":"exit"}`
@@ -90,14 +90,14 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, `{not valid json}`)
 
 		want := `{"jsonrpc":"2.0","error":{"code":-32700,"message":"invalid JSON"}}`
-		assert.Truef(t, s.Scan(), "expecting ParseError response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+		assert.True(t, s.Scan(), "expecting ParseError response")
+		require.EqualValues(t, s.Text(), want, "unexpected response")
 
 		t.Log("server continues processing after parse error")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
 
-		assert.Truef(t, s.Scan(), "expecting initialize response after parse error")
+		assert.True(t, s.Scan(), "expecting initialize response after parse error")
 	})
 
 	// https://www.jsonrpc.org/specification#error_object
@@ -107,7 +107,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -121,8 +121,8 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, unknownRequest)
 
 		want := `{"jsonrpc":"2.0","id":2,"error":{"code":-32601,"message":"method not found"}}`
-		assert.Truef(t, s.Scan(), "expecting MethodNotFound error response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected response")
+		assert.True(t, s.Scan(), "expecting MethodNotFound error response")
+		require.EqualValues(t, s.Text(), want, "unexpected response")
 	})
 
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_publishDiagnostics
@@ -134,8 +134,8 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, initMsg)
 
 		wantInit := `{"jsonrpc":"2.0","id":1,"result":{"capabilities":{"completionProvider":{"triggerCharacters":["[",",",";","{","="]},"definitionProvider":true,"documentFormattingProvider":true,"documentSymbolProvider":true,"hoverProvider":true,"positionEncoding":"utf-8","referencesProvider":true,"textDocumentSync":2},"serverInfo":{"name":"dotls","version":"(devel)"}}}`
-		assert.Truef(t, s.Scan(), "expecting initialize response")
-		require.EqualValuesf(t, s.Text(), wantInit, "unexpected initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
+		require.EqualValues(t, s.Text(), wantInit, "unexpected initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -146,16 +146,16 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, didOpenFirst)
 
 		want := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":1,"diagnostics":[{"range":{"start":{"line":1,"character":11},"end":{"line":1,"character":11}},"severity":1,"message":"expected attribute value"},{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification for didOpen")
-		require.EqualValuesf(t, s.Text(), want, "unexpected diagnostics for didOpen")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics notification for didOpen")
+		require.EqualValues(t, s.Text(), want, "unexpected diagnostics for didOpen")
 
 		t.Log("fix first error via incremental change, one error remains")
 		didChangeMsg1 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///first.dot","version":2},"contentChanges":[{"range":{"start":{"line":1,"character":5},"end":{"line":1,"character":11}},"text":"label=\"hello\""}]}}`
 		writeMessage(t, in, didChangeMsg1)
 
 		wantOneError := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":2,"diagnostics":[{"range":{"start":{"line":3,"character":0},"end":{"line":3,"character":0}},"severity":1,"message":"expected node or subgraph as edge operand"}]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after first incremental change")
-		require.EqualValuesf(t, s.Text(), wantOneError, "unexpected diagnostics after first fix")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics after first incremental change")
+		require.EqualValues(t, s.Text(), wantOneError, "unexpected diagnostics after first fix")
 
 		t.Log("open second valid document, empty diagnostics")
 		secondDocContent := `graph { x -- y }`
@@ -163,24 +163,24 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, didOpenSecond)
 
 		wantSecondEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","version":1,"diagnostics":[]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for second document")
-		require.EqualValuesf(t, s.Text(), wantSecondEmpty, "unexpected diagnostics for second document")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics for second document")
+		require.EqualValues(t, s.Text(), wantSecondEmpty, "unexpected diagnostics for second document")
 
 		t.Log("fix second error in first document, no errors remain")
 		didChangeMsg2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///first.dot","version":3},"contentChanges":[{"range":{"start":{"line":2,"character":2},"end":{"line":2,"character":6}},"text":"b -> c"}]}}`
 		writeMessage(t, in, didChangeMsg2)
 
 		wantFirstEmpty := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///first.dot","version":3,"diagnostics":[]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after second incremental change")
-		require.EqualValuesf(t, s.Text(), wantFirstEmpty, "unexpected diagnostics after all fixes")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics after second incremental change")
+		require.EqualValues(t, s.Text(), wantFirstEmpty, "unexpected diagnostics after all fixes")
 
 		t.Log("change second document, still valid")
 		didChangeSecond := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///second.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":14},"end":{"line":0,"character":14}},"text":" -- z"}]}}`
 		writeMessage(t, in, didChangeSecond)
 
 		wantSecondEmptyV2 := `{"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"file:///second.dot","version":2,"diagnostics":[]}}`
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after changing second document")
-		require.EqualValuesf(t, s.Text(), wantSecondEmptyV2, "unexpected diagnostics after changing second document")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics after changing second document")
+		require.EqualValues(t, s.Text(), wantSecondEmptyV2, "unexpected diagnostics after changing second document")
 
 		t.Log("close documents and verify server still responsive")
 		didCloseSecond := `{"jsonrpc":"2.0","method":"textDocument/didClose","params":{"textDocument":{"uri":"file:///second.dot"}}}`
@@ -196,8 +196,8 @@ func TestServer(t *testing.T) {
 		writeMessage(t, in, shutdownMsg)
 
 		wantShutdown := `{"jsonrpc":"2.0","id":2,"result":null}`
-		assert.Truef(t, s.Scan(), "expecting shutdown response")
-		require.EqualValuesf(t, s.Text(), wantShutdown, "unexpected shutdown response")
+		assert.True(t, s.Scan(), "expecting shutdown response")
+		require.EqualValues(t, s.Text(), wantShutdown, "unexpected shutdown response")
 	})
 
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
@@ -207,7 +207,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -217,41 +217,41 @@ func TestServer(t *testing.T) {
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics")
 
 		t.Log("complete 'lab' in node context returns node-applicable attributes")
 		completionReq := `{"jsonrpc":"2.0","method":"textDocument/completion","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":16}}}`
 		writeMessage(t, in, completionReq)
 
 		wantCompletion := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"lblString","documentation":{"kind":"markdown","value":"Text label attached to objects\n\n**Type:** [lblString](https://graphviz.org/docs/attr-types/lblString/)\n\nLabel: escString or HTML-like \u003ctable\u003e...\u003c/table\u003e\n\n[Docs](https://graphviz.org/docs/attrs/label/)"},"insertText":"label="},{"label":"labelloc","kind":10,"detail":"string","documentation":{"kind":"markdown","value":"Vertical placement of labels\n\n**Type:** [string](https://graphviz.org/docs/attr-types/string/)\n\nText string\n\n[Docs](https://graphviz.org/docs/attrs/labelloc/)"},"insertText":"labelloc="}]}}`
-		assert.Truef(t, s.Scan(), "expecting completion response")
-		require.EqualValuesf(t, s.Text(), wantCompletion, "unexpected completion response")
+		assert.True(t, s.Scan(), "expecting completion response")
+		require.EqualValues(t, s.Text(), wantCompletion, "unexpected completion response")
 
 		t.Log("continue typing narrows completions")
 		didChange := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":16},"end":{"line":0,"character":16}},"text":"el"}]}}`
 		writeMessage(t, in, didChange)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after change")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics after change")
 
 		completionReq2 := `{"jsonrpc":"2.0","method":"textDocument/completion","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":18}}}`
 		writeMessage(t, in, completionReq2)
 
 		wantCompletion2 := `{"jsonrpc":"2.0","id":3,"result":{"isIncomplete":false,"items":[{"label":"label","kind":10,"detail":"lblString","documentation":{"kind":"markdown","value":"Text label attached to objects\n\n**Type:** [lblString](https://graphviz.org/docs/attr-types/lblString/)\n\nLabel: escString or HTML-like \u003ctable\u003e...\u003c/table\u003e\n\n[Docs](https://graphviz.org/docs/attrs/label/)"},"insertText":"label="},{"label":"labelloc","kind":10,"detail":"string","documentation":{"kind":"markdown","value":"Vertical placement of labels\n\n**Type:** [string](https://graphviz.org/docs/attr-types/string/)\n\nText string\n\n[Docs](https://graphviz.org/docs/attrs/labelloc/)"},"insertText":"labelloc="}]}}`
-		assert.Truef(t, s.Scan(), "expecting narrowed completion response")
-		require.EqualValuesf(t, s.Text(), wantCompletion2, "unexpected narrowed completion response")
+		assert.True(t, s.Scan(), "expecting narrowed completion response")
+		require.EqualValues(t, s.Text(), wantCompletion2, "unexpected narrowed completion response")
 
 		t.Log("complete 'arr' in edge context returns edge-specific attributes")
 		didChange2 := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":3},"contentChanges":[{"range":{"start":{"line":0,"character":10},"end":{"line":0,"character":20}},"text":"a -> b [arr"}]}}`
 		writeMessage(t, in, didChange2)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics after edge change")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics after edge change")
 
 		completionReq3 := `{"jsonrpc":"2.0","method":"textDocument/completion","id":4,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":21}}}`
 		writeMessage(t, in, completionReq3)
 
 		wantCompletion3 := `{"jsonrpc":"2.0","id":4,"result":{"isIncomplete":false,"items":[{"label":"arrowhead","kind":10,"detail":"arrowType","documentation":{"kind":"markdown","value":"Style of arrowhead on edge head node\n\n**Type:** [arrowType](https://graphviz.org/docs/attr-types/arrowType/): ` + "`box` | `crow` | `curve` | `diamond` | `dot` | `icurve` | `inv` | `none` | `normal` | `tee` | `vee`" + `\n\n[Docs](https://graphviz.org/docs/attrs/arrowhead/)"},"insertText":"arrowhead="},{"label":"arrowsize","kind":10,"detail":"double","documentation":{"kind":"markdown","value":"Multiplicative scale factor for arrowheads\n\n**Type:** [double](https://graphviz.org/docs/attr-types/double/)\n\nDouble-precision floating point number\n\n[Docs](https://graphviz.org/docs/attrs/arrowsize/)"},"insertText":"arrowsize="},{"label":"arrowtail","kind":10,"detail":"arrowType","documentation":{"kind":"markdown","value":"Style of arrowhead on edge tail node\n\n**Type:** [arrowType](https://graphviz.org/docs/attr-types/arrowType/): ` + "`box` | `crow` | `curve` | `diamond` | `dot` | `icurve` | `inv` | `none` | `normal` | `tee` | `vee`" + `\n\n[Docs](https://graphviz.org/docs/attrs/arrowtail/)"},"insertText":"arrowtail="}]}}`
-		assert.Truef(t, s.Scan(), "expecting edge completion response")
-		require.EqualValuesf(t, s.Text(), wantCompletion3, "unexpected edge completion response")
+		assert.True(t, s.Scan(), "expecting edge completion response")
+		require.EqualValues(t, s.Text(), wantCompletion3, "unexpected edge completion response")
 	})
 
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
@@ -261,7 +261,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -271,15 +271,15 @@ func TestServer(t *testing.T) {
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics notification")
 
 		t.Log("complete after '=' returns dirType values")
 		completionReq := `{"jsonrpc":"2.0","method":"textDocument/completion","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"position":{"line":0,"character":21}}}`
 		writeMessage(t, in, completionReq)
 
 		want := `{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"back","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"Arrow at tail end only (T \u003c- H)\n\n[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"both","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"Arrow at both ends (T \u003c-\u003e H)\n\n[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"forward","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"Arrow at head end only (T -\u003e H)\n\n[dirType](https://graphviz.org/docs/attr-types/dirType/)"}},{"label":"none","kind":12,"detail":"dirType","documentation":{"kind":"markdown","value":"No arrows\n\n[dirType](https://graphviz.org/docs/attr-types/dirType/)"}}]}}`
-		assert.Truef(t, s.Scan(), "expecting completion response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected completion response")
+		assert.True(t, s.Scan(), "expecting completion response")
+		require.EqualValues(t, s.Text(), want, "unexpected completion response")
 	})
 
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_formatting
@@ -289,7 +289,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -299,28 +299,28 @@ func TestServer(t *testing.T) {
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + invalidContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for invalid document")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics for invalid document")
 
 		t.Log("formatting invalid document returns error")
 		formatInvalid := `{"jsonrpc":"2.0","method":"textDocument/formatting","id":2,"params":{"textDocument":{"uri":"file:///test.dot"},"options":{"tabSize":2,"insertSpaces":false}}}`
 		writeMessage(t, in, formatInvalid)
 
 		wantError := `{"jsonrpc":"2.0","id":2,"error":{"code":-32603,"message":"formatting failed: 1:16: expected node or subgraph as edge operand"}}`
-		assert.Truef(t, s.Scan(), "expecting error response for invalid document")
-		require.EqualValuesf(t, s.Text(), wantError, "unexpected error response")
+		assert.True(t, s.Scan(), "expecting error response for invalid document")
+		require.EqualValues(t, s.Text(), wantError, "unexpected error response")
 
 		t.Log("fix document and format successfully")
 		didChange := `{"jsonrpc":"2.0","method":"textDocument/didChange","params":{"textDocument":{"uri":"file:///test.dot","version":2},"contentChanges":[{"range":{"start":{"line":0,"character":14},"end":{"line":0,"character":14}},"text":"b "}]}}`
 		writeMessage(t, in, didChange)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics for fixed document")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics for fixed document")
 
 		formatValid := `{"jsonrpc":"2.0","method":"textDocument/formatting","id":3,"params":{"textDocument":{"uri":"file:///test.dot"},"options":{"tabSize":2,"insertSpaces":false}}}`
 		writeMessage(t, in, formatValid)
 
 		wantFormatting := `{"jsonrpc":"2.0","id":3,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":18}},"newText":"digraph {\n\ta -\u003e b\n}\n"}]}`
-		assert.Truef(t, s.Scan(), "expecting formatting response")
-		require.EqualValuesf(t, s.Text(), wantFormatting, "unexpected formatting response")
+		assert.True(t, s.Scan(), "expecting formatting response")
+		require.EqualValues(t, s.Text(), wantFormatting, "unexpected formatting response")
 	})
 
 	// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_hover
@@ -330,7 +330,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -340,7 +340,7 @@ func TestServer(t *testing.T) {
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics notification")
 
 		t.Log("hover over 'label' attribute name returns documentation")
 		// position is on 'label' (character 14 is the 'a' in 'label')
@@ -349,8 +349,8 @@ func TestServer(t *testing.T) {
 
 		// Same documentation as completion item for 'label'
 		want := `{"jsonrpc":"2.0","id":2,"result":{"contents":{"kind":"markdown","value":"Text label attached to objects\n\n**Type:** [lblString](https://graphviz.org/docs/attr-types/lblString/)\n\nLabel: escString or HTML-like \u003ctable\u003e...\u003c/table\u003e\n\n[Docs](https://graphviz.org/docs/attrs/label/)"}}}`
-		assert.Truef(t, s.Scan(), "expecting hover response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected hover response")
+		assert.True(t, s.Scan(), "expecting hover response")
+		require.EqualValues(t, s.Text(), want, "unexpected hover response")
 	})
 
 	t.Run("DocumentSymbols", func(t *testing.T) {
@@ -359,7 +359,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -369,15 +369,15 @@ func TestServer(t *testing.T) {
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics notification")
 
 		t.Log("request document symbols")
 		symbolsReq := `{"jsonrpc":"2.0","method":"textDocument/documentSymbol","id":2,"params":{"textDocument":{"uri":"file:///test.dot"}}}`
 		writeMessage(t, in, symbolsReq)
 
 		want := `{"jsonrpc":"2.0","id":2,"result":[{"name":"G","detail":"digraph","kind":2,"range":{"start":{"line":0,"character":0},"end":{"line":0,"character":48}},"selectionRange":{"start":{"line":0,"character":8},"end":{"line":0,"character":9}},"children":[{"name":"cluster_0","detail":"subgraph","kind":3,"range":{"start":{"line":0,"character":12},"end":{"line":0,"character":39}},"selectionRange":{"start":{"line":0,"character":21},"end":{"line":0,"character":30}},"children":[{"name":"a","kind":13,"range":{"start":{"line":0,"character":33},"end":{"line":0,"character":34}},"selectionRange":{"start":{"line":0,"character":33},"end":{"line":0,"character":34}}},{"name":"b","kind":13,"range":{"start":{"line":0,"character":36},"end":{"line":0,"character":37}},"selectionRange":{"start":{"line":0,"character":36},"end":{"line":0,"character":37}}}]},{"name":"a -\u003e b","kind":24,"range":{"start":{"line":0,"character":40},"end":{"line":0,"character":46}},"selectionRange":{"start":{"line":0,"character":40},"end":{"line":0,"character":46}}}]}]}`
-		assert.Truef(t, s.Scan(), "expecting documentSymbol response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected documentSymbol response")
+		assert.True(t, s.Scan(), "expecting documentSymbol response")
+		require.EqualValues(t, s.Text(), want, "unexpected documentSymbol response")
 	})
 
 	t.Run("Definition", func(t *testing.T) {
@@ -386,7 +386,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -396,7 +396,7 @@ func TestServer(t *testing.T) {
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics notification")
 
 		t.Log("request definition for 'a' in node stmt (character 18), should jump to 'a' in edge (character 10)")
 		// Position is on 'a' in the node statement at character 18 (0-based)
@@ -405,8 +405,8 @@ func TestServer(t *testing.T) {
 
 		// Definition should point to first occurrence of 'a' at character 10
 		want := `{"jsonrpc":"2.0","id":2,"result":{"uri":"file:///test.dot","range":{"start":{"line":0,"character":10},"end":{"line":0,"character":11}}}}`
-		assert.Truef(t, s.Scan(), "expecting definition response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected definition response")
+		assert.True(t, s.Scan(), "expecting definition response")
+		require.EqualValues(t, s.Text(), want, "unexpected definition response")
 	})
 
 	t.Run("References", func(t *testing.T) {
@@ -415,7 +415,7 @@ func TestServer(t *testing.T) {
 		t.Log("initialize handshake")
 		initMsg := `{"jsonrpc":"2.0","method":"initialize","id":1,"params":{}}`
 		writeMessage(t, in, initMsg)
-		assert.Truef(t, s.Scan(), "expecting initialize response")
+		assert.True(t, s.Scan(), "expecting initialize response")
 
 		initializedMsg := `{"jsonrpc":"2.0","method":"initialized","params":{}}`
 		writeMessage(t, in, initializedMsg)
@@ -425,7 +425,7 @@ func TestServer(t *testing.T) {
 		didOpen := `{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.dot","languageId":"dot","version":1,"text":"` + docContent + `"}}}`
 		writeMessage(t, in, didOpen)
 
-		assert.Truef(t, s.Scan(), "expecting publishDiagnostics notification")
+		assert.True(t, s.Scan(), "expecting publishDiagnostics notification")
 
 		t.Log("request references for 'a' in edge stmt (character 10), should find both occurrences")
 		// Position is on 'a' in the edge statement at character 10 (0-based)
@@ -434,8 +434,8 @@ func TestServer(t *testing.T) {
 
 		// References should include both 'a' at character 10 and 'a' at character 18
 		want := `{"jsonrpc":"2.0","id":2,"result":[{"uri":"file:///test.dot","range":{"start":{"line":0,"character":10},"end":{"line":0,"character":11}}},{"uri":"file:///test.dot","range":{"start":{"line":0,"character":18},"end":{"line":0,"character":19}}}]}`
-		assert.Truef(t, s.Scan(), "expecting references response")
-		require.EqualValuesf(t, s.Text(), want, "unexpected references response")
+		assert.True(t, s.Scan(), "expecting references response")
+		require.EqualValues(t, s.Text(), want, "unexpected references response")
 	})
 }
 
@@ -449,7 +449,7 @@ func TestStartReturnsReaderError(t *testing.T) {
 
 	err = srv.Start(t.Context())
 
-	require.Truef(t, errors.Is(err, readErr), "want %v, got %v", readErr, err)
+	require.True(t, errors.Is(err, readErr), "want %v, got %v", readErr, err)
 }
 
 func setup(t *testing.T) (*rpc.Scanner, io.Writer) {
@@ -463,14 +463,14 @@ func setup(t *testing.T) (*rpc.Scanner, io.Writer) {
 		Out: outW,
 		Log: io.Discard,
 	})
-	require.NoErrorf(t, err, "want no errors creating server")
+	require.NoError(t, err, "want no errors creating server")
 	go func() {
 		require.NoError(t, srv.Start(t.Context()))
 	}()
 
 	t.Cleanup(func() {
-		require.NoErrorf(t, inW.Close(), "failed to close inW")
-		require.NoErrorf(t, outW.Close(), "failed to close outW")
+		require.NoError(t, inW.Close(), "failed to close inW")
+		require.NoError(t, outW.Close(), "failed to close outW")
 	})
 
 	return rpc.NewScanner(outR), inW
@@ -486,7 +486,7 @@ func writeMessage(t *testing.T, w io.Writer, content string) {
 func write(t *testing.T, w io.Writer, format string, args ...any) {
 	t.Helper()
 	_, err := fmt.Fprintf(w, format, args...)
-	require.NoErrorf(t, err, "failed to write message")
+	require.NoError(t, err, "failed to write message")
 }
 
 func TestDocumentChange(t *testing.T) {
@@ -668,10 +668,10 @@ func TestDocumentChange(t *testing.T) {
 
 			for _, change := range tt.changes {
 				err := doc.change(change)
-				require.NoErrorf(t, err, "unexpected error applying change")
+				require.NoError(t, err, "unexpected error applying change")
 			}
 
-			assert.EqualValuesf(t, string(doc.src), tt.want, "unexpected document content")
+			assert.EqualValues(t, string(doc.src), tt.want, "unexpected document content")
 		})
 	}
 }

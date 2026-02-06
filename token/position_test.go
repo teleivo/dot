@@ -55,7 +55,7 @@ func TestPosition(t *testing.T) {
 			t.Run(strconv.Itoa(i), func(t *testing.T) {
 				got := pos.Before(test.in)
 
-				assert.Equalsf(t, got, test.want["Before"], "pos.Before(%#v)", test.in)
+				assert.Equals(t, got, test.want["Before"], "pos.Before(%#v)", test.in)
 			})
 		}
 	})
@@ -64,7 +64,7 @@ func TestPosition(t *testing.T) {
 			t.Run(strconv.Itoa(i), func(t *testing.T) {
 				got := pos.After(test.in)
 
-				assert.Equalsf(t, got, test.want["After"], "pos.After(%#v)", test.in)
+				assert.Equals(t, got, test.want["After"], "pos.After(%#v)", test.in)
 			})
 		}
 	})

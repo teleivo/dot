@@ -121,11 +121,11 @@ func TestInfo(t *testing.T) {
 			got := Info(tree, tt.position)
 
 			if tt.wantNil {
-				assert.Nilf(t, got, "expected nil hover for %q at %s", tt.src, tt.position)
+				assert.Nil(t, got, "expected nil hover for %q at %s", tt.src, tt.position)
 			} else {
-				assert.NotNilf(t, got, "expected non-nil hover for %q at %s", tt.src, tt.position)
+				assert.NotNil(t, got, "expected non-nil hover for %q at %s", tt.src, tt.position)
 				if got != nil {
-					assert.Truef(t, strings.Contains(got.Contents.Value, tt.wantDoc),
+					assert.True(t, strings.Contains(got.Contents.Value, tt.wantDoc),
 						"hover doc %q should contain %q for %q at %s", got.Contents.Value, tt.wantDoc, tt.src, tt.position)
 				}
 			}

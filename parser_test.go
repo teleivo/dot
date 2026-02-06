@@ -3711,21 +3711,21 @@ B"'
 			p := dot.NewParser([]byte(test.in))
 			g := p.Parse()
 
-			assert.EqualValuesf(t, g.String(), test.want, "Parse(%q)", test.in)
-			assert.EqualValuesf(t, errorStrings(p.Errors()), test.wantErrors, "Parse(%q) errors", test.in)
+			assert.EqualValues(t, g.String(), test.want, "Parse(%q)", test.in)
+			assert.EqualValues(t, errorStrings(p.Errors()), test.wantErrors, "Parse(%q) errors", test.in)
 
 			// Verify String() matches Render(Default)
 			var buf strings.Builder
 			err := g.Render(&buf, dot.Default)
-			assert.NoErrorf(t, err, "Render(%q, Default)", test.in)
-			assert.EqualValuesf(t, g.String(), buf.String(), "String() should match Render(Default)")
+			assert.NoError(t, err, "Render(%q, Default)", test.in)
+			assert.EqualValues(t, g.String(), buf.String(), "String() should match Render(Default)")
 
 			// Verify positions via Render(Scheme) when expected
 			if test.wantScheme != "" {
 				buf.Reset()
 				err = g.Render(&buf, dot.Scheme)
-				assert.NoErrorf(t, err, "Render(%q, Scheme)", test.in)
-				assert.EqualValuesf(t, buf.String(), test.wantScheme, "Render(%q, Scheme)", test.in)
+				assert.NoError(t, err, "Render(%q, Scheme)", test.in)
+				assert.EqualValues(t, buf.String(), test.wantScheme, "Render(%q, Scheme)", test.in)
 			}
 		})
 	}

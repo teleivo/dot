@@ -228,7 +228,7 @@ func TestItems(t *testing.T) {
 				got[i] = item.Label
 			}
 
-			assert.EqualValuesf(t, got, tt.want, "unexpected items")
+			assert.EqualValues(t, got, tt.want, "unexpected items")
 
 			if tt.wantInsertText != nil {
 				gotInsertText := make(map[string]string)
@@ -237,7 +237,7 @@ func TestItems(t *testing.T) {
 						gotInsertText[item.Label] = *item.InsertText
 					}
 				}
-				assert.EqualValuesf(t, gotInsertText, tt.wantInsertText, "unexpected InsertText")
+				assert.EqualValues(t, gotInsertText, tt.wantInsertText, "unexpected InsertText")
 			}
 		})
 	}

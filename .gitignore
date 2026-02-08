@@ -31,3 +31,4 @@ visual-test-error.log
 _research/
 *.log
 scratch*.dot
+.claude/

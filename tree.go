@@ -224,7 +224,7 @@ func (tree *Tree) Render(w io.Writer, format Format) error {
 	case Scheme:
 		err = renderScheme(bw, tree, 0)
 	default:
-		panic(fmt.Errorf("rendering tree in format %q is not implemented", format))
+		panic(fmt.Errorf("rendering tree in format %d is not implemented", format))
 	}
 	if err != nil {
 		return err

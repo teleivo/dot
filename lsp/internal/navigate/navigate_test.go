@@ -1,6 +1,7 @@
 package navigate
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/teleivo/assertive/assert"
@@ -249,13 +250,14 @@ func TestDocumentSymbols(t *testing.T) {
 
 	t.Run("LimitMaxItems", func(t *testing.T) {
 		// Generate a graph with more than maxItems nodes
-		src := "digraph { "
-		for i := 0; i < maxItems+1; i++ {
-			src += "n" + string(rune('a'+i%26)) + string(rune('0'+i/26%10)) + "; "
+		var src strings.Builder
+		src.WriteString("digraph { ")
+		for i := range maxItems + 1 {
+			src.WriteString("n" + string(rune('a'+i%26)) + string(rune('0'+i/26%10)) + "; ")
 		}
-		src += "}"
+		src.WriteString("}")
 
-		ps := dot.NewParser([]byte(src))
+		ps := dot.NewParser([]byte(src.String()))
 		tree := ps.Parse()
 
 		got := DocumentSymbols(tree)
@@ -269,16 +271,16 @@ func TestDocumentSymbols(t *testing.T) {
 		// Generate multiple graphs, each with nodes that together exceed maxItems
 		// This tests that the item counter is shared across siblings, not reset per graph
 		nodesPerGraph := maxItems / 3
-		src := ""
-		for g := 0; g < 5; g++ {
-			src += "digraph g" + string(rune('0'+g)) + " { "
-			for i := 0; i < nodesPerGraph; i++ {
-				src += "n" + string(rune('a'+i%26)) + string(rune('0'+i/26%10)) + "; "
+		var src strings.Builder
+		for g := range 5 {
+			src.WriteString("digraph g" + string(rune('0'+g)) + " { ")
+			for i := range nodesPerGraph {
+				src.WriteString("n" + string(rune('a'+i%26)) + string(rune('0'+i/26%10)) + "; ")
 			}
-			src += "} "
+			src.WriteString("} ")
 		}
 
-		ps := dot.NewParser([]byte(src))
+		ps := dot.NewParser([]byte(src.String()))
 		tree := ps.Parse()
 
 		got := DocumentSymbols(tree)
@@ -289,17 +291,18 @@ func TestDocumentSymbols(t *testing.T) {
 
 	t.Run("LimitMaxDepth", func(t *testing.T) {
 		// Generate deeply nested subgraphs
-		src := "digraph { "
-		for i := 0; i < maxDepth+2; i++ {
-			src += "subgraph s" + string(rune('0'+i)) + " { "
+		var src strings.Builder
+		src.WriteString("digraph { ")
+		for i := range maxDepth + 2 {
+			src.WriteString("subgraph s" + string(rune('0'+i)) + " { ")
 		}
-		src += "a "
-		for i := 0; i < maxDepth+2; i++ {
-			src += "} "
+		src.WriteString("a ")
+		for range maxDepth + 2 {
+			src.WriteString("} ")
 		}
-		src += "}"
+		src.WriteString("}")
 
-		ps := dot.NewParser([]byte(src))
+		ps := dot.NewParser([]byte(src.String()))
 		tree := ps.Parse()
 
 		got := DocumentSymbols(tree)
@@ -470,8 +473,8 @@ func TestReferences(t *testing.T) {
 		},
 		"TwoOccurrencesNodeAndEdge": {
 			// Node 'a' appears in node stmt and edge stmt
-			src:  `digraph { a; a -> b }`,
-			pos:  token.Position{Line: 1, Column: 11}, // on first 'a'
+			src: `digraph { a; a -> b }`,
+			pos: token.Position{Line: 1, Column: 11}, // on first 'a'
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 10, 0, 11)},
 				{URI: uri, Range: r(0, 13, 0, 14)},
@@ -479,8 +482,8 @@ func TestReferences(t *testing.T) {
 		},
 		"TwoOccurrencesEdgeThenNode": {
 			// Node 'a' appears in edge stmt first, then node stmt
-			src:  `digraph { a -> b; a }`,
-			pos:  token.Position{Line: 1, Column: 19}, // on second 'a' in node stmt
+			src: `digraph { a -> b; a }`,
+			pos: token.Position{Line: 1, Column: 19}, // on second 'a' in node stmt
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 10, 0, 11)},
 				{URI: uri, Range: r(0, 18, 0, 19)},
@@ -488,8 +491,8 @@ func TestReferences(t *testing.T) {
 		},
 		"MultipleEdges": {
 			// Node 'b' appears in multiple edges
-			src:  `digraph { a -> b; b -> c; d -> b }`,
-			pos:  token.Position{Line: 1, Column: 16}, // on first 'b'
+			src: `digraph { a -> b; b -> c; d -> b }`,
+			pos: token.Position{Line: 1, Column: 16}, // on first 'b'
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 15, 0, 16)},
 				{URI: uri, Range: r(0, 18, 0, 19)},
@@ -498,8 +501,8 @@ func TestReferences(t *testing.T) {
 		},
 		"InSubgraph": {
 			// Node 'a' appears both inside and outside subgraph
-			src:  `digraph { subgraph { a }; a -> b }`,
-			pos:  token.Position{Line: 1, Column: 22}, // on 'a' inside subgraph
+			src: `digraph { subgraph { a }; a -> b }`,
+			pos: token.Position{Line: 1, Column: 22}, // on 'a' inside subgraph
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 21, 0, 22)},
 				{URI: uri, Range: r(0, 26, 0, 27)},
@@ -507,8 +510,8 @@ func TestReferences(t *testing.T) {
 		},
 		"QuotedIdentifier": {
 			// Quoted IDs should match exactly
-			src:  `digraph { "foo" -> b; "foo" }`,
-			pos:  token.Position{Line: 1, Column: 11}, // on first "foo"
+			src: `digraph { "foo" -> b; "foo" }`,
+			pos: token.Position{Line: 1, Column: 11}, // on first "foo"
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 10, 0, 15)},
 				{URI: uri, Range: r(0, 22, 0, 27)},
@@ -529,8 +532,8 @@ func TestReferences(t *testing.T) {
 		},
 		"NodeWithPort": {
 			// Node ID with port - should find both occurrences of 'a'
-			src:  `digraph { a:p1 -> b; a }`,
-			pos:  token.Position{Line: 1, Column: 22}, // on 'a' in node stmt
+			src: `digraph { a:p1 -> b; a }`,
+			pos: token.Position{Line: 1, Column: 22}, // on 'a' in node stmt
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 10, 0, 11)},
 				{URI: uri, Range: r(0, 21, 0, 22)},
@@ -555,8 +558,8 @@ func TestReferences(t *testing.T) {
 		},
 		"EdgeChain": {
 			// Node appears multiple times in edge chain
-			src:  `digraph { a -> b -> a }`,
-			pos:  token.Position{Line: 1, Column: 11}, // on first 'a'
+			src: `digraph { a -> b -> a }`,
+			pos: token.Position{Line: 1, Column: 11}, // on first 'a'
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 10, 0, 11)},
 				{URI: uri, Range: r(0, 20, 0, 21)},
@@ -564,8 +567,8 @@ func TestReferences(t *testing.T) {
 		},
 		"NestedSubgraphs": {
 			// Node appears at different nesting levels
-			src:  `digraph { a; subgraph { subgraph { a } }; a }`,
-			pos:  token.Position{Line: 1, Column: 11}, // on first 'a'
+			src: `digraph { a; subgraph { subgraph { a } }; a }`,
+			pos: token.Position{Line: 1, Column: 11}, // on first 'a'
 			want: []rpc.Location{
 				{URI: uri, Range: r(0, 10, 0, 11)},
 				{URI: uri, Range: r(0, 35, 0, 36)},

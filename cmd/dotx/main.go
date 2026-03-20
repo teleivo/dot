@@ -98,6 +98,9 @@ func runFmt(args []string, f io.Reader, w io.Writer, wErr io.Writer) (int, error
 		return 2, fmt.Errorf("failed to convert -format=%q: %v", *format, err)
 	}
 
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	err = profile(func() error {
 		if flags.NArg() == 1 {
 			arg := flags.Arg(0)
@@ -111,7 +114,7 @@ func runFmt(args []string, f io.Reader, w io.Writer, wErr io.Writer) (int, error
 			}
 
 			if fi.IsDir() {
-				return dotfmt.Dir(root, ft)
+				return dotfmt.Dir(ctx, root, ft, wErr)
 			}
 			return dotfmt.File(root, ft)
 		}

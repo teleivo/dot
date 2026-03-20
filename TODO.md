@@ -1,11 +1,18 @@
 # TODO
 
-* dotx fmt: add concurrency to printing files/dirs
-  * use trace task for formatting dir and region for individual files
-
 * profile fmt
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
   * format entire graphviz dir
+
+* I want to see how a goroutine format is waiting on baton
+* can I figure out which files take the longest using the trace data?
+
+before
+  19.25 real,     24.90 user,     5.98 sys, 29919 ctx-switch
+
+after
+  17.85 real,     28.09 user,     7.17 sys, 35890 ctx-switch
+
 * profile lsp
   * `dotx fmt < samples-graphviz/share/examples/world.gv` is the most challenging
 

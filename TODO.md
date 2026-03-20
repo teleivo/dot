@@ -1,31 +1,23 @@
 # TODO
 
-* reduce allocations in layout/parsing (GC is 48% of CPU time)
+* reduce allocations in layout/parsing
 
-  alloc_objects after iterator removal (world.gv, 31.1M total):
+  alloc_objects after measure embedding (world.gv, 25.4M total):
 
   | Function | Allocs | % |
   |---|---|---|
-  | `tagIfWith` (layout node construction) | 10.5M | 33.7% |
-  | `appendToken` (parser) | 4.7M | 15.0% |
-  | `appendTree` (parser) | 4.1M | 13.2% |
-  | `parseID` | 2.9M | 9.3% |
-  | `Doc.Text` | 2.6M | 8.3% |
+  | `tagIfWith` (layout node construction) | 4.8M | 18.9% |
+  | `appendToken` (parser) | 4.7M | 18.6% |
+  | `appendTree` (parser) | 3.2M | 12.5% |
+  | `Doc.Text` | 3.3M | 13.2% |
+  | `parseID` | 2.6M | 10.1% |
 
-  * embed `measure` as a value in `node` instead of a pointer (~10.5M allocs)
-  * switch `[]*node` to `[]node` to store nodes inline in the slice (~10.5M allocs)
+  * switch `[]*node` to `[]node` to store nodes inline in the slice (~4.8M allocs)
   * investigate parser allocations (`appendToken`, `appendTree`, `parseID`)
 
-  * format entire dir
-    * before concurrency added
-      19.25 real,     24.90 user,     5.98 sys, 29919 ctx-switch
-    * after concurrency added
-      17.85 real,     28.09 user,     7.17 sys, 35890 ctx-switch
-    * after bufio
-    * after getting rid of iterators
-
-* profile lsp
 * add a benchmark to ensure no regressions?
+  * do formatters publish things like throughput? what is a good measure?
+* profile lsp
 
 ## Parser
 

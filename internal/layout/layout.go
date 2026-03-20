@@ -111,7 +111,7 @@ func (d *Doc) Clone() *Doc {
 			tag:     t.tag,
 			len:     t.len,
 			cond:    t.cond,
-			measure: &measure{},
+			measure: measure{},
 		}
 	}
 	return clone
@@ -198,7 +198,7 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 		}
 	}
 
-	d.tags = append(d.tags, &node{tag: t, len: 0, cond: cond, measure: &measure{}})
+	d.tags = append(d.tags, &node{tag: t, len: 0, cond: cond, measure: measure{}})
 	body(d)
 	if j := len(d.tags); j != i {
 		d.tags[i].len = j - i - 1
@@ -303,7 +303,7 @@ func (d *Doc) sumWidths(iter tagRange) {
 			// sum children's measures into parent
 			for j := children.start; j < children.end; {
 				child := d.tags[j]
-				t.measure.add(*child.measure)
+				t.measure.add(child.measure)
 				if child.len > 0 {
 					j = j + 1 + child.len
 				} else {
@@ -601,7 +601,7 @@ type node struct {
 	tag     tag
 	len     int
 	cond    condition
-	measure *measure
+	measure measure
 }
 
 func (t *node) String() string {
@@ -640,7 +640,7 @@ func (m *measure) add(b measure) {
 	}
 }
 
-func (m *measure) String() string {
+func (m measure) String() string {
 	if m.broken {
 		return "broken"
 	}

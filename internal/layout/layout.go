@@ -34,6 +34,7 @@
 package layout
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"math"
@@ -228,14 +229,15 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 func (d *Doc) Render(w io.Writer, format Format) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
-	r := &renderer{w: w}
+	bw := bufio.NewWriter(w)
+	r := &renderer{w: bw}
 
 	var err error
 	switch format {
 	case Default:
 		err = r.render(d.All(), true)
 	case Layout:
-		_, err = fmt.Fprint(w, d)
+		_, err = fmt.Fprint(bw, d)
 	case Go:
 		goTemplate := `package main
 
@@ -250,10 +252,13 @@ func main() {
 	d.Render(os.Stdout, layout.Default)
 }
 `
-		_, err = fmt.Fprintf(w, goTemplate, goString(d, 1))
+		_, err = fmt.Fprintf(bw, goTemplate, goString(d, 1))
 	}
 
-	return err
+	if err != nil {
+		return err
+	}
+	return bw.Flush()
 }
 
 type renderer struct {

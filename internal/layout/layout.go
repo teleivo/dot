@@ -117,30 +117,13 @@ func (d *Doc) Clone() *Doc {
 	return clone
 }
 
-type tagIterator func(yield func(*node, tagIterator) bool)
-
-// All returns an iterator over all tags in the document. This is used internally by the layout
-// engine and for implementing [Doc.String] and [Doc.GoString].
-func (d *Doc) All() tagIterator {
-	return d.newTagIterator(0, len(d.tags))
+type tagRange struct {
+	start, end int
 }
 
-func (d *Doc) newTagIterator(i, j int) tagIterator {
-	return func(yield func(*node, tagIterator) bool) {
-		for i < j {
-			if d.tags[i].len == 0 {
-				if !yield(d.tags[i], d.newTagIterator(i, i)) {
-					return
-				}
-				i++
-			} else {
-				if !yield(d.tags[i], d.newTagIterator(i+1, i+1+d.tags[i].len)) {
-					return
-				}
-				i = i + 1 + d.tags[i].len
-			}
-		}
-	}
+// All returns a tagRange over all tags in the document.
+func (d *Doc) All() tagRange {
+	return tagRange{0, len(d.tags)}
 }
 
 // Text adds literal text content to the document.
@@ -230,7 +213,7 @@ func (d *Doc) Render(w io.Writer, format Format) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
 	bw := bufio.NewWriter(w)
-	r := &renderer{w: bw}
+	r := &renderer{tags: d.tags, w: bw}
 
 	var err error
 	switch format {
@@ -262,6 +245,7 @@ func main() {
 }
 
 type renderer struct {
+	tags            []*node   // tags is the flat tag slice from the Doc
 	w               io.Writer // w writer to output formatted DOT code to
 	indent          int       // indent is the current level of indentation
 	pendingSpace    bool      // pendingSpace indicates a space that will only be rendered if its not trailing
@@ -274,18 +258,22 @@ func (r *renderer) write(s string) error {
 }
 
 func (d *Doc) measure() {
-	for t, children := range d.All() {
-		measureIter(t, children)
-	}
-	for t, children := range d.All() {
-		sumWidths(t, children)
-	}
+	all := d.All()
+	d.measureIter(all)
+	d.sumWidths(all)
 }
 
-func measureIter(parent *node, children tagIterator) {
-	tagWidth(parent)
-	for t, children := range children {
-		measureIter(t, children)
+func (d *Doc) measureIter(iter tagRange) {
+	for i := iter.start; i < iter.end; {
+		t := d.tags[i]
+		tagWidth(t)
+		if t.len > 0 {
+			children := tagRange{i + 1, i + 1 + t.len}
+			d.measureIter(children)
+			i = i + 1 + t.len
+		} else {
+			i++
+		}
 	}
 }
 
@@ -306,25 +294,43 @@ func tagWidth(t *node) {
 	}
 }
 
-func sumWidths(parent *node, children tagIterator) measure {
-	for t, children := range children {
-		child := sumWidths(t, children)
-		parent.measure.add(child)
+func (d *Doc) sumWidths(iter tagRange) {
+	for i := iter.start; i < iter.end; {
+		t := d.tags[i]
+		if t.len > 0 {
+			children := tagRange{i + 1, i + 1 + t.len}
+			d.sumWidths(children)
+			// sum children's measures into parent
+			for j := children.start; j < children.end; {
+				child := d.tags[j]
+				t.measure.add(*child.measure)
+				if child.len > 0 {
+					j = j + 1 + child.len
+				} else {
+					j++
+				}
+			}
+			i = i + 1 + t.len
+		} else {
+			i++
+		}
 	}
-	return *parent.measure
 }
 
-func (d *Doc) layout(iter tagIterator, indent, column int) {
-	for t, children := range iter {
+func (d *Doc) layout(iter tagRange, indent, column int) {
+	for i := iter.start; i < iter.end; {
+		t := d.tags[i]
 		switch tag := t.tag.(type) {
 		case *group:
 			if t.measure.broken || column+t.measure.width > d.maxColumn {
 				t.measure.broken = true
+				children := tagRange{i + 1, i + 1 + t.len}
 				d.layout(children, indent, column)
 			} else {
 				column += t.measure.width
 			}
 		case *indentation:
+			children := tagRange{i + 1, i + 1 + t.len}
 			d.layout(children, safeAdd(indent, tag.columns), column)
 		case *text:
 			column += len(tag.content)
@@ -332,6 +338,11 @@ func (d *Doc) layout(iter tagIterator, indent, column int) {
 			column++
 		case newlines:
 			column = indent
+		}
+		if t.len > 0 {
+			i = i + 1 + t.len
+		} else {
+			i++
 		}
 	}
 }
@@ -347,18 +358,26 @@ func safeAdd(a, b int) int {
 	return a + b
 }
 
-func (r *renderer) render(iter tagIterator, isParentBroken bool) error {
-	for t, children := range iter {
+func (r *renderer) render(iter tagRange, isParentBroken bool) error {
+	for i := iter.start; i < iter.end; {
+		t := r.tags[i]
 		if t.cond == Flat && isParentBroken || t.cond == Broken && !isParentBroken {
+			if t.len > 0 {
+				i = i + 1 + t.len
+			} else {
+				i++
+			}
 			continue
 		}
 
 		switch tag := t.tag.(type) {
 		case *group:
+			children := tagRange{i + 1, i + 1 + t.len}
 			if err := r.render(children, t.measure.broken); err != nil {
 				return err
 			}
 		case *indentation:
+			children := tagRange{i + 1, i + 1 + t.len}
 			r.indent = safeAdd(r.indent, tag.columns)
 			if err := r.render(children, isParentBroken); err != nil {
 				return err
@@ -393,6 +412,11 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) error {
 				}
 			}
 		}
+		if t.len > 0 {
+			i = i + 1 + t.len
+		} else {
+			i++
+		}
 	}
 	return nil
 }
@@ -402,23 +426,26 @@ func (r *renderer) render(iter tagIterator, isParentBroken bool) error {
 // and layout phases are not run. Useful for debugging the layout algorithm.
 func (d *Doc) String() string {
 	var sb strings.Builder
-	stringIter(&sb, d.All(), 0)
+	d.stringIter(&sb, d.All(), 0)
 	return sb.String()
 }
 
-func stringIter(w *strings.Builder, iter tagIterator, indent int) {
-	for t, children := range iter {
+func (d *Doc) stringIter(w *strings.Builder, iter tagRange, indent int) {
+	for i := iter.start; i < iter.end; {
+		t := d.tags[i]
 		switch tag := t.tag.(type) {
 		case *group:
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "<group width=%s>\n", t.measure)
-			stringIter(w, children, indent+1)
+			children := tagRange{i + 1, i + 1 + t.len}
+			d.stringIter(w, children, indent+1)
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "</group>\n")
 		case *indentation:
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "<indent columns=%d>\n", tag.columns)
-			stringIter(w, children, indent+1)
+			children := tagRange{i + 1, i + 1 + t.len}
+			d.stringIter(w, children, indent+1)
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "</indent>\n")
 		case *text:
@@ -446,6 +473,11 @@ func stringIter(w *strings.Builder, iter tagIterator, indent int) {
 				fmt.Fprintf(w, "<break cond=%q count=%d/>\n", t.cond, tag.count)
 			}
 		}
+		if t.len > 0 {
+			i = i + 1 + t.len
+		} else {
+			i++
+		}
 	}
 }
 
@@ -465,13 +497,14 @@ func (d *Doc) GoString() string {
 func goString(d *Doc, indent int) string {
 	var sb strings.Builder
 	_, _ = fmt.Fprintf(&sb, "layout.NewDoc(%d)\n", d.maxColumn)
-	goStringIter(&sb, d.All(), indent)
+	d.goStringIter(&sb, d.All(), indent)
 	return sb.String()
 }
 
-func goStringIter(w *strings.Builder, iter tagIterator, indent int) {
+func (d *Doc) goStringIter(w *strings.Builder, iter tagRange, indent int) {
 	first := true
-	for t, children := range iter {
+	for i := iter.start; i < iter.end; {
+		t := d.tags[i]
 		if first {
 			writeIndent(w, indent)
 			fmt.Fprint(w, "d.\n")
@@ -483,14 +516,16 @@ func goStringIter(w *strings.Builder, iter tagIterator, indent int) {
 
 		switch tag := t.tag.(type) {
 		case *group:
+			children := tagRange{i + 1, i + 1 + t.len}
 			fmt.Fprint(w, "Group(func(d *layout.Doc) {\n")
-			goStringIter(w, children, indent+1)
+			d.goStringIter(w, children, indent+1)
 			fmt.Fprintln(w)
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "})")
 		case *indentation:
+			children := tagRange{i + 1, i + 1 + t.len}
 			fmt.Fprintf(w, "Indent(%d, func(d *layout.Doc) {\n", tag.columns)
-			goStringIter(w, children, indent+1)
+			d.goStringIter(w, children, indent+1)
 			fmt.Fprintln(w)
 			writeIndent(w, indent)
 			fmt.Fprint(w, "})")
@@ -514,6 +549,11 @@ func goStringIter(w *strings.Builder, iter tagIterator, indent int) {
 			}
 		}
 		first = false
+		if t.len > 0 {
+			i = i + 1 + t.len
+		} else {
+			i++
+		}
 	}
 }
 

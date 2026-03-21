@@ -2,15 +2,15 @@
 
 * reduce allocations in layout/parsing
 
-  alloc_objects after node value slice (world.gv, 19.0M total):
+  alloc_objects after tag interface removal (world.gv, 16.2M total):
 
   | Function | Allocs | % |
   |---|---|---|
-  | `appendToken` (parser) | 4.9M | 26.0% |
-  | `appendTree` (parser) | 3.2M | 16.8% |
-  | `parseID` | 2.7M | 14.0% |
-  | `Doc.Text` | 2.5M | 13.0% |
-  | `parseAttribute` | 1.8M | 9.5% |
+  | `appendToken` (parser) | 4.3M | 26.7% |
+  | `appendTree` (parser) | 3.4M | 20.7% |
+  | `parseID` | 2.7M | 16.4% |
+  | `parseAttribute` | 1.5M | 9.3% |
+  | `tokenizeQuotedID` | 1.2M | 7.4% |
 
   * investigate parser allocations (`appendToken`, `appendTree`, `parseID`)
 

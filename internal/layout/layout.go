@@ -47,7 +47,7 @@ type Format int
 const (
 	// Default renders the formatted output as text.
 	Default Format = iota
-	// Layout renders the document structure using HTML-like syntax, showing all tags including
+	// Layout renders the document structure using HTML-like syntax, showing all nodes including
 	// those that may not appear in the final output. This is useful for debugging the measure
 	// and layout algorithm to understand why a group breaks.
 	Layout
@@ -79,7 +79,7 @@ func NewFormat(format string) (Format, error) {
 // if you need to render multiple times.
 type Doc struct {
 	maxColumn int
-	tags      []node
+	nodes     []node
 }
 
 // NewDoc creates a new document with the specified maximum column width. Text will be reflowed
@@ -90,59 +90,58 @@ func NewDoc(maxColumn int) *Doc {
 
 // HasTrailingSpace reports whether the last tag added to the document is whitespace (space or break).
 func (d *Doc) HasTrailingSpace() bool {
-	if len(d.tags) == 0 {
+	if len(d.nodes) == 0 {
 		return false
 	}
-	switch d.tags[len(d.tags)-1].tag.(type) {
-	case space, newlines:
-		return true
-	}
-	return false
+	k := d.nodes[len(d.nodes)-1].kind
+	return k == spaceTag || k == newlineTag
 }
 
 // Clone creates a deep copy of the Doc. Use this if you want to [Doc.Render] a Doc multiple times.
 func (d *Doc) Clone() *Doc {
 	clone := &Doc{
 		maxColumn: d.maxColumn,
-		tags:      make([]node, len(d.tags)),
+		nodes:     make([]node, len(d.nodes)),
 	}
-	for i, t := range d.tags {
-		clone.tags[i] = node{
-			tag:  t.tag,
-			len:  t.len,
-			cond: t.cond,
+	for i, t := range d.nodes {
+		clone.nodes[i] = node{
+			kind:    t.kind,
+			content: t.content,
+			count:   t.count,
+			len:     t.len,
+			cond:    t.cond,
 		}
 	}
 	return clone
 }
 
-type tagRange struct {
+type nodeRange struct {
 	start, end int
 }
 
-// All returns a tagRange over all tags in the document.
-func (d *Doc) All() tagRange {
-	return tagRange{0, len(d.tags)}
+// All returns a nodeRange over all nodes in the document.
+func (d *Doc) All() nodeRange {
+	return nodeRange{0, len(d.nodes)}
 }
 
 // Text adds literal text content to the document.
 func (d *Doc) Text(content string) *Doc {
-	return d.tag(&text{content: content})
+	return d.addNode(node{kind: textTag, content: content}, Always, func(d *Doc) {})
 }
 
 // TextIf adds literal text content that only renders when the specified condition is met.
 func (d *Doc) TextIf(content string, cond condition) *Doc {
-	return d.tagIf(&text{content: content}, cond)
+	return d.addNode(node{kind: textTag, content: content}, cond, func(d *Doc) {})
 }
 
 // Space adds a single space to the document.
 func (d *Doc) Space() *Doc {
-	return d.tag(singleSpace)
+	return d.addNode(node{kind: spaceTag}, Always, func(d *Doc) {})
 }
 
 // SpaceIf adds a single space that only renders when the specified condition is met.
 func (d *Doc) SpaceIf(cond condition) *Doc {
-	return d.tagIf(singleSpace, cond)
+	return d.addNode(node{kind: spaceTag}, cond, func(d *Doc) {})
 }
 
 // Break adds one or more newlines to the document. The count must be positive.
@@ -150,7 +149,7 @@ func (d *Doc) Break(count int) *Doc {
 	if count <= 0 {
 		panic("Break: count must be positive")
 	}
-	return d.tag(newlines{count: count})
+	return d.addNode(node{kind: newlineTag, count: count}, Always, func(d *Doc) {})
 }
 
 // BreakIf adds one or more newlines that only render when the specified condition is met.
@@ -159,48 +158,37 @@ func (d *Doc) BreakIf(count int, cond condition) *Doc {
 	if count <= 0 {
 		panic("BreakIf: count must be positive")
 	}
-	return d.tagIf(newlines{count: count}, cond)
+	return d.addNode(node{kind: newlineTag, count: count}, cond, func(d *Doc) {})
 }
 
 // Group marks a sequence of content that should be kept on one line if it fits within the
 // maximum column width, or broken across multiple lines if it doesn't.
 func (d *Doc) Group(body func(*Doc)) *Doc {
-	return d.tagWith(&group{}, body)
+	return d.addNode(node{kind: groupTag}, Always, body)
 }
 
 // Indent increases the indentation level by the specified number of columns for the content
 // added in body. The indentation is applied at the start of each line after a newline.
 // Each column of indentation is rendered as a single tab character.
 func (d *Doc) Indent(columns int, body func(*Doc)) *Doc {
-	return d.tagWith(&indentation{columns: columns}, body)
+	return d.addNode(node{kind: indentTag, count: columns}, Always, body)
 }
 
-func (d *Doc) tag(t tag) *Doc {
-	return d.tagIfWith(t, Always, func(d *Doc) {})
-}
-
-func (d *Doc) tagIf(t tag, cond condition) *Doc {
-	return d.tagIfWith(t, cond, func(d *Doc) {})
-}
-
-func (d *Doc) tagWith(t tag, body func(*Doc)) *Doc {
-	return d.tagIfWith(t, Always, body)
-}
-
-func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
-	i := len(d.tags)
+func (d *Doc) addNode(n node, cond condition, body func(*Doc)) *Doc {
+	i := len(d.nodes)
 
 	// merge consecutive spaces of the same condition
-	if _, ok := t.(space); ok && i > 0 {
-		if _, ok := d.tags[i-1].tag.(space); ok && cond == d.tags[i-1].cond {
+	if n.kind == spaceTag && i > 0 {
+		if d.nodes[i-1].kind == spaceTag && cond == d.nodes[i-1].cond {
 			return d
 		}
 	}
 
-	d.tags = append(d.tags, node{tag: t, len: 0, cond: cond})
+	n.cond = cond
+	d.nodes = append(d.nodes, n)
 	body(d)
-	if j := len(d.tags); j != i {
-		d.tags[i].len = j - i - 1
+	if j := len(d.nodes); j != i {
+		d.nodes[i].len = j - i - 1
 	}
 	return d
 }
@@ -212,7 +200,7 @@ func (d *Doc) Render(w io.Writer, format Format) error {
 	d.measure()
 	d.layout(d.All(), 0, 0)
 	bw := bufio.NewWriter(w)
-	r := &renderer{tags: d.tags, w: bw}
+	r := &renderer{nodes: d.nodes, w: bw}
 
 	var err error
 	switch format {
@@ -244,7 +232,7 @@ func main() {
 }
 
 type renderer struct {
-	tags            []node    // tags is the flat tag slice from the Doc
+	nodes           []node    // nodes is the flat node slice from the Doc
 	w               io.Writer // w writer to output formatted DOT code to
 	indent          int       // indent is the current level of indentation
 	pendingSpace    bool      // pendingSpace indicates a space that will only be rendered if its not trailing
@@ -262,12 +250,12 @@ func (d *Doc) measure() {
 	d.sumWidths(all)
 }
 
-func (d *Doc) measureIter(iter tagRange) {
-	for i := iter.start; i < iter.end; {
-		t := &d.tags[i]
+func (d *Doc) measureIter(nr nodeRange) {
+	for i := nr.start; i < nr.end; {
+		t := &d.nodes[i]
 		tagWidth(t)
 		if t.len > 0 {
-			children := tagRange{i + 1, i + 1 + t.len}
+			children := nodeRange{i + 1, i + 1 + t.len}
 			d.measureIter(children)
 			i = i + 1 + t.len
 		} else {
@@ -281,27 +269,27 @@ func tagWidth(t *node) {
 		return
 	}
 
-	switch tag := t.tag.(type) {
-	case *text:
-		t.measure.width = len(tag.content)
-	case space:
+	switch t.kind {
+	case textTag:
+		t.measure.width = len(t.content)
+	case spaceTag:
 		// Spaces start as pending - they'll be included in width during sumWidths if
 		// followed by content
 		t.measure.pendingSpace = true
-	case newlines:
+	case newlineTag:
 		t.measure.broken = true
 	}
 }
 
-func (d *Doc) sumWidths(iter tagRange) {
-	for i := iter.start; i < iter.end; {
-		t := &d.tags[i]
+func (d *Doc) sumWidths(nr nodeRange) {
+	for i := nr.start; i < nr.end; {
+		t := &d.nodes[i]
 		if t.len > 0 {
-			children := tagRange{i + 1, i + 1 + t.len}
+			children := nodeRange{i + 1, i + 1 + t.len}
 			d.sumWidths(children)
 			// sum children's measures into parent
 			for j := children.start; j < children.end; {
-				child := &d.tags[j]
+				child := &d.nodes[j]
 				t.measure.add(child.measure)
 				if child.len > 0 {
 					j = j + 1 + child.len
@@ -316,26 +304,26 @@ func (d *Doc) sumWidths(iter tagRange) {
 	}
 }
 
-func (d *Doc) layout(iter tagRange, indent, column int) {
-	for i := iter.start; i < iter.end; {
-		t := &d.tags[i]
-		switch tag := t.tag.(type) {
-		case *group:
+func (d *Doc) layout(nr nodeRange, indent, column int) {
+	for i := nr.start; i < nr.end; {
+		t := &d.nodes[i]
+		switch t.kind {
+		case groupTag:
 			if t.measure.broken || column+t.measure.width > d.maxColumn {
 				t.measure.broken = true
-				children := tagRange{i + 1, i + 1 + t.len}
+				children := nodeRange{i + 1, i + 1 + t.len}
 				d.layout(children, indent, column)
 			} else {
 				column += t.measure.width
 			}
-		case *indentation:
-			children := tagRange{i + 1, i + 1 + t.len}
-			d.layout(children, safeAdd(indent, tag.columns), column)
-		case *text:
-			column += len(tag.content)
-		case space:
+		case indentTag:
+			children := nodeRange{i + 1, i + 1 + t.len}
+			d.layout(children, safeAdd(indent, t.count), column)
+		case textTag:
+			column += len(t.content)
+		case spaceTag:
 			column++
-		case newlines:
+		case newlineTag:
 			column = indent
 		}
 		if t.len > 0 {
@@ -357,9 +345,9 @@ func safeAdd(a, b int) int {
 	return a + b
 }
 
-func (r *renderer) render(iter tagRange, isParentBroken bool) error {
-	for i := iter.start; i < iter.end; {
-		t := r.tags[i]
+func (r *renderer) render(nr nodeRange, isParentBroken bool) error {
+	for i := nr.start; i < nr.end; {
+		t := r.nodes[i]
 		if t.cond == Flat && isParentBroken || t.cond == Broken && !isParentBroken {
 			if t.len > 0 {
 				i = i + 1 + t.len
@@ -369,20 +357,20 @@ func (r *renderer) render(iter tagRange, isParentBroken bool) error {
 			continue
 		}
 
-		switch tag := t.tag.(type) {
-		case *group:
-			children := tagRange{i + 1, i + 1 + t.len}
+		switch t.kind {
+		case groupTag:
+			children := nodeRange{i + 1, i + 1 + t.len}
 			if err := r.render(children, t.measure.broken); err != nil {
 				return err
 			}
-		case *indentation:
-			children := tagRange{i + 1, i + 1 + t.len}
-			r.indent = safeAdd(r.indent, tag.columns)
+		case indentTag:
+			children := nodeRange{i + 1, i + 1 + t.len}
+			r.indent = safeAdd(r.indent, t.count)
 			if err := r.render(children, isParentBroken); err != nil {
 				return err
 			}
-			r.indent -= tag.columns
-		case *text:
+			r.indent -= t.count
+		case textTag:
 			if r.pendingSpace { // space is not trailing so write it
 				if err := r.write(" "); err != nil {
 					return err
@@ -396,16 +384,16 @@ func (r *renderer) render(iter tagRange, isParentBroken bool) error {
 					}
 				}
 			}
-			if err := r.write(tag.content); err != nil {
+			if err := r.write(t.content); err != nil {
 				return err
 			}
 			r.writtenNewlines = 0 // reset newlines as text means we do not deal with consecutive newlines
-		case space:
+		case spaceTag:
 			r.pendingSpace = true // writing space is delayed as it might be trailing
-		case newlines:
+		case newlineTag:
 			r.pendingSpace = false // discard pending space which would be trailing
 			// merge consecutive Breaks
-			for ; r.writtenNewlines < tag.count; r.writtenNewlines++ {
+			for ; r.writtenNewlines < t.count; r.writtenNewlines++ {
 				if err := r.write("\n"); err != nil {
 					return err
 				}
@@ -420,7 +408,7 @@ func (r *renderer) render(iter tagRange, isParentBroken bool) error {
 	return nil
 }
 
-// String returns the document structure as HTML-like markup, showing all tags and their properties.
+// String returns the document structure as HTML-like markup, showing all nodes and their properties.
 // This implements [fmt.Stringer] and is like rendering with [Layout] format except that the measure
 // and layout phases are not run. Useful for debugging the layout algorithm.
 func (d *Doc) String() string {
@@ -429,47 +417,47 @@ func (d *Doc) String() string {
 	return sb.String()
 }
 
-func (d *Doc) stringIter(w *strings.Builder, iter tagRange, indent int) {
-	for i := iter.start; i < iter.end; {
-		t := d.tags[i]
-		switch tag := t.tag.(type) {
-		case *group:
+func (d *Doc) stringIter(w *strings.Builder, nr nodeRange, indent int) {
+	for i := nr.start; i < nr.end; {
+		t := d.nodes[i]
+		switch t.kind {
+		case groupTag:
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "<group width=%s>\n", t.measure)
-			children := tagRange{i + 1, i + 1 + t.len}
+			children := nodeRange{i + 1, i + 1 + t.len}
 			d.stringIter(w, children, indent+1)
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "</group>\n")
-		case *indentation:
+		case indentTag:
 			writeIndent(w, indent)
-			fmt.Fprintf(w, "<indent columns=%d>\n", tag.columns)
-			children := tagRange{i + 1, i + 1 + t.len}
+			fmt.Fprintf(w, "<indent columns=%d>\n", t.count)
+			children := nodeRange{i + 1, i + 1 + t.len}
 			d.stringIter(w, children, indent+1)
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "</indent>\n")
-		case *text:
+		case textTag:
 			writeIndent(w, indent)
 			switch t.cond { // width is not computed for text that only renders when layout is Broken
 			case Always:
-				fmt.Fprintf(w, "<text width=%s content=%q/>\n", t.measure, tag.content)
+				fmt.Fprintf(w, "<text width=%s content=%q/>\n", t.measure, t.content)
 			case Flat:
-				fmt.Fprintf(w, "<text cond=%q width=%s content=%q/>\n", t.cond, t.measure, tag.content)
+				fmt.Fprintf(w, "<text cond=%q width=%s content=%q/>\n", t.cond, t.measure, t.content)
 			default:
-				fmt.Fprintf(w, "<text cond=%q content=%q/>\n", t.cond, tag.content)
+				fmt.Fprintf(w, "<text cond=%q content=%q/>\n", t.cond, t.content)
 			}
-		case space:
+		case spaceTag:
 			writeIndent(w, indent)
 			if t.cond == Always {
 				fmt.Fprintf(w, "<space/>\n")
 			} else {
 				fmt.Fprintf(w, "<space cond=%q/>\n", t.cond)
 			}
-		case newlines:
+		case newlineTag:
 			writeIndent(w, indent)
 			if t.cond == Always {
-				fmt.Fprintf(w, "<break count=%d/>\n", tag.count)
+				fmt.Fprintf(w, "<break count=%d/>\n", t.count)
 			} else {
-				fmt.Fprintf(w, "<break cond=%q count=%d/>\n", t.cond, tag.count)
+				fmt.Fprintf(w, "<break cond=%q count=%d/>\n", t.cond, t.count)
 			}
 		}
 		if t.len > 0 {
@@ -500,10 +488,10 @@ func goString(d *Doc, indent int) string {
 	return sb.String()
 }
 
-func (d *Doc) goStringIter(w *strings.Builder, iter tagRange, indent int) {
+func (d *Doc) goStringIter(w *strings.Builder, nr nodeRange, indent int) {
 	first := true
-	for i := iter.start; i < iter.end; {
-		t := d.tags[i]
+	for i := nr.start; i < nr.end; {
+		t := d.nodes[i]
 		if first {
 			writeIndent(w, indent)
 			fmt.Fprint(w, "d.\n")
@@ -513,38 +501,38 @@ func (d *Doc) goStringIter(w *strings.Builder, iter tagRange, indent int) {
 		}
 		writeIndent(w, indent)
 
-		switch tag := t.tag.(type) {
-		case *group:
-			children := tagRange{i + 1, i + 1 + t.len}
+		switch t.kind {
+		case groupTag:
+			children := nodeRange{i + 1, i + 1 + t.len}
 			fmt.Fprint(w, "Group(func(d *layout.Doc) {\n")
 			d.goStringIter(w, children, indent+1)
 			fmt.Fprintln(w)
 			writeIndent(w, indent)
 			fmt.Fprintf(w, "})")
-		case *indentation:
-			children := tagRange{i + 1, i + 1 + t.len}
-			fmt.Fprintf(w, "Indent(%d, func(d *layout.Doc) {\n", tag.columns)
+		case indentTag:
+			children := nodeRange{i + 1, i + 1 + t.len}
+			fmt.Fprintf(w, "Indent(%d, func(d *layout.Doc) {\n", t.count)
 			d.goStringIter(w, children, indent+1)
 			fmt.Fprintln(w)
 			writeIndent(w, indent)
 			fmt.Fprint(w, "})")
-		case *text:
+		case textTag:
 			if t.cond == Always {
-				fmt.Fprintf(w, "Text(%q)", tag.content)
+				fmt.Fprintf(w, "Text(%q)", t.content)
 			} else {
-				fmt.Fprintf(w, "TextIf(%q, layout.%#v)", tag.content, t.cond)
+				fmt.Fprintf(w, "TextIf(%q, layout.%#v)", t.content, t.cond)
 			}
-		case space:
+		case spaceTag:
 			if t.cond == Always {
 				fmt.Fprint(w, "Space()")
 			} else {
 				fmt.Fprintf(w, "SpaceIf(layout.%#v)", t.cond)
 			}
-		case newlines:
+		case newlineTag:
 			if t.cond == Always {
-				fmt.Fprintf(w, "Break(%d)", tag.count)
+				fmt.Fprintf(w, "Break(%d)", t.count)
 			} else {
-				fmt.Fprintf(w, "BreakIf(%d, layout.%#v)", tag.count, t.cond)
+				fmt.Fprintf(w, "BreakIf(%d, layout.%#v)", t.count, t.cond)
 			}
 		}
 		first = false
@@ -596,18 +584,47 @@ func (c condition) GoString() string {
 	}
 }
 
+type tagKind int
+
+const (
+	textTag tagKind = iota
+	spaceTag
+	newlineTag
+	groupTag
+	indentTag
+)
+
 type node struct {
-	tag     tag
+	kind    tagKind
+	content string // text content
+	count   int    // newline count or indent columns
 	len     int
 	cond    condition
 	measure measure
 }
 
 func (t *node) String() string {
-	return fmt.Sprintf("Node{tag=%s, len=%d, cond=%s, measure=%s}", t.tag, t.len, t.cond, t.measure)
+	return fmt.Sprintf("Node{kind=%s, len=%d, cond=%s, measure=%s}", t.kind, t.len, t.cond, t.measure)
 }
 
-// measure represents the calculated width of a tag sequence during the measurement phase.
+func (k tagKind) String() string {
+	switch k {
+	case textTag:
+		return "text"
+	case spaceTag:
+		return "space"
+	case newlineTag:
+		return "newline"
+	case groupTag:
+		return "group"
+	case indentTag:
+		return "indent"
+	default:
+		panic(fmt.Sprintf("unknown tagKind: %d", k))
+	}
+}
+
+// measure represents the calculated width of a node sequence during the measurement phase.
 //
 // A space is "trailing" if there's no content after it before the end of a sequence (or a
 // break). The algorithm defers counting spaces until we know if they're trailing.
@@ -644,58 +661,4 @@ func (m measure) String() string {
 		return "broken"
 	}
 	return fmt.Sprint(m.width)
-}
-
-type tag interface {
-	tag()
-}
-
-// Group a sequence of tags to be rendered as one line or multiple lines if they exceed the maximum
-// column.
-type group struct{}
-
-func (g *group) tag() {}
-
-func (g *group) String() string {
-	return "Group"
-}
-
-type indentation struct {
-	columns int
-}
-
-func (i *indentation) tag() {}
-
-func (i *indentation) String() string {
-	return fmt.Sprintf("Indent(%d)", i.columns)
-}
-
-type text struct {
-	content string
-}
-
-func (t *text) tag() {}
-
-func (t *text) String() string {
-	return fmt.Sprintf("Text(%q)", t.content)
-}
-
-var singleSpace = space{}
-
-type space struct{}
-
-func (s space) tag() {}
-
-func (s space) String() string {
-	return "Space"
-}
-
-type newlines struct {
-	count int
-}
-
-func (n newlines) tag() {}
-
-func (n newlines) String() string {
-	return fmt.Sprintf("Break(%d)", n.count)
 }

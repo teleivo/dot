@@ -2,17 +2,16 @@
 
 * reduce allocations in layout/parsing
 
-  alloc_objects after measure embedding (world.gv, 25.4M total):
+  alloc_objects after node value slice (world.gv, 19.0M total):
 
   | Function | Allocs | % |
   |---|---|---|
-  | `tagIfWith` (layout node construction) | 4.8M | 18.9% |
-  | `appendToken` (parser) | 4.7M | 18.6% |
-  | `appendTree` (parser) | 3.2M | 12.5% |
-  | `Doc.Text` | 3.3M | 13.2% |
-  | `parseID` | 2.6M | 10.1% |
+  | `appendToken` (parser) | 4.9M | 26.0% |
+  | `appendTree` (parser) | 3.2M | 16.8% |
+  | `parseID` | 2.7M | 14.0% |
+  | `Doc.Text` | 2.5M | 13.0% |
+  | `parseAttribute` | 1.8M | 9.5% |
 
-  * switch `[]*node` to `[]node` to store nodes inline in the slice (~4.8M allocs)
   * investigate parser allocations (`appendToken`, `appendTree`, `parseID`)
 
 * add a benchmark to ensure no regressions?

@@ -79,7 +79,7 @@ func NewFormat(format string) (Format, error) {
 // if you need to render multiple times.
 type Doc struct {
 	maxColumn int
-	tags      []*node
+	tags      []node
 }
 
 // NewDoc creates a new document with the specified maximum column width. Text will be reflowed
@@ -104,14 +104,13 @@ func (d *Doc) HasTrailingSpace() bool {
 func (d *Doc) Clone() *Doc {
 	clone := &Doc{
 		maxColumn: d.maxColumn,
-		tags:      make([]*node, len(d.tags)),
+		tags:      make([]node, len(d.tags)),
 	}
 	for i, t := range d.tags {
-		clone.tags[i] = &node{
-			tag:     t.tag,
-			len:     t.len,
-			cond:    t.cond,
-			measure: measure{},
+		clone.tags[i] = node{
+			tag:  t.tag,
+			len:  t.len,
+			cond: t.cond,
 		}
 	}
 	return clone
@@ -198,7 +197,7 @@ func (d *Doc) tagIfWith(t tag, cond condition, body func(*Doc)) *Doc {
 		}
 	}
 
-	d.tags = append(d.tags, &node{tag: t, len: 0, cond: cond, measure: measure{}})
+	d.tags = append(d.tags, node{tag: t, len: 0, cond: cond})
 	body(d)
 	if j := len(d.tags); j != i {
 		d.tags[i].len = j - i - 1
@@ -245,7 +244,7 @@ func main() {
 }
 
 type renderer struct {
-	tags            []*node   // tags is the flat tag slice from the Doc
+	tags            []node    // tags is the flat tag slice from the Doc
 	w               io.Writer // w writer to output formatted DOT code to
 	indent          int       // indent is the current level of indentation
 	pendingSpace    bool      // pendingSpace indicates a space that will only be rendered if its not trailing
@@ -265,7 +264,7 @@ func (d *Doc) measure() {
 
 func (d *Doc) measureIter(iter tagRange) {
 	for i := iter.start; i < iter.end; {
-		t := d.tags[i]
+		t := &d.tags[i]
 		tagWidth(t)
 		if t.len > 0 {
 			children := tagRange{i + 1, i + 1 + t.len}
@@ -296,13 +295,13 @@ func tagWidth(t *node) {
 
 func (d *Doc) sumWidths(iter tagRange) {
 	for i := iter.start; i < iter.end; {
-		t := d.tags[i]
+		t := &d.tags[i]
 		if t.len > 0 {
 			children := tagRange{i + 1, i + 1 + t.len}
 			d.sumWidths(children)
 			// sum children's measures into parent
 			for j := children.start; j < children.end; {
-				child := d.tags[j]
+				child := &d.tags[j]
 				t.measure.add(child.measure)
 				if child.len > 0 {
 					j = j + 1 + child.len
@@ -319,7 +318,7 @@ func (d *Doc) sumWidths(iter tagRange) {
 
 func (d *Doc) layout(iter tagRange, indent, column int) {
 	for i := iter.start; i < iter.end; {
-		t := d.tags[i]
+		t := &d.tags[i]
 		switch tag := t.tag.(type) {
 		case *group:
 			if t.measure.broken || column+t.measure.width > d.maxColumn {

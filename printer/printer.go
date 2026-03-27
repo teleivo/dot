@@ -81,7 +81,7 @@ func (p *Printer) layoutBlock(doc *layout.Doc, nodeIdx int) bool {
 	// layout keywords and ID up to '{'
 	var needsSpace bool
 	i := nr.Start
-	prevEnd := 0
+	var prevEnd uint32
 	isFirst := true
 	for ; i < nr.End; i = p.tree.Next(i) {
 		n := p.tree.NodeAt(i)
@@ -101,7 +101,7 @@ func (p *Printer) layoutBlock(doc *layout.Doc, nodeIdx int) bool {
 				// Block comment on its own line needs a break after
 				nextIdx := p.tree.Next(i)
 				isOwn := !isTrailingLine(prevEnd, n.Start.Line) &&
-					nextIdx < nr.End && n.End.Line < p.tree.StartLine(nextIdx)
+					nextIdx < nr.End && int(n.End.Line) < p.tree.StartLine(nextIdx)
 				if isOwn && needsSpace {
 					doc.Break(1)
 					needsSpace = false
@@ -174,7 +174,7 @@ func (p *Printer) layoutBlock(doc *layout.Doc, nodeIdx int) bool {
 // layoutStmtList handles: stmt_list : [ stmt [ ';' ] stmt_list ]
 func (p *Printer) layoutStmtList(doc *layout.Doc, nodeIdx int) {
 	nr := p.tree.Children(nodeIdx)
-	prevEnd := 0
+	var prevEnd uint32
 	for i := nr.Start; i < nr.End; i = p.tree.Next(i) {
 		n := p.tree.NodeAt(i)
 		if !n.IsToken() {
@@ -274,85 +274,6 @@ func (p *Printer) layoutCommentText(doc *layout.Doc, literal string) bool {
 	return true
 }
 
-<<<<<<< HEAD
-// layoutTrailingComments emits any trailing comment tokens from tree's direct children.
-// Returns true if the last comment emitted was a line comment (ends with break).
-func (p *Printer) layoutTrailingComments(doc *layout.Doc, tree *dot.Tree) bool {
-	var broke bool
-	for _, child := range tree.Children {
-		if tc, ok := child.(dot.TokenChild); ok && tc.Kind == token.Comment {
-			broke = !p.layoutComment(doc, tc.Literal, true)
-		}
-	}
-	return broke
-}
-
-// isLineComment reports whether the comment literal is a line comment (// or #).
-func isLineComment(s string) bool {
-	return (len(s) > 0 && s[0] == '#') || (len(s) > 1 && s[0] == '/' && s[1] == '/')
-}
-
-// prevEndLine returns the end line of the child at index i-1, or 0 if i <= 0.
-func prevEndLine(children []dot.Child, i int) uint32 {
-	if i <= 0 {
-		return 0
-	}
-	prev := children[i-1]
-	if tc, ok := prev.(dot.TokenChild); ok {
-		return tc.End.Line
-	}
-	if tc, ok := prev.(dot.TreeChild); ok {
-		return tc.End.Line
-	}
-	return 0
-}
-
-// nextStartLine returns the start line of the child at index i+1, or 0 if i >= len(children)-1.
-func nextStartLine(children []dot.Child, i int) uint32 {
-	if i >= len(children)-1 {
-		return 0
-	}
-	next := children[i+1]
-	if tc, ok := next.(dot.TokenChild); ok {
-		return tc.Start.Line
-	}
-	if tc, ok := next.(dot.TreeChild); ok {
-		return tc.Start.Line
-	}
-	return 0
-}
-
-// isTrailingComment reports whether the comment at index i is on the same line as the previous element.
-func isTrailingComment(comment dot.TokenChild, children []dot.Child, i int) bool {
-	prevLine := prevEndLine(children, i)
-	return prevLine > 0 && comment.Start.Line == prevLine
-}
-
-// isOwnLineComment reports whether the comment at index i is on its own line
-// (not trailing the previous element and not on the same line as the next element).
-func isOwnLineComment(comment dot.TokenChild, children []dot.Child, i int) bool {
-	if isTrailingComment(comment, children, i) {
-		return false
-	}
-	nextLine := nextStartLine(children, i)
-	return nextLine > 0 && comment.End.Line < nextLine
-}
-
-// hasComment reports whether tree or any of its descendants contain a comment.
-func hasComment(tree *dot.Tree) bool {
-	for _, child := range tree.Children {
-		if tc, ok := child.(dot.TokenChild); ok && tc.Kind == token.Comment {
-			return true
-		}
-		if tc, ok := child.(dot.TreeChild); ok && hasComment(tc.Tree) {
-			return true
-		}
-	}
-	return false
-}
-
-=======
->>>>>>> ed39f41 (perf: replace recursive Tree with flat contiguous syntax tree)
 // layoutNodeID handles: node_id : ID [ port ]
 func (p *Printer) layoutNodeID(doc *layout.Doc, nodeIdx int) bool {
 	var broke bool
@@ -368,20 +289,13 @@ func (p *Printer) layoutNodeID(doc *layout.Doc, nodeIdx int) bool {
 // layoutPort handles: port : ':' ID [ ':' compass_pt ] | ':' compass_pt
 func (p *Printer) layoutPort(doc *layout.Doc, nodeIdx int) bool {
 	var pendingColon, broke, needsSpace bool
-<<<<<<< HEAD
 	var colonLine uint32
-	for i, child := range tree.Children {
-		if tc, ok := child.(dot.TokenChild); ok {
-			switch tc.Kind {
-=======
-	var colonLine int
 	nr := p.tree.Children(nodeIdx)
-	prevEnd := 0
+	var prevEnd uint32
 	for i := nr.Start; i < nr.End; i = p.tree.Next(i) {
 		n := p.tree.NodeAt(i)
 		if n.IsToken() {
 			switch n.TokenKind {
->>>>>>> ed39f41 (perf: replace recursive Tree with flat contiguous syntax tree)
 			case token.Colon:
 				pendingColon = true
 				colonLine = n.End.Line
@@ -456,7 +370,7 @@ func (p *Printer) layoutAttrList(doc *layout.Doc, nodeIdx int) {
 func (p *Printer) layoutBracketBlock(doc *layout.Doc, parentIdx, startIdx int) int {
 	nr := p.tree.Children(parentIdx)
 	i := startIdx
-	prevEnd := 0
+	var prevEnd uint32
 	doc.Group(func(d *layout.Doc) {
 		doc.Text(token.LeftBracket.String()).
 			BreakIf(1, layout.Broken).
@@ -487,7 +401,7 @@ func (p *Printer) layoutBracketBlock(doc *layout.Doc, parentIdx, startIdx int) i
 // layoutAList handles: a_list : ID '=' ID [ ( ';' | ',' ) ] [ a_list ]
 func (p *Printer) layoutAList(doc *layout.Doc, nodeIdx int, emittedAttr bool) bool {
 	nr := p.tree.Children(nodeIdx)
-	prevEnd := 0
+	var prevEnd uint32
 	for i := nr.Start; i < nr.End; i = p.tree.Next(i) {
 		n := p.tree.NodeAt(i)
 		if n.IsToken() && n.TokenKind == token.Comment {
@@ -514,7 +428,7 @@ func (p *Printer) layoutEdgeStmt(doc *layout.Doc, nodeIdx int) {
 		var needsSpace, lastBroke bool
 		doc.Group(func(d *layout.Doc) {
 			nr := p.tree.Children(nodeIdx)
-			prevEnd := 0
+			var prevEnd uint32
 			for i := nr.Start; i < nr.End; i = p.tree.Next(i) {
 				n := p.tree.NodeAt(i)
 				if n.IsToken() {
@@ -585,7 +499,7 @@ func (p *Printer) layoutAttrStmt(doc *layout.Doc, nodeIdx int) {
 func (p *Printer) layoutAttribute(doc *layout.Doc, nodeIdx int) {
 	var needsSpace bool
 	nr := p.tree.Children(nodeIdx)
-	prevEnd := 0
+	var prevEnd uint32
 	for i := nr.Start; i < nr.End; i = p.tree.Next(i) {
 		n := p.tree.NodeAt(i)
 		if n.IsToken() {
@@ -631,6 +545,6 @@ func isLineComment(s string) bool {
 	return (len(s) > 0 && s[0] == '#') || (len(s) > 1 && s[0] == '/' && s[1] == '/')
 }
 
-func isTrailingLine(prevEndLine, commentStartLine int) bool {
+func isTrailingLine(prevEndLine, commentStartLine uint32) bool {
 	return prevEndLine > 0 && commentStartLine == prevEndLine
 }

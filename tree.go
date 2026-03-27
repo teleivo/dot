@@ -320,12 +320,12 @@ func (t *Tree) HasComment(i int) bool {
 
 // EndLine returns the end line of the node at index i.
 func (t *Tree) EndLine(i int) int {
-	return t.nodes[i].End.Line
+	return int(t.nodes[i].End.Line)
 }
 
 // StartLine returns the start line of the node at index i.
 func (t *Tree) StartLine(i int) int {
-	return t.nodes[i].Start.Line
+	return int(t.nodes[i].Start.Line)
 }
 
 // String returns the tree formatted using the [Default] format.

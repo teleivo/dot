@@ -174,8 +174,8 @@ func (d *document) endPos() rpc.Position {
 
 func tokenPosition(pos rpc.Position) token.Position {
 	return token.Position{
-		Line:   int(pos.Line) + 1,
-		Column: int(pos.Character) + 1,
+		Line:   pos.Line + 1,
+		Column: pos.Character + 1,
 	}
 }
 
@@ -482,4 +482,3 @@ func (srv *Server) Start(ctx context.Context) error {
 	}
 	return nil
 }
-

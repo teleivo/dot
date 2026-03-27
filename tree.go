@@ -39,7 +39,7 @@ func NewFormat(format string) (Format, error) {
 }
 
 // TreeKind represents the type of syntax tree node (non-terminals).
-type TreeKind uint
+type TreeKind uint32
 
 const (
 	KindErrorTree TreeKind = 1 << iota

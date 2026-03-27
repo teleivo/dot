@@ -127,7 +127,7 @@ func (sc *Scanner) next() {
 
 // pos returns the current position as a token.Position.
 func (sc *Scanner) pos() token.Position {
-	return token.Position{Line: sc.curLine, Column: sc.curColumn}
+	return token.Position{Line: uint32(sc.curLine), Column: uint32(sc.curColumn)}
 }
 
 func (sc *Scanner) skipWhitespace() {

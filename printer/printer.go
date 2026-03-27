@@ -141,7 +141,7 @@ func (p *Printer) layoutBlock(doc *layout.Doc, tree *dot.Tree) bool {
 		doc.Break(1).Text(token.RightBrace.String())
 	})
 
-	braceEndLine := 0
+	var braceEndLine uint32
 	if i < len(tree.Children) {
 		if tc, ok := tree.Children[i].(dot.TokenChild); ok && tc.Kind == token.RightBrace {
 			braceEndLine = tc.End.Line
@@ -268,7 +268,7 @@ func isLineComment(s string) bool {
 }
 
 // prevEndLine returns the end line of the child at index i-1, or 0 if i <= 0.
-func prevEndLine(children []dot.Child, i int) int {
+func prevEndLine(children []dot.Child, i int) uint32 {
 	if i <= 0 {
 		return 0
 	}
@@ -283,7 +283,7 @@ func prevEndLine(children []dot.Child, i int) int {
 }
 
 // nextStartLine returns the start line of the child at index i+1, or 0 if i >= len(children)-1.
-func nextStartLine(children []dot.Child, i int) int {
+func nextStartLine(children []dot.Child, i int) uint32 {
 	if i >= len(children)-1 {
 		return 0
 	}
@@ -343,7 +343,7 @@ func (p *Printer) layoutNodeID(doc *layout.Doc, tree *dot.Tree) bool {
 // Returns true if a trailing break was emitted (line comment or multi-line block comment).
 func (p *Printer) layoutPort(doc *layout.Doc, tree *dot.Tree) bool {
 	var pendingColon, broke, needsSpace bool
-	var colonLine int
+	var colonLine uint32
 	for i, child := range tree.Children {
 		if tc, ok := child.(dot.TokenChild); ok {
 			switch tc.Kind {

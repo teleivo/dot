@@ -7,8 +7,8 @@ import (
 // Position describes a position in DOT source code.
 // A Position is valid if the line number is > 0.
 type Position struct {
-	Line   int // line number, starting at 1
-	Column int // column number, starting at 1 (byte offset)
+	Line   uint32 // line number, starting at 1
+	Column uint32 // column number, starting at 1 (byte offset)
 }
 
 // IsValid reports whether the position is valid.
@@ -16,7 +16,7 @@ func (p Position) IsValid() bool { return p.Line > 0 }
 
 // String returns the position in line:column format.
 func (p Position) String() string {
-	return strconv.Itoa(p.Line) + ":" + strconv.Itoa(p.Column)
+	return strconv.FormatUint(uint64(p.Line), 10) + ":" + strconv.FormatUint(uint64(p.Column), 10)
 }
 
 // Before reports whether the position p is before o.

@@ -10,7 +10,7 @@ import (
 // Kind represents the types of lexical tokens of the DOT language.
 // Token kinds are powers of 2 and can be combined using bitwise OR
 // to create token sets for efficient membership testing.
-type Kind uint
+type Kind uint32
 
 const (
 	ERROR Kind = 1 << iota

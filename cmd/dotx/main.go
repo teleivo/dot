@@ -219,14 +219,14 @@ func runInspectTree(args []string, r io.Reader, w io.Writer, wErr io.Writer) (in
 			return fmt.Errorf("error reading input: %v", err)
 		}
 
-		p := dot.NewParser(src)
-		t := p.Parse()
+		ps := dot.NewParser(src)
+		tree := ps.Parse()
 
-		for _, parseErr := range p.Errors() {
+		for _, parseErr := range ps.Errors() {
 			_, _ = fmt.Fprintln(wErr, parseErr)
 		}
 
-		if err := t.Render(w, ft); err != nil {
+		if err := tree.Render(w, ft); err != nil {
 			return fmt.Errorf("error rendering tree: %v", err)
 		}
 

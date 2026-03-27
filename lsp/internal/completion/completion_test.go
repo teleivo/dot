@@ -219,10 +219,10 @@ func TestItems(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ps := dot.NewParser([]byte(tt.src))
-			root := ps.Parse()
+			p := dot.NewParser([]byte(tt.src))
+			tree := p.Parse()
 
-			items := Items(root, tt.position)
+			items := Items(tree, tt.position)
 			got := make([]string, len(items))
 			for i, item := range items {
 				got[i] = item.Label

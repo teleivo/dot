@@ -115,8 +115,8 @@ func TestInfo(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ps := dot.NewParser([]byte(tt.src))
-			tree := ps.Parse()
+			p := dot.NewParser([]byte(tt.src))
+			tree := p.Parse()
 
 			got := Info(tree, tt.position)
 

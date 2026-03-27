@@ -80,7 +80,7 @@ type document struct {
 	src     []byte
 	lines   []int
 	tree    *dot.Tree   // cached parse result, nil if stale
-	errors  []dot.Error // cached parse errors from tree
+	errors  []dot.Error // cached parse errors
 }
 
 func newDocument(item rpc.TextDocumentItem) *document {
@@ -146,7 +146,7 @@ func (d *document) parse() {
 	}
 }
 
-// Tree returns the cached parse tree, parsing the document if needed.
+// Tree returns the cached syntax tree, parsing the document if needed.
 func (d *document) Tree() *dot.Tree {
 	d.parse()
 	return d.tree
@@ -405,7 +405,7 @@ func (srv *Server) Start(ctx context.Context) error {
 						srv.writeErr(cancel, message.ID, rpcErr)
 						continue
 					}
-					srv.writeResult(cancel, message.ID, navigate.DocumentSymbols(doc.Tree()))
+					srv.writeResult(cancel, message.ID, navigate.DocumentSymbols(doc.Tree(), 0))
 				case rpc.MethodDefinition:
 					if message.ID == nil {
 						srv.logger.Error("missing request id", "method", message.Method)
@@ -421,7 +421,7 @@ func (srv *Server) Start(ctx context.Context) error {
 						srv.writeErr(cancel, message.ID, rpcErr)
 						continue
 					}
-					srv.writeResult(cancel, message.ID, navigate.Definition(doc.Tree(), params.TextDocument.URI, tokenPosition(params.Position)))
+					srv.writeResult(cancel, message.ID, navigate.Definition(doc.Tree(), 0, params.TextDocument.URI, tokenPosition(params.Position)))
 				case rpc.MethodReferences:
 					if message.ID == nil {
 						srv.logger.Error("missing request id", "method", message.Method)
@@ -437,7 +437,7 @@ func (srv *Server) Start(ctx context.Context) error {
 						srv.writeErr(cancel, message.ID, rpcErr)
 						continue
 					}
-					srv.writeResult(cancel, message.ID, navigate.References(doc.Tree(), params.TextDocument.URI, tokenPosition(params.Position)))
+					srv.writeResult(cancel, message.ID, navigate.References(doc.Tree(), 0, params.TextDocument.URI, tokenPosition(params.Position)))
 				case rpc.MethodDidClose:
 					params, rpcErr := unmarshalParams[rpc.DidCloseTextDocumentParams](message.Params)
 					if rpcErr != nil {

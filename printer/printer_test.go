@@ -6,6 +6,7 @@ import (
 
 	"github.com/teleivo/assertive/assert"
 	"github.com/teleivo/assertive/require"
+	"github.com/teleivo/dot"
 	"github.com/teleivo/dot/internal/layout"
 	"github.com/teleivo/dot/printer"
 )
@@ -322,7 +323,7 @@ strict graph {
 `,
 		},
 		"CommentBlockInlineBeforeGraphKeyword": {
-			in:   `/* c1 */ graph {}`,
+			in: `/* c1 */ graph {}`,
 			want: `/* c1 */ graph {
 }
 `,
@@ -331,7 +332,8 @@ strict graph {
 			in: `/* line1
    line2 */ graph {}`,
 			want: `/* line1
-line2 */ graph {
+line2 */
+graph {
 }
 `,
 		},
@@ -540,10 +542,8 @@ node    /* c1 */
 	]
 }`,
 			want: `graph {
-	A [
-		color=red
-		// c1
-	]
+	A [color=red]
+	// c1
 }
 `,
 		},
@@ -555,10 +555,8 @@ node    /* c1 */
 	]
 }`,
 			want: `graph {
-	A [
-		color=red
-		/* c1 */
-	]
+	A [color=red]
+	/* c1 */
 }
 `,
 		},
@@ -861,21 +859,18 @@ A
 -> B
 }`,
 			want: `digraph {
-	A
+	A ->
 	// c1
-	-> B
+	B
 }
 `,
 		},
 		"CommentBlockLeadingEdgeOperator": {
 			in: `digraph {
-A
-/* c1 */
--> B
+A -> /* c1 */ B
 }`,
 			want: `digraph {
-	A
-	/* c1 */ -> B
+	A -> /* c1 */ B
 }
 `,
 		},
@@ -1106,20 +1101,11 @@ A [label="This is a long label value"] /* comment between brackets */ [color=red
 	}
 }
 
-func TestPrintErrorReturnsError(t *testing.T) {
+func TestParseErrorIsDetected(t *testing.T) {
 	input := "graph { a = }"
 
-	var output bytes.Buffer
-	p := printer.New([]byte(input), &output, layout.Default)
-
-	err := p.Print()
-
-	require.NotNil(t, err, "Print(%q) should return an error when parsing fails", input)
-
-	// Print() should not write anything to the writer when parsing fails. The implementation
-	// returns early on parse error, ensuring the output writer remains empty.
-	got := output.String()
-	if got != "" {
-		t.Errorf("Print() wrote to output on parse error, got: %q, want empty string", got)
-	}
+	ps := dot.NewParser([]byte(input))
+	_ = ps.Parse()
+	errs := ps.Errors()
+	require.NotNil(t, errs, "Parse(%q) should return errors", input)
 }

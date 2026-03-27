@@ -2851,9 +2851,9 @@ graph { C -> D }`,
 // c2
 digraph {}`,
 			want: `File
+	'// c1'
+	'// c2'
 	Graph
-		'// c1'
-		'// c2'
 		'digraph'
 		'{'
 		StmtList
@@ -2883,8 +2883,8 @@ graph G2 {}`,
 		'{'
 		StmtList
 		'}'
+	'// c1'
 	Graph
-		'// c1'
 		'graph'
 		ID
 			'G2'
@@ -2897,8 +2897,8 @@ graph G2 {}`,
 			in: `# c1
 digraph {}`,
 			want: `File
+	'# c1'
 	Graph
-		'# c1'
 		'digraph'
 		'{'
 		StmtList
@@ -3482,8 +3482,8 @@ B"'
 				NodeID
 					ID
 						'A'
-				'/* c1 */'
 				'--'
+				'/* c1 */'
 				NodeID
 					ID
 						'B'
@@ -3506,9 +3506,9 @@ B"'
 					ID
 						'A'
 				AttrList
-					'/* c1 */'
 					'['
 					AList
+						'/* c1 */'
 						Attribute
 							AttrName
 								ID
@@ -3532,11 +3532,11 @@ B"'
 		'{'
 		StmtList
 			AttrStmt
-				'/* c1 */'
 				'node'
 				AttrList
 					'['
 					AList
+						'/* c1 */'
 						Attribute
 							AttrName
 								ID
@@ -3575,8 +3575,8 @@ B"'
 							AttrValue
 								ID
 									'red'
-					'/* c1 */'
 					']'
+		'/* c1 */'
 		'}'
 `,
 		},
@@ -3606,8 +3606,8 @@ B"'
 							AttrValue
 								ID
 									'b'
-						'/* c1 */'
 						','
+						'/* c1 */'
 						Attribute
 							AttrName
 								ID
@@ -3663,9 +3663,9 @@ B"'
 		'graph'
 		'{'
 		StmtList
-			'/* c1 */'
 			ErrorTree
 				'ERROR'
+		'/* c1 */'
 		'}'
 `,
 			wantErrors: []string{

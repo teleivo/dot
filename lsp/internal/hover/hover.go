@@ -12,13 +12,13 @@ import (
 )
 
 // Info returns hover information for the symbol at the given position.
-func Info(root *dot.Tree, pos token.Position) *rpc.Hover {
-	matchAttr := tree.Find(root, pos, dot.KindAttribute)
-	if matchAttr.Tree == nil {
+func Info(t *dot.Tree, pos token.Position) *rpc.Hover {
+	matchAttr := tree.Find(t, pos, dot.KindAttribute)
+	if matchAttr.Index == -1 {
 		return nil
 	}
 
-	attrName := tree.AttrName(matchAttr.Tree)
+	attrName := tree.AttrName(t, matchAttr.Index)
 	if attrName == "" {
 		return nil
 	}
@@ -34,13 +34,12 @@ func Info(root *dot.Tree, pos token.Position) *rpc.Hover {
 		return nil
 	}
 
-	matchAttrValue := tree.Find(matchAttr.Tree, pos, dot.KindAttrValue)
-	if matchAttrValue.Tree == nil { // hover must be on attribute name
+	matchAttrValue := tree.Find(t, pos, dot.KindAttrValue)
+	if matchAttrValue.Index == -1 {
 		return &rpc.Hover{Contents: rpc.MarkupContent{Kind: "markdown", Value: attrFound.MarkdownDoc}}
 	}
 
-	// hover might be on attribute value
-	attrValueTok, ok := dot.FirstID(matchAttrValue.Tree)
+	attrValueTok, ok := t.FirstID(matchAttrValue.Index)
 	if !ok {
 		return nil
 	}

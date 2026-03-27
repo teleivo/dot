@@ -21,75 +21,61 @@ const (
 	maxItems = 1000
 )
 
-// DocumentSymbols returns the document symbols for the given parse tree.
-// Symbols represent navigable elements in the DOT file such as graphs, subgraphs,
-// nodes, and edges. The returned symbols form a hierarchy matching the document structure.
-//
-// For DOT files, the symbol hierarchy is:
-//   - Graph (top-level digraph/graph) with Kind=Module, Detail="digraph"/"graph"
-//   - Subgraph (subgraph blocks) with Kind=Namespace, Detail="subgraph"
-//   - Node (node statements) with Kind=Variable
-//   - Edge (edge statements like "a -> b") with Kind=Event
-//
-// Anonymous graphs/subgraphs have an empty Name with the keyword in Detail.
-// Attribute statements (node [...], edge [...], graph [...]) are skipped.
-//
-// To handle large files, symbols are limited to MaxItems total and MaxDepth nesting.
-func DocumentSymbols(root *dot.Tree) []rpc.DocumentSymbol {
+// DocumentSymbols returns the document symbols for the given syntax tree.
+func DocumentSymbols(t *dot.Tree, root int) []rpc.DocumentSymbol {
 	var symbols []rpc.DocumentSymbol
-	symbols, _ = collectSymbols(root, symbols, 0, 0)
+	symbols, _ = collectSymbols(t, root, symbols, 0, 0)
 	return symbols
 }
 
-func collectSymbols(root *dot.Tree, result []rpc.DocumentSymbol, depth, items int) ([]rpc.DocumentSymbol, int) {
-	if root == nil {
-		return result, items
-	}
+func collectSymbols(t *dot.Tree, parent int, result []rpc.DocumentSymbol, depth, items int) ([]rpc.DocumentSymbol, int) {
+	nr := t.Children(parent)
+	for i := nr.Start; i < nr.End; i = t.Next(i) {
+		n := t.NodeAt(i)
+		if n.IsToken() {
+			continue
+		}
+		switch n.Kind {
+		case dot.KindGraph, dot.KindSubgraph:
+			if depth >= maxDepth || items >= maxItems {
+				return result, items
+			}
+			sym := documentSymbol(t, i)
+			var children []rpc.DocumentSymbol
+			children, items = collectSymbols(t, i, children, depth+1, items)
+			sym.Children = children
 
-	for _, child := range root.Children {
-		switch c := child.(type) {
-		case dot.TreeChild:
-			switch c.Kind {
-			case dot.KindGraph, dot.KindSubgraph:
-				if depth >= maxDepth || items >= maxItems {
-					return result, items
-				}
-				sym := documentSymbol(c.Tree)
-				var children []rpc.DocumentSymbol
-				children, items = collectSymbols(c.Tree, children, depth+1, items)
-				sym.Children = children
+			result = append(result, *sym)
+			items++
+		default:
+			if items >= maxItems-1 {
+				return result, items
+			}
 
+			sym := documentSymbol(t, i)
+			if sym != nil {
 				result = append(result, *sym)
 				items++
-			default:
-				if items >= maxItems-1 { // need 1 spot for the parent
-					return result, items
-				}
-
-				sym := documentSymbol(c.Tree)
-				if sym != nil {
-					result = append(result, *sym)
-					items++
-				}
-
-				result, items = collectSymbols(c.Tree, result, depth, items)
 			}
+
+			result, items = collectSymbols(t, i, result, depth, items)
 		}
 	}
 
 	return result, items
 }
 
-func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
-	switch t.Kind {
+func documentSymbol(t *dot.Tree, i int) *rpc.DocumentSymbol {
+	n := t.NodeAt(i)
+	switch n.Kind {
 	case dot.KindGraph:
-		keyword, _ := dot.TokenFirst(t, token.Graph|token.Digraph)
+		keyword, _ := t.FirstToken(i, token.Graph|token.Digraph)
 		result := rpc.DocumentSymbol{
 			Detail: keyword.Kind.String(),
 			Kind:   rpc.SymbolKindModule,
-			Range:  rpc.RangeFromToken(t.Start, t.End),
+			Range:  rpc.RangeFromToken(n.Start, n.End),
 		}
-		if id, ok := dot.FirstID(t); ok {
+		if id, ok := t.FirstID(i); ok {
 			result.Name = id.Literal
 			result.SelectionRange = rpc.RangeFromToken(id.Start, id.End)
 		} else {
@@ -97,14 +83,13 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 		}
 		return &result
 	case dot.KindSubgraph:
-		keyword, _ := dot.TokenFirst(t, token.Subgraph)
+		keyword, _ := t.FirstToken(i, token.Subgraph)
 		result := rpc.DocumentSymbol{
 			Detail: keyword.Kind.String(),
-			// Namespace: subgraphs group statements but don't create scope in DOT
-			Kind:  rpc.SymbolKindNamespace,
-			Range: rpc.RangeFromToken(t.Start, t.End),
+			Kind:   rpc.SymbolKindNamespace,
+			Range:  rpc.RangeFromToken(n.Start, n.End),
 		}
-		if id, ok := dot.FirstID(t); ok {
+		if id, ok := t.FirstID(i); ok {
 			result.Name = id.Literal
 			result.SelectionRange = rpc.RangeFromToken(id.Start, id.End)
 		} else {
@@ -112,32 +97,35 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 		}
 		return &result
 	case dot.KindNodeStmt:
-		treeRange := rpc.RangeFromToken(t.Start, t.End)
+		treeRange := rpc.RangeFromToken(n.Start, n.End)
 		result := rpc.DocumentSymbol{
 			Kind:           rpc.SymbolKindVariable,
 			Range:          treeRange,
 			SelectionRange: treeRange,
 		}
-		nodeID, _ := dot.TreeFirst(t, dot.KindNodeID)
-		if id, ok := dot.FirstID(nodeID); ok {
-			result.Name = id.Literal
-			result.SelectionRange = rpc.RangeFromToken(id.Start, id.End)
+		if nodeIDIdx, ok := t.FirstTree(i, dot.KindNodeID); ok {
+			if id, ok := t.FirstID(nodeIDIdx); ok {
+				result.Name = id.Literal
+				result.SelectionRange = rpc.RangeFromToken(id.Start, id.End)
+			}
 		}
 		return &result
 	case dot.KindEdgeStmt:
 		var sb strings.Builder
-		for _, child := range t.Children {
-			if c, ok := child.(dot.TreeChild); ok && c.Kind == dot.KindNodeID {
-				if id, ok := dot.FirstID(c.Tree); ok {
+		nr := t.Children(i)
+		for j := nr.Start; j < nr.End; j = t.Next(j) {
+			cn := t.NodeAt(j)
+			if !cn.IsToken() && cn.Kind == dot.KindNodeID {
+				if id, ok := t.FirstID(j); ok {
 					sb.WriteString(id.Literal)
 				}
-			} else if tok, ok := child.(dot.TokenChild); ok && tok.Kind&(token.DirectedEdge|token.UndirectedEdge) != 0 {
+			} else if cn.IsToken() && cn.TokenKind&(token.DirectedEdge|token.UndirectedEdge) != 0 {
 				sb.WriteByte(' ')
-				sb.WriteString(tok.Literal)
+				sb.WriteString(cn.Literal)
 				sb.WriteByte(' ')
 			}
 		}
-		treeRange := rpc.RangeFromToken(t.Start, t.End)
+		treeRange := rpc.RangeFromToken(n.Start, n.End)
 		result := rpc.DocumentSymbol{
 			Kind:           rpc.SymbolKindEvent,
 			Name:           sb.String(),
@@ -151,81 +139,70 @@ func documentSymbol(t *dot.Tree) *rpc.DocumentSymbol {
 }
 
 // Definition returns the location of the definition for the node ID at the given position.
-// A definition is the first occurrence of a node ID in the document, whether it appears
-// in a node statement or an edge statement.
-//
-// Returns nil if the position is not on a node ID or the tree is nil.
-func Definition(root *dot.Tree, uri rpc.DocumentURI, pos token.Position) *rpc.Location {
-	match := tree.Find(root, pos, dot.KindNodeID)
-	if match.Tree == nil {
+func Definition(t *dot.Tree, root int, uri rpc.DocumentURI, pos token.Position) *rpc.Location {
+	match := tree.Find(t, pos, dot.KindNodeID)
+	if match.Index == -1 {
 		return nil
 	}
-	id, ok := dot.FirstID(match.Tree)
+	id, ok := t.FirstID(match.Index)
 	if !ok {
 		return nil
 	}
 
-	def := firstNodeID(root, id.Literal)
+	def := firstNodeID(t, root, id.Literal)
+	if def == nil {
+		return nil
+	}
 	return &rpc.Location{URI: uri, Range: rpc.RangeFromToken(def.Start, def.End)}
 }
 
-func firstNodeID(root *dot.Tree, name string) *token.Token {
-	if root == nil {
-		return nil
-	}
-
-	for _, child := range root.Children {
-		switch c := child.(type) {
-		case dot.TreeChild:
-			if c.Kind == dot.KindNodeID {
-				if id, ok := dot.FirstID(c.Tree); ok && id.Literal == name {
-					return &id
-				}
-			} else if found := firstNodeID(c.Tree, name); found != nil {
-				return found
+func firstNodeID(t *dot.Tree, parent int, name string) *token.Token {
+	nr := t.Children(parent)
+	for i := nr.Start; i < nr.End; i = t.Next(i) {
+		n := t.NodeAt(i)
+		if n.IsToken() {
+			continue
+		}
+		if n.Kind == dot.KindNodeID {
+			if id, ok := t.FirstID(i); ok && id.Literal == name {
+				return &id
 			}
+		} else if found := firstNodeID(t, i, name); found != nil {
+			return found
 		}
 	}
-
 	return nil
 }
 
 // References returns all locations where the node ID at the given position is used.
-// This finds all occurrences of the same node ID throughout the document, whether they
-// appear in node statements or edge statements.
-//
-// Returns nil if the position is not on a node ID or the tree is nil.
-func References(root *dot.Tree, uri rpc.DocumentURI, pos token.Position) []rpc.Location {
-	match := tree.Find(root, pos, dot.KindNodeID)
-	if match.Tree == nil {
+func References(t *dot.Tree, root int, uri rpc.DocumentURI, pos token.Position) []rpc.Location {
+	match := tree.Find(t, pos, dot.KindNodeID)
+	if match.Index == -1 {
 		return nil
 	}
-	id, ok := dot.FirstID(match.Tree)
+	id, ok := t.FirstID(match.Index)
 	if !ok {
 		return nil
 	}
 
 	var result []rpc.Location
-	return collectReferences(root, uri, id.Literal, result)
+	return collectReferences(t, root, uri, id.Literal, result)
 }
 
-func collectReferences(root *dot.Tree, uri rpc.DocumentURI, name string, result []rpc.Location) []rpc.Location {
-	if root == nil {
-		return result
-	}
-
-	for _, child := range root.Children {
-		switch c := child.(type) {
-		case dot.TreeChild:
-			if c.Kind == dot.KindNodeID {
-				if id, ok := dot.FirstID(c.Tree); ok && id.Literal == name {
-					result = append(result, rpc.Location{URI: uri, Range: rpc.RangeFromToken(id.Start, id.End)})
-				}
-			} else {
-				result = collectReferences(c.Tree, uri, name, result)
+func collectReferences(t *dot.Tree, parent int, uri rpc.DocumentURI, name string, result []rpc.Location) []rpc.Location {
+	nr := t.Children(parent)
+	for i := nr.Start; i < nr.End; i = t.Next(i) {
+		n := t.NodeAt(i)
+		if n.IsToken() {
+			continue
+		}
+		if n.Kind == dot.KindNodeID {
+			if id, ok := t.FirstID(i); ok && id.Literal == name {
+				result = append(result, rpc.Location{URI: uri, Range: rpc.RangeFromToken(id.Start, id.End)})
 			}
+		} else {
+			result = collectReferences(t, i, uri, name, result)
 		}
 	}
-
 	return result
 }

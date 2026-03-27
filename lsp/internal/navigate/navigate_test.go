@@ -90,13 +90,25 @@ func TestDocumentSymbols(t *testing.T) {
 				},
 			},
 		},
-		"GraphWithEdge": {
-			src: `digraph { a -> b }`,
+		"GraphWithNodes": {
+			src: `digraph G { A; B }`,
 			want: []rpc.DocumentSymbol{
 				{
-					Name: "", Detail: "digraph", Kind: rpc.SymbolKindModule, Range: r(0, 0, 0, 18), SelectionRange: r(0, 0, 0, 7),
+					Name: "G", Detail: "digraph", Kind: rpc.SymbolKindModule, Range: r(0, 0, 0, 18), SelectionRange: r(0, 8, 0, 9),
 					Children: []rpc.DocumentSymbol{
-						{Name: "a -> b", Kind: rpc.SymbolKindEvent, Range: r(0, 10, 0, 16), SelectionRange: r(0, 10, 0, 16)},
+						{Name: "A", Kind: rpc.SymbolKindVariable, Range: r(0, 12, 0, 13), SelectionRange: r(0, 12, 0, 13)},
+						{Name: "B", Kind: rpc.SymbolKindVariable, Range: r(0, 15, 0, 16), SelectionRange: r(0, 15, 0, 16)},
+					},
+				},
+			},
+		},
+		"GraphWithEdge": {
+			src: `digraph G { A -> B }`,
+			want: []rpc.DocumentSymbol{
+				{
+					Name: "G", Detail: "digraph", Kind: rpc.SymbolKindModule, Range: r(0, 0, 0, 20), SelectionRange: r(0, 8, 0, 9),
+					Children: []rpc.DocumentSymbol{
+						{Name: "A -> B", Kind: rpc.SymbolKindEvent, Range: r(0, 12, 0, 18), SelectionRange: r(0, 12, 0, 18)},
 					},
 				},
 			},
@@ -239,10 +251,11 @@ func TestDocumentSymbols(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ps := dot.NewParser([]byte(tt.src))
-			tree := ps.Parse()
+			p := dot.NewParser([]byte(tt.src))
+			tree := p.Parse()
+			cst := tree
 
-			got := DocumentSymbols(tree)
+			got := DocumentSymbols(cst, 0)
 
 			assert.EqualValues(t, got, tt.want, "unexpected symbols for %q", tt.src)
 		})
@@ -257,10 +270,11 @@ func TestDocumentSymbols(t *testing.T) {
 		}
 		src.WriteString("}")
 
-		ps := dot.NewParser([]byte(src.String()))
-		tree := ps.Parse()
+		p := dot.NewParser([]byte(src.String()))
+		tree := p.Parse()
+		cst := tree
 
-		got := DocumentSymbols(tree)
+		got := DocumentSymbols(cst, 0)
 
 		// Count total symbols (graph + children)
 		total := countSymbols(got)
@@ -280,10 +294,11 @@ func TestDocumentSymbols(t *testing.T) {
 			src.WriteString("} ")
 		}
 
-		ps := dot.NewParser([]byte(src.String()))
-		tree := ps.Parse()
+		p := dot.NewParser([]byte(src.String()))
+		tree := p.Parse()
+		cst := tree
 
-		got := DocumentSymbols(tree)
+		got := DocumentSymbols(cst, 0)
 
 		total := countSymbols(got)
 		assert.True(t, total <= maxItems, "expected at most %d symbols, got %d", maxItems, total)
@@ -302,10 +317,11 @@ func TestDocumentSymbols(t *testing.T) {
 		}
 		src.WriteString("}")
 
-		ps := dot.NewParser([]byte(src.String()))
-		tree := ps.Parse()
+		p := dot.NewParser([]byte(src.String()))
+		tree := p.Parse()
+		cst := tree
 
-		got := DocumentSymbols(tree)
+		got := DocumentSymbols(cst, 0)
 
 		depth := maxSymbolDepth(got)
 		assert.True(t, depth <= maxDepth, "expected max depth %d, got %d", maxDepth, depth)
@@ -447,10 +463,11 @@ func TestDefinition(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ps := dot.NewParser([]byte(tt.src))
-			tree := ps.Parse()
+			p := dot.NewParser([]byte(tt.src))
+			tree := p.Parse()
+			cst := tree
 
-			got := Definition(tree, uri, tt.pos)
+			got := Definition(cst, 0, uri, tt.pos)
 
 			assert.EqualValues(t, got, tt.want, "unexpected definition for %q at %v", tt.src, tt.pos)
 		})
@@ -579,10 +596,11 @@ func TestReferences(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ps := dot.NewParser([]byte(tt.src))
-			tree := ps.Parse()
+			p := dot.NewParser([]byte(tt.src))
+			tree := p.Parse()
+			cst := tree
 
-			got := References(tree, uri, tt.pos)
+			got := References(cst, 0, uri, tt.pos)
 
 			assert.EqualValues(t, got, tt.want, "unexpected references for %q at %v", tt.src, tt.pos)
 		})

@@ -12,22 +12,34 @@ import (
 )
 
 // Items returns completion items for the given tree at the given position.
-func Items(root *dot.Tree, pos token.Position) []rpc.CompletionItem {
+func Items(t *dot.Tree, pos token.Position) []rpc.CompletionItem {
 	ctx := result{Comp: tree.Graph}
-	context(root, pos, &ctx)
+	context(t, 0, pos, &ctx)
 
 	var items []rpc.CompletionItem
-	if ctx.AttrName == "" { // attribute name completion
-		for _, attr := range attribute.Attributes {
-			if strings.HasPrefix(attr.Name, ctx.Prefix) && attr.UsedBy&ctx.Comp != 0 {
-				items = append(items, attributeNameItem(attr, ctx.HasEqual))
-			}
+	if ctx.AttrName == "" {
+		items = attributeNameItems(ctx)
+	} else if attr := findAttr(ctx.AttrName, ctx.Comp); attr != nil {
+		items = attributeValueItems(attr, ctx)
+	}
+	return items
+}
+
+func attributeNameItems(ctx result) []rpc.CompletionItem {
+	var items []rpc.CompletionItem
+	for _, attr := range attribute.Attributes {
+		if strings.HasPrefix(attr.Name, ctx.Prefix) && attr.UsedBy&ctx.Comp != 0 {
+			items = append(items, attributeNameItem(attr, ctx.HasEqual))
 		}
-	} else if attr := findAttr(ctx.AttrName, ctx.Comp); attr != nil { // attribute value completion
-		for _, v := range attr.Type.ValuesFor(ctx.Comp) {
-			if strings.HasPrefix(v.Value, ctx.Prefix) {
-				items = append(items, attributeValueItem(v, attr.Type))
-			}
+	}
+	return items
+}
+
+func attributeValueItems(attr *attribute.Attribute, ctx result) []rpc.CompletionItem {
+	var items []rpc.CompletionItem
+	for _, v := range attr.Type.ValuesFor(ctx.Comp) {
+		if strings.HasPrefix(v.Value, ctx.Prefix) {
+			items = append(items, attributeValueItem(v, attr.Type))
 		}
 	}
 	return items
@@ -83,26 +95,26 @@ type result struct {
 	HasEqual bool           // true when = already exists in the attribute
 }
 
-// context finds the prefix text at the cursor position and determines the attribute context.
-func context(root *dot.Tree, pos token.Position, res *result) {
-	if root == nil {
+func context(t *dot.Tree, nodeIdx int, pos token.Position, res *result) {
+	n := t.NodeAt(nodeIdx)
+	if n.IsToken() {
 		return
 	}
 
-	switch root.Kind {
+	switch n.Kind {
 	case dot.KindSubgraph:
 		res.Comp = tree.Subgraph
-		if id, ok := dot.FirstID(root); ok && strings.HasPrefix(id.Literal, "cluster_") {
+		if id, ok := t.FirstID(nodeIdx); ok && strings.HasPrefix(id.Literal, "cluster_") {
 			res.Comp = tree.Cluster
 		}
 	case dot.KindNodeStmt:
-		if _, ok := dot.TreeFirst(root, dot.KindAttrList); ok {
+		if _, ok := t.FirstTree(nodeIdx, dot.KindAttrList); ok {
 			res.Comp = tree.Node
 		}
 	case dot.KindEdgeStmt:
 		res.Comp = tree.Edge
 	case dot.KindAttrStmt:
-		if tok, ok := dot.TokenAt(root, token.Graph|token.Node|token.Edge, 0); ok {
+		if tok, ok := t.TokenAt(nodeIdx, token.Graph|token.Node|token.Edge, 0); ok {
 			switch tok.Kind {
 			case token.Graph:
 				if res.Comp != tree.Cluster && res.Comp != tree.Subgraph {
@@ -116,55 +128,51 @@ func context(root *dot.Tree, pos token.Position, res *result) {
 		}
 	}
 
-	var prev dot.TreeChild
-	for _, child := range root.Children {
-		switch c := child.(type) {
-		case dot.TreeChild:
-			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
-			if !pos.Before(c.Start) && !pos.After(end) {
-				// skip AttrName if cursor is past its actual end AND there's a = token
-				// (meaning we're in value position, not still typing the name)
-				if c.Kind == dot.KindAttrName && pos.After(c.End) {
-					if _, ok := dot.TokenFirst(root, token.Equal); ok {
-						prev = c
+	prevIdx := -1
+	nr := t.Children(nodeIdx)
+	for i := nr.Start; i < nr.End; i = t.Next(i) {
+		cn := t.NodeAt(i)
+		if !cn.IsToken() {
+			end := token.Position{Line: cn.End.Line, Column: cn.End.Column + 1}
+			if !pos.Before(cn.Start) && !pos.After(end) {
+				if cn.Kind == dot.KindAttrName && pos.After(cn.End) {
+					if _, ok := t.FirstToken(nodeIdx, token.Equal); ok {
+						prevIdx = i
 						continue
 					}
 				}
-				if root.Kind == dot.KindAttribute {
-					switch c.Kind {
+				if n.Kind == dot.KindAttribute {
+					switch cn.Kind {
 					case dot.KindAttrName:
-						_, res.HasEqual = dot.TokenFirst(root, token.Equal)
+						_, res.HasEqual = t.FirstToken(nodeIdx, token.Equal)
 					case dot.KindAttrValue:
-						res.AttrName = tree.AttrName(root)
+						res.AttrName = tree.AttrName(t, nodeIdx)
 					}
 				}
-				// When cursor is inside ErrorTree following an incomplete Attribute
-				// (has = but no AttrValue), we're in value position for that attribute.
-				// This can happen in AList (inside [...]) or StmtList (top-level attrs).
-				if c.Kind == dot.KindErrorTree && (root.Kind == dot.KindAList || root.Kind == dot.KindStmtList) && prev.Tree != nil {
-					_, hasEqual := dot.TokenFirst(prev.Tree, token.Equal)
-					_, hasValue := dot.TreeFirst(prev.Tree, dot.KindAttrValue)
-					if prev.Kind == dot.KindAttribute && hasEqual && !hasValue {
-						res.AttrName = tree.AttrName(prev.Tree)
+				if cn.Kind == dot.KindErrorTree && (n.Kind == dot.KindAList || n.Kind == dot.KindStmtList) && prevIdx != -1 {
+					prevNode := t.NodeAt(prevIdx)
+					_, hasEqual := t.FirstToken(prevIdx, token.Equal)
+					_, hasValue := t.FirstTree(prevIdx, dot.KindAttrValue)
+					if prevNode.Kind == dot.KindAttribute && hasEqual && !hasValue {
+						res.AttrName = tree.AttrName(t, prevIdx)
 					}
 				}
-				context(c.Tree, pos, res)
+				context(t, i, pos, res)
 				return
 			}
-			prev = c
-		case dot.TokenChild:
-			end := token.Position{Line: c.End.Line, Column: c.End.Column + 1}
-			if !pos.Before(c.Start) && !pos.After(end) {
-				// cursor on or after = in Attribute means value position
-				if c.Kind == token.Equal && root.Kind == dot.KindAttribute {
-					res.AttrName = tree.AttrName(root)
-					if pos.After(c.End) {
-						continue // cursor is past =, continue to find AttrValue for prefix
+			prevIdx = i
+		} else {
+			end := token.Position{Line: cn.End.Line, Column: cn.End.Column + 1}
+			if !pos.Before(cn.Start) && !pos.After(end) {
+				if cn.TokenKind == token.Equal && n.Kind == dot.KindAttribute {
+					res.AttrName = tree.AttrName(t, nodeIdx)
+					if pos.After(cn.End) {
+						continue
 					}
 					return
 				}
-				if c.Kind == token.ID {
-					res.Prefix = c.String()
+				if cn.TokenKind == token.ID {
+					res.Prefix = cn.Token().String()
 				}
 				return
 			}

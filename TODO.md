@@ -1,22 +1,19 @@
 # TODO
 
-* reduce allocations in layout/parsing
+## Performance
 
-  alloc_objects after tag interface removal (world.gv, 16.2M total):
-
-  | Function | Allocs | % |
-  |---|---|---|
-  | `appendToken` (parser) | 4.3M | 26.7% |
-  | `appendTree` (parser) | 3.4M | 20.7% |
-  | `parseID` | 2.7M | 16.4% |
-  | `parseAttribute` | 1.5M | 9.3% |
-  | `tokenizeQuotedID` | 1.2M | 7.4% |
-
-  * investigate parser allocations (`appendToken`, `appendTree`, `parseID`)
-
-* add a benchmark to ensure no regressions?
-  * do formatters publish things like throughput? what is a good measure?
 * profile lsp
+* heap usage scales ~90-150x input size (44KB file → 3.8MB, 16MB file → 2.5GB). Dominated by
+  parser allocations (interface boxing in `appendToken`/`appendTree`). The `flat-cst` branch
+  reduces allocations from 17M to 4.7M by building the tree as a flat `[]Node` slice directly.
+
+  benchmark results (main branch):
+
+  | Input | Size | Throughput | Allocs/op |
+  |---|---|---|---|
+  | Small | 66B | 5.0 MB/s | 174 |
+  | Medium | 44KB | 14.4 MB/s | 29K |
+  | Large | 16MB | 7.1 MB/s | 17.5M |
 
 ## Parser
 

@@ -128,9 +128,9 @@ type Tree struct {
 type Node struct {
 	Kind       TreeKind       // syntactic construct for tree nodes; zero for token nodes
 	TokenKind  token.Kind     // token kind for token nodes; zero for tree nodes
+	len        uint32         // number of descendant nodes in the subtree; zero for token nodes
 	Start, End token.Position // source positions
 	Literal    string         // token literal for token nodes; empty for tree nodes
-	len        int            // number of descendant nodes in the subtree; zero for token nodes
 }
 
 // NodeRange represents a half-open range [Start, End) of child nodes in the Tree.
@@ -161,13 +161,13 @@ func (t *Tree) Root() NodeRange {
 
 // Children returns the NodeRange of children for the tree node at index i.
 func (t *Tree) Children(i int) NodeRange {
-	return NodeRange{i + 1, i + 1 + t.nodes[i].len}
+	return NodeRange{i + 1, i + 1 + int(t.nodes[i].len)}
 }
 
 // Next returns the index of the next sibling after the node at index i, skipping over any
 // descendants.
 func (t *Tree) Next(i int) int {
-	return i + 1 + t.nodes[i].len
+	return i + 1 + int(t.nodes[i].len)
 }
 
 // FirstTree returns the index of the first child tree node matching want within the children of

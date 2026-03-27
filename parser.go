@@ -128,7 +128,7 @@ func (p *Parser) openNode(kind TreeKind) int {
 
 func (p *Parser) closeNode(i int) {
 	n := &p.tree.nodes[i]
-	n.len = len(p.tree.nodes) - i - 1
+	n.len = uint32(len(p.tree.nodes) - i - 1)
 	if n.len > 0 {
 		// Set Start/End from first and last descendant
 		first := p.tree.nodes[i+1]

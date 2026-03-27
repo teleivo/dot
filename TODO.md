@@ -3,17 +3,22 @@
 ## Performance
 
 * profile lsp
-* heap usage scales ~90-150x input size (44KB file → 3.8MB, 16MB file → 2.5GB). Dominated by
-  parser allocations (interface boxing in `appendToken`/`appendTree`). The `flat-cst` branch
-  reduces allocations from 17M to 4.7M by building the tree as a flat `[]Node` slice directly.
+* heap usage scales ~80-150x input size (44KB file → 3.6MB, 16MB file → 2.4GB). Dominated by
+  parser allocations (interface boxing in `appendToken`/`appendTree`).
 
-  benchmark results (main branch):
+  benchmark results (`go test -bench=BenchmarkPrint -benchmem -benchtime=10s ./printer/`):
 
-  | Input | Size | Throughput | Allocs/op |
-  |---|---|---|---|
-  | Small | 66B | 5.0 MB/s | 174 |
-  | Medium | 44KB | 14.4 MB/s | 29K |
-  | Large | 16MB | 7.1 MB/s | 17.5M |
+  | Input | Size | Throughput | B/op | Allocs/op |
+  |---|---|---|---|---|
+  | Small | 66B | 3.9 MB/s | 20KB | 174 |
+  | Medium | 44KB | 12.3 MB/s | 3.6MB | 29K |
+  | Large | 16MB | 8.3 MB/s | 2.4GB | 17.5M |
+
+  the `flat-cst` branch reduces allocs from 17.5M to 5.9M (66%) and improves throughput ~18% for
+  large files, but increases B/op from 2.4GB to 3.5GB due to larger contiguous node slice (48 bytes
+  per node vs 16 byte interface values). Not merged — the memory trade-off is unfavorable for the
+  marginal wall-clock gain in batch formatting. May be worth revisiting if LSP GC pressure becomes
+  a user-visible issue.
 
 ## Parser
 
